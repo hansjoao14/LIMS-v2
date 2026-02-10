@@ -1,0 +1,21 @@
+<div class="min-h-screen bg-gray-50/50">
+  <app-sidebar></app-sidebar>
+
+  <div 
+    class="p-4 flex flex-col min-h-screen transition-all duration-300 ease-in-out"
+    [class]="sidebarService.isOpen() ? 'xl:ml-80' : 'xl:ml-22'">
+    
+    <nav class="sticky top-2 z-50 block w-full max-w-full bg-gray-50/80 backdrop-blur-md border border-white/30 text-white shadow-sm rounded-xl transition-all px-4 py-2">
+      <app-header></app-header>
+    </nav>
+
+    <div class="mt-6 flex-1 overflow-auto">
+      <router-outlet></router-outlet>
+    </div>
+
+    <footer class="text-blue-gray-600 mt-4">
+      <app-footer></app-footer>
+    </footer>
+
+  </div>
+</div>

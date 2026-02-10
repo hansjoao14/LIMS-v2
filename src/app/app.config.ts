@@ -1,11 +1,40 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, inject, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
-
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { routes } from './app.routes';
+import { provideToastr } from 'ngx-toastr';
+import { registerLocaleData } from '@angular/common';
+import { environment } from '../environments/environment';
+import localeEsEc from '@angular/common/locales/es-EC';
+import { InMemoryCache, ApolloClientOptions } from '@apollo/client/core';
+import { HttpLink } from 'apollo-angular/http';
+import { provideApollo } from 'apollo-angular';
+import { provideHttpClient } from '@angular/common/http';
+
+registerLocaleData(localeEsEc);
+
+export function apolloOptionsFactory(
+  httpLink: HttpLink
+): ApolloClientOptions { 
+  return {
+    link: httpLink.create({ uri: environment.graphql }),
+    cache: new InMemoryCache(),
+  };
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes)
+    // Fundamental para que el renderizado automático funcione
+    provideZoneChangeDetection({ eventCoalescing: true }), 
+    provideHttpClient(),
+    provideRouter(routes),
+    provideAnimations(),
+    provideToastr({
+      progressAnimation: 'increasing',
+      timeOut: 5000,
+      progressBar: true,
+    }),
+    provideApollo(() => apolloOptionsFactory(inject(HttpLink))),
   ]
 };

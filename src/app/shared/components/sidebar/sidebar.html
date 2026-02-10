@@ -1,0 +1,140 @@
+<aside
+  [ngClass]="collapsed ? 'w-20' : 'w-72'"
+  class="bg-linear-to-br from-[#172030] via-[#28367F] to-[#1275BB] fixed left-4 top-4 z-50 h-[calc(100vh-32px)] rounded-xl transition-all duration-300 overflow-hidden flex flex-col shadow-2xl"
+>
+  <div
+    class="flex items-center justify-between border-b border-white/20 px-4 py-4 shrink-0"
+  >
+    @if (!collapsed) {
+      <a routerLink="/dashboard" class="cursor-pointer block">
+        <img src="/logodondgerman.png" alt="logo" class="h-9 object-contain" />
+      </a>
+    }
+    <button
+      (click)="toggleSidebar()"
+      class="w-8 h-8 flex items-center justify-center rounded-lg text-white hover:bg-white/10 active:bg-white/30 transition-colors"
+    >
+      @if (!collapsed) {
+        <app-close-sidebar-icon></app-close-sidebar-icon>
+      }
+      @if (collapsed) {
+        <app-open-sidebar-icon></app-open-sidebar-icon>
+      }
+    </button>
+  </div>
+
+  <nav class="flex-1 overflow-y-auto px-2 py-4 scrollbar-hide">
+    <ul class="flex flex-col gap-1">
+      @for (item of menuItems; track item.label) {
+        @if (!item.children) {
+          <li>
+            <a
+              [routerLink]="item.path"
+              routerLinkActive="bg-gradient-to-tr from-blue-600 to-blue-400 shadow-lg font-bold"
+              class="flex items-center gap-3 px-3 py-3 rounded-lg text-white hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <div class="w-6 h-6 flex items-center justify-center">
+                <ng-container
+                  *ngComponentOutlet="item.icon ?? null"
+                ></ng-container>
+              </div>
+
+              @if (!collapsed) {
+                <span class="font-medium text-sm capitalize truncate">{{
+                  item.label
+                }}</span>
+              }
+            </a>
+          </li>
+        }
+
+        @if (item.children) {
+          <li class="flex flex-col">
+            <button
+              (click)="toggleSubmenu(item)"
+              class="flex items-center justify-between gap-3 px-3 py-3 rounded-lg text-white hover:bg-white/10 transition-colors cursor-pointer w-full text-left"
+              [ngClass]="{ 'bg-white/5': item.expanded }"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-6 h-6 flex items-center justify-center">
+                  <ng-container
+                    *ngComponentOutlet="item.icon ?? null"
+                  ></ng-container>
+                </div>
+                @if (!collapsed) {
+                  <span class="font-medium text-sm capitalize truncate">{{
+                    item.label
+                  }}</span>
+                }
+              </div>
+
+              @if (!collapsed) {
+                <svg
+                  class="w-4 h-4 transition-transform duration-200"
+                  [class.rotate-180]="item.expanded"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              }
+            </button>
+
+            @if (item.expanded && !collapsed) {
+              <ul
+                class="flex flex-col gap-1 mt-1 ml-4 border-l border-white/20 pl-2 transition-all duration-300"
+              >
+                @for (subItem of item.children; track subItem.label) {
+                  <li>
+                    <a
+                      [routerLink]="subItem.path"
+                      routerLinkActive="text-[#56B0EB] font-bold"
+                      class="flex items-center px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-sm"
+                    >
+                      {{ subItem.label }}
+                    </a>
+                  </li>
+                }
+              </ul>
+            }
+          </li>
+        }
+      }
+    </ul>
+  </nav>
+
+  <div class="px-2 pb-4 shrink-0 mt-2">
+    <button
+      (click)="logout()"
+      class="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-white hover:bg-red-500/20 active:bg-red-500/40 transition-colors cursor-pointer"
+    >
+      <div class="w-6 h-6 flex items-center justify-center">
+        <app-close-icon class="h-full w-full"></app-close-icon>
+      </div>
+      @if (!collapsed) {
+        <span class="font-medium text-sm">Cerrar sesión</span>
+      }
+    </button>
+  </div>
+
+  <div class="px-4 pb-6 shrink-0">
+    @if (!collapsed) {
+      <div class="flex items-center space-x-2 text-white">
+        <div class="text-[#56B0EB] font-bold text-xl">SGIA</div>
+        <div class="h-8 w-px bg-white/50"></div>
+        <div class="text-[10px] leading-tight opacity-80">
+          <p>Sistema de</p>
+          <p>Gestión de la</p>
+          <p>Información Ambiental</p>
+        </div>
+      </div>
+    }
+  </div>
+</aside>
+

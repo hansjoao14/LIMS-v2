@@ -1,0 +1,15 @@
+/* sidebar.component.css */
+
+/* Transición suave para ancho */
+aside {
+  transition: width 0.3s ease;
+}
+
+/* opcional: personaliza scroll bar */
+aside nav::-webkit-scrollbar {
+  width: 4px;
+}
+aside nav::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.3);
+  border-radius: 2px;
+}

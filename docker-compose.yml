@@ -1,0 +1,7 @@
+services:
+  angular-sgia:
+    container_name: sgia-frontend-intranet
+    build: .
+    ports:
+      - "5200:5200"
+    restart: unless-stopped

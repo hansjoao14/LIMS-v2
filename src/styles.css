@@ -1,3 +1,30 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import "tailwindcss";
+
+
+
+.ngx-pagination .current {
+  padding: 0.1875rem 0.625rem;
+  background: #2e07ae !important;
+  color: #fefefe;
+  cursor: default;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+/* Contenedor que envuelve header + router-outlet + footer */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Zona de contenido que debe crecer */
+.content {
+  flex: 1;
+}
