@@ -13,6 +13,7 @@ import { provideHttpClient } from '@angular/common/http';
 
 registerLocaleData(localeEsEc);
 
+// Se elimina el <any> para corregir el error de tipado
 export function apolloOptionsFactory(
   httpLink: HttpLink
 ): ApolloClientOptions { 
@@ -25,8 +26,9 @@ export function apolloOptionsFactory(
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    // Fundamental para que el renderizado automático funcione
-    provideZoneChangeDetection({ eventCoalescing: true }), 
+    // Fundamental para que el renderizado automático detecte cambios
+    provideZoneChangeDetection({ eventCoalescing: true }),
+  
     provideHttpClient(),
     provideRouter(routes),
     provideAnimations(),
@@ -35,6 +37,8 @@ export const appConfig: ApplicationConfig = {
       timeOut: 5000,
       progressBar: true,
     }),
+
+    // Se eliminó provideClientHydration para evitar el error NG0505
     provideApollo(() => apolloOptionsFactory(inject(HttpLink))),
   ]
 };

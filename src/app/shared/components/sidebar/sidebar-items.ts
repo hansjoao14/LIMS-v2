@@ -1,22 +1,23 @@
 import { Type } from '@angular/core';
 import { HouseComponent } from '../../../ui/icons/house/house.component';
-
+import { CarpetaIcon } from '../../../ui/icons/carpeta-icon/carpeta-icon';
 
 // Asumo que tienes un ícono genérico, si no usa otro
 
 export interface MenuItem {
-  path?: string;          // Opcional para carpetas padres
+  path?: string; // Opcional para carpetas padres
   label: string;
-  icon?: Type<any>;       // Opcional para hijos
-  children?: MenuItem[];  // LISTA DE SUB-ITEMS (Dropdown)
-  expanded?: boolean;     // Estado del dropdown (Abierto/Cerrado)
+  icon?: Type<any>; // Opcional para hijos
+  children?: MenuItem[]; // LISTA DE SUB-ITEMS (Dropdown)
+  expanded?: boolean; // Estado del dropdown (Abierto/Cerrado)
 }
 
 export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: HouseComponent },
+
+  { path: '/solicitud-trabajo', label: 'Solicitud de Trabajo', icon: CarpetaIcon },
+
   
-
-
 
   /* // DROPDOWN: CATÁLOGOS BASE
   { 

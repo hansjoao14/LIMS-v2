@@ -23,9 +23,9 @@ export class Login {
 
   // 🔁 Carousel
   carouselImages: string[] = [
+    '/image 653.png',
     '/image 264.png',
-    '/image 264.png',
-    '/image 264.png',
+    '/image 653.png',
   ];
   currentIndex: number = 0;
   intervalId: any;
@@ -43,6 +43,7 @@ export class Login {
 
   // 🔄 Inicia el carrusel
   startCarousel(): void {
+    console.log('Iniciando carrusel...');
     this.intervalId = setInterval(() => {
       this.currentIndex = (this.currentIndex + 1) % this.carouselImages.length;
     }, 4000); // cada 4 segundos

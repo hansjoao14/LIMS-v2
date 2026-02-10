@@ -21,5 +21,21 @@ export const featuresRoutes: Routes = [
       ],
     },
   },
+    {
+    path: 'solicitud-trabajo',
+    loadComponent: () =>
+      import('./solicitud-trabajo/solicitud-trabajo').then((m) => m.SolicitudTrabajo),
+    // ✅ Habilitado
+    canActivate: [canActivateWithRealmRoles],
+    data: {
+      title: 'Solicitud de Trabajo',
+      // ✅ Habilitado (Ajusta los roles según necesites)
+      requiredRoles: [
+        { role: 'manager' },
+        { role: 'admin' },
+        { role: 'gestor' },
+      ],
+    },
+  },
  
 ];

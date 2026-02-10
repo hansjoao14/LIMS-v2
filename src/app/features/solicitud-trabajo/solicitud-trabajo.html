@@ -1,0 +1,93 @@
+<div class="flex min-h-screen bg-gray-100 font-sans">
+
+
+  <main class="flex-1 p-8">
+    <header class="flex justify-between items-start mb-6">
+      <h1 class="text-xl font-bold text-slate-700">Sistema LIMS / <span class="text-blue-600">Solicitud de trabajo</span></h1>
+      <div class="text-right text-sm text-gray-500">
+        <p class="font-bold">Solicitud de trabajo - Ensayos</p>
+        <p>Elaborado por: Tec. Jorge Diaz</p>
+        <p>Fecha de solicitud: 27/05/2025</p>
+      </div>
+    </header>
+
+    <section class="bg-white p-6 rounded-lg shadow-sm">
+      <h2 class="text-lg font-bold mb-4">Solicitud de trabajo</h2>
+      <p class="mb-6 text-sm">Número de solicitud: <span class="font-semibold">ST-2025-001</span></p>
+
+      <form [formGroup]="solicitudForm" (ngSubmit)="onSubmit()">
+        <div class="grid grid-cols-12 gap-6">
+          
+          <div class="col-span-6">
+            <label class="block text-sm font-bold mb-1">Listado de jefaturas o dirección*</label>
+            <select formControlName="jefatura" class="w-full border p-2 rounded bg-gray-50">
+              <option value="">Selecciona una opción</option>
+            </select>
+          </div>
+          <div class="col-span-3">
+            <label class="block text-sm font-bold mb-1">Solicitado por*</label>
+            <select formControlName="solicitadoPor" class="w-full border p-2 rounded bg-gray-50">
+              <option value="">Selecciona una opción</option>
+            </select>
+          </div>
+          <div class="col-span-3">
+            <label class="block text-sm font-bold mb-1 text-gray-400">Cargo</label>
+            <input type="text" disabled placeholder="Se llenará automáticamente" class="w-full border p-2 rounded bg-gray-200">
+          </div>
+
+          <div class="col-span-12 mt-4">
+            <h3 class="font-bold border-b pb-2">Información del operador</h3>
+          </div>
+
+          <div class="col-span-4">
+            <label class="block text-sm font-bold mb-1">RUC del operador*</label>
+            <input type="text" formControlName="ruc" placeholder="e.g. 1724165094-001" class="w-full border p-2 rounded">
+          </div>
+          <div class="col-span-4">
+            <label class="block text-sm font-bold mb-1">Razón social del operador*</label>
+            <input type="text" formControlName="razonSocial" placeholder="e.g. INDUSTRIA ANDINA S.A." class="w-full border p-2 rounded">
+          </div>
+          <div class="col-span-4">
+            <label class="block text-sm font-bold mb-1">Horarios o jornadas*</label>
+            <input type="date" formControlName="horarios" class="w-full border p-2 rounded">
+          </div>
+
+          <div class="col-span-8">
+            <label class="block text-sm font-bold mb-1">Dirección del operador*</label>
+            <input type="text" formControlName="direccion" class="w-full border p-2 rounded mb-4">
+            
+            <div class="flex gap-4 items-end">
+              <div>
+                <label class="block text-xs font-bold">Latitud:</label>
+                <input type="text" formControlName="latitud" class="border p-2 rounded bg-gray-100">
+              </div>
+              <div>
+                <label class="block text-xs font-bold">Longitud:</label>
+                <input type="text" formControlName="longitud" class="border p-2 rounded bg-gray-100">
+              </div>
+              <button type="button" class="bg-blue-900 text-white px-4 py-2 rounded flex items-center">
+                <span class="mr-1">+</span> AGREGAR
+              </button>
+            </div>
+          </div>
+
+          <div class="col-span-4">
+            <label class="block text-sm font-bold mb-1">Motivo*</label>
+            <select formControlName="motivo" class="w-full border p-2 rounded mb-4">
+              <option value="">Selecciona un motivo</option>
+            </select>
+
+            <label class="block text-sm font-bold mb-1">Observaciones</label>
+            <textarea formControlName="observaciones" rows="3" class="w-full border p-2 rounded" placeholder="Detallar información adicional..."></textarea>
+            <p class="text-right text-xs text-gray-400">0/250</p>
+          </div>
+        </div>
+
+        <div class="flex justify-start gap-4 mt-10">
+          <button type="button" class="bg-gray-500 text-white px-12 py-2 rounded uppercase font-bold">Regresar</button>
+          <button type="submit" class="bg-blue-900 text-white px-12 py-2 rounded uppercase font-bold">Siguiente</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</div>
