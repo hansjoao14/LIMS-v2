@@ -19,6 +19,9 @@ npm install apexcharts ng-apexcharts
 npm i ngx-pagination
 npm install @fortawesome/fontawesome-free
 
+npm install leaflet
+npm install --save-dev @types/leaflet
+
 npm i ngx-spinner
 
 

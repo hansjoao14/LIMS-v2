@@ -1,0 +1,21 @@
+/* Asegura que el contenedor del mapa tenga dimensiones */
+#map-container {
+  background: #f1f5f9;
+  z-index: 10;
+}
+
+/* Fix para iconos de Leaflet si no cargan */
+:host ::ng-deep .leaflet-pane {
+  z-index: 0 !important;
+}
+
+:host ::ng-deep .leaflet-top, 
+:host ::ng-deep .leaflet-bottom {
+  z-index: 400 !important;
+}
+
+/* Estilo para los inputs de coordenadas readonly */
+input[readonly] {
+  cursor: default;
+  color: #1e3a8a;
+}
