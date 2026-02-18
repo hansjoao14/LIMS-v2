@@ -97,6 +97,10 @@
                       routerLinkActive="text-[#56B0EB] font-bold"
                       class="flex items-center px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-sm"
                     >
+                     <ng-container
+                    *ngComponentOutlet="subItem.icon ?? null"
+                  ></ng-container>&nbsp;&nbsp;
+
                       {{ subItem.label }}
                     </a>
                   </li>

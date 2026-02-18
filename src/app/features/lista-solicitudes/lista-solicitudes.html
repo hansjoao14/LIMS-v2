@@ -1,0 +1,40 @@
+<div class="table-container">
+  <div class="table-header">
+    <h2>Historial de Solicitudes de Trabajo</h2>
+    <div class="search-box">
+      <input type="text" placeholder="Buscar solicitud...">
+    </div>
+  </div>
+
+  <table class="custom-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Fecha</th>
+        <th>Solicitante</th>
+        <th>Actividad</th>
+        <th>Prioridad</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let s of solicitudes">
+        <td><strong>{{ s.id }}</strong></td>
+        <td>{{ s.fecha }}</td>
+        <td>{{ s.solicitante }}</td>
+        <td>{{ s.actividad }}</td>
+        <td>
+          <span [class]="'priority-' + s.prioridad.toLowerCase()">{{ s.prioridad }}</span>
+        </td>
+        <td>
+          <span class="badge" [ngClass]="getBadgeClass(s.estado)">{{ s.estado }}</span>
+        </td>
+        <td class="actions">
+          <button class="btn-icon" title="Editar">✏️</button>
+          <button class="btn-icon" title="Ver Detalles">👁️</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

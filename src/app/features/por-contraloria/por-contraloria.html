@@ -1,0 +1,96 @@
+<div style="padding: 30px; background-color: white; font-family: 'Segoe UI', Tahoma, sans-serif; color: #1d2b64; max-width: 1200px; margin: 0 auto;">
+  
+  <header style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px;">
+    <div>
+      <p style="margin: 0; font-size: 15px;">Sistema LIMS / <strong>Gestión de Vehículos</strong></p>
+      <h2 style="margin: 15px 0 5px; font-size: 22px; font-weight: bold;">Solicitud de transporte - Contraloria</h2>
+      <p style="margin: 0; font-size: 14px; color: #555;">Complete la siguiente infomación para solicitar un vehículo de la DMRCA</p>
+    </div>
+    <div style="text-align: right; font-size: 14px; line-height: 1.6; font-weight: bold;">
+      <p style="margin: 0;">FOR.ADM.SVR.001.03</p>
+      <p style="margin: 0;">Elaborado por: <span style="font-weight: normal;">Tec. Jorge Diaz</span></p>
+      <p style="margin: 0;">Fecha de solicitud: <span style="font-weight: normal;">27/05/2025</span></p>
+      <p style="margin: 0;">Edición: <span style="font-weight: normal;">12</span></p>
+    </div>
+  </header>
+
+  <form>
+    <h3 style="margin-bottom: 25px; font-size: 18px; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 10px;">Orden de movilización de vehículo</h3>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px;">
+      
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="display: flex; flex-direction: column;">
+          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Día y Fecha*</label>
+          <input type="date" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Ocupantes (Con el conductor)*</label>
+          <input type="number" placeholder="e.g. 5" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Hora de Salida*</label>
+          <input type="time" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Hora de Retorno*</label>
+          <input type="time" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Funcionario Responsable*</label>
+          <select style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px; color: #666;">
+            <option>Selecciona un funcionario responsable</option>
+          </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Motivo de movilización*</label>
+          <input type="text" placeholder="e.g. Monitoreo de descargas liquidas" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="display: flex; flex-direction: column;">
+          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Vehículo Asignado*</label>
+          <input type="text" placeholder="e.g. Toyota corolla cross 2015" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Nombre del solicitante*</label>
+          <input type="text" placeholder="e.g. Ing. Rosa Fonseca" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Cargo del solicitante*</label>
+          <input type="text" placeholder="e.g. Dirección Metropolitana..." style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Lugar de origen*</label>
+          <input type="text" placeholder="e.g. Av. Mariscal sucre..." style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Lugares de destino*</label>
+          <input type="text" placeholder="e.g. Leonidas Plaza y Luis Cordero" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        </div>
+      </div>
+
+      <div style="grid-column: span 2; display: flex; flex-direction: column; margin-top: 10px;">
+        <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Observaciones*</label>
+        <div style="position: relative;">
+          <textarea style="width: 100%; height: 80px; padding: 10px; background: #f1f4f8; border: 2px solid #63b3ed; border-radius: 5px; resize: none;"></textarea>
+          <span style="position: absolute; right: 10px; bottom: 10px; font-size: 12px; color: #999;">0/250</span>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" style="margin-top: 30px; background-color: #233169; color: white; padding: 12px 60px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      GUARDAR
+    </button>
+  </form>
+</div>

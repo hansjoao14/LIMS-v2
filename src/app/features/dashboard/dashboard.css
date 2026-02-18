@@ -1,0 +1,105 @@
+.dashboard-wrapper {
+  padding: 40px;
+  background-color: #f4f7fa; /* Fondo gris azulado muy suave */
+  min-height: 100vh;
+}
+
+.welcome-section {
+  margin-bottom: 40px;
+}
+
+.welcome-section h1 {
+  color: #1d2b64;
+  font-size: 28px;
+  margin: 0;
+  font-weight: 300;
+}
+
+.welcome-section h1 span {
+  font-weight: 800;
+  color: #2a41a3;
+}
+
+.welcome-section p {
+  color: #64748b;
+  margin-top: 8px;
+  font-size: 15px;
+}
+
+/* Grilla de Tarjetas */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+/* Estilo de la Tarjeta */
+.card-item {
+  text-decoration: none;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+  border-color: #1d2b64;
+}
+
+.card-icon {
+  font-size: 32px;
+  margin-bottom: 16px;
+  background: #f1f5f9;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.card-body h3 {
+  color: #1e293b;
+  font-size: 18px;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.card-body p {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.card-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #1d2b64;
+  font-weight: bold;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.arrow-icon {
+  transition: transform 0.3s ease;
+}
+
+.card-item:hover .arrow-icon {
+  transform: translateX(5px);
+}
+
+/* Color especial para el módulo de Contraloría */
+.card-item:last-child {
+  border-left: 5px solid #1d2b64;
+}

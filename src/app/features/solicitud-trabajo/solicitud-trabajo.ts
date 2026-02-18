@@ -1,4 +1,4 @@
-import { Component, AfterViewChecked } from '@angular/core';
+import { Component, AfterViewChecked, NgZone } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
@@ -13,12 +13,8 @@ import * as L from 'leaflet';
 export class SolicitudTrabajo implements AfterViewChecked {
   solicitudForm: FormGroup;
   showMapModal = false;
-  
-  // Configuración de Leaflet
   private map: any;
   private marker: any;
-  // Coordenadas por defecto (Quito, Ecuador)
-  private defaultCoords: L.LatLngExpression = [-0.1807, -78.4678];
 
   headerData = {
     elaboradoPor: 'Tec. Jorge Diaz',
@@ -26,7 +22,7 @@ export class SolicitudTrabajo implements AfterViewChecked {
     numeroSolicitud: 'ST-2025-001'
   };
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private zone: NgZone) {
     this.solicitudForm = this.fb.group({
       jefatura: ['', Validators.required],
       solicitadoPor: ['', Validators.required],
@@ -34,15 +30,14 @@ export class SolicitudTrabajo implements AfterViewChecked {
       razonSocial: ['', Validators.required],
       nombreComercial: [''],
       direccion: ['', Validators.required],
-      latitud: ['-0.1807'],
-      longitud: ['-78.4678'],
-      horarios: [''],
+      latitud: ['0672650 E'],
+      longitud: ['9962200 N'],
+      horarios: ['2025-06-03'],
       motivo: ['', Validators.required],
       observaciones: ['', [Validators.maxLength(250)]]
     });
   }
 
-  // Se usa AfterViewChecked para asegurar que el div del mapa exista antes de inicializarlo
   ngAfterViewChecked() {
     if (this.showMapModal && !this.map) {
       this.initMap();
@@ -55,56 +50,44 @@ export class SolicitudTrabajo implements AfterViewChecked {
 
   closeMap() {
     this.showMapModal = false;
-    this.map = null; // Destruimos la referencia para poder reinicializarlo
+    if (this.map) {
+      this.map.remove();
+      this.map = null;
+    }
   }
 
   private initMap(): void {
-    const lat = parseFloat(this.solicitudForm.value.latitud) || -0.1807;
-    const lng = parseFloat(this.solicitudForm.value.longitud) || -78.4678;
+    this.zone.runOutsideAngular(() => {
+      // Coordenadas iniciales para Quito
+      this.map = L.map('map-container').setView([-0.1807, -78.4678], 14);
 
-    this.map = L.map('map-container').setView([lat, lng], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(this.map);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(this.map);
+      // Icono personalizado para el pin (Opcional)
+      this.marker = L.marker([-0.1807, -78.4678], { draggable: true }).addTo(this.map);
 
-    // Marcador interactivo
-    this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
+      // Forzar renderizado
+      setTimeout(() => this.map.invalidateSize(), 200);
 
-    this.marker.on('dragend', () => {
-      const pos = this.marker.getLatLng();
-      this.updateCoords(pos.lat, pos.lng);
-    });
-
-    this.map.on('click', (e: any) => {
-      this.marker.setLatLng(e.latlng);
-      this.updateCoords(e.latlng.lat, e.latlng.lng);
+      this.map.on('click', (e: any) => {
+        this.marker.setLatLng(e.latlng);
+        this.updateCoords(e.latlng.lat, e.latlng.lng);
+      });
     });
   }
 
   updateCoords(lat: number, lng: number) {
-    this.solicitudForm.patchValue({
-      latitud: lat.toFixed(6),
-      longitud: lng.toFixed(6)
+    this.zone.run(() => {
+      this.solicitudForm.patchValue({
+        latitud: lat.toFixed(6) + ' E',
+        longitud: lng.toFixed(6) + ' N'
+      });
     });
   }
 
   confirmLocation() {
     this.closeMap();
   }
-
-  jornadas = [
-    { nombre: 'Lunes', abreviacion: 'LU', activo: false },
-    { nombre: 'Martes', abreviacion: 'MA', activo: true }, // Por defecto como en la imagen
-    { nombre: 'Miércoles', abreviacion: 'MI', activo: false },
-    { nombre: 'Jueves', abreviacion: 'JU', activo: false },
-    { nombre: 'Viernes', abreviacion: 'VI', activo: false },
-  ];
-
-  seleccionarJornada(jornada: any) {
-    this.jornadas.forEach(j => j.activo = false);
-    jornada.activo = true;
-    this.solicitudForm.patchValue({ horarios: jornada.nombre });
-  }
-
 }

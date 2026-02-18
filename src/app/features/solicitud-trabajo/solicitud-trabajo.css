@@ -19,3 +19,28 @@ input[readonly] {
   cursor: default;
   color: #1e3a8a;
 }
+
+#map-container {
+  background: #f1f5f9;
+  z-index: 10;
+}
+
+:host ::ng-deep .leaflet-pane {
+  z-index: 0 !important;
+}
+
+/* Animaciones suaves */
+.animate-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Estilo para los inputs de lectura */
+input[readonly] {
+  background-color: #f9fafb;
+  color: #1e3a8a;
+}

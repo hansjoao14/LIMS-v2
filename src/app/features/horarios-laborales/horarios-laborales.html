@@ -1,0 +1,78 @@
+<div style="padding: 20px; background-color: white; font-family: sans-serif; color: #1d2b64;">
+  
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+    <div>
+      <p style="margin: 0; font-size: 14px;">Sistema LIMS / <strong>Gestión de Vehículos</strong></p>
+      <h2 style="margin: 10px 0 5px; font-size: 22px;">Solicitud de transporte</h2>
+      <p style="margin: 0; font-size: 13px; color: #666;">Complete la siguiente información para solicitar un vehículo de la DMRCA</p>
+    </div>
+    <div style="text-align: right; font-size: 13px; line-height: 1.5;">
+      <p style="margin: 0;"><strong>FOR.ADM.SVR.001.02</strong></p>
+      <p style="margin: 0;"><strong>Elaborado por:</strong> Tec. Jorge Diaz</p>
+      <p style="margin: 0;"><strong>Fecha de solicitud:</strong> 27/05/2025</p>
+      <p style="margin: 0;"><strong>Edición:</strong> 12</p>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <h3 style="border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 20px; font-size: 18px;">Programación semanal de vehículos</h3>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+      
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">Día y Fecha*</label>
+        <input type="date" formControlName="fecha" style="padding: 10px; background: #f1f4f8; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">Ocupantes (Con el conductor)*</label>
+        <input type="number" formControlName="ocupantes" placeholder="e.g. 5" style="padding: 10px; background: #f1f4f8; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">Sector / Dirección del destino*</label>
+        <input type="text" formControlName="destino" placeholder="e.g. Av. Mariscal sucre..." style="padding: 10px; background: #f1f4f8; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">Hora de Salida*</label>
+        <input type="time" formControlName="horaSalida" style="padding: 10px; background: #f1f4f8; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">Hora de Retorno*</label>
+        <input type="time" formControlName="horaRetorno" style="padding: 10px; background: #f1f4f8; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">Vehículo Asignado*</label>
+        <input type="text" formControlName="vehiculo" placeholder="e.g. Toyota corolla..." style="padding: 10px; background: #f1f4f8; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">Funcionario Responsable*</label>
+        <select formControlName="funcionario" style="padding: 10px; background: #f1f4f8; border: 1px solid #ccc; border-radius: 4px;">
+          <option value="" disabled selected>Selecciona un funcionario</option>
+          <option *ngFor="let f of funcionarios" [value]="f.id">{{f.nombre}}</option>
+        </select>
+      </div>
+
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">Actividad*</label>
+        <input type="text" formControlName="actividad" placeholder="e.g. Monitoreo..." style="padding: 10px; background: #f1f4f8; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+
+      <div style="display: flex; flex-direction: column; grid-column: span 2;">
+        <label style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">Observaciones*</label>
+        <div style="position: relative;">
+          <textarea formControlName="observaciones" style="width: 100%; height: 80px; padding: 10px; background: #f1f4f8; border: 1px solid #ccc; border-radius: 4px; resize: none;"></textarea>
+          <span style="position: absolute; right: 10px; bottom: 5px; font-size: 11px; color: #999;">{{ obsLen }}/250</span>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" style="margin-top: 30px; background-color: #1d2b64; color: white; padding: 12px 60px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+      GUARDAR
+    </button>
+  </form>
+</div>

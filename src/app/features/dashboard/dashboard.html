@@ -1,1 +1,20 @@
-<p>dashboard works!</p>
+<div class="dashboard-wrapper">
+  <div class="welcome-section">
+    <h1>Panel Principal <span>SGIA</span></h1>
+    <p>Bienvenido al Sistema de Gestión Institucional Ambiental. Seleccione un módulo para continuar.</p>
+  </div>
+
+  <div class="cards-grid">
+    <a *ngFor="let item of modulos" [routerLink]="item.route" class="card-item">
+      <div class="card-icon">{{ item.icon }}</div>
+      <div class="card-body">
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.desc }}</p>
+      </div>
+      <div class="card-footer">
+        <span>Ingresar</span>
+        <i class="arrow-icon">→</i>
+      </div>
+    </a>
+  </div>
+</div>
