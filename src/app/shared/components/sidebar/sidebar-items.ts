@@ -17,85 +17,46 @@ export interface MenuItem {
   icon?: Type<any>; // Opcional para hijos
   children?: MenuItem[]; // LISTA DE SUB-ITEMS (Dropdown)
   expanded?: boolean; // Estado del dropdown (Abierto/Cerrado)
+  requiredRoles?: string[];
 }
 
 export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
-  { path: '/dashboard', label: 'Dashboard', icon: HouseComponent },
-
-  { path: '/solicitud-trabajo', label: 'Solicitud de Trabajo', icon: CarpetaIcon },
-   { path: '/lista-solicitudes', label: 'Bandeja de solicitudes', icon: ListaSolicitudesIcon },
-
+  { 
+    path: '/dashboard', 
+    label: 'Dashboard', 
+    icon: HouseComponent, 
+    requiredRoles: ['manager', 'admin', 'gestor'] 
+  },
+  { 
+    path: '/solicitud-trabajo', 
+    label: 'Solicitud de Trabajo', 
+    icon: CarpetaIcon, 
+    requiredRoles: ['admin', 'gestor'] 
+  },
+  { 
+    path: '/lista-solicitudes', 
+    label: 'Bandeja de solicitudes', 
+    icon: ListaSolicitudesIcon, 
+    requiredRoles: ['admin', 'gestor'] 
+  },
   { 
     label: 'Gestión de Vehiculos',
     icon: CarIcon,
     expanded: false,
+    requiredRoles: ['admin', 'gestor'],
     children: [
-      { path: '/horarios-laborales', label: 'Horarios laborales', icon: HorariosLaboralesIcon },
-      { path: '/por-contraloria', label: 'Por contraloria', icon: PorContraloriaIcon },
-
-     
+      { path: '/horarios-laborales', label: 'Horarios laborales', icon: HorariosLaboralesIcon, requiredRoles: ['admin', 'gestor'] },
+      { path: '/por-contraloria', label: 'Por contraloria', icon: PorContraloriaIcon, requiredRoles: ['admin', 'gestor'] },
     ]
   },
-
-    { 
+  { 
     label: 'Operaciones de Campo',
     icon: OperacionesCampoIcon,
     expanded: false,
+    requiredRoles: ['manager', 'admin', 'gestor'],
     children: [
-      { path: '/orden-trabajo-in-situ', label: 'Orden de trabajo In Situ', icon: OrdenTrabajoInSituIcon },
-      { path: '/plan-muestreo', label: 'Plan de Muestreo', icon: PlanMuestreoIcon },
-
-     
+      { path: '/orden-trabajo-in-situ', label: 'Orden de trabajo In Situ', icon: OrdenTrabajoInSituIcon, requiredRoles: ['manager', 'admin', 'gestor'] },
+      { path: '/plan-muestreo', label: 'Plan de Muestreo', icon: PlanMuestreoIcon, requiredRoles: ['manager', 'admin', 'gestor'] },
     ]
-  },
-
-
-
-
-
-  /* // DROPDOWN: CATÁLOGOS BASE
-  { 
-    label: 'Catálogos Base',
-    icon: EntidadesComponent,
-    expanded: false,
-    children: [
-      { path: '/entidades', label: 'Entidades' },
-      { path: '/periodos', label: 'Períodos' },
-   
-      { path: '/formulas', label: 'Fórmulas' },
-      { path: '/cobeneficios', label: 'Cobeneficios' },
-      { path: '/amenazas', label: 'Amenazas' },
-      { path: '/accion-cobeneficio', label: 'Acción-Cobeneficio' },
-      { path: '/accion-amenaza', label: 'Acción-Amenaza' },
-     
-    ]
-  },
-
-  // DROPDOWN: ESTRUCTURA SECTORIAL
-  {
-    label: 'Estructura Sectorial',
-    icon: SectorIconComponent,
-    expanded: false,
-    children: [
-      { path: '/sector', label: 'Sector' },
-      { path: '/sector-entidad', label: 'Sector-Entidad' },
-      { path: '/accion', label: 'Línea de Acción' },
-   
-
-    ]
-  },
-
-  // DROPDOWN: MEDICIÓN Y METAS
-  {
-    label: 'Medición y Metas',
-    icon: MetasGeneralesIconComponent,
-    expanded: false,
-    children: [
-      { path: '/metas-generales', label: 'Metas Generales' },
-      { path: '/meta-sectorial', label: 'Meta Sectorial' },
-      { path: '/escenario', label: 'Escenario' },
-      { path: '/medicion', label: 'Medición' },
-      { path: '/indicadores', label: 'Indicadores' },
-    ]
-  } */
+  }
 ];

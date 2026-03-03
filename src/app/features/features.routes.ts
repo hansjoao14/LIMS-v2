@@ -25,7 +25,7 @@ export const featuresRoutes: Routes = [
     data: {
       title: 'Solicitud de Trabajo',
       // ✅ Habilitado (Ajusta los roles según necesites)
-      requiredRoles: [{ role: 'manager' }, { role: 'admin' }, { role: 'gestor' }],
+      requiredRoles: [{ role: 'admin' }, { role: 'gestor' }],
     },
   },
 
@@ -38,7 +38,7 @@ export const featuresRoutes: Routes = [
     data: {
       title: 'Lista de Solicitudes',
       // ✅ Habilitado (Ajusta los roles según necesites)
-      requiredRoles: [{ role: 'manager' }, { role: 'admin' }, { role: 'gestor' }],
+      requiredRoles: [ { role: 'admin' }, { role: 'gestor' }],
     },
   },
 
@@ -51,7 +51,7 @@ export const featuresRoutes: Routes = [
     data: {
       title: 'Horarios Laborales',
       // ✅ Habilitado (Ajusta los roles según necesites)
-      requiredRoles: [{ role: 'manager' }, { role: 'admin' }, { role: 'gestor' }],
+      requiredRoles: [{ role: 'admin' }, { role: 'gestor' }],
     },
   },
 
@@ -63,7 +63,7 @@ export const featuresRoutes: Routes = [
     data: {
       title: 'Por Contraloría',
       // ✅ Habilitado (Ajusta los roles según necesites)
-      requiredRoles: [{ role: 'manager' }, { role: 'admin' }, { role: 'gestor' }],
+      requiredRoles: [{ role: 'admin' }, { role: 'gestor' }],
     },
   },
 

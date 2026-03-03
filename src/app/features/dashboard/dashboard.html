@@ -5,16 +5,22 @@
   </div>
 
   <div class="cards-grid">
-    <a *ngFor="let item of modulos" [routerLink]="item.route" class="card-item">
-      <div class="card-icon">{{ item.icon }}</div>
-      <div class="card-body">
-        <h3>{{ item.title }}</h3>
-        <p>{{ item.desc }}</p>
+    @for (item of modulosVisibles(); track item.title) {
+      <a [routerLink]="item.route" class="card-item">
+        <div class="card-icon">{{ item.icon }}</div>
+        <div class="card-body">
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.desc }}</p>
+        </div>
+        <div class="card-footer">
+          <span>Ingresar</span>
+          <i class="arrow-icon">→</i>
+        </div>
+      </a>
+    } @empty {
+      <div class="no-access">
+        <p>No tienes módulos asignados a tu rol actual.</p>
       </div>
-      <div class="card-footer">
-        <span>Ingresar</span>
-        <i class="arrow-icon">→</i>
-      </div>
-    </a>
+    }
   </div>
 </div>

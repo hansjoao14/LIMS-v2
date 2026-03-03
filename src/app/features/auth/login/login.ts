@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { SpinnerComponent } from '../../../ui/spinner/spinner.component';
@@ -8,17 +8,16 @@ import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-login',
-    standalone: true,
-  imports: [SpinnerComponent, FormsModule, CommonModule,],
+  standalone: true,
+  imports: [SpinnerComponent, FormsModule, CommonModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
-export class Login {
-
+export class Login implements OnInit, OnDestroy {
   @ViewChild(SpinnerComponent) spinnerComponent!: SpinnerComponent;
 
-  user: string = 'german.caicedo@quito.gob.ec';
-  password: string = 'C@po032786';
+  user: string = '';
+  password: string = '';
   passwordVisible: boolean = false;
 
   // 🔁 Carousel
@@ -34,32 +33,61 @@ export class Login {
 
   ngOnInit(): void {
     this.startCarousel();
-    this.authService.logout();
+    
+    // 1. Intentar cargar credenciales recordadas del localStorage
+    this.loadSavedCredentials();
+    
+    // Nota: Si decides que el logout() debe borrar el storage, 
+    // asegúrate de llamar a logout ANTES de loadSavedCredentials o 
+    // manejarlo según tu lógica de negocio.
   }
 
-  /* ngOnDestroy(): void {
-    clearInterval(this.intervalId);
-  } */
+  ngOnDestroy(): void {
+    // 🧹 Limpieza del intervalo para evitar procesos en segundo plano
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
 
-  // 🔄 Inicia el carrusel
+  /**
+   * ✅ Busca si existen credenciales en el LocalStorage y las setea
+   */
+  private loadSavedCredentials(): void {
+    const savedUser = localStorage.getItem('user');
+    const savedPass = localStorage.getItem('password');
+
+    if (savedUser && savedPass) {
+      this.user = savedUser;
+      this.password = savedPass;
+      console.log('Credenciales cargadas desde el almacenamiento local.');
+    }
+  }
+
   startCarousel(): void {
-    console.log('Iniciando carrusel...');
     this.intervalId = setInterval(() => {
       this.currentIndex = (this.currentIndex + 1) % this.carouselImages.length;
-    }, 4000); // cada 4 segundos
+    }, 4000);
   }
 
-  // 👁 Mostrar/Ocultar contraseña
   togglePassword(): void {
     this.passwordVisible = !this.passwordVisible;
   }
 
   login(): void {
+    if (!this.user || !this.password) {
+      Swal.fire('Atención', 'Por favor, ingrese sus credenciales', 'warning');
+      return;
+    }
+
     this.spinnerComponent.showSpinner();
 
     this.authService
       .login(this.user, this.password)
       .then(() => {
+        // ✅ Guardamos en localStorage al tener un login exitoso
+        localStorage.setItem('user', this.user);
+        localStorage.setItem('password', this.password);
+
         this.spinnerComponent.hideSpinner();
         this.router.navigate(['/dashboard']);
       })
@@ -69,43 +97,10 @@ export class Login {
         Swal.fire({
           icon: 'error',
           title: 'Error de autenticación',
-          text: 'No se pudo establecer conexión con el servidor o las credenciales son incorrectas.',
+          text: 'Credenciales incorrectas o error de conexión.',
           confirmButtonColor: '#28367F',
           confirmButtonText: 'Aceptar',
         });
       });
   }
-
-  // 👤 Inicio de sesión
-  /*  login(): void {
-    /*  if (!this.user || !this.password) {
-      return; // evita continuar si hay campos vacíos
-    } */
-  // this.spinnerComponent.showSpinner();
-
-  /*   setTimeout(() => {
-      this.spinnerComponent.hideSpinner();
-      this.router.navigate(['/dashboard']);
-    }, 2000); */
-
-  /*   this.authService.login(this.user, this.password).subscribe({
-      next: (response) => {
-        const token = response.token;
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const role = payload.role;
-
-        if (role === 'admin') {
-          this.router.navigate(['/dashboard']);
-        } else {
-          this.router.navigate(['/profile']);
-        }
-      },
-      error: (err) => {
-        this.spinnerComponent.hideSpinner();
-        console.error('Login failed', err);
-      },
-    }); */
 }
-
-
-
