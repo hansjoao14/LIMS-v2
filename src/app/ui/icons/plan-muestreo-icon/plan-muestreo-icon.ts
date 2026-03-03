@@ -9,7 +9,7 @@ import colors from '../../constants/colors';
 })
 export class PlanMuestreoIcon {
 
-    @Input() size = 1;
+  @Input() size = 1;
   @Input() color = colors.white;
 
 }
