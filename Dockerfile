@@ -17,5 +17,5 @@ RUN npm ci --legacy-peer-deps
 COPY --from=build /app/dist/LIMS/browser ./dist/LIMS/browser
 COPY server.js ./
 
-EXPOSE 3700
+EXPOSE 5200
 CMD ["node", "server.js"]
