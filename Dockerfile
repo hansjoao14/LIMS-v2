@@ -14,7 +14,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps
 
-COPY --from=build /app/dist/sgia-frontend/browser ./dist/sgia-frontend/browser
+COPY --from=build /app/dist/LIMS/browser ./dist/LIMS/browser
 COPY server.js ./
 
 EXPOSE 3700

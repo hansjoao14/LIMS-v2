@@ -1,6 +1,6 @@
 services:
   angular-sgia:
-    container_name: sgia-frontend-intranet
+    container_name: lims-angular-sgia
     build: .
     ports:
       - "5200:5200"
