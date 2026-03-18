@@ -1,93 +1,77 @@
 import { Routes } from '@angular/router';
 import { canActivateWithRealmRoles } from '../core/guards/roles.guard';
+import { RoleAccess } from '../core/utils/roles.constans';
+
 
 /**
- * Defines the feature routes for the application.
+ * Defines the feature routes for the application using centralized RoleAccess.
  */
 export const featuresRoutes: Routes = [
   {
     path: 'dashboard',
     loadComponent: () => import('./dashboard/dashboard').then((m) => m.Dashboard),
-    // ✅ Habilitado
     canActivate: [canActivateWithRealmRoles],
     data: {
       title: 'Dashboard',
-      // ✅ Habilitado (Ajusta los roles según necesites)
-      requiredRoles: [{ role: 'manager' }, { role: 'admin' }, { role: 'gestor' }],
+      requiredRoles: RoleAccess.ALL_USERS, // Permite: admin, direccion, analista, tecnico, responsable
     },
   },
   {
     path: 'solicitud-trabajo',
     loadComponent: () =>
       import('./solicitud-trabajo/solicitud-trabajo').then((m) => m.SolicitudTrabajo),
-    // ✅ Habilitado
     canActivate: [canActivateWithRealmRoles],
     data: {
       title: 'Solicitud de Trabajo',
-      // ✅ Habilitado (Ajusta los roles según necesites)
-      requiredRoles: [{ role: 'admin' }, { role: 'gestor' }],
+      requiredRoles: RoleAccess.MANAGEMENT, // Permite: admin, direccion, analista
     },
   },
-
   {
     path: 'lista-solicitudes',
     loadComponent: () =>
       import('./lista-solicitudes/lista-solicitudes').then((m) => m.ListaSolicitudes),
-    // ✅ Habilitado
     canActivate: [canActivateWithRealmRoles],
     data: {
       title: 'Lista de Solicitudes',
-      // ✅ Habilitado (Ajusta los roles según necesites)
-      requiredRoles: [ { role: 'admin' }, { role: 'gestor' }],
+      requiredRoles: RoleAccess.MANAGEMENT, // Permite: admin, direccion, analista
     },
   },
-
   {
     path: 'horarios-laborales',
     loadComponent: () =>
       import('./horarios-laborales/horarios-laborales').then((m) => m.HorariosLaborales),
-    // ✅ Habilitado
     canActivate: [canActivateWithRealmRoles],
     data: {
       title: 'Horarios Laborales',
-      // ✅ Habilitado (Ajusta los roles según necesites)
-      requiredRoles: [{ role: 'admin' }, { role: 'gestor' }],
+      requiredRoles: RoleAccess.ADMIN_ONLY, // Solo Administradores
     },
   },
-
   {
     path: 'por-contraloria',
     loadComponent: () => import('./por-contraloria/por-contraloria').then((m) => m.PorContraloria),
-    // ✅ Habilitado
     canActivate: [canActivateWithRealmRoles],
     data: {
       title: 'Por Contraloría',
-      // ✅ Habilitado (Ajusta los roles según necesites)
-      requiredRoles: [{ role: 'admin' }, { role: 'gestor' }],
+      requiredRoles: RoleAccess.MANAGEMENT, // Permite: admin, direccion, analista
     },
   },
-
-   {
+  {
     path: 'orden-trabajo-in-situ',
-    loadComponent: () => import('./orden-trabajo-in-situ/orden-trabajo-in-situ').then((m) => m.OrdenTrabajoInSitu),
-    // ✅ Habilitado
+    loadComponent: () => 
+      import('./orden-trabajo-in-situ/orden-trabajo-in-situ').then((m) => m.OrdenTrabajoInSitu),
     canActivate: [canActivateWithRealmRoles],
     data: {
       title: 'Orden de Trabajo In Situ',
-      // ✅ Habilitado (Ajusta los roles según necesites)
-      requiredRoles: [{ role: 'manager' }, { role: 'admin' }, { role: 'gestor' }],
+      requiredRoles: RoleAccess.OPERATIONAL, // Permite: admin, tecnico, responsable_campo
     },
   },
-
-   {
+  {
     path: 'plan-muestreo',
     loadComponent: () => import('./plan-muestreo/plan-muestreo').then((m) => m.PlanMuestreo),
-    // ✅ Habilitado
     canActivate: [canActivateWithRealmRoles],
     data: {
       title: 'Plan de Muestreo',
-      // ✅ Habilitado (Ajusta los roles según necesites)
-      requiredRoles: [{ role: 'manager' }, { role: 'admin' }, { role: 'gestor' }],
+      requiredRoles: RoleAccess.OPERATIONAL, // Permite: admin, tecnico, responsable_campo
     },
   },
 ];

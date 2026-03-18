@@ -8,16 +8,16 @@ import { PorContraloriaIcon } from '../../../ui/icons/por-contraloria-icon/por-c
 import { OperacionesCampoIcon } from '../../../ui/icons/operaciones-campo-icon/operaciones-campo-icon';
 import { OrdenTrabajoInSituIcon } from '../../../ui/icons/orden-trabajo-in-situ-icon/orden-trabajo-in-situ-icon';
 import { PlanMuestreoIcon } from '../../../ui/icons/plan-muestreo-icon/plan-muestreo-icon';
+import { RoleAccess } from '../../../core/utils/roles.constans';
 
-// Asumo que tienes un ícono genérico, si no usa otro
 
 export interface MenuItem {
-  path?: string; // Opcional para carpetas padres
+  path?: string;
   label: string;
-  icon?: Type<any>; // Opcional para hijos
-  children?: MenuItem[]; // LISTA DE SUB-ITEMS (Dropdown)
-  expanded?: boolean; // Estado del dropdown (Abierto/Cerrado)
-  requiredRoles?: string[];
+  icon?: Type<any>;
+  children?: MenuItem[];
+  expanded?: boolean;
+  requiredRoles?: any[]; // Cambiado a any[] para soportar la estructura [{role: string}] del Guard
 }
 
 export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
@@ -25,38 +25,58 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     path: '/dashboard', 
     label: 'Dashboard', 
     icon: HouseComponent, 
-    requiredRoles: ['manager', 'admin', 'gestor'] 
+    requiredRoles: RoleAccess.ALL_USERS // [admin, direccion, analista, tecnico, responsable] 
   },
   { 
     path: '/solicitud-trabajo', 
     label: 'Solicitud de Trabajo', 
     icon: CarpetaIcon, 
-    requiredRoles: ['admin', 'gestor'] 
+    requiredRoles: RoleAccess.MANAGEMENT // [admin, direccion, analista] 
   },
   { 
     path: '/lista-solicitudes', 
     label: 'Bandeja de solicitudes', 
     icon: ListaSolicitudesIcon, 
-    requiredRoles: ['admin', 'gestor'] 
+    requiredRoles: RoleAccess.MANAGEMENT // Basado en roles de revisión y auditoría 
   },
   { 
     label: 'Gestión de Vehiculos',
     icon: CarIcon,
     expanded: false,
-    requiredRoles: ['admin', 'gestor'],
+    requiredRoles: RoleAccess.ADMIN_ONLY, // Acceso restringido a administración 
     children: [
-      { path: '/horarios-laborales', label: 'Horarios laborales', icon: HorariosLaboralesIcon, requiredRoles: ['admin', 'gestor'] },
-      { path: '/por-contraloria', label: 'Por contraloria', icon: PorContraloriaIcon, requiredRoles: ['admin', 'gestor'] },
+      { 
+        path: '/horarios-laborales', 
+        label: 'Horarios laborales', 
+        icon: HorariosLaboralesIcon, 
+        requiredRoles: RoleAccess.ADMIN_ONLY 
+      },
+      { 
+        path: '/por-contraloria', 
+        label: 'Por contraloria', 
+        icon: PorContraloriaIcon, 
+        requiredRoles: RoleAccess.MANAGEMENT // Permite revisión por Analistas/Dirección 
+      },
     ]
   },
   { 
     label: 'Operaciones de Campo',
     icon: OperacionesCampoIcon,
     expanded: false,
-    requiredRoles: ['manager', 'admin', 'gestor'],
+    requiredRoles: RoleAccess.OPERATIONAL, // [admin, tecnico, responsable_campo] 
     children: [
-      { path: '/orden-trabajo-in-situ', label: 'Orden de trabajo In Situ', icon: OrdenTrabajoInSituIcon, requiredRoles: ['manager', 'admin', 'gestor'] },
-      { path: '/plan-muestreo', label: 'Plan de Muestreo', icon: PlanMuestreoIcon, requiredRoles: ['manager', 'admin', 'gestor'] },
+      { 
+        path: '/orden-trabajo-in-situ', 
+        label: 'Orden de trabajo In Situ', 
+        icon: OrdenTrabajoInSituIcon, 
+        requiredRoles: RoleAccess.OPERATIONAL 
+      },
+      { 
+        path: '/plan-muestreo', 
+        label: 'Plan de Muestreo', 
+        icon: PlanMuestreoIcon, 
+        requiredRoles: RoleAccess.OPERATIONAL 
+      },
     ]
   }
 ];

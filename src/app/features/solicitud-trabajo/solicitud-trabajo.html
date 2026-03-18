@@ -1,120 +1,196 @@
 <div class="p-6 bg-[#f8fafc] min-h-screen text-slate-700 font-sans">
+  <!-- Cabecera de Figma -->
   <div class="flex justify-between items-start mb-6">
-    <div class="flex items-center">
-      <h2 class="text-sm font-medium text-gray-500">Sistema LIMS / <span class="text-blue-700 font-bold">Solicitud de trabajo</span></h2>
+    <div>
+      <h2 class="text-sm font-medium text-gray-500 italic">
+        Sistema LIMS / <span class="text-blue-700 font-bold">Solicitud de trabajo</span>
+      </h2>
     </div>
     <div class="text-right text-xs">
       <h1 class="font-bold text-blue-900 text-sm">Solicitud de trabajo - Ensayos</h1>
       <p class="text-gray-500">Elaborado por: <span class="font-semibold text-slate-700">Tec. Jorge Diaz</span></p>
-      <p class="text-gray-500">Fecha de solicitud: <span class="font-semibold text-slate-700">27/05/2025</span></p>
+      <p class="text-gray-500">Fecha de solicitud: <span class="font-semibold text-slate-700">27/05/2026</span></p>
     </div>
   </div>
 
   <div class="bg-white rounded-sm shadow-sm p-8 border border-gray-200">
-    <h3 class="text-xl font-bold mb-1">Solicitud de trabajo</h3>
+    <h3 class="text-xl font-bold mb-1 text-slate-800">Solicitud de trabajo</h3>
     <p class="text-sm mb-6 font-semibold">Número de solicitud: <span class="text-slate-700">ST-2025-001</span></p>
 
-    <form [formGroup]="solicitudForm" class="space-y-6">
-      <div class="grid grid-cols-12 gap-6">
-        <div class="col-span-6">
-          <label class="block text-sm font-bold mb-1">Listado de jefaturas o dirección*</label>
-          <select formControlName="jefatura" class="w-full border border-gray-300 rounded p-2 bg-gray-50 text-sm text-gray-400 outline-none">
-            <option value="">Selecciona una de las opciones</option>
-          </select>
-        </div>
-        <div class="col-span-3">
-          <label class="block text-sm font-bold mb-1">Solicitado por*</label>
-          <select formControlName="solicitadoPor" class="w-full border border-gray-300 rounded p-2 bg-gray-50 text-sm text-gray-400 outline-none">
-            <option value="">Selecciona una de las opciones</option>
-          </select>
-        </div>
-        <div class="col-span-3">
-          <label class="block text-sm font-bold mb-1 text-gray-400">Cargo</label>
-          <input type="text" disabled placeholder="Se llenara automaticamente" class="w-full border border-gray-200 rounded p-2 bg-gray-100 text-gray-400 text-sm">
-        </div>
+    @if (loading) {
+      <div class="flex flex-col items-center justify-center p-20">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mb-4"></div>
+        <span class="font-bold text-blue-900">Cargando formulario LIMS...</span>
       </div>
-
-      <div class="mt-8 border-t border-gray-100 pt-6">
-        <h4 class="font-bold text-lg mb-4">Información del operador</h4>
+    } @else {
+      <form [formGroup]="form" class="space-y-6">
         
-        <div class="grid grid-cols-12 gap-x-6 gap-y-4">
-          <div class="col-span-4">
-            <label class="block text-sm font-bold mb-1">RUC del operador*</label>
-            <input type="text" formControlName="ruc" placeholder="e.g. 1724165094-001" class="w-full border border-gray-300 rounded p-2 text-sm">
+        <!-- SECCIÓN 1: DATOS DE LOGIN (Autocompletados) -->
+        <div class="grid grid-cols-12 gap-6 mb-8">
+          <div class="col-span-12 md:col-span-6">
+            <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Listado de jefaturas o dirección*</label>
+            <input type="text" formControlName="jefatura_display" 
+                   class="w-full border border-gray-200 rounded p-2 bg-gray-50 text-sm text-gray-600 outline-none">
           </div>
-          <div class="col-span-4">
-            <label class="block text-sm font-bold mb-1">Razón social del operador*</label>
-            <input type="text" formControlName="razonSocial" placeholder="e.g. INDUSTRIA ANDINA S.A." class="w-full border border-gray-300 rounded p-2 text-sm">
+          <div class="col-span-12 md:col-span-3">
+            <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Solicitado por*</label>
+            <input type="text" formControlName="solicitado_por" 
+                   class="w-full border border-gray-200 rounded p-2 bg-gray-50 text-sm text-gray-600 outline-none">
           </div>
-          <div class="col-span-4">
-            <label class="block text-sm font-bold mb-1">Horarios o jornadas laborales del operador*</label>
-            <div class="flex items-center border border-gray-300 rounded bg-gray-50">
-               <span class="px-3 border-r border-gray-300 py-2 text-blue-900">
-                 <i class="far fa-calendar"></i> </span>
-               <select formControlName="horarios" class="w-full p-2 text-sm bg-transparent outline-none">
-                 <option value="">03 / 06 / 2025</option>
-               </select>
-            </div>
-          </div>
-
-          <div class="col-span-6">
-            <label class="block text-sm font-bold mb-1">Nombre comercial del operador*</label>
-            <input type="text" formControlName="nombreComercial" placeholder="e.g. QuimAndina" class="w-full border border-gray-300 rounded p-2 text-sm mb-4">
-            
-            <label class="block text-sm font-bold mb-1">Dirección del operador*</label>
-            <input type="text" formControlName="direccion" placeholder="e.g. Av. Mariscal sucre N75-270 y Diego de vaquez." class="w-full border border-gray-300 rounded p-2 text-sm">
-          </div>
-
-          <div class="col-span-6">
-            <label class="block text-sm font-bold mb-1">Motivo*</label>
-            <select formControlName="motivo" class="w-full border border-gray-300 rounded p-2 text-sm bg-gray-50 mb-4 text-gray-400">
-              <option value="">Selecciona un motivo</option>
-            </select>
-            
-            <label class="block text-sm font-bold mb-1 text-slate-800">Observaciones</label>
-            <textarea formControlName="observaciones" rows="3" class="w-full border border-gray-300 rounded p-2 text-xs placeholder-gray-300 resize-none"></textarea>
-            <p class="text-right text-[10px] text-gray-400">0/250</p>
-          </div>
-
-          <div class="col-span-12 mt-2">
-            <label class="block text-sm font-bold mb-1">Coordenadas geográficas del operador*</label>
-            <div class="flex items-center gap-4">
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-bold uppercase text-slate-500">Latitud:</span>
-                <input type="text" formControlName="latitud" readonly class="w-28 bg-gray-100 border border-gray-200 rounded p-1 text-center text-sm">
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-bold uppercase text-slate-500">Longitud:</span>
-                <input type="text" formControlName="longitud" readonly class="w-28 bg-gray-100 border border-gray-200 rounded p-1 text-center text-sm">
-              </div>
-              <button type="button" (click)="openMap()" class="bg-[#1e293b] text-white px-5 py-1.5 rounded text-xs font-bold flex items-center gap-2 hover:bg-slate-700 transition uppercase shadow-sm">
-                <span class="text-lg">+</span> AGREGAR
-              </button>
-            </div>
+          <div class="col-span-12 md:col-span-3">
+            <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1 text-gray-400">Cargo</label>
+            <input type="text" formControlName="cargo_usuario" 
+                   class="w-full border border-gray-200 rounded p-2 bg-gray-50 text-sm text-gray-400 font-medium italic">
           </div>
         </div>
-      </div>
 
-      <div class="flex gap-4 pt-10 border-t border-gray-50">
-        <button type="button" class="bg-gray-500 text-white px-12 py-2.5 rounded font-bold uppercase text-xs shadow-sm">Regresar</button>
-        <button type="submit" class="bg-[#1e3a8a] text-white px-12 py-2.5 rounded font-bold uppercase text-xs shadow-md">Siguiente</button>
-      </div>
-    </form>
+        <!-- SECCIÓN 2: TIPO IDENTIFICACIÓN (Dinámico JSON) -->
+        <div class="grid grid-cols-12 gap-6 mb-8">
+          @for (p of questionsPart1; track p.id) {
+            <div class="col-span-12 md:col-span-6">
+              <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">{{ p.pregunta }}*</label>
+              <select [formControlName]="p.nombre" class="w-full border border-gray-300 rounded p-2 text-sm bg-white focus:border-blue-900 outline-none">
+                <option value="">Seleccione una opción</option>
+                @for (opt of p.catalogos; track opt.id) {
+                  <option [value]="opt.id">{{ opt.nombre }}</option>
+                }
+              </select>
+            </div>
+          }
+        </div>
+
+        <div class="mt-8 border-t border-gray-100 pt-6">
+          <h4 class="font-bold text-blue-900 text-lg mb-6 italic">Información del operador</h4>
+          
+          <div class="grid grid-cols-12 gap-6">
+            <!-- Columna Izquierda: Inputs del Operador -->
+            <div class="col-span-12 lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+              @for (p of questionsPart2; track p.id) {
+                @if (!p.hidden) {
+                  <div [class]="p.num_caracter && p.num_caracter > 200 ? 'md:col-span-2' : 'col-span-1'">
+                    <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">{{ p.pregunta }}*</label>
+                    <input type="text" [formControlName]="p.nombre" [placeholder]="p.ayuda || ''"
+                           class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-900 outline-none transition-colors">
+                  </div>
+                }
+              }
+
+              <!-- Bloque Manual: Coordenadas -->
+              <div class="md:col-span-2 mt-4 p-4 bg-slate-50 rounded-sm border border-slate-100">
+                <label class="block text-[11px] font-bold text-blue-900 uppercase mb-3">Coordenadas geográficas del operador*</label>
+                <div class="flex flex-wrap items-center gap-4">
+                  <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">Latitud:</span>
+                    <input type="text" formControlName="val_lati" readonly 
+                           class="w-32 bg-white border border-gray-200 rounded p-1.5 text-sm text-center font-mono">
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">Longitud:</span>
+                    <input type="text" formControlName="val_long" readonly 
+                           class="w-32 bg-white border border-gray-200 rounded p-1.5 text-sm text-center font-mono">
+                  </div>
+                  <button type="button" (click)="openMap()" 
+                          class="bg-[#1e3a8a] text-white px-5 py-2 rounded text-[10px] font-bold uppercase shadow-sm hover:bg-blue-800 transition-all flex items-center gap-2">
+                    <span class="text-sm">+</span> AGREGAR UBICACIÓN
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Columna Derecha: Tabla de Horarios -->
+            <div class="col-span-12 lg:col-span-4">
+              <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Horario o Jornadas Laborales*</label>
+              <div class="border border-gray-300 rounded overflow-hidden">
+                <div class="max-h-80 overflow-y-auto bg-white custom-scroll">
+                  @for (p of preguntas; track p.id) {
+                    @if (p.tipo_respuesta === 'Selección Mutiple' && p.jornada_laboral_item) {
+                      <table class="w-full text-[11px]">
+                        <tbody>
+                          @for (j of p.jornada_laboral_item; track $index) {
+                            <tr class="border-b last:border-0 hover:bg-blue-50 transition-colors">
+                              <td class="p-2.5 text-slate-600 font-medium">{{ j.dia_laboral }}</td>
+                              <td class="p-2.5 text-right text-blue-800 font-mono font-bold tracking-tight">
+                                {{ j.hora_inicio }} - {{ j.hora_fin }}
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 3: MOTIVO Y OBSERVACIONES -->
+          <div class="grid grid-cols-12 gap-6 mt-8">
+            @for (p of questionsPart3; track p.id) {
+              @if (!p.hidden) {
+                <div class="col-span-12 md:col-span-6">
+                  <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">{{ p.pregunta }}*</label>
+                  
+                  @if (p.tipo_respuesta === 'Selección Simple') {
+                    <select [formControlName]="p.nombre" class="w-full border border-gray-300 rounded p-2 text-sm bg-white focus:border-blue-900 outline-none">
+                      <option value="">Seleccione un motivo</option>
+                      @for (opt of p.catalogos; track opt.id) {
+                        <option [value]="opt.id">{{ opt.nombre }}</option>
+                      }
+                    </select>
+                  }
+
+                  @if (p.nombre === 'val_obs') {
+                    <div class="relative">
+                      <textarea [formControlName]="p.nombre" rows="4" 
+                                placeholder="Escriba aquí sus observaciones..."
+                                class="w-full border border-gray-300 rounded p-3 text-sm resize-none focus:ring-1 focus:ring-blue-900 outline-none"></textarea>
+                      <span class="absolute bottom-2 right-3 text-[9px] text-gray-400 font-bold uppercase">Max 250 carac.</span>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- ACCIONES -->
+        <div class="flex flex-col md:flex-row gap-4 pt-10 border-t border-gray-100">
+          <button type="button" class="bg-gray-400 text-white px-12 py-3 rounded font-bold uppercase text-xs hover:bg-gray-500 transition-all shadow-sm">
+            Regresar
+          </button>
+          <button type="submit" [disabled]="form.invalid" 
+                  class="bg-[#1e3a8a] text-white px-12 py-3 rounded font-bold uppercase text-xs shadow-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-800 transition-all">
+            Siguiente
+          </button>
+        </div>
+      </form>
+    }
   </div>
 </div>
 
-<div *ngIf="showMapModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-  <div class="bg-white rounded shadow-xl w-full max-w-2xl overflow-hidden">
-    <div class="p-4 border-b flex justify-between items-center">
-      <h3 class="font-bold text-xs uppercase">Mapa de Ubicación</h3>
-      <button (click)="closeMap()" class="text-2xl">&times;</button>
-    </div>
-    <div class="p-4">
-      <div id="map-container" class="h-80 w-full rounded border border-gray-200"></div>
-    </div>
-    <div class="p-4 flex justify-end gap-2 bg-gray-50">
-      <button (click)="closeMap()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
-      <button (click)="confirmLocation()" class="px-6 py-2 bg-[#1e3a8a] text-white rounded text-xs font-bold uppercase">Confirmar Coordenadas</button>
+<!-- MODAL MAPA -->
+@if (showMapModal) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+    <div class="bg-white rounded shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200">
+      <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+        <h3 class="font-bold text-xs uppercase text-blue-900 flex items-center gap-2">
+          <span class="text-lg">📍</span> Mapa de Ubicación del Operador
+        </h3>
+        <button (click)="closeMap()" class="text-2xl font-light text-slate-400 hover:text-red-500 transition-colors">&times;</button>
+      </div>
+      <div class="p-4 bg-white">
+        <div id="map-container" class="h-80 w-full rounded border border-gray-200 shadow-inner"></div>
+        <p class="text-[10px] text-slate-400 mt-2 italic">* Haga clic o arrastre el marcador para seleccionar la ubicación exacta.</p>
+      </div>
+      <div class="p-4 flex justify-end gap-2 border-t bg-slate-50">
+        <button (click)="closeMap()" class="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors uppercase">
+          Cancelar
+        </button>
+        <button (click)="closeMap()" 
+                class="px-6 py-2 bg-[#1e3a8a] text-white rounded text-xs font-bold uppercase shadow-sm hover:bg-blue-900 transition-all">
+          Confirmar Coordenadas
+        </button>
+      </div>
     </div>
   </div>
-</div>
+}

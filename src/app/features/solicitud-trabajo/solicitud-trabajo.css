@@ -44,3 +44,26 @@ input[readonly] {
   background-color: #f9fafb;
   color: #1e3a8a;
 }
+
+/* Scrollbar para la tabla de jornadas */
+.max-h-\[300px\]::-webkit-scrollbar {
+  width: 6px;
+}
+.max-h-\[300px\]::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+.max-h-\[300px\]::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+/* Ajustes de Leaflet */
+#map-container {
+  z-index: 10;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 1px #1e3a8a;
+}

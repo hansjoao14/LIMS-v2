@@ -6,11 +6,9 @@ import Swal from 'sweetalert2';
 import { AuthService } from '../../../features/auth/service/auth-service';
 import { SidebarService } from '../../service/sidebar.service';
 import { MenuItem, SIDEBAR_MENU_ITEMS } from './sidebar-items';
-
-// Iconos
-import { CloseIconComponent } from '../../../ui/icons/close-icon/close-icon.component';
-import { CloseSidebarIconComponent } from '../../../ui/icons/close-sidebar-icon/close-sidebar-icon.component';
-import { OpenSidebarIconComponent } from '../../../ui/icons/open-sidebar-icon/open-sidebar-icon.component';
+import { CloseSidebarIconComponent } from "../../../ui/icons/close-sidebar-icon/close-sidebar-icon.component";
+import { OpenSidebarIconComponent } from "../../../ui/icons/open-sidebar-icon/open-sidebar-icon.component";
+import { CloseIconComponent } from "../../../ui/icons/close-icon/close-icon.component"; // Importa tus items actualizados
 
 @Component({
   selector: 'app-sidebar',
@@ -19,10 +17,10 @@ import { OpenSidebarIconComponent } from '../../../ui/icons/open-sidebar-icon/op
     CommonModule,
     RouterLink,
     RouterLinkActive,
-    CloseIconComponent,
     CloseSidebarIconComponent,
-    OpenSidebarIconComponent
-  ],
+    OpenSidebarIconComponent,
+    CloseIconComponent
+],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
@@ -33,11 +31,12 @@ export class Sidebar implements OnInit {
 
   public collapsed = false;
 
-  // 🔄 Menú reactivo: se recalcula automáticamente cuando cambia el perfil del usuario
+  // 🔄 Menú reactivo: se recalcula cuando cambia el perfil o roles
   public menuItems = computed(() => {
     const profile = this.authService.userProfile();
-    const roles = profile?.roles || [];
-    return this.filterMenuByRole(SIDEBAR_MENU_ITEMS, roles);
+    // Obtenemos los roles del usuario (como strings desde Keycloak/AuthService)
+    const userRoles = profile?.roles || [];
+    return this.filterMenuByRole(SIDEBAR_MENU_ITEMS, userRoles);
   });
 
   ngOnInit(): void {
@@ -45,15 +44,23 @@ export class Sidebar implements OnInit {
   }
 
   /**
-   * Filtra el menú de forma recursiva según los roles del usuario
+   * Filtra el menú comparando los strings de userRoles 
+   * contra la propiedad .role de los objetos en requiredRoles
    */
   private filterMenuByRole(items: MenuItem[], userRoles: string[]): MenuItem[] {
     return items
       .filter(item => {
+        // Si no hay roles requeridos, es público para todos los logueados
         if (!item.requiredRoles || item.requiredRoles.length === 0) return true;
-        return item.requiredRoles.some(role => userRoles.includes(role));
+
+        // Mapeamos el array de objetos [{role: 'admin'}] a strings ['admin'] para comparar
+        const requiredRolesList = item.requiredRoles.map(r => r.role);
+        
+        // Verificamos si el usuario tiene al menos uno de los roles permitidos
+        return requiredRolesList.some(role => userRoles.includes(role));
       })
       .map(item => {
+        // Procesar hijos de forma recursiva
         if (item.children) {
           return {
             ...item,
@@ -62,7 +69,7 @@ export class Sidebar implements OnInit {
         }
         return item;
       })
-      // No mostrar categorías padres si se quedaron sin hijos o no tienen ruta propia
+      // Eliminar carpetas padres que se quedaron sin hijos después del filtrado
       .filter(item => !item.children || item.children.length > 0 || item.path);
   }
 
@@ -94,7 +101,6 @@ export class Sidebar implements OnInit {
       cancelButtonText: 'Cancelar',
     }).then((result) => {
       if (result.isConfirmed) {
-        // El authService.logout() ya limpia el localStorage (user_email, roles, tokens, etc)
         this.authService.logout();
         this.router.navigateByUrl('/login');
       }

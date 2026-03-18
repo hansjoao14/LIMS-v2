@@ -99,7 +99,7 @@ app.post("/logout", async (req, res) => {
     });
 
     if (!response.ok) throw new Error("No se pudo cerrar sesión");
-    res.json({ message: "Sesión cerrada correctamente ✅" });
+    res.json({ message: "Sesión cerrada correctamente " });
   } catch (err) {
     console.error("Error en logout:", err.message);
     res.status(500).json({ error: err.message });
@@ -118,6 +118,6 @@ app.use((req, res) => {
 // 🚀 Iniciar servidor
 const PORT = process.env.PORT || 5200;
 app.listen(PORT, () => {
-  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
+  console.log(` Servidor corriendo en http://localhost:${PORT}`);
   console.log(`📦 Sirviendo Angular desde: ${angularDistPath}`);
 });

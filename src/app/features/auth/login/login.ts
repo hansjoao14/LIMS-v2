@@ -50,7 +50,7 @@ export class Login implements OnInit, OnDestroy {
   }
 
   /**
-   * ✅ Busca si existen credenciales en el LocalStorage y las setea
+   *  Busca si existen credenciales en el LocalStorage y las setea
    */
   private loadSavedCredentials(): void {
     const savedUser = localStorage.getItem('user');
@@ -84,7 +84,7 @@ export class Login implements OnInit, OnDestroy {
     this.authService
       .login(this.user, this.password)
       .then(() => {
-        // ✅ Guardamos en localStorage al tener un login exitoso
+        //  Guardamos en localStorage al tener un login exitoso
         localStorage.setItem('user', this.user);
         localStorage.setItem('password', this.password);
 
