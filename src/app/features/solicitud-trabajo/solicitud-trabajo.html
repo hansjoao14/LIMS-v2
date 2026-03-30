@@ -13,10 +13,16 @@
     <div class="text-right text-xs">
       <h1 class="font-bold text-blue-900 text-sm">{{ formularioTitulo }}</h1>
       <p class="text-gray-500">
-        Elaborado por: <span class="font-semibold text-slate-700">{{ form.get('solicitado_por')?.value || 'Usuario' }}</span>
+        Elaborado por:
+        <span class="font-semibold text-slate-700">{{
+          form.get('solicitado_por')?.value || 'Usuario'
+        }}</span>
       </p>
       <p class="text-gray-500">
-        Jefatura: <span class="font-semibold text-slate-700">{{ form.get('jefatura_display')?.value || 'N/A' }}</span>
+        Jefatura:
+        <span class="font-semibold text-slate-700">{{
+          form.get('jefatura_display')?.value || 'N/A'
+        }}</span>
       </p>
     </div>
   </div>
@@ -25,7 +31,9 @@
     <h3 class="text-xl font-bold mb-1 text-slate-800">Solicitud de trabajo</h3>
     <p class="text-sm mb-6 font-semibold">
       Configuración activa:
-      <span class="text-slate-700">{{ formulario?.formulario_nombre || 'Cargando schema...' }}</span>
+      <span class="text-slate-700">{{
+        formulario?.formulario_nombre || 'Cargando schema...'
+      }}</span>
     </p>
 
     @if (loading) {
@@ -125,7 +133,9 @@
                                 <td class="p-2.5 text-slate-600 font-medium">
                                   {{ item.dia_laboral.trim() }}
                                 </td>
-                                <td class="p-2.5 text-right text-blue-800 font-mono font-bold tracking-tight">
+                                <td
+                                  class="p-2.5 text-right text-blue-800 font-mono font-bold tracking-tight"
+                                >
                                   {{ item.hora_inicio }} - {{ item.hora_fin }}
                                 </td>
                               </tr>
@@ -178,7 +188,9 @@
                               [class.bg-gray-50]="field.readonly"
                             ></textarea>
                             @if (field.maxLength) {
-                              <span class="absolute bottom-2 right-3 text-[9px] text-gray-400 font-bold uppercase">
+                              <span
+                                class="absolute bottom-2 right-3 text-[9px] text-gray-400 font-bold uppercase"
+                              >
                                 {{ getCharacterCount(field) }}/{{ field.maxLength }}
                               </span>
                             }
@@ -207,7 +219,9 @@
                         }
 
                         @if (field.readonly) {
-                          <span class="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                          <span
+                            class="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded"
+                          >
                             Solo lectura
                           </span>
                         }
@@ -245,8 +259,12 @@
 </div>
 
 @if (showMapModal) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-    <div class="bg-white rounded shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200">
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300"
+  >
+    <div
+      class="bg-white rounded shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200"
+    >
       <div class="p-4 border-b flex justify-between items-center bg-slate-50">
         <h3 class="font-bold text-xs uppercase text-blue-900 flex items-center gap-2">
           <span class="text-lg">📍</span> Mapa de Ubicación del Operador
@@ -260,7 +278,10 @@
         </button>
       </div>
       <div class="p-4 bg-white">
-        <div id="map-container" class="h-80 w-full rounded border border-gray-200 shadow-inner"></div>
+        <div
+          id="map-container"
+          class="h-80 w-full rounded border border-gray-200 shadow-inner"
+        ></div>
         <p class="text-[10px] text-slate-400 mt-2 italic">
           Haga clic o arrastre el marcador para seleccionar la ubicación exacta.
         </p>
