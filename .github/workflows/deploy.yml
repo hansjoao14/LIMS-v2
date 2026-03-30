@@ -19,22 +19,23 @@ jobs:
           script: |
             echo "=== 🚀 INICIO DEPLOY LIMS ==="
             
-            # Ir a la carpeta del proyecto
-            cd /home/LIMS || { echo "❌ Carpeta no encontrada"; exit 1; }
+            # 1. Validar carpeta del proyecto
+            cd /home/LIMS || { echo "❌ Carpeta /home/LIMS no encontrada"; exit 1; }
 
-            # 1. Sincronizar código con GitHub usando SSH
+            # 2. Sincronizar código (Reset forzado para evitar conflictos de Git)
             git remote set-url origin git@github.com:capo2786/LIMS.git
             git fetch origin main
             git reset --hard origin/main
             
             echo "🧹 Reiniciando SOLO los contenedores de LIMS..."
             
-            # 2. Reconstruir solo lo que está en esta carpeta
-            # Usamos 'docker compose' o 'docker-compose' según disponibilidad
-            (docker compose down || docker-compose down) || true
-            (docker compose up -d --build || docker-compose up -d --build)
+            # 3. Reconstruir usando todas las rutas posibles de Docker Compose
+            # Esto evita el error de "command not found"
+            (docker compose down || docker-compose down || /usr/libexec/docker/cli-plugins/docker-compose down) || true
+            
+            (docker compose up -d --build || docker-compose up -d --build || /usr/libexec/docker/cli-plugins/docker-compose up -d --build)
 
-            # 3. Limpieza de imágenes basura para no llenar el disco
+            # 4. Limpieza de imágenes antiguas para ahorrar espacio en el VPS
             docker image prune -f
             
             echo "=== ✅ DEPLOY LIMS FINALIZADO ==="
