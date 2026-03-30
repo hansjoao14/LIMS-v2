@@ -15,47 +15,19 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          command_timeout: 20m
           script: |
             echo "=== 🚀 INICIO DEPLOY LIMS ==="
-            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
-
-            # Autorizar GitHub en el servidor
-            mkdir -p ~/.ssh
-            touch ~/.ssh/known_hosts
-            ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts 2>/dev/null
-
-            cd /home
-
-            if [ -d "LIMS" ]; then
-              echo "✅ Carpeta LIMS encontrada. Actualizando..."
-              cd LIMS
-              
-              # Forzar el remote SSH correcto
-              git remote set-url origin git@github.com:capo2786/LIMS.git
-              
-              # Limpiar bloqueos de git e index
-              rm -f .git/index.lock
-              
-              # Sincronización forzada con la rama principal
-              git fetch --all
-              git reset --hard origin/main
-            else
-              echo "⚠️ Carpeta no encontrada. Clonando LIMS..."
-              git clone git@github.com:capo2786/LIMS.git
-              cd LIMS
-            fi
-
-            echo "🧹 Reiniciando servicios con Docker..."
-            # docker-compose down detiene y limpia redes/contenedores previos
-            docker-compose down || true
-
-            echo "🏗️ Construyendo imágenes y levantando..."
-            # --build es vital para que Angular recompile el código nuevo
+            cd /home/LIMS || (cd /home && git clone git@github.com:capo2786/LIMS.git && cd LIMS)
+            
+            # Forzar actualización
+            git remote set-url origin git@github.com:capo2786/LIMS.git
+            git fetch --all
+            git reset --hard origin/main
+            
+            # Docker: Forzar reinicio total
+            docker-compose down --remove-orphans || true
             docker-compose up -d --build
-
-            echo "🧹 Limpieza de imágenes..."
+            
+            # Limpieza rápida
             docker image prune -f
-
             echo "=== ✅ DEPLOY LIMS FINALIZADO ==="
-            echo "🔗 URL: http://173.212.251.64:5200"
