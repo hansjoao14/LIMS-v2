@@ -29,6 +29,68 @@ export interface Pregunta {
   is_dependent: boolean | null;
   is_ws_sri: boolean;
   is_ws_civil: boolean;
+  is_ws_iess?: boolean;
+  estado?: boolean;
+  multivaluado?: boolean;
+  num_rango?: number | null;
+  num_atras?: number | null;
+  num_adelante?: number | null;
+  is_dependent_catalogo?: boolean | null;
+}
+
+export interface FormularioLaboratorio {
+  formulario_nombre: string;
+  formulario_id: string;
+  tipo_formulario: string;
+  tipo_formulario_id: number;
+  preguntas: Pregunta[];
+}
+
+export type FieldSectionId =
+  | 'identificacion'
+  | 'operador'
+  | 'ubicacion'
+  | 'horario'
+  | 'contacto'
+  | 'observaciones';
+
+export type FieldControlType =
+  | 'text'
+  | 'textarea'
+  | 'select'
+  | 'coordinates'
+  | 'schedule';
+
+export interface FieldConfig {
+  id: string;
+  key: string;
+  label: string;
+  order: number;
+  controlType: FieldControlType;
+  section: FieldSectionId;
+  placeholder: string;
+  required: boolean;
+  readonly: boolean;
+  hidden: boolean;
+  maxLength: number | null;
+  options: CatalogoItem[];
+  scheduleItems: JornadaItem[];
+  dependsOn?: {
+    fieldId: string;
+    triggerValue: string;
+  };
+  integrations: {
+    sri: boolean;
+    civil: boolean;
+    iess: boolean;
+  };
+  source: Pregunta;
+}
+
+export interface FieldSectionConfig {
+  id: FieldSectionId;
+  title: string;
+  description: string;
 }
 
 export interface UserSession {

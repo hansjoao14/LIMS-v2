@@ -23,7 +23,7 @@ export class Login implements OnInit, OnDestroy {
   // 🔁 Carousel
   carouselImages: string[] = [
     '/image 653.png',
-    '/image 264.png',
+    '/image 653.png',
     '/image 653.png',
   ];
   currentIndex: number = 0;
