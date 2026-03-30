@@ -23,6 +23,7 @@ import {
 import { SolicitudService } from './service/solicitud-trabajo-service';
 import { AuthService } from '../auth/service/auth-service';
 import { ToastrAlertService } from '../../services/toastr.service';
+import { cedulaEcuatoriana, rucEcuatoriano } from '../../core/utils/ecuador-id.validators';
 
 /**
  * Componente para la gestión de solicitudes de trabajo en el laboratorio.
@@ -340,6 +341,8 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     if (!this.isFieldInvalid(field)) return null;
     if (control.hasError('required')) return 'Este campo es obligatorio.';
     if (control.hasError('maxlength')) return `Máximo ${field.maxLength} caracteres.`;
+    if (control.hasError('cedulaInvalida')) return control.getError('cedulaInvalida');
+    if (control.hasError('rucInvalido')) return control.getError('rucInvalido');
 
     return 'Revise el valor ingresado.';
   }
@@ -389,6 +392,11 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     localStorage.setItem('lims_solicitud_payload', JSON.stringify(entry));
     this.toastr.showSuccess('Solicitud guardada correctamente', 'Éxito');
     console.log('Solicitud guardada en localStorage:', entry);
+
+    this.form.reset();
+    this.setUserDataFromLogin();
+    this.selectedScheduleIndexes.clear();
+    this.updateDependentFields();
   }
 
   goBack() {
@@ -428,6 +436,11 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
     if (field.maxLength) {
       validators.push(Validators.maxLength(field.maxLength));
+    }
+
+    if (!isHidden) {
+      if (field.key === 'val_ced_op') validators.push(cedulaEcuatoriana());
+      if (field.key === 'val_ruc_op') validators.push(rucEcuatoriano());
     }
 
     return validators;
