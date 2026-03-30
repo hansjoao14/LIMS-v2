@@ -439,7 +439,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     if (!isHidden) {
-      if (field.key === 'val_ced_op') validators.push(cedulaEcuatoriana());
+      if (field.key === 'val_ced_op' || field.key === 'val_ct_ced') validators.push(cedulaEcuatoriana());
       if (field.key === 'val_ruc_op') validators.push(rucEcuatoriano());
     }
 
