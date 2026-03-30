@@ -204,7 +204,65 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   fields: FieldConfig[] = [];
   loading = true;
   showMapModal = false;
+  showCatalogo = false;
   selectedScheduleIndexes = new Set<number>();
+  savedElaboradoPor = '';
+  fechaSolicitud = '';
+  readonly numeroSolicitud = 'ST-' + new Date().getFullYear() + '-001';
+
+  catalogoServicios = [
+    {
+      matriz: 'AGUA',
+      collapsed: false,
+      servicios: [
+        { nombre: 'AGUAS SUPERFICIALES', aplicable: 'NÚMERO DE MUESTRAS', activo: false },
+        { nombre: 'AGUAS RESIDUALES', aplicable: 'NÚMERO DE MUESTRAS', activo: false },
+      ],
+    },
+    {
+      matriz: 'AIRE',
+      collapsed: false,
+      servicios: [
+        { nombre: 'FUENTES FIJAS DE COMBUSTIÓN', aplicable: 'NÚMERO DE FUENTES', activo: false },
+      ],
+    },
+    {
+      matriz: 'RUIDO',
+      collapsed: false,
+      servicios: [
+        { nombre: 'RUIDO AMBIENTE', aplicable: 'NÚMERO DE PUNTOS CRÍTICOS DE AFECTACIÓN', activo: false },
+      ],
+    },
+  ];
+
+  ensayosMuestreo = [
+    { activo: false, producto: 'AGUAS SUPERFICIALES', parametro: 'SÓLIDOS SUSPENDIDOS TOTALES', metodoInterno: 'PEE/IAM-Q/42', metodoReferencia: 'NTE INEN ISO 5667-1 UNE EN ISO 5667-6 UNE EN ISO 5667-14' },
+  ];
+
+  ensayosResiduales = [
+    { activo: false, ensayo: 'DEMANDA QUÍMICA DE OXÍGENO', identificacion: 'DQO', metodoInterno: 'PEE/IAM-Q/03', metodoReferencia: 'APHA 5220 C', unidad: 'mg/L' },
+    { activo: false, ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES', identificacion: 'SST', metodoInterno: 'PEE/IAM-Q/02', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
+    { activo: false, ensayo: 'SÓLIDOS TOTALES*', identificacion: 'ST', metodoInterno: '', metodoReferencia: 'APHA 2540 B', unidad: 'mg/L' },
+    { activo: false, ensayo: 'SÓLIDOS DISUELTOS TOTALES*', identificacion: 'STD', metodoInterno: 'PEE/IAM-Q/14', metodoReferencia: 'APHA 2540 C', unidad: 'mg/L' },
+    { activo: false, ensayo: 'SÓLIDOS SEDIMENTABLES*', identificacion: 'SS', metodoInterno: '', metodoReferencia: 'APHA 2540 D', unidad: 'mL' },
+    { activo: false, ensayo: 'CONDUCTIVIDAD ELÉCTRICA*', identificacion: 'CE', metodoInterno: 'PEE/IAM-Q/15', metodoReferencia: 'APHA 2540 D', unidad: 'Us/cm' },
+    { activo: false, ensayo: 'COLOR*', identificacion: 'C', metodoInterno: '', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
+    { activo: false, ensayo: 'TEMPERATURA', identificacion: 'T', metodoInterno: 'PEE/IAM-Q/04', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
+    { activo: false, ensayo: 'SULFATOS', identificacion: 'SO42-', metodoInterno: 'PEE/IAM-Q/06', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
+    { activo: false, ensayo: 'ACEITES Y GRASAS', identificacion: '-', metodoInterno: 'PEE/IAM-Q/05', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
+    { activo: false, ensayo: 'TURBIDEZ*', identificacion: '-', metodoInterno: 'PEE/IAM-Q/31', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
+    { activo: false, ensayo: 'OXÍGENO DISUELTO*', identificacion: 'O', metodoInterno: 'PEE/IAM-Q/44', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
+    { activo: false, ensayo: 'NITRITOS*', identificacion: 'NO2-', metodoInterno: '', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
+    { activo: false, ensayo: 'NITRATOS*', identificacion: 'NO3-', metodoInterno: '', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
+    { activo: false, ensayo: 'SURFACTANTES ANIÓNICOS', identificacion: 'MBAS', metodoInterno: 'PEE/IAM-Q/46', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
+  ];
+
+  readonly notasRelevantes = [
+    'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
+    'Los resultados serán entregados en 10 días calendario después de realizado el monitoreo.',
+    'Los resultados obtenidos podrán utilizarse para la elaboración de Informes Técnicos cuando requiera la Secretaría de Ambiente.',
+    'Si el plazo establecido coincide con fin de semana o feriado, se entregarán al siguiente día hábil.',
+  ];
 
   readonly sections: FieldSectionConfig[] = [
     {
@@ -393,10 +451,54 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     this.toastr.showSuccess('Solicitud guardada correctamente', 'Éxito');
     console.log('Solicitud guardada en localStorage:', entry);
 
+    this.savedElaboradoPor = this.form.getRawValue().solicitado_por || 'Usuario';
+    this.fechaSolicitud = new Date().toLocaleDateString('es-EC', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+    });
+    this.showCatalogo = true;
+  }
+
+  regresarAlFormulario() {
+    this.showCatalogo = false;
     this.form.reset();
     this.setUserDataFromLogin();
     this.selectedScheduleIndexes.clear();
+    this.catalogoServicios.forEach(g => {
+      g.collapsed = false;
+      g.servicios.forEach(s => (s.activo = false));
+    });
+    this.ensayosMuestreo.forEach(f => (f.activo = false));
+    this.ensayosResiduales.forEach(f => (f.activo = false));
     this.updateDependentFields();
+  }
+
+  toggleEnsayoMuestreo(idx: number) {
+    this.ensayosMuestreo[idx].activo = !this.ensayosMuestreo[idx].activo;
+  }
+
+  toggleEnsayoResidual(idx: number) {
+    this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo;
+  }
+
+  toggleMatrizCollapse(idx: number) {
+    this.catalogoServicios[idx].collapsed = !this.catalogoServicios[idx].collapsed;
+  }
+
+  toggleServicio(matrizIdx: number, servicioIdx: number) {
+    this.catalogoServicios[matrizIdx].servicios[servicioIdx].activo =
+      !this.catalogoServicios[matrizIdx].servicios[servicioIdx].activo;
+  }
+
+  guardarCatalogo() {
+    const existing = JSON.parse(localStorage.getItem('lims_solicitud_payload') || '{}');
+    existing.catalogo_servicios = this.catalogoServicios.flatMap(g =>
+      g.servicios
+        .filter(s => s.activo)
+        .map(s => ({ matriz: g.matriz, servicio: s.nombre, aplicable: s.aplicable })),
+    );
+    localStorage.setItem('lims_solicitud_payload', JSON.stringify(existing));
+    this.toastr.showSuccess('Catálogo guardado correctamente', 'Éxito');
+    this.router.navigate(['/lista-solicitudes']);
   }
 
   goBack() {

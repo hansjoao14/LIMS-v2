@@ -28,6 +28,219 @@
   </div>
 
   <div class="bg-white rounded-sm shadow-sm p-8 border border-gray-200">
+
+    @if (showCatalogo) {
+      <!-- ── VISTA CATÁLOGO DE SERVICIOS ── -->
+      <div class="mb-6">
+        <h3 class="text-xl font-bold text-slate-800">Solicitud de trabajo</h3>
+        <p class="text-sm mt-1 text-slate-600">
+          Número de solicitud: <strong class="text-slate-800">{{ numeroSolicitud }}</strong>
+        </p>
+      </div>
+
+      <div class="mb-8">
+        <h4 class="text-base font-bold text-blue-900 mb-1">Catálogo de servicios</h4>
+        <p class="text-sm text-slate-500 mb-4">
+          Activa el servicio requerido dependiendo de la matriz ambiental
+        </p>
+
+        <!-- Tabla catálogo -->
+        <div class="border border-gray-200 rounded overflow-hidden">
+          <!-- Header -->
+          <div class="grid grid-cols-[1fr_1fr_1fr] bg-gray-50 border-b border-gray-200">
+            <div class="px-4 py-3 text-[11px] font-bold text-slate-700 uppercase tracking-wide text-center">
+              Matriz ambiental
+            </div>
+            <div class="px-4 py-3 text-[11px] font-bold text-slate-700 uppercase tracking-wide text-center border-l border-gray-200">
+              Servicios aplicables
+            </div>
+            <div class="px-4 py-3 text-[11px] font-bold text-slate-700 uppercase tracking-wide text-center border-l border-gray-200">
+              Activar servicio requerido
+            </div>
+          </div>
+
+          <!-- Grupos -->
+          @for (grupo of catalogoServicios; track $index; let gi = $index) {
+            <div class="border-b last:border-0 border-gray-200 relative">
+              <!-- Fila collapse -->
+              <div
+                class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-gray-100 cursor-pointer select-none"
+                (click)="toggleMatrizCollapse(gi)"
+              >
+                <span
+                  class="flex items-center justify-center w-5 h-5 rounded bg-blue-900 text-white text-[10px] font-bold transition-transform"
+                  [class.rotate-180]="grupo.collapsed"
+                >
+                  &#8964;
+                </span>
+              </div>
+
+              @if (!grupo.collapsed) {
+                <div class="flex">
+                  <!-- Columna matriz icon -->
+                  <div class="flex flex-col items-center justify-center min-w-[120px] px-4 py-4 border-r border-gray-200 bg-white">
+                    <div class="w-12 h-12 rounded-full bg-[#1e3a8a] flex items-center justify-center mb-2">
+                      @switch (grupo.matriz) {
+                        @case ('AGUA') {
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C12 2 4 10.5 4 15a8 8 0 0016 0C20 10.5 12 2 12 2z"/>
+                          </svg>
+                        }
+                        @case ('AIRE') {
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2"/>
+                          </svg>
+                        }
+                        @case ('RUIDO') {
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072M6.343 6.343a9 9 0 000 11.314"/>
+                          </svg>
+                        }
+                      }
+                    </div>
+                    <span class="text-[11px] font-bold text-slate-700 uppercase">{{ grupo.matriz }}</span>
+                  </div>
+
+                  <!-- Columna servicios -->
+                  <div class="flex-1 divide-y divide-gray-100">
+                    @for (servicio of grupo.servicios; track $index; let si = $index) {
+                      <div class="grid grid-cols-2 items-center">
+                        <div class="px-4 py-4 text-[11px] font-semibold text-slate-600 uppercase border-r border-gray-200">
+                          {{ servicio.nombre }}
+                        </div>
+                        <div class="grid grid-cols-2 items-center">
+                          <div class="px-4 py-4 text-[11px] text-slate-600 uppercase border-r border-gray-200">
+                            {{ servicio.aplicable }}
+                          </div>
+                          <div class="px-4 py-4 flex items-center gap-3 justify-center">
+                            <button
+                              type="button"
+                              (click)="toggleServicio(gi, si)"
+                              class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
+                              [class.bg-blue-900]="servicio.activo"
+                              [class.bg-gray-300]="!servicio.activo"
+                            >
+                              <span
+                                class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                                [class.translate-x-6]="servicio.activo"
+                                [class.translate-x-1]="!servicio.activo"
+                              ></span>
+                            </button>
+                            <span class="text-xs text-slate-500 w-4">{{ servicio.activo ? 'Sí' : 'No' }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- ── PANELES DE ENSAYOS (solo AGUA con servicio activo) ── -->
+              @if (grupo.matriz === 'AGUA' && grupo.servicios[0].activo) {
+                <div class="border-t border-gray-200 bg-white px-4 py-5 space-y-6">
+
+                  <!-- Tabla 1: Muestreo -->
+                  <div>
+                    <h5 class="font-bold text-slate-800 text-sm mb-3">
+                      Ensayos Físico-Químicos para Aguas de Muestreo
+                      <span class="text-slate-500 font-normal">(Solo aguas superficiales)</span>
+                    </h5>
+                    <div class="border border-gray-200 rounded overflow-hidden">
+                      <div class="grid grid-cols-5 bg-gray-50 border-b border-gray-200">
+                        @for (col of ['ANÁLISIS REQUERIDO','PRODUCTO O MATERIAL A MUESTREAR','PARÁMETRO','MÉTODO INTERNO','MÉTODO REFERENCIA']; track $index) {
+                          <div class="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase text-center border-r last:border-0 border-gray-200">{{ col }}</div>
+                        }
+                      </div>
+                      @for (fila of ensayosMuestreo; track $index; let fi = $index) {
+                        <div class="grid grid-cols-5 border-t border-gray-100 items-center">
+                          <div class="px-3 py-3 flex items-center gap-2 justify-center border-r border-gray-100">
+                            <button type="button" (click)="toggleEnsayoMuestreo(fi)"
+                              class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                              [class.bg-blue-900]="fila.activo" [class.bg-gray-300]="!fila.activo">
+                              <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                                [class.translate-x-6]="fila.activo" [class.translate-x-1]="!fila.activo"></span>
+                            </button>
+                            <span class="text-xs text-slate-500">{{ fila.activo ? 'Sí' : 'No' }}</span>
+                          </div>
+                          <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r border-gray-100">{{ fila.producto }}</div>
+                          <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r border-gray-100">{{ fila.parametro }}</div>
+                          <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r border-gray-100">{{ fila.metodoInterno }}</div>
+                          <div class="px-3 py-3 text-[11px] text-slate-600 text-center">{{ fila.metodoReferencia }}</div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Tabla 2: Residuales -->
+                  <div>
+                    <h5 class="font-bold text-slate-800 text-sm mb-3">
+                      Ensayos Físico-Químico para Aguas Residuales y Superficiales
+                    </h5>
+                    <div class="border border-gray-200 rounded overflow-hidden">
+                      <div class="grid grid-cols-6 bg-gray-50 border-b border-gray-200">
+                        @for (col of ['ANÁLISIS REQUERIDO','ENSAYO','IDENTIFICACIÓN','MÉTODO INTERNO','MÉTODO REFERENCIA','UNIDAD']; track $index) {
+                          <div class="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase text-center border-r last:border-0 border-gray-200">{{ col }}</div>
+                        }
+                      </div>
+                      @for (fila of ensayosResiduales; track $index; let ri = $index) {
+                        <div class="grid grid-cols-6 border-t border-gray-100 items-center">
+                          <div class="px-3 py-3 flex items-center gap-2 justify-center border-r border-gray-100">
+                            <button type="button" (click)="toggleEnsayoResidual(ri)"
+                              class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                              [class.bg-blue-900]="fila.activo" [class.bg-gray-300]="!fila.activo">
+                              <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                                [class.translate-x-6]="fila.activo" [class.translate-x-1]="!fila.activo"></span>
+                            </button>
+                            <span class="text-xs text-slate-500">{{ fila.activo ? 'Sí' : 'No' }}</span>
+                          </div>
+                          <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r border-gray-100">{{ fila.ensayo }}</div>
+                          <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r border-gray-100">{{ fila.identificacion }}</div>
+                          <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r border-gray-100">{{ fila.metodoInterno }}</div>
+                          <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r border-gray-100">{{ fila.metodoReferencia }}</div>
+                          <div class="px-3 py-3 text-[11px] text-slate-600 text-center">{{ fila.unidad }}</div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Notas relevantes -->
+                  <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                    <p class="text-[11px] font-bold text-slate-700 mb-2">ⓘ Notas Relevantes:</p>
+                    <ol class="list-decimal list-inside space-y-1">
+                      @for (nota of notasRelevantes; track $index) {
+                        <li class="text-[11px] text-slate-600">{{ nota }}</li>
+                      }
+                    </ol>
+                  </div>
+
+                </div>
+              }
+
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Botones catálogo -->
+      <div class="flex gap-4 pt-2">
+        <button
+          type="button"
+          (click)="regresarAlFormulario()"
+          class="bg-[#1e3a8a] text-white px-12 py-3 rounded font-bold uppercase text-xs hover:bg-blue-800 transition-all shadow-sm"
+        >
+          Regresar
+        </button>
+        <button
+          type="button"
+          (click)="guardarCatalogo()"
+          class="bg-[#1e3a8a] text-white px-12 py-3 rounded font-bold uppercase text-xs shadow-md hover:bg-blue-800 transition-all"
+        >
+          Guardar
+        </button>
+      </div>
+
+    } @else {
+    <!-- ── VISTA FORMULARIO ── -->
     <h3 class="text-xl font-bold mb-1 text-slate-800">Solicitud de trabajo</h3>
     <p class="text-sm mb-6 font-semibold">
       Configuración activa:
@@ -273,6 +486,7 @@
         </div>
       </form>
     }
+    } <!-- cierre @else formulario -->
   </div>
 </div>
 
