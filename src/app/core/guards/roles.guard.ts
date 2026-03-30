@@ -13,7 +13,7 @@ export const canActivateWithRealmRoles: CanActivateFn = (route, state) => {
       icon: 'warning',
       title: 'Sesión expirada',
       text: 'Por favor, inicia sesión nuevamente.',
-      confirmButtonColor: '#28367F'
+      confirmButtonColor: '#28367F',
     });
     return router.createUrlTree(['/login']);
   }
@@ -41,15 +41,15 @@ export const canActivateWithRealmRoles: CanActivateFn = (route, state) => {
   }
 
   // 2. DISPARAR ALERTA SI NO TIENE ROLES
-  console.error('⛔ Acceso Denegado: Roles insuficientes.');
-  
+  console.error('Acceso Denegado: Roles insuficientes.');
+
   Swal.fire({
     icon: 'error',
     title: 'Acceso Denegado',
     text: `No tienes los permisos necesarios para acceder a esta sección. Se requieren roles: ${requiredRolesList.join(', ')}`,
     confirmButtonColor: '#28367F',
-    confirmButtonText: 'Entendido'
+    confirmButtonText: 'Entendido',
   });
 
-  return router.createUrlTree(['/login']); 
+  return router.createUrlTree(['/login']);
 };

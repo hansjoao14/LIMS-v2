@@ -1,6 +1,6 @@
 /**
  * Angular route guard that checks if the user is authenticated using Keycloak.
- * 
+ *
  * - If the user is logged in, allows route activation.
  * - If not, redirects the user to the Keycloak login page, preserving the current URL for redirection after login.
  *
@@ -14,13 +14,13 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
 export const authGuard: CanActivateFn = async () => {
- // const keycloak = inject(KeycloakService);
+  // const keycloak = inject(KeycloakService);
   const router = inject(Router);
 
- // const isLoggedIn = await keycloak.isLoggedIn();
- // if (isLoggedIn) return true;
+  // const isLoggedIn = await keycloak.isLoggedIn();
+  // if (isLoggedIn) return true;
 
   // Redirige a login de Keycloak
-//  await keycloak.login({ redirectUri: window.location.href });
+  //  await keycloak.login({ redirectUri: window.location.href });
   return false;
 };

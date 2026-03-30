@@ -26,7 +26,7 @@ import { AuthService } from '../auth/service/auth-service';
  * Componente para la gestión de solicitudes de trabajo en el laboratorio.
  * Maneja formularios dinámicos con validaciones, dependencias entre campos,
  * integración con mapas y gestión de datos del usuario autenticado.
- * 
+ *
  * @standalone
  * @component
  */
@@ -420,7 +420,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         continue;
       }
 
-      const parentField = this.fields.find((candidate) => candidate.id === field.dependsOn?.fieldId);
+      const parentField = this.fields.find(
+        (candidate) => candidate.id === field.dependsOn?.fieldId,
+      );
       const parentValue = parentField ? this.getFieldControl(parentField.key)?.value : null;
       const isVisible = String(parentValue ?? '') === field.dependsOn.triggerValue;
 
