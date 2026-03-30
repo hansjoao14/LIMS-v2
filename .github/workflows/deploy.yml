@@ -15,19 +15,27 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 20m
           script: |
             echo "=== 🚀 INICIO DEPLOY LIMS ==="
-            cd /home/LIMS || (cd /home && git clone git@github.com:capo2786/LIMS.git && cd LIMS)
             
-            # Forzar actualización
+            # Ir a la carpeta del proyecto
+            cd /home/LIMS || { echo "❌ Carpeta no encontrada"; exit 1; }
+
+            # 1. Sincronizar código con GitHub usando SSH
             git remote set-url origin git@github.com:capo2786/LIMS.git
-            git fetch --all
+            git fetch origin main
             git reset --hard origin/main
             
-            # Docker: Forzar reinicio total
-            docker-compose down --remove-orphans || true
-            docker-compose up -d --build
+            echo "🧹 Reiniciando SOLO los contenedores de LIMS..."
             
-            # Limpieza rápida
+            # 2. Reconstruir solo lo que está en esta carpeta
+            # Usamos 'docker compose' o 'docker-compose' según disponibilidad
+            (docker compose down || docker-compose down) || true
+            (docker compose up -d --build || docker-compose up -d --build)
+
+            # 3. Limpieza de imágenes basura para no llenar el disco
             docker image prune -f
+            
             echo "=== ✅ DEPLOY LIMS FINALIZADO ==="
+            echo "🔗 URL: http://173.212.251.64"
