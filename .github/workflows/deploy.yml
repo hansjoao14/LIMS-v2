@@ -15,28 +15,19 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          command_timeout: 20m
           script: |
             echo "=== 🚀 INICIO DEPLOY LIMS ==="
+            cd /home/LIMS
             
-            # 1. Validar carpeta del proyecto
-            cd /home/LIMS || { echo "❌ Carpeta /home/LIMS no encontrada"; exit 1; }
-
-            # 2. Sincronizar código (Reset forzado para evitar conflictos de Git)
-            git remote set-url origin git@github.com:capo2786/LIMS.git
+            # Limpiar cualquier bloqueo previo de Git
+            rm -f .git/index.lock
+            
+            # Sincronizar el código (Ahora funcionará por el safe.directory que pusiste)
             git fetch origin main
             git reset --hard origin/main
             
-            echo "🧹 Reiniciando SOLO los contenedores de LIMS..."
+            # Docker: Reinicio quirúrgico (Solo afecta a LIMS)
+            # Probamos ambas variantes por si acaso
+            docker compose up -d --build --remove-orphans || docker-compose up -d --build --remove-orphans
             
-            # 3. Reconstruir usando todas las rutas posibles de Docker Compose
-            # Esto evita el error de "command not found"
-            (docker compose down || docker-compose down || /usr/libexec/docker/cli-plugins/docker-compose down) || true
-            
-            (docker compose up -d --build || docker-compose up -d --build || /usr/libexec/docker/cli-plugins/docker-compose up -d --build)
-
-            # 4. Limpieza de imágenes antiguas para ahorrar espacio en el VPS
-            docker image prune -f
-            
-            echo "=== ✅ DEPLOY LIMS FINALIZADO ==="
-            echo "🔗 URL: http://173.212.251.64"
+            echo "=== ✅ DEPLOY FINALIZADO ==="
