@@ -24,7 +24,7 @@ export interface Pregunta {
   ayuda: string | null;
   catalogos: CatalogoItem[] | null;
   jornada_laboral_item: JornadaItem[] | null;
-  atributo_id: string | null;      // ID de la pregunta de la que depende
+  atributo_id: string | null; // ID de la pregunta de la que depende
   item_catalogo_id: string | null; // Valor que dispara la visibilidad
   is_dependent: boolean | null;
   is_ws_sri: boolean;
@@ -54,12 +54,7 @@ export type FieldSectionId =
   | 'contacto'
   | 'observaciones';
 
-export type FieldControlType =
-  | 'text'
-  | 'textarea'
-  | 'select'
-  | 'coordinates'
-  | 'schedule';
+export type FieldControlType = 'text' | 'textarea' | 'select' | 'coordinates' | 'schedule';
 
 export interface FieldConfig {
   id: string;

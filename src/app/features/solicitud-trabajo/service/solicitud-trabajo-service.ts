@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { FormularioLaboratorio } from '../model/solicitud-trabajo.model';
 
-
 @Injectable({ providedIn: 'root' })
 export class SolicitudService {
   constructor(private http: HttpClient) {}
