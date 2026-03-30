@@ -9,6 +9,7 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 
 import * as L from 'leaflet';
@@ -21,6 +22,7 @@ import {
 } from './model/solicitud-trabajo.model';
 import { SolicitudService } from './service/solicitud-trabajo-service';
 import { AuthService } from '../auth/service/auth-service';
+import { ToastrAlertService } from '../../services/toastr.service';
 
 /**
  * Componente para la gestión de solicitudes de trabajo en el laboratorio.
@@ -201,6 +203,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   fields: FieldConfig[] = [];
   loading = true;
   showMapModal = false;
+  selectedScheduleIndexes = new Set<number>();
 
   readonly sections: FieldSectionConfig[] = [
     {
@@ -244,6 +247,8 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     private service: SolicitudService,
     private authService: AuthService,
     private zone: NgZone,
+    private router: Router,
+    private toastr: ToastrAlertService,
   ) {
     this.form = this.fb.group({
       jefatura_display: this.fb.control({ value: '', disabled: true }),
@@ -344,6 +349,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     return typeof value === 'string' ? value.length : 0;
   }
 
+  toggleScheduleItem(index: number) {
+    if (this.selectedScheduleIndexes.has(index)) {
+      this.selectedScheduleIndexes.delete(index);
+    } else {
+      this.selectedScheduleIndexes.add(index);
+    }
+  }
+
+  isScheduleSelected(index: number): boolean {
+    return this.selectedScheduleIndexes.has(index);
+  }
+
   openMap() {
     this.showMapModal = true;
   }
@@ -364,7 +381,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     const payload = this.buildPayload();
-    console.log('Solicitud lista para API:', payload);
+    const entry = {
+      ...payload,
+      guardado_en: new Date().toISOString(),
+    };
+
+    localStorage.setItem('lims_solicitud_payload', JSON.stringify(entry));
+    this.toastr.showSuccess('Solicitud guardada correctamente', 'Éxito');
+    console.log('Solicitud guardada en localStorage:', entry);
+  }
+
+  goBack() {
+    this.router.navigate(['/lista-solicitudes']);
   }
 
   private setUserDataFromLogin() {
@@ -535,13 +563,16 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       }));
 
     const scheduleField = this.fields.find((field) => field.controlType === 'schedule');
+    const selectedJornadas = (scheduleField?.scheduleItems ?? []).filter((_, i) =>
+      this.selectedScheduleIndexes.has(i),
+    );
 
     return {
       formulario_id: this.formulario?.formulario_id ?? null,
       tipo_formulario_id: this.formulario?.tipo_formulario_id ?? null,
       datos_solicitante: this.form.getRawValue(),
       respuestas: answers,
-      jornadas_laborales: scheduleField?.scheduleItems ?? [],
+      jornadas_laborales: selectedJornadas,
     };
   }
 
