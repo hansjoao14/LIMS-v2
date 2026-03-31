@@ -5,6 +5,7 @@ import {
   FormBuilder,
   FormControl,
   FormGroup,
+  FormsModule,
   ReactiveFormsModule,
   ValidatorFn,
   Validators,
@@ -194,7 +195,7 @@ import { cedulaEcuatoriana, rucEcuatoriano } from '../../core/utils/ecuador-id.v
 @Component({
   selector: 'app-solicitud-trabajo',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './solicitud-trabajo.html',
   styleUrls: ['./solicitud-trabajo.css'],
 })
@@ -205,6 +206,35 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   loading = true;
   showMapModal = false;
   showCatalogo = false;
+  showTerminosModal = false;
+  showConfidencialidadModal = false;
+
+  readonly terminosCondiciones = [
+    'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
+    'Los resultados serán entregados en 15 días calendario a partir de realizada la toma de muestra para Ensayos Físico-Químico para Aguas Residuales y Superficiales y para Ensayos de Muestreo para Aguas Superficiales.',
+    'Los resultados serán entregados en 10 días calendario a partir de realizada la toma de muestra para Ensayos Físico–Químicos de Emisiones Gaseosas de Fuentes Fijas a la Atmósfera y para Ensayos para Acústica Ambiental.',
+    'Los resultados obtenidos podrán utilizarse para elaboración de informes técnicos cuando requiera la Secretaría de Ambiente.',
+    'Los resultados de la red de monitoreo del recurso hídrico serán entregados hasta los primeros 15 días del siguiente mes del monitoreo.',
+    'Si el plazo establecido para la entrega de los resultados coincide con fin de semana o feriado, los mismos se entregarán al siguiente día hábil.',
+    'En caso de que el cliente tenga algún reclamo o queja respecto los servicios brindados por IAM-Q, podrá emitir la misma al laboratorio IAM-Q siguiendo lo dispuesto en el procedimiento PG/IAM-Q/11 Quejas. El mismo es difundido al cliente y además está disponible en el formulario DC-MC-05 Encuesta de Servicios IAM-Q y en las instalaciones del Laboratorio IAM-Q para cuando cualquier parte interesada lo solicite.',
+  ];
+
+  readonly acuerdoConfidencialidad = `OBJETO.-
+El presente acuerdo tiene por objeto establecer con el cliente, la manera en la que el laboratorio IAM-Q maneja la información obtenida o creada durante la realización de sus actividades, en el servicio solicitado por el cliente.
+
+El laboratorio IAM-Q al ser parte de una entidad del sector público, está obligado a acatar las disposiciones establecidas en la Ley Orgánica de Transparencia y Acceso a La Información, con respecto a la información obtenida o creada durante la realización de sus actividades. La misma que establece:
+
+5. Información Confidencial: Información o documentación, en cualquier formato, final o preparatoria, haya sido o no generada por el sujeto obligado, derivada de los derechos personalísimos y fundamentales, y requiere expresa autorización de su titular para su divulgación, que contiene datos que al revelarse, pudiesen dañar los siguientes intereses privados: a) El derecho a la privacidad, incluyendo privacidad relacionada a la vida, la salud o la seguridad, así como el derecho al honor y la propia imagen; b) Los datos personales cuya difusión requiera el consentimiento de sus titulares y deberán ser tratados según lo dispuesto en la Ley Orgánica de Protección de Datos Personales; c) Los intereses comerciales y económicos legítimos; y, d) Las patentes, derechos de autor y secretos comerciales. (Congreso Nacional del Ecuador, 2023:7)
+
+6. Información Pública: Todo tipo de dato en documentos de cualquier formato, final o preparatoria, haya sido o no generada por el sujeto obligado, que se encuentre en poder de los sujetos obligados por esta Ley, contenidos, creados u obtenidos por ellos, que se encuentren bajo su responsabilidad y custodio o que se hayan producido con recursos del Estado. (Congreso Nacional del Ecuador, 2023:7)
+
+7. Información Reservada: Información o documentación, final o preparatoria, haya sido o no generada por el sujeto obligado, que requiere de forma excepcional limitación en su conocimiento y distribución, de acuerdo a los criterios expresamente establecidos en la ley, y siempre que no sea posible su publicidad bajo un procedimiento de disociación, por existir un riesgo claro, probable y específico de daño a intereses públicos conforme a los requisitos contemplados en esta Ley. No existirá reserva de información en los casos expresamente establecidos en la Constitución de la República del Ecuador y la ley. (Congreso Nacional del Ecuador, 2023:7)
+
+Artículo 32.- Solicitud y Contenido. La solicitud de información puede ser presentada por medio físico o electrónico y deberá contener lo siguiente: 1. Identificación de la persona solicitante; 2. Información de contacto para recibir notificaciones; 3. Descripción precisa de la información solicitada; y, 4. El solicitante deberá especificar en su petición, el tipo de formato físico o digital, en el que desea que se le haga la entrega de la información solicitada. (Congreso Nacional del Ecuador, 2023:25)
+
+De igual manera, la información acerca de la cliente obtenida de fuentes diferentes al cliente seguirá lo dispuesto por la Ley Orgánica de Transparencia y Acceso a La Información.
+
+Además, cuando el laboratorio sea requerido por ley o autorizado por las disposiciones contractuales, para revelar información confidencial, notificará mediante memorando u oficio al cliente o a la persona interesada la información proporcionada, salvo que esté prohibido por ley.`;
   selectedScheduleIndexes = new Set<number>();
   savedElaboradoPor = '';
   fechaSolicitud = '';
@@ -215,53 +245,90 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       matriz: 'AGUA',
       collapsed: false,
       servicios: [
-        { nombre: 'AGUAS SUPERFICIALES', aplicable: 'NÚMERO DE MUESTRAS', activo: false },
-        { nombre: 'AGUAS RESIDUALES', aplicable: 'NÚMERO DE MUESTRAS', activo: false },
+        { nombre: 'AGUAS SUPERFICIALES', aplicable: 'NÚMERO DE MUESTRAS', activo: false, cantidad: null as number | null },
+        { nombre: 'AGUAS RESIDUALES', aplicable: 'NÚMERO DE MUESTRAS', activo: false, cantidad: null as number | null },
       ],
     },
     {
       matriz: 'AIRE',
       collapsed: false,
       servicios: [
-        { nombre: 'FUENTES FIJAS DE COMBUSTIÓN', aplicable: 'NÚMERO DE FUENTES', activo: false },
+        { nombre: 'FUENTES FIJAS DE COMBUSTIÓN', aplicable: 'NÚMERO DE FUENTES', activo: false, cantidad: null as number | null },
       ],
     },
     {
       matriz: 'RUIDO',
       collapsed: false,
       servicios: [
-        { nombre: 'RUIDO AMBIENTE', aplicable: 'NÚMERO DE PUNTOS CRÍTICOS DE AFECTACIÓN', activo: false },
+        { nombre: 'RUIDO AMBIENTE', aplicable: 'NÚMERO DE PUNTOS CRÍTICOS DE AFECTACIÓN', activo: false, cantidad: null as number | null },
       ],
     },
   ];
 
   ensayosMuestreo = [
-    { activo: false, producto: 'AGUAS SUPERFICIALES', parametro: 'SÓLIDOS SUSPENDIDOS TOTALES', metodoInterno: 'PEE/IAM-Q/42', metodoReferencia: 'NTE INEN ISO 5667-1 UNE EN ISO 5667-6 UNE EN ISO 5667-14' },
+    { activo: false, producto: 'AGUAS SUPERFICIALES', parametro: 'SÓLIDOS SUSPENDIDOS TOTALES', metodoInterno: 'PEE/IAM-Q/42', metodoReferencia: 'NTE INEN ISO 5667-1 | UNE EN ISO 5667-6 | UNE EN ISO 5667-14' },
   ];
 
   ensayosResiduales = [
-    { activo: false, ensayo: 'DEMANDA QUÍMICA DE OXÍGENO', identificacion: 'DQO', metodoInterno: 'PEE/IAM-Q/03', metodoReferencia: 'APHA 5220 C', unidad: 'mg/L' },
-    { activo: false, ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES', identificacion: 'SST', metodoInterno: 'PEE/IAM-Q/02', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
-    { activo: false, ensayo: 'SÓLIDOS TOTALES*', identificacion: 'ST', metodoInterno: '', metodoReferencia: 'APHA 2540 B', unidad: 'mg/L' },
-    { activo: false, ensayo: 'SÓLIDOS DISUELTOS TOTALES*', identificacion: 'STD', metodoInterno: 'PEE/IAM-Q/14', metodoReferencia: 'APHA 2540 C', unidad: 'mg/L' },
-    { activo: false, ensayo: 'SÓLIDOS SEDIMENTABLES*', identificacion: 'SS', metodoInterno: '', metodoReferencia: 'APHA 2540 D', unidad: 'mL' },
-    { activo: false, ensayo: 'CONDUCTIVIDAD ELÉCTRICA*', identificacion: 'CE', metodoInterno: 'PEE/IAM-Q/15', metodoReferencia: 'APHA 2540 D', unidad: 'Us/cm' },
-    { activo: false, ensayo: 'COLOR*', identificacion: 'C', metodoInterno: '', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
-    { activo: false, ensayo: 'TEMPERATURA', identificacion: 'T', metodoInterno: 'PEE/IAM-Q/04', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
-    { activo: false, ensayo: 'SULFATOS', identificacion: 'SO42-', metodoInterno: 'PEE/IAM-Q/06', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
-    { activo: false, ensayo: 'ACEITES Y GRASAS', identificacion: '-', metodoInterno: 'PEE/IAM-Q/05', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
-    { activo: false, ensayo: 'TURBIDEZ*', identificacion: '-', metodoInterno: 'PEE/IAM-Q/31', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
-    { activo: false, ensayo: 'OXÍGENO DISUELTO*', identificacion: 'O', metodoInterno: 'PEE/IAM-Q/44', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
-    { activo: false, ensayo: 'NITRITOS*', identificacion: 'NO2-', metodoInterno: '', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
-    { activo: false, ensayo: 'NITRATOS*', identificacion: 'NO3-', metodoInterno: '', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
-    { activo: false, ensayo: 'SURFACTANTES ANIÓNICOS', identificacion: 'MBAS', metodoInterno: 'PEE/IAM-Q/46', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L' },
+    { activo: false, ensayo: 'DEMANDA QUÍMICA DE OXÍGENO', identificacion: 'DQO', metodoInterno: 'PEE/IAM-Q/03', metodoReferencia: 'APHA 5220 C', unidad: 'mg/L', naturaleza: 'Laboratorio' },
+    { activo: false, ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES', identificacion: 'SST', metodoInterno: 'PEE/IAM-Q/02', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L', naturaleza: 'Laboratorio' },
+    { activo: false, ensayo: 'SÓLIDOS TOTALES*', identificacion: 'ST', metodoInterno: '', metodoReferencia: 'APHA 2540 B', unidad: 'mg/L', naturaleza: 'Laboratorio' },
+    { activo: false, ensayo: 'SÓLIDOS DISUELTOS TOTALES*', identificacion: 'STD', metodoInterno: 'PEE/IAM-Q/14', metodoReferencia: 'APHA 2540 C', unidad: 'mg/L', naturaleza: 'Laboratorio' },
+    { activo: false, ensayo: 'SÓLIDOS SEDIMENTABLES*', identificacion: 'SS', metodoInterno: '', metodoReferencia: 'APHA 2540 F', unidad: 'ml/L', naturaleza: 'Laboratorio' },
+    { activo: false, ensayo: 'CONDUCTIVIDAD ELÉCTRICA*', identificacion: 'CE', metodoInterno: 'PEE/IAM-Q/15', metodoReferencia: 'APHA 2510', unidad: 'Us/cm', naturaleza: 'In situ' },
+    { activo: false, ensayo: 'COLOR*', identificacion: 'C', metodoInterno: '', metodoReferencia: 'APHA 2120', unidad: 'Unit Pt-Co', naturaleza: 'Laboratorio' },
+    { activo: false, ensayo: 'TEMPERATURA', identificacion: 'T', metodoInterno: 'PEE/IAM-Q/04', metodoReferencia: 'APHA 2550 B', unidad: '°C', naturaleza: 'In situ' },
+    { activo: false, ensayo: 'SULFATOS', identificacion: 'SO42-', metodoInterno: 'PEE/IAM-Q/06', metodoReferencia: 'HACH 8051', unidad: 'mg/L', naturaleza: 'Laboratorio' },
+    { activo: false, ensayo: 'ACEITES Y GRASAS', identificacion: '-', metodoInterno: 'PEE/IAM-Q/05', metodoReferencia: 'EPA METHOD 1664', unidad: 'mg/L', naturaleza: 'Laboratorio' },
+    { activo: false, ensayo: 'TURBIDEZ*', identificacion: '-', metodoInterno: 'PEE/IAM-Q/31', metodoReferencia: 'SM 2130 B', unidad: 'mg/L', naturaleza: 'Laboratorio' },
+    { activo: false, ensayo: 'OXÍGENO DISUELTO*', identificacion: 'O', metodoInterno: 'PEE/IAM-Q/44', metodoReferencia: 'SM 4500-O H', unidad: 'mg/L', naturaleza: 'In situ' },
+    { activo: false, ensayo: 'NITRITOS*', identificacion: 'NO2-', metodoInterno: '', metodoReferencia: 'APHA 4110 B', unidad: 'mg/L', naturaleza: 'Laboratorio' },
+    { activo: false, ensayo: 'NITRATOS*', identificacion: 'NO3-', metodoInterno: '', metodoReferencia: 'APHA 4110 B', unidad: 'mg/L', naturaleza: 'Laboratorio' },
+    { activo: false, ensayo: 'SURFACTANTES ANIÓNICOS*', identificacion: 'MBAS', metodoInterno: 'PEE/IAM-Q/46', metodoReferencia: 'TNTplus 874', unidad: 'mg/L', naturaleza: 'Laboratorio' },
   ];
 
-  readonly notasRelevantes = [
+  ensayosAire = [
+    { activo: false, ensayo: 'MONÓXIDO DE CARBONO', identificacion: 'CO', metodoInterno: 'PEE/IAM-Q/07', metodoReferencia: 'EPA CTM-030', unidad: 'ppm / mg/Nm³*' },
+    { activo: false, ensayo: 'DIÓXIDO DE AZUFRE', identificacion: 'SO2', metodoInterno: 'PEE/IAM-Q/07', metodoReferencia: 'EPA CTM-030', unidad: 'ppm / mg/Nm³*' },
+    { activo: false, ensayo: 'ÓXIDOS DE NITRÓGENO', identificacion: 'NOx', metodoInterno: 'PEE/IAM-Q/07', metodoReferencia: 'EPA CTM-030', unidad: 'ppm / mg/Nm³*' },
+    { activo: false, ensayo: 'OXÍGENO', identificacion: 'O2', metodoInterno: 'PEE/IAM-Q/07', metodoReferencia: 'EPA CTM-030', unidad: 'ppm / mg/Nm³*' },
+    { activo: false, ensayo: 'MATERIAL PARTICULADO*', identificacion: 'MP', metodoInterno: 'PEE/IAM-Q/14', metodoReferencia: 'EPA 60, Apéndice A, Método 5', unidad: 'ppm / mg/Nm³*' },
+  ];
+
+  ensayosRuido = [
+    { activo: false, ensayo: 'RUIDO AMBIENTAL', identificacion: '---', metodoInterno: 'PEE/IAM-Q/11', metodoReferencia: 'ANEXO 5 AM 097A | ISO 1996-2:2017', unidad: 'dB' },
+  ];
+
+  ruidoInfo = {
+    tipoUsoSueloOperador: '',
+    tipoUsoSueloPCA: '',
+    ruidoDiurno: '',
+    ruidoNocturno: '',
+    direccionPCA: '',
+    telefonoPCA: '',
+  };
+
+  readonly notasAgua = [
+    'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
+    'Las muestras serán descartadas del laboratorio en 28 días calendario después de recibidas.',
+    'Los resultados serán entregados en 15 días calendario a partir del ingreso de las muestras al Laboratorio IAM-Q.',
+    'Los resultados obtenidos podrán utilizarse para elaboración de informes técnicos cuando requiera la Secretaría de Ambiente.',
+    'Los resultados de la red de monitoreo del recurso hídrico serán entregados hasta los primeros 15 días del siguiente mes del monitoreo.',
+    'Si el plazo establecido para la entrega de los resultados coincide con fin de semana o feriado, los mismos se entregarán al siguiente día hábil.',
+  ];
+
+  readonly notasAire = [
     'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
     'Los resultados serán entregados en 10 días calendario después de realizado el monitoreo.',
     'Los resultados obtenidos podrán utilizarse para la elaboración de Informes Técnicos cuando requiera la Secretaría de Ambiente.',
-    'Si el plazo establecido coincide con fin de semana o feriado, se entregarán al siguiente día hábil.',
+    'Si el plazo establecido para la entrega de los resultados coincide con fin de semana o feriado, los mismos se entregarán al siguiente día hábil.',
+  ];
+
+  readonly notasRuido = [
+    'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
+    'Los resultados serán entregados en 10 días calendario después de realizado el monitoreo.',
+    'Los resultados obtenidos podrán utilizarse para la elaboración de Informes Técnicos cuando requiera la Secretaría de Ambiente.',
+    'Si el plazo establecido para la entrega de los resultados coincide con fin de semana o feriado, los mismos se entregarán al siguiente día hábil.',
   ];
 
   readonly sections: FieldSectionConfig[] = [
@@ -313,6 +380,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       jefatura_display: this.fb.control({ value: '', disabled: true }),
       solicitado_por: this.fb.control({ value: '', disabled: true }),
       cargo_usuario: this.fb.control({ value: '', disabled: true }),
+      val_pasaporte: this.fb.control(''),
     });
   }
 
@@ -351,6 +419,15 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   get sectionsWithVisibleFields() {
     return this.sections.filter((section) => this.getVisibleFields(section.id).length > 0);
+  }
+
+  get isPasaporteSelected(): boolean {
+    const tipoField = this.fields.find((f) => f.key === 'val_ct_tipo');
+    if (!tipoField) return false;
+    const selectedId = this.getFieldControl('val_ct_tipo')?.value;
+    return tipoField.options.some(
+      (opt) => String(opt.id) === String(selectedId) && opt.nombre?.toLowerCase().includes('pasaporte'),
+    );
   }
 
   getFieldControl(key: string): FormControl {
@@ -469,6 +546,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     });
     this.ensayosMuestreo.forEach(f => (f.activo = false));
     this.ensayosResiduales.forEach(f => (f.activo = false));
+    this.ensayosAire.forEach(f => (f.activo = false));
+    this.ensayosRuido.forEach(f => (f.activo = false));
+    this.ruidoInfo = { tipoUsoSueloOperador: '', tipoUsoSueloPCA: '', ruidoDiurno: '', ruidoNocturno: '', direccionPCA: '', telefonoPCA: '' };
     this.updateDependentFields();
   }
 
@@ -480,21 +560,44 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo;
   }
 
+  toggleEnsayoAire(idx: number) {
+    this.ensayosAire[idx].activo = !this.ensayosAire[idx].activo;
+  }
+
+  toggleEnsayoRuido(idx: number) {
+    this.ensayosRuido[idx].activo = !this.ensayosRuido[idx].activo;
+  }
+
   toggleMatrizCollapse(idx: number) {
     this.catalogoServicios[idx].collapsed = !this.catalogoServicios[idx].collapsed;
   }
 
   toggleServicio(matrizIdx: number, servicioIdx: number) {
-    this.catalogoServicios[matrizIdx].servicios[servicioIdx].activo =
-      !this.catalogoServicios[matrizIdx].servicios[servicioIdx].activo;
+    const servicio = this.catalogoServicios[matrizIdx].servicios[servicioIdx];
+    servicio.activo = !servicio.activo;
+    if (!servicio.activo) servicio.cantidad = null;
   }
 
   guardarCatalogo() {
+    this.showTerminosModal = true;
+  }
+
+  aceptarTerminos() {
+    this.showTerminosModal = false;
+    this.showConfidencialidadModal = true;
+  }
+
+  aceptarConfidencialidad() {
+    this.showConfidencialidadModal = false;
+    this.ejecutarGuardado();
+  }
+
+  private ejecutarGuardado() {
     const existing = JSON.parse(localStorage.getItem('lims_solicitud_payload') || '{}');
     existing.catalogo_servicios = this.catalogoServicios.flatMap(g =>
       g.servicios
         .filter(s => s.activo)
-        .map(s => ({ matriz: g.matriz, servicio: s.nombre, aplicable: s.aplicable })),
+        .map(s => ({ matriz: g.matriz, servicio: s.nombre, aplicable: s.aplicable, cantidad: s.cantidad })),
     );
     localStorage.setItem('lims_solicitud_payload', JSON.stringify(existing));
     this.toastr.showSuccess('Catálogo guardado correctamente', 'Éxito');
@@ -571,6 +674,15 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
       this.syncFieldState(field, !isVisible);
     }
+
+    const pasaporteControl = this.form.get('val_pasaporte');
+    if (this.isPasaporteSelected) {
+      pasaporteControl?.setValidators([Validators.required]);
+    } else {
+      pasaporteControl?.clearValidators();
+      pasaporteControl?.reset('', { emitEvent: false });
+    }
+    pasaporteControl?.updateValueAndValidity({ emitEvent: false });
   }
 
   private syncFieldState(field: FieldConfig, hidden: boolean) {
