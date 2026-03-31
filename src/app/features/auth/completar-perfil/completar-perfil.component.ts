@@ -22,7 +22,7 @@ export class CompletarPerfilComponent implements OnInit {
   direccionesAmbiente = [
     { value: 'cambio-climatico', label: 'Dirección de Cambio Climático' },
     { value: 'regularizacion-control', label: 'Dirección de Regularización y Control Ambiental' },
-    { value: 'recursos-naturales', label: 'Dirección de Recursos Naturales' },
+    { value: 'recursos-naturales', label: 'Dirección Metropolitana Regulación y Control Ambiental' },
     { value: 'politicas-planeamiento', label: 'Dirección de Políticas y Planeamiento Ambiental' }
   ];
 
@@ -64,8 +64,8 @@ export class CompletarPerfilComponent implements OnInit {
       ...this.datosUsuarioTemp,
       // Nota: Si tu backend espera un ID numérico, deberás mapear estos strings a números.
       // Si el backend acepta el slug/string, se queda así:
-      entidad_id: this.perfilForm.value.entidad_id, 
-      is_completed: true 
+      entidad_id: this.perfilForm.value.entidad_id,
+      is_completed: true
     };
 
     const rolesPayload = this.rolesDisponibles.map(rol => ({

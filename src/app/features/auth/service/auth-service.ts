@@ -100,7 +100,7 @@ export class AuthService {
   logout(): void {
     this.stopAutoRefresh();
     const refresh_token = localStorage.getItem('refresh_token');
-    
+
     this.clearTokens();
     this.userProfile.set(null);
 
@@ -138,8 +138,8 @@ export class AuthService {
         name: decoded.name || decoded.preferred_username,
         roles: decoded.realm_access?.roles || [],
         // Captura de atributos personalizados de Keycloak
-        cargo: decoded.cargo || 'Analista de Laboratorio', 
-        jefatura: decoded.jefatura || 'Dirección de Recursos Naturales'
+        cargo: decoded.cargo || 'Analista de Laboratorio',
+        jefatura: decoded.jefatura || 'Dirección Metropolitana Regulación y Control Ambiental'
       };
 
       this.userProfile.set(profile);
@@ -177,8 +177,8 @@ export class AuthService {
   private startAutoRefresh() {
     this.stopAutoRefresh();
     // Refrescar cada 14 minutos (asumiendo que el token dura 15)
-    const intervalMs = 14 * 60 * 1000; 
-    
+    const intervalMs = 14 * 60 * 1000;
+
     this.refreshIntervalSub = timer(intervalMs, intervalMs).subscribe(() => {
       this.refreshToken().subscribe({
         error: () => this.stopAutoRefresh()
@@ -192,5 +192,5 @@ export class AuthService {
       this.refreshIntervalSub = undefined;
     }
   }
-  
+
 }
