@@ -10,10 +10,10 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router'; // <-- AÑADIDO: ActivatedRoute
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
-
 import * as L from 'leaflet';
+
 import {
   FieldConfig,
   FieldSectionConfig,
@@ -25,6 +25,8 @@ import { SolicitudService } from './service/solicitud-trabajo-service';
 import { AuthService } from '../auth/service/auth-service';
 import { ToastrAlertService } from '../../services/toastr.service';
 import { cedulaEcuatoriana, rucEcuatoriano } from '../../core/utils/ecuador-id.validators';
+
+type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
 @Component({
   selector: 'app-solicitud-trabajo',
@@ -38,10 +40,74 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   formulario: FormularioLaboratorio | null = null;
   fields: FieldConfig[] = [];
   loading = true;
+
+  currentStep = 0;
   showMapModal = false;
-  showCatalogo = false;
   showTerminosModal = false;
   showConfidencialidadModal = false;
+
+  readonly stepLabels = [
+    'Entidad y técnico',
+    'Formulario',
+    'Catálogo',
+    'Confirmación',
+  ];
+
+  entidadesMock = [
+    { id: 'ENT-001', nombre: 'Secretaría de Ambiente' },
+    { id: 'ENT-002', nombre: 'Dirección Metropolitana' },
+    { id: 'ENT-003', nombre: 'Unidad Técnica Ambiental' },
+  ];
+
+  tecnicosMock = [
+    { id: 'TEC-001', entidadId: 'ENT-001', nombre: 'Juan Pérez', cargo: 'Analista Ambiental' },
+    { id: 'TEC-002', entidadId: 'ENT-001', nombre: 'María López', cargo: 'Técnico de Laboratorio' },
+    { id: 'TEC-003', entidadId: 'ENT-002', nombre: 'Carlos Ruiz', cargo: 'Inspector Ambiental' },
+    { id: 'TEC-004', entidadId: 'ENT-003', nombre: 'Ana Torres', cargo: 'Coordinadora Técnica' },
+  ];
+
+  tecnicosFiltrados: Array<{
+    id: string;
+    entidadId: string;
+    nombre: string;
+    cargo: string;
+  }> = [];
+
+  selectedEntidadNombre = '';
+  selectedTecnicoNombre = '';
+
+  readonly sections: FieldSectionConfig[] = [
+    {
+      id: 'identificacion',
+      title: 'Identificación',
+      description: 'Define el tipo de identificación y habilita los campos relacionados.',
+    },
+    {
+      id: 'operador',
+      title: 'Información del operador',
+      description: 'Datos principales del operador que solicita el servicio.',
+    },
+    {
+      id: 'ubicacion',
+      title: 'Ubicación',
+      description: 'Coordenadas geográficas capturadas desde el mapa.',
+    },
+    {
+      id: 'horario',
+      title: 'Jornadas laborales',
+      description: 'Disponibilidad horaria del operador según el formulario.',
+    },
+    {
+      id: 'contacto',
+      title: 'Contacto del caso',
+      description: 'Información adicional para denuncias o seguimiento.',
+    },
+    {
+      id: 'observaciones',
+      title: 'Observaciones',
+      description: 'Comentarios finales antes del envío.',
+    },
+  ];
 
   readonly terminosCondiciones = [
     'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
@@ -50,26 +116,16 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     'Los resultados obtenidos podrán utilizarse para elaboración de informes técnicos cuando requiera la Secretaría de Ambiente.',
     'Los resultados de la red de monitoreo del recurso hídrico serán entregados hasta los primeros 15 días del siguiente mes del monitoreo.',
     'Si el plazo establecido para la entrega de los resultados coincide con fin de semana o feriado, los mismos se entregarán al siguiente día hábil.',
-    'En caso de que el cliente tenga algún reclamo o queja respecto los servicios brindados por IAM-Q, podrá emitir la misma al laboratorio IAM-Q siguiendo lo dispuesto en el procedimiento PG/IAM-Q/11 Quejas. El mismo es difundido al cliente y además está disponible en el formulario DC-MC-05 Encuesta de Servicios IAM-Q y en las instalaciones del Laboratorio IAM-Q para cuando cualquier parte interesada lo solicite.',
+    'En caso de que el cliente tenga algún reclamo o queja respecto los servicios brindados por IAM-Q, podrá emitir la misma al laboratorio IAM-Q siguiendo lo dispuesto en el procedimiento PG/IAM-Q/11 Quejas.',
   ];
 
   readonly acuerdoConfidencialidad = `OBJETO.-
 El presente acuerdo tiene por objeto establecer con el cliente, la manera en la que el laboratorio IAM-Q maneja la información obtenida o creada durante la realización de sus actividades, en el servicio solicitado por el cliente.
 
-El laboratorio IAM-Q al ser parte de una entidad del sector público, está obligado a acatar las disposiciones establecidas en la Ley Orgánica de Transparencia y Acceso a La Información, con respecto a la información obtenida o creada durante la realización de sus actividades. La misma que establece:
-
-5. Información Confidencial: Información o documentación, en cualquier formato, final o preparatoria, haya sido o no generada por el sujeto obligado, derivada de los derechos personalísimos y fundamentales, y requiere expresa autorización de su titular para su divulgación, que contiene datos que al revelarse, pudiesen dañar los siguientes intereses privados: a) El derecho a la privacidad, incluyendo privacidad relacionada a la vida, la salud o la seguridad, así como el derecho al honor y la propia imagen; b) Los datos personales cuya difusión requiera el consentimiento de sus titulares y deberán ser tratados según lo dispuesto en la Ley Orgánica de Protección de Datos Personales; c) Los intereses comerciales y económicos legítimos; y, d) Las patentes, derechos de autor y secretos comerciales. (Congreso Nacional del Ecuador, 2023:7)
-
-6. Información Pública: Todo tipo de dato en documentos de cualquier formato, final o preparatoria, haya sido o no generada por el sujeto obligado, que se encuentre en poder de los sujetos obligados por esta Ley, contenidos, creados u obtenidos por ellos, que se encuentren bajo su responsabilidad y custodio o que se hayan producido con recursos del Estado. (Congreso Nacional del Ecuador, 2023:7)
-
-7. Información Reservada: Información o documentación, final o preparatoria, haya sido o no generada por el sujeto obligado, que requiere de forma excepcional limitación en su conocimiento y distribución, de acuerdo a los criterios expresamente establecidos en la ley, y siempre que no sea posible su publicidad bajo un procedimiento de disociación, por existir un riesgo claro, probable y específico de daño a intereses públicos conforme a los requisitos contemplados en esta Ley. No existirá reserva de información en los casos expresamente establecidos en la Constitución de la República del Ecuador y la ley. (Congreso Nacional del Ecuador, 2023:7)
-
-Artículo 32.- Solicitud y Contenido. La solicitud de información puede ser presentada por medio físico o electrónico y deberá contener lo siguiente: 1. Identificación de la persona solicitante; 2. Información de contacto para recibir notificaciones; 3. Descripción precisa de la información solicitada; y, 4. El solicitante deberá especificar en su petición, el tipo de formato físico o digital, en el que desea que se le haga la entrega de la información solicitada. (Congreso Nacional del Ecuador, 2023:25)
-
-De igual manera, la información acerca de la cliente obtenida de fuentes diferentes al cliente seguirá lo dispuesto por la Ley Orgánica de Transparencia y Acceso a La Información.
+El laboratorio IAM-Q al ser parte de una entidad del sector público, está obligado a acatar las disposiciones establecidas en la Ley Orgánica de Transparencia y Acceso a La Información, con respecto a la información obtenida o creada durante la realización de sus actividades.
 
 Además, cuando el laboratorio sea requerido por ley o autorizado por las disposiciones contractuales, para revelar información confidencial, notificará mediante memorando u oficio al cliente o a la persona interesada la información proporcionada, salvo que esté prohibido por ley.`;
-  
+
   selectedScheduleIndexes = new Set<number>();
   savedElaboradoPor = '';
   fechaSolicitud = '';
@@ -101,33 +157,23 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
   ];
 
   ensayosMuestreo = [
-    { activo: false, producto: 'AGUAS SUPERFICIALES', parametro: 'SÓLIDOS SUSPENDIDOS TOTALES', metodoInterno: 'PEE/IAM-Q/42', metodoReferencia: 'NTE INEN ISO 5667-1 | UNE EN ISO 5667-6 | UNE EN ISO 5667-14' },
+    {
+      activo: false,
+      producto: 'AGUAS SUPERFICIALES',
+      parametro: 'SÓLIDOS SUSPENDIDOS TOTALES',
+      metodoInterno: 'PEE/IAM-Q/42',
+      metodoReferencia: 'NTE INEN ISO 5667-1 | UNE EN ISO 5667-6 | UNE EN ISO 5667-14',
+    },
   ];
 
   ensayosResiduales = [
     { activo: false, ensayo: 'DEMANDA QUÍMICA DE OXÍGENO', identificacion: 'DQO', metodoInterno: 'PEE/IAM-Q/03', metodoReferencia: 'APHA 5220 C', unidad: 'mg/L', naturaleza: 'Laboratorio' },
     { activo: false, ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES', identificacion: 'SST', metodoInterno: 'PEE/IAM-Q/02', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L', naturaleza: 'Laboratorio' },
-    { activo: false, ensayo: 'SÓLIDOS TOTALES*', identificacion: 'ST', metodoInterno: '', metodoReferencia: 'APHA 2540 B', unidad: 'mg/L', naturaleza: 'Laboratorio' },
-    { activo: false, ensayo: 'SÓLIDOS DISUELTOS TOTALES*', identificacion: 'STD', metodoInterno: 'PEE/IAM-Q/14', metodoReferencia: 'APHA 2540 C', unidad: 'mg/L', naturaleza: 'Laboratorio' },
-    { activo: false, ensayo: 'SÓLIDOS SEDIMENTABLES*', identificacion: 'SS', metodoInterno: '', metodoReferencia: 'APHA 2540 F', unidad: 'ml/L', naturaleza: 'Laboratorio' },
-    { activo: false, ensayo: 'CONDUCTIVIDAD ELÉCTRICA*', identificacion: 'CE', metodoInterno: 'PEE/IAM-Q/15', metodoReferencia: 'APHA 2510', unidad: 'Us/cm', naturaleza: 'In situ' },
-    { activo: false, ensayo: 'COLOR*', identificacion: 'C', metodoInterno: '', metodoReferencia: 'APHA 2120', unidad: 'Unit Pt-Co', naturaleza: 'Laboratorio' },
-    { activo: false, ensayo: 'TEMPERATURA', identificacion: 'T', metodoInterno: 'PEE/IAM-Q/04', metodoReferencia: 'APHA 2550 B', unidad: '°C', naturaleza: 'In situ' },
-    { activo: false, ensayo: 'SULFATOS', identificacion: 'SO42-', metodoInterno: 'PEE/IAM-Q/06', metodoReferencia: 'HACH 8051', unidad: 'mg/L', naturaleza: 'Laboratorio' },
-    { activo: false, ensayo: 'ACEITES Y GRASAS', identificacion: '-', metodoInterno: 'PEE/IAM-Q/05', metodoReferencia: 'EPA METHOD 1664', unidad: 'mg/L', naturaleza: 'Laboratorio' },
-    { activo: false, ensayo: 'TURBIDEZ*', identificacion: '-', metodoInterno: 'PEE/IAM-Q/31', metodoReferencia: 'SM 2130 B', unidad: 'mg/L', naturaleza: 'Laboratorio' },
-    { activo: false, ensayo: 'OXÍGENO DISUELTO*', identificacion: 'O', metodoInterno: 'PEE/IAM-Q/44', metodoReferencia: 'SM 4500-O H', unidad: 'mg/L', naturaleza: 'In situ' },
-    { activo: false, ensayo: 'NITRITOS*', identificacion: 'NO2-', metodoInterno: '', metodoReferencia: 'APHA 4110 B', unidad: 'mg/L', naturaleza: 'Laboratorio' },
-    { activo: false, ensayo: 'NITRATOS*', identificacion: 'NO3-', metodoInterno: '', metodoReferencia: 'APHA 4110 B', unidad: 'mg/L', naturaleza: 'Laboratorio' },
-    { activo: false, ensayo: 'SURFACTANTES ANIÓNICOS*', identificacion: 'MBAS', metodoInterno: 'PEE/IAM-Q/46', metodoReferencia: 'TNTplus 874', unidad: 'mg/L', naturaleza: 'Laboratorio' },
   ];
 
   ensayosAire = [
     { activo: false, ensayo: 'MONÓXIDO DE CARBONO', identificacion: 'CO', metodoInterno: 'PEE/IAM-Q/07', metodoReferencia: 'EPA CTM-030', unidad: 'ppm / mg/Nm³*' },
     { activo: false, ensayo: 'DIÓXIDO DE AZUFRE', identificacion: 'SO2', metodoInterno: 'PEE/IAM-Q/07', metodoReferencia: 'EPA CTM-030', unidad: 'ppm / mg/Nm³*' },
-    { activo: false, ensayo: 'ÓXIDOS DE NITRÓGENO', identificacion: 'NOx', metodoInterno: 'PEE/IAM-Q/07', metodoReferencia: 'EPA CTM-030', unidad: 'ppm / mg/Nm³*' },
-    { activo: false, ensayo: 'OXÍGENO', identificacion: 'O2', metodoInterno: 'PEE/IAM-Q/07', metodoReferencia: 'EPA CTM-030', unidad: 'ppm / mg/Nm³*' },
-    { activo: false, ensayo: 'MATERIAL PARTICULADO*', identificacion: 'MP', metodoInterno: 'PEE/IAM-Q/14', metodoReferencia: 'EPA 60, Apéndice A, Método 5', unidad: 'ppm / mg/Nm³*' },
   ];
 
   ensayosRuido = [
@@ -137,8 +183,6 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
   ruidoInfo = {
     tipoUsoSueloOperador: '',
     tipoUsoSueloPCA: '',
-    ruidoDiurno: '',
-    ruidoNocturno: '',
     direccionPCA: '',
     telefonoPCA: '',
   };
@@ -148,55 +192,18 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     'Las muestras serán descartadas del laboratorio en 28 días calendario después de recibidas.',
     'Los resultados serán entregados en 15 días calendario a partir del ingreso de las muestras al Laboratorio IAM-Q.',
     'Los resultados obtenidos podrán utilizarse para elaboración de informes técnicos cuando requiera la Secretaría de Ambiente.',
-    'Los resultados de la red de monitoreo del recurso hídrico serán entregados hasta los primeros 15 días del siguiente mes del monitoreo.',
-    'Si el plazo establecido para la entrega de los resultados coincide con fin de semana o feriado, los mismos se entregarán al siguiente día hábil.',
   ];
 
   readonly notasAire = [
     'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
     'Los resultados serán entregados en 10 días calendario después de realizado el monitoreo.',
     'Los resultados obtenidos podrán utilizarse para la elaboración de Informes Técnicos cuando requiera la Secretaría de Ambiente.',
-    'Si el plazo establecido para la entrega de los resultados coincide con fin de semana o feriado, los mismos se entregarán al siguiente día hábil.',
   ];
 
   readonly notasRuido = [
     'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
     'Los resultados serán entregados en 10 días calendario después de realizado el monitoreo.',
     'Los resultados obtenidos podrán utilizarse para la elaboración de Informes Técnicos cuando requiera la Secretaría de Ambiente.',
-    'Si el plazo establecido para la entrega de los resultados coincide con fin de semana o feriado, los mismos se entregarán al siguiente día hábil.',
-  ];
-
-  readonly sections: FieldSectionConfig[] = [
-    {
-      id: 'identificacion',
-      title: 'Identificación',
-      description: 'Define el tipo de identificación y habilita los campos relacionados.',
-    },
-    {
-      id: 'operador',
-      title: 'Información del operador',
-      description: 'Datos principales del operador que solicita el servicio.',
-    },
-    {
-      id: 'ubicacion',
-      title: 'Ubicación',
-      description: 'Coordenadas geográficas capturadas desde el mapa.',
-    },
-    {
-      id: 'horario',
-      title: 'Jornadas laborales',
-      description: 'Disponibilidad horaria del operador según el formulario.',
-    },
-    {
-      id: 'contacto',
-      title: 'Contacto del caso',
-      description: 'Información adicional para denuncias o seguimiento.',
-    },
-    {
-      id: 'observaciones',
-      title: 'Observaciones',
-      description: 'Comentarios finales antes del envío a la API.',
-    },
   ];
 
   private map: L.Map | null = null;
@@ -209,23 +216,28 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     private authService: AuthService,
     private zone: NgZone,
     private router: Router,
-    private route: ActivatedRoute, // <-- AÑADIDO: Para leer el ID de la URL
+    private route: ActivatedRoute,
     private toastr: ToastrAlertService,
   ) {
     this.form = this.fb.group({
+      entidad_id: this.fb.control('', Validators.required),
+      tecnico_id: this.fb.control('', Validators.required),
+
       jefatura_display: this.fb.control({ value: '', disabled: true }),
       solicitado_por: this.fb.control({ value: '', disabled: true }),
       cargo_usuario: this.fb.control({ value: '', disabled: true }),
+
+      motivo_flujo: this.fb.control<MotivoFlujo>('', Validators.required),
       val_pasaporte: this.fb.control(''),
     });
   }
 
-  ngOnInit() {
-    // <-- AÑADIDO: Obtenemos el ID de la ruta (o usamos 1 por defecto para pruebas si no hay ruta aún)
-    const idTipoFormulario = this.route.snapshot.paramMap.get('idTipoFrmulario') || '380'; 
+  ngOnInit(): void {
+    this.setupStepOneLogic();
 
-    this.service
-      .getFormulario(idTipoFormulario) // <-- AÑADIDO: Le pasamos el ID al servicio modificado
+    const idTipoFormulario = this.route.snapshot.paramMap.get('idTipoFrmulario') || '380';
+
+    this.service.getFormulario(idTipoFormulario)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (formulario) => {
@@ -235,18 +247,19 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
             .map((pregunta) => this.toFieldConfig(pregunta));
 
           this.generateControls();
-          this.setUserDataFromLogin();
+          this.setUserDataFallback();
           this.applyDependencyLogic();
           this.loading = false;
         },
         error: (err) => {
           console.error('Error al cargar formulario', err);
           this.loading = false;
+          this.toastr.showError('No se pudo cargar el formulario', 'Error');
         },
       });
   }
 
-  ngAfterViewChecked() {
+  ngAfterViewChecked(): void {
     if (this.showMapModal && !this.map) {
       this.initMap();
     }
@@ -254,10 +267,6 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
 
   get formularioTitulo(): string {
     return this.formulario?.tipo_formulario ?? 'Solicitud de trabajo - Ensayos';
-  }
-
-  get sectionsWithVisibleFields() {
-    return this.sections.filter((section) => this.getVisibleFields(section.id).length > 0);
   }
 
   get isPasaporteSelected(): boolean {
@@ -269,12 +278,35 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     );
   }
 
+  get isStepOneReady(): boolean {
+    return !!this.form.get('entidad_id')?.value && !!this.form.get('tecnico_id')?.value;
+  }
+
+  get motivoFlujo(): MotivoFlujo {
+    return (this.form.get('motivo_flujo')?.value || '') as MotivoFlujo;
+  }
+
   getFieldControl(key: string): FormControl {
     return this.form.get(key) as FormControl;
   }
 
-  getVisibleFields(sectionId: FieldSectionId): FieldConfig[] {
-    return this.fields.filter((field) => field.section === sectionId && !field.hidden);
+  getSectionFields(sectionId: FieldSectionId): FieldConfig[] {
+    return this.fields.filter(
+      (field) => field.section === sectionId && !field.hidden && !this.isMotivoField(field),
+    );
+  }
+
+  getMotivoBaseFields(): FieldConfig[] {
+    return this.fields.filter(
+      (field) => !field.hidden && this.isMotivoField(field) && !this.isMotivoSpecificField(field),
+    );
+  }
+
+  getMotivoSpecificFields(flow: MotivoFlujo): FieldConfig[] {
+    if (!flow) return [];
+    return this.fields.filter(
+      (field) => !field.hidden && this.matchesMotivoFlow(field, flow),
+    );
   }
 
   getFieldRows(field: FieldConfig): number {
@@ -293,14 +325,8 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     if (field.integrations.civil) integrations.push('Registro civil');
     if (field.integrations.iess) integrations.push('Consulta IESS');
 
-    if (integrations.length > 0) {
-      return integrations.join(' | ');
-    }
-
-    if (field.maxLength) {
-      return `Max ${field.maxLength} caracteres`;
-    }
-
+    if (integrations.length > 0) return integrations.join(' | ');
+    if (field.maxLength) return `Max ${field.maxLength} caracteres`;
     return null;
   }
 
@@ -317,7 +343,6 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     if (control.hasError('maxlength')) return `Máximo ${field.maxLength} caracteres.`;
     if (control.hasError('cedulaInvalida')) return control.getError('cedulaInvalida');
     if (control.hasError('rucInvalido')) return control.getError('rucInvalido');
-
     return 'Revise el valor ingresado.';
   }
 
@@ -326,7 +351,7 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     return typeof value === 'string' ? value.length : 0;
   }
 
-  toggleScheduleItem(index: number) {
+  toggleScheduleItem(index: number): void {
     if (this.selectedScheduleIndexes.has(index)) {
       this.selectedScheduleIndexes.delete(index);
     } else {
@@ -338,11 +363,49 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     return this.selectedScheduleIndexes.has(index);
   }
 
-  openMap() {
+  goToStep(step: number): void {
+    if (step < 0 || step > 3) return;
+
+    if (step === 1 && !this.isStepOneReady) {
+      this.form.get('entidad_id')?.markAsTouched();
+      this.form.get('tecnico_id')?.markAsTouched();
+      return;
+    }
+
+    if (step > this.currentStep + 1) return;
+    this.currentStep = step;
+  }
+
+  goNextStep(): void {
+    if (this.currentStep === 0) {
+      if (!this.isStepOneReady) {
+        this.form.get('entidad_id')?.markAsTouched();
+        this.form.get('tecnico_id')?.markAsTouched();
+        return;
+      }
+      this.currentStep = 1;
+      return;
+    }
+
+    if (this.currentStep === 1) {
+      this.submit();
+      return;
+    }
+
+    if (this.currentStep === 2) {
+      this.guardarCatalogo();
+    }
+  }
+
+  goPrevStep(): void {
+    if (this.currentStep > 0) this.currentStep--;
+  }
+
+  openMap(): void {
     this.showMapModal = true;
   }
 
-  closeMap() {
+  closeMap(): void {
     this.showMapModal = false;
     if (this.map) {
       this.map.remove();
@@ -351,121 +414,193 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     this.marker = null;
   }
 
-  submit() {
+  submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
     const payload = this.buildPayload();
+
     const entry = {
       ...payload,
       guardado_en: new Date().toISOString(),
+      metadata_inicio: {
+        entidad_id: this.form.get('entidad_id')?.value,
+        entidad_nombre: this.selectedEntidadNombre,
+        tecnico_id: this.form.get('tecnico_id')?.value,
+        tecnico_nombre: this.selectedTecnicoNombre,
+        cargo: this.form.getRawValue().cargo_usuario,
+      },
     };
 
-    localStorage.setItem('lims_solicitud_payload', JSON.stringify(entry));
-    this.toastr.showSuccess('Solicitud guardada correctamente', 'Éxito');
-    console.log('Solicitud guardada en localStorage:', entry);
+    this.service.saveSolicitud(entry).subscribe({
+      next: () => {
+        this.savedElaboradoPor = this.form.getRawValue().solicitado_por || 'Usuario';
+        this.fechaSolicitud = new Date().toLocaleDateString('es-EC', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
 
-    this.savedElaboradoPor = this.form.getRawValue().solicitado_por || 'Usuario';
-    this.fechaSolicitud = new Date().toLocaleDateString('es-EC', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
+        this.toastr.showSuccess('Formulario guardado correctamente', 'Éxito');
+        this.currentStep = 2;
+      },
+      error: (err) => {
+        console.error('Error al guardar formulario', err);
+        this.toastr.showError('No se pudo guardar el formulario', 'Error');
+      },
     });
-    this.showCatalogo = true;
   }
 
-  regresarAlFormulario() {
-    this.showCatalogo = false;
-    this.form.reset();
-    this.setUserDataFromLogin();
-    this.selectedScheduleIndexes.clear();
-    this.catalogoServicios.forEach(g => {
-      g.collapsed = false;
-      g.servicios.forEach(s => (s.activo = false));
-    });
-    this.ensayosMuestreo.forEach(f => (f.activo = false));
-    this.ensayosResiduales.forEach(f => (f.activo = false));
-    this.ensayosAire.forEach(f => (f.activo = false));
-    this.ensayosRuido.forEach(f => (f.activo = false));
-    this.ruidoInfo = { tipoUsoSueloOperador: '', tipoUsoSueloPCA: '', ruidoDiurno: '', ruidoNocturno: '', direccionPCA: '', telefonoPCA: '' };
-    this.updateDependentFields();
+  guardarCatalogo(): void {
+    this.currentStep = 3;
+    this.showTerminosModal = true;
   }
 
-  toggleEnsayoMuestreo(idx: number) {
+  aceptarTerminos(): void {
+    this.showTerminosModal = false;
+    this.showConfidencialidadModal = true;
+  }
+
+  aceptarConfidencialidad(): void {
+    this.showConfidencialidadModal = false;
+    this.ejecutarGuardado();
+  }
+
+  toggleEnsayoMuestreo(idx: number): void {
     this.ensayosMuestreo[idx].activo = !this.ensayosMuestreo[idx].activo;
   }
 
-  toggleEnsayoResidual(idx: number) {
+  toggleEnsayoResidual(idx: number): void {
     this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo;
   }
 
-  toggleEnsayoAire(idx: number) {
+  toggleEnsayoAire(idx: number): void {
     this.ensayosAire[idx].activo = !this.ensayosAire[idx].activo;
   }
 
-  toggleEnsayoRuido(idx: number) {
+  toggleEnsayoRuido(idx: number): void {
     this.ensayosRuido[idx].activo = !this.ensayosRuido[idx].activo;
   }
 
-  toggleMatrizCollapse(idx: number) {
+  toggleMatrizCollapse(idx: number): void {
     this.catalogoServicios[idx].collapsed = !this.catalogoServicios[idx].collapsed;
   }
 
-  toggleServicio(matrizIdx: number, servicioIdx: number) {
+  toggleServicio(matrizIdx: number, servicioIdx: number): void {
     const servicio = this.catalogoServicios[matrizIdx].servicios[servicioIdx];
     servicio.activo = !servicio.activo;
     if (!servicio.activo) servicio.cantidad = null;
   }
 
-  guardarCatalogo() {
-    this.showTerminosModal = true;
-  }
+  private ejecutarGuardado(): void {
+    const existing = this.service.getSolicitudLocal<any>() || {};
 
-  aceptarTerminos() {
-    this.showTerminosModal = false;
-    this.showConfidencialidadModal = true;
-  }
-
-  aceptarConfidencialidad() {
-    this.showConfidencialidadModal = false;
-    this.ejecutarGuardado();
-  }
-
-  private ejecutarGuardado() {
-    const existing = JSON.parse(localStorage.getItem('lims_solicitud_payload') || '{}');
-    existing.catalogo_servicios = this.catalogoServicios.flatMap(g =>
+    existing.catalogo_servicios = this.catalogoServicios.flatMap((g) =>
       g.servicios
-        .filter(s => s.activo)
-        .map(s => ({ matriz: g.matriz, servicio: s.nombre, aplicable: s.aplicable, cantidad: s.cantidad })),
+        .filter((s) => s.activo)
+        .map((s) => ({
+          matriz: g.matriz,
+          servicio: s.nombre,
+          aplicable: s.aplicable,
+          cantidad: s.cantidad,
+        })),
     );
-    localStorage.setItem('lims_solicitud_payload', JSON.stringify(existing));
-    this.toastr.showSuccess('Catálogo guardado correctamente', 'Éxito');
-    this.router.navigate(['/lista-solicitudes']);
-  }
 
-  goBack() {
-    this.router.navigate(['/lista-solicitudes']);
-  }
+    existing.ensayos = {
+      agua_muestreo: this.ensayosMuestreo.filter((f) => f.activo),
+      agua_residuales: this.ensayosResiduales.filter((f) => f.activo),
+      aire: this.ensayosAire.filter((f) => f.activo),
+      ruido: this.ensayosRuido.filter((f) => f.activo),
+    };
 
-  private setUserDataFromLogin() {
-    const user = this.authService.getCurrentUser();
-    if (!user) return;
+    existing.ruido_info = this.ruidoInfo;
 
-    this.form.patchValue({
-      jefatura_display: user.jefatura || 'N/A',
-      solicitado_por: user.name || 'Usuario',
-      cargo_usuario: user.cargo || 'N/A',
+    existing.acuerdos = {
+      terminos_aceptados: true,
+      confidencialidad_aceptada: true,
+      fecha_aceptacion: new Date().toISOString(),
+    };
+
+    existing.metadata = {
+      numero_solicitud: this.numeroSolicitud,
+      fecha_solicitud: this.fechaSolicitud,
+      elaborado_por: this.savedElaboradoPor,
+    };
+
+    this.service.saveSolicitud(existing).subscribe({
+      next: () => {
+        this.toastr.showSuccess('Solicitud guardada correctamente', 'Éxito');
+        this.router.navigate(['/lista-solicitudes']);
+      },
+      error: (err) => {
+        console.error('Error al guardar solicitud', err);
+        this.toastr.showError('No se pudo guardar la solicitud', 'Error');
+      },
     });
   }
 
-  private generateControls() {
+  private setupStepOneLogic(): void {
+    this.form.get('entidad_id')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((entidadId: string) => {
+        this.tecnicosFiltrados = this.tecnicosMock.filter((t) => t.entidadId === entidadId);
+
+        const entidad = this.entidadesMock.find((e) => e.id === entidadId);
+        this.selectedEntidadNombre = entidad?.nombre || '';
+
+        this.form.patchValue(
+          {
+            tecnico_id: '',
+            solicitado_por: '',
+            cargo_usuario: '',
+            jefatura_display: this.selectedEntidadNombre,
+          },
+          { emitEvent: false },
+        );
+
+        this.selectedTecnicoNombre = '';
+      });
+
+    this.form.get('tecnico_id')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((tecnicoId: string) => {
+        const tecnico = this.tecnicosMock.find((t) => t.id === tecnicoId);
+
+        this.selectedTecnicoNombre = tecnico?.nombre || '';
+
+        this.form.patchValue(
+          {
+            solicitado_por: tecnico?.nombre || '',
+            cargo_usuario: tecnico?.cargo || '',
+          },
+          { emitEvent: false },
+        );
+      });
+  }
+
+  private setUserDataFallback(): void {
+    const user = this.authService.getCurrentUser();
+    if (!user) return;
+
+    if (!this.form.getRawValue().solicitado_por) {
+      this.form.patchValue({ solicitado_por: user.name || 'Usuario' });
+    }
+
+    if (!this.form.getRawValue().cargo_usuario) {
+      this.form.patchValue({ cargo_usuario: user.cargo || 'N/A' });
+    }
+
+    if (!this.form.getRawValue().jefatura_display) {
+      this.form.patchValue({ jefatura_display: user.jefatura || 'N/A' });
+    }
+  }
+
+  private generateControls(): void {
     for (const field of this.fields) {
       if (this.form.contains(field.key)) continue;
-
-      this.form.addControl(
-        field.key,
-        this.fb.control('', this.buildValidators(field, field.hidden)),
-      );
+      this.form.addControl(field.key, this.fb.control('', this.buildValidators(field, field.hidden)));
     }
   }
 
@@ -490,7 +625,7 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     return validators;
   }
 
-  private applyDependencyLogic() {
+  private applyDependencyLogic(): void {
     this.updateDependentFields();
 
     this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
@@ -498,16 +633,14 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     });
   }
 
-  private updateDependentFields() {
+  private updateDependentFields(): void {
     for (const field of this.fields) {
       if (!field.dependsOn) {
         this.syncFieldState(field, field.source.hidden);
         continue;
       }
 
-      const parentField = this.fields.find(
-        (candidate) => candidate.id === field.dependsOn?.fieldId,
-      );
+      const parentField = this.fields.find((candidate) => candidate.id === field.dependsOn?.fieldId);
       const parentValue = parentField ? this.getFieldControl(parentField.key)?.value : null;
       const isVisible = String(parentValue ?? '') === field.dependsOn.triggerValue;
 
@@ -524,7 +657,7 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     pasaporteControl?.updateValueAndValidity({ emitEvent: false });
   }
 
-  private syncFieldState(field: FieldConfig, hidden: boolean) {
+  private syncFieldState(field: FieldConfig, hidden: boolean): void {
     field.hidden = hidden;
 
     const control = this.getFieldControl(field.key);
@@ -545,16 +678,16 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
       order: pregunta.orden,
       controlType: this.resolveControlType(pregunta),
       section: this.resolveSection(pregunta),
-      placeholder: pregunta.ayuda ?? '',
+      placeholder: typeof pregunta.ayuda === 'string' ? pregunta.ayuda : '',
       required: pregunta.obligatorio,
       readonly: pregunta.readonly,
       hidden: pregunta.hidden,
-      maxLength: pregunta.num_caracter,
+      maxLength: typeof pregunta.num_caracter === 'number' ? pregunta.num_caracter : null,
       options: pregunta.catalogos ?? [],
       scheduleItems: pregunta.jornada_laboral_item ?? [],
       dependsOn: pregunta.atributo_id
         ? {
-            fieldId: pregunta.atributo_id,
+            fieldId: String(pregunta.atributo_id),
             triggerValue: String(pregunta.item_catalogo_id ?? ''),
           }
         : undefined,
@@ -571,7 +704,9 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     if (pregunta.nombre === 'val_lati' || pregunta.nombre === 'val_long') return 'coordinates';
     if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
     if (pregunta.tipo_respuesta === 'Selección Mutiple') return 'schedule';
-    if (pregunta.nombre === 'val_obs' || (pregunta.num_caracter ?? 0) > 200) return 'textarea';
+    if (pregunta.nombre === 'val_obs' || (typeof pregunta.num_caracter === 'number' && pregunta.num_caracter > 200)) {
+      return 'textarea';
+    }
     return 'text';
   }
 
@@ -584,13 +719,29 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     return 'operador';
   }
 
-  private initMap() {
+  private isMotivoField(field: FieldConfig): boolean {
+    const key = field.key?.toLowerCase() || '';
+    const label = field.label?.toLowerCase() || '';
+    return key.includes('motivo') || label.includes('motivo');
+  }
+
+  private isMotivoSpecificField(field: FieldConfig): boolean {
+    const text = `${field.key} ${field.label}`.toLowerCase();
+    return text.includes('seguimiento') || text.includes('denuncia') || text.includes('licenciamiento');
+  }
+
+  private matchesMotivoFlow(field: FieldConfig, flow: MotivoFlujo): boolean {
+    const text = `${field.key} ${field.label}`.toLowerCase();
+    return text.includes(flow);
+  }
+
+  private initMap(): void {
     this.zone.runOutsideAngular(() => {
       const latControl = this.getFieldControl('val_lati');
       const longControl = this.getFieldControl('val_long');
 
-      const lat = Number(latControl.value) || -0.1807;
-      const lng = Number(longControl.value) || -78.4678;
+      const lat = Number(latControl?.value) || -0.1807;
+      const lng = Number(longControl?.value) || -78.4678;
 
       this.map = L.map('map-container').setView([lat, lng], 14);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
@@ -610,7 +761,7 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     });
   }
 
-  private updateCoords(lat: number, lng: number) {
+  private updateCoords(lat: number, lng: number): void {
     this.zone.run(() => {
       this.form.patchValue({
         val_lati: lat.toFixed(6),
@@ -647,7 +798,7 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     return typeof value === 'string' ? value.trim() : value;
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     this.closeMap();
     this.destroy$.next();
     this.destroy$.complete();

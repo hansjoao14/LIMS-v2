@@ -1,0 +1,41 @@
+<div class="lims-stepper">
+  <div class="lims-stepper__track">
+    @for (step of steps; track trackByStep($index, step); let i = $index) {
+      <div class="lims-stepper__item">
+        <button
+          type="button"
+          class="lims-stepper__button"
+          [class.active]="isActive(i)"
+          [class.completed]="isCompleted(i)"
+          [class.pending]="isPending(i)"
+          [class.disabled]="isStepDisabled(step, i)"
+          [disabled]="isStepDisabled(step, i)"
+          (click)="goToStep(i)"
+        >
+          <span class="lims-stepper__circle">
+            @if (isCompleted(i)) {
+              <span>✓</span>
+            } @else {
+              <span>{{ i + 1 }}</span>
+            }
+          </span>
+
+          <span class="lims-stepper__content">
+            <span class="lims-stepper__label">{{ step.label }}</span>
+
+            @if (step.description) {
+              <span class="lims-stepper__description">{{ step.description }}</span>
+            }
+          </span>
+        </button>
+
+        @if (i < steps.length - 1) {
+          <div
+            class="lims-stepper__line"
+            [class.completed]="isCompleted(i)"
+          ></div>
+        }
+      </div>
+    }
+  </div>
+</div>

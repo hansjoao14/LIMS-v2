@@ -1,10 +1,8 @@
-/* Asegura que el contenedor del mapa tenga dimensiones */
 #map-container {
   background: #f1f5f9;
   z-index: 10;
 }
 
-/* Fix para iconos de Leaflet si no cargan */
 :host ::ng-deep .leaflet-pane {
   z-index: 0 !important;
 }
@@ -14,22 +12,12 @@
   z-index: 400 !important;
 }
 
-/* Estilo para los inputs de coordenadas readonly */
 input[readonly] {
   cursor: default;
+  background-color: #f9fafb;
   color: #1e3a8a;
 }
 
-#map-container {
-  background: #f1f5f9;
-  z-index: 10;
-}
-
-:host ::ng-deep .leaflet-pane {
-  z-index: 0 !important;
-}
-
-/* Animaciones suaves */
 .animate-in {
   animation: fadeIn 0.3s ease-out;
 }
@@ -45,27 +33,17 @@ input[readonly] {
   }
 }
 
-/* Estilo para los inputs de lectura */
-input[readonly] {
-  background-color: #f9fafb;
-  color: #1e3a8a;
-}
-
-/* Scrollbar para la tabla de jornadas */
 .max-h-\[300px\]::-webkit-scrollbar {
   width: 6px;
 }
+
 .max-h-\[300px\]::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 10px;
 }
+
 .max-h-\[300px\]::-webkit-scrollbar-track {
   background: #f1f5f9;
-}
-
-/* Ajustes de Leaflet */
-#map-container {
-  z-index: 10;
 }
 
 input:focus,
