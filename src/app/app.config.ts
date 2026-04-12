@@ -1,12 +1,12 @@
 import { ApplicationConfig, inject, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { routes } from './app.routes';
 import { provideToastr } from 'ngx-toastr';
 import { registerLocaleData } from '@angular/common';
 import { environment } from '../environments/environment';
 import localeEsEc from '@angular/common/locales/es-EC';
-import { InMemoryCache, ApolloClientOptions } from '@apollo/client/core';
+import { InMemoryCache, ApolloClient } from '@apollo/client/core';
 import { HttpLink } from 'apollo-angular/http';
 import { provideApollo } from 'apollo-angular';
 import { provideHttpClient } from '@angular/common/http';
@@ -16,7 +16,7 @@ registerLocaleData(localeEsEc);
 // Se elimina el <any> para corregir el error de tipado
 export function apolloOptionsFactory(
   httpLink: HttpLink
-): ApolloClientOptions { 
+): ApolloClient.Options { 
   return {
     link: httpLink.create({ uri: environment.graphql }),
     cache: new InMemoryCache(),
@@ -31,7 +31,7 @@ export const appConfig: ApplicationConfig = {
   
     provideHttpClient(),
     provideRouter(routes),
-    provideAnimations(),
+    provideAnimationsAsync(),
     provideToastr({
       progressAnimation: 'increasing',
       timeOut: 5000,

@@ -10,7 +10,7 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router'; // <-- AÑADIDO: ActivatedRoute
 import { Subject, takeUntil } from 'rxjs';
 
 import * as L from 'leaflet';
@@ -26,172 +26,6 @@ import { AuthService } from '../auth/service/auth-service';
 import { ToastrAlertService } from '../../services/toastr.service';
 import { cedulaEcuatoriana, rucEcuatoriano } from '../../core/utils/ecuador-id.validators';
 
-/**
- * Componente para la gestión de solicitudes de trabajo en el laboratorio.
- * Maneja formularios dinámicos con validaciones, dependencias entre campos,
- * integración con mapas y gestión de datos del usuario autenticado.
- *
- * @standalone
- * @component
- */
-
-/**
- * Obtiene el control de formulario asociado a una clave específica.
- * @param key - La clave del campo en el formulario
- * @returns El FormControl correspondiente a la clave
- * @throws Si el control no existe en el formulario
- */
-
-/**
- * Obtiene los campos visibles para una sección específica del formulario.
- * @param sectionId - El identificador de la sección
- * @returns Array de campos configurados que pertenecen a la sección y no están ocultos
- */
-
-/**
- * Calcula el número de filas que debe tener un campo de texto según su tipo.
- * @param field - La configuración del campo
- * @returns Número de filas (4 para observaciones, 3 para otros)
- */
-
-/**
- * Determina el tipo de input HTML basado en la clave del campo.
- * @param field - La configuración del campo
- * @returns Tipo de input ('tel' para números/RUC/cédulas, 'text' por defecto)
- */
-
-/**
- * Genera el texto de ayuda o pista para un campo según sus integraciones y límites.
- * @param field - La configuración del campo
- * @returns Texto con servicios integrados o límite de caracteres, null si no aplica
- */
-
-/**
- * Valida si un campo está inválido y ha sido tocado o modificado.
- * @param field - La configuración del campo
- * @returns true si el campo es inválido y ha sido interactuado
- */
-
-/**
- * Obtiene el mensaje de error específico para un campo inválido.
- * @param field - La configuración del campo
- * @returns Mensaje de error descriptivo o null si no hay error
- */
-
-/**
- * Cuenta los caracteres actuales en el valor de un campo.
- * @param field - La configuración del campo
- * @returns Número de caracteres ingresados
- */
-
-/**
- * Abre el modal del mapa para captura de coordenadas geográficas.
- */
-
-/**
- * Cierra el modal del mapa y limpia los recursos asociados.
- */
-
-/**
- * Envía el formulario completo después de validar todos los campos requeridos.
- * Marca todos los campos como tocados si la validación falla.
- * Construye el payload y lo prepara para envío a la API.
- */
-
-/**
- * Asigna los datos del usuario autenticado a los campos correspondientes del formulario.
- * @private
- */
-
-/**
- * Genera dinámicamente los controles del formulario basados en los campos configurados.
- * Evita crear controles duplicados.
- * @private
- */
-
-/**
- * Construye el conjunto de validadores para un campo específico.
- * @private
- * @param field - La configuración del campo
- * @param isHidden - Indica si el campo está oculto
- * @returns Array de validadores correspondientes
- */
-
-/**
- * Aplica la lógica de dependencias entre campos y suscribe a cambios.
- * @private
- */
-
-/**
- * Actualiza el estado de visibilidad y validación de campos dependientes.
- * @private
- */
-
-/**
- * Sincroniza el estado de un campo (oculto, validadores, reset).
- * @private
- * @param field - La configuración del campo
- * @param hidden - Indica si el campo debe estar oculto
- */
-
-/**
- * Convierte una pregunta del API a configuración de campo del formulario.
- * @private
- * @param pregunta - La pregunta del formulario del servidor
- * @returns Configuración de campo procesada
- */
-
-/**
- * Resuelve el tipo de control más apropiado según las características de la pregunta.
- * @private
- * @param pregunta - La pregunta del servidor
- * @returns Tipo de control ('text', 'textarea', 'select', 'coordinates', 'schedule')
- */
-
-/**
- * Determina la sección a la que pertenece una pregunta según su nombre.
- * @private
- * @param pregunta - La pregunta del servidor
- * @returns Identificador de la sección correspondiente
- */
-
-/**
- * Inicializa el mapa interactivo usando Leaflet para captura de coordenadas.
- * Configura marcadores arrastrables y click para actualizar posición.
- * @private
- */
-
-/**
- * Actualiza los valores de latitud y longitud en el formulario.
- * @private
- * @param lat - Latitud capturada
- * @param lng - Longitud capturada
- */
-
-/**
- * Construye el objeto payload con los datos del formulario para enviar a la API.
- * @private
- * @returns Objeto con formulario_id, datos_solicitante, respuestas y jornadas_laborales
- */
-
-/**
- * Normaliza el valor de un control removiendo espacios en blanco si es texto.
- * @private
- * @param control - El control del formulario
- * @returns Valor normalizado
- */
-
-/**
- * Hook del ciclo de vida: Inicializa el componente cargando formulario y datos.
- */
-
-/**
- * Hook del ciclo de vida: Verifica si debe inicializar el mapa cuando es visible.
- */
-
-/**
- * Hook del ciclo de vida: Libera recursos y cancela suscripciones.
- */
 @Component({
   selector: 'app-solicitud-trabajo',
   standalone: true,
@@ -235,6 +69,7 @@ Artículo 32.- Solicitud y Contenido. La solicitud de información puede ser pre
 De igual manera, la información acerca de la cliente obtenida de fuentes diferentes al cliente seguirá lo dispuesto por la Ley Orgánica de Transparencia y Acceso a La Información.
 
 Además, cuando el laboratorio sea requerido por ley o autorizado por las disposiciones contractuales, para revelar información confidencial, notificará mediante memorando u oficio al cliente o a la persona interesada la información proporcionada, salvo que esté prohibido por ley.`;
+  
   selectedScheduleIndexes = new Set<number>();
   savedElaboradoPor = '';
   fechaSolicitud = '';
@@ -374,6 +209,7 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     private authService: AuthService,
     private zone: NgZone,
     private router: Router,
+    private route: ActivatedRoute, // <-- AÑADIDO: Para leer el ID de la URL
     private toastr: ToastrAlertService,
   ) {
     this.form = this.fb.group({
@@ -385,8 +221,11 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
   }
 
   ngOnInit() {
+    // <-- AÑADIDO: Obtenemos el ID de la ruta (o usamos 1 por defecto para pruebas si no hay ruta aún)
+    const idTipoFormulario = this.route.snapshot.paramMap.get('idTipoFrmulario') || '380'; 
+
     this.service
-      .getFormulario()
+      .getFormulario(idTipoFormulario) // <-- AÑADIDO: Le pasamos el ID al servicio modificado
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (formulario) => {
