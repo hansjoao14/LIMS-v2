@@ -1,0 +1,99 @@
+<div class="p-6 bg-slate-50 min-h-screen">
+  <div class="max-w-7xl mx-auto">
+    
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-blue-900 uppercase tracking-tight">Administración de Formularios LIMS</h1>
+        <p class="text-sm text-slate-500 mt-1">Gestione la configuración general, campos y reglas de validación de los formularios dinámicos.</p>
+      </div>
+      <button class="bg-[#1e3a8a] text-white px-6 py-2.5 rounded text-xs font-bold uppercase shadow-md hover:bg-blue-800 transition-colors flex items-center gap-2">
+        <span class="text-lg leading-none">+</span> Nuevo Formulario
+      </button>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+      
+      @if (loading) {
+        <div class="flex flex-col items-center justify-center p-24">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mb-4"></div>
+          <span class="text-sm font-bold text-blue-900 uppercase tracking-wide">Cargando base de datos...</span>
+        </div>
+      } @else {
+        
+        <div class="p-4 border-b border-slate-200 bg-white flex justify-between items-center">
+          <div class="relative w-80">
+            <input type="text" placeholder="Buscar formulario por nombre..." class="w-full border border-slate-300 rounded-md pl-10 pr-4 py-2 text-sm outline-none focus:border-blue-500 transition-colors">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <span class="text-xs font-bold text-slate-500 uppercase">{{ formularios.length }} Formularios encontrados</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-100 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                <th class="p-4 w-24">ID</th>
+                <th class="p-4">Nombre del Formulario</th>
+                <th class="p-4">Tipo de Formulario</th>
+                <th class="p-4 text-center">Campos Parametrizados</th>
+                <th class="p-4 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-sm">
+              
+              @for (form of formularios; track form.formulario_id) {
+                <tr class="hover:bg-blue-50/50 transition-colors group">
+                  
+                  <td class="p-4 font-mono text-xs text-slate-500">
+                    {{ form.formulario_id || form.tipo_formulario_id }}
+                  </td>
+                  
+                  <td class="p-4">
+                    <p class="font-bold text-slate-800">{{ form.formulario_nombre }}</p>
+                    <p class="text-[10px] text-slate-500 uppercase mt-0.5">Versión activa</p>
+                  </td>
+                  
+                  <td class="p-4">
+                    <span class="bg-blue-50 text-blue-800 border border-blue-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide">
+                      {{ form.tipo_formulario }}
+                    </span>
+                  </td>
+                  
+                  <td class="p-4 text-center">
+                    <div class="inline-flex flex-col items-center justify-center">
+                      <span class="font-bold text-slate-800 text-base">{{ form.preguntas?.length || 0 }}</span>
+                      <span class="text-[9px] text-slate-500 uppercase tracking-wider">Preguntas</span>
+                    </div>
+                  </td>
+                  
+                  <td class="p-4 text-right">
+                    <button 
+                      (click)="configurarFormulario(form.formulario_id)"
+                      class="text-[#1e3a8a] hover:text-white font-bold text-[11px] uppercase px-4 py-2 border border-[#1e3a8a] hover:bg-[#1e3a8a] rounded transition-all shadow-sm">
+                      Configurar Esquema
+                    </button>
+                  </td>
+                  
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="p-12 text-center">
+                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-3">
+                      <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <p class="text-sm font-bold text-slate-600 uppercase">No se encontraron formularios</p>
+                    <p class="text-xs text-slate-500 mt-1">Aún no hay configuraciones registradas en la base de datos.</p>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+</div>

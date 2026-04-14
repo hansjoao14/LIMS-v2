@@ -1,30 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewChecked, Component, NgZone, OnDestroy, OnInit } from '@angular/core';
-import {
-  AbstractControl,
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
-  ValidatorFn,
-  Validators,
-} from '@angular/forms';
+import { Component, NgZone, OnDestroy, OnInit, AfterViewChecked } from '@angular/core';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidatorFn, Validators, FormControl } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import * as L from 'leaflet';
+import Swal from 'sweetalert2'; 
 
-import {
-  FieldConfig,
-  FieldSectionConfig,
-  FieldSectionId,
-  FormularioLaboratorio,
-  Pregunta,
-} from './model/solicitud-trabajo.model';
+import { FieldConfig, FieldSectionId, FormularioLaboratorio, Pregunta } from './model/solicitud-trabajo.model';
 import { SolicitudService } from './service/solicitud-trabajo-service';
 import { AuthService } from '../auth/service/auth-service';
-import { ToastrAlertService } from '../../services/toastr.service';
-import { cedulaEcuatoriana, rucEcuatoriano } from '../../core/utils/ecuador-id.validators';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
@@ -40,175 +24,90 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   formulario: FormularioLaboratorio | null = null;
   fields: FieldConfig[] = [];
   loading = true;
+  currentStep = 1;
 
-  currentStep = 0;
+  // Integraciones y Modales
+  buscandoIntegracion: { [key: string]: boolean } = {};
   showMapModal = false;
   showTerminosModal = false;
   showConfidencialidadModal = false;
+  showFirmaModal = false;
 
-  readonly stepLabels = [
-    'Entidad y técnico',
-    'Formulario',
-    'Catálogo',
-    'Confirmación',
-  ];
+  archivoFirma: File | null = null;
+  claveFirma = '';
+  isFirmando = false;
+  isGuardando = false;
 
+  // Mapa
+  private map: L.Map | null = null;
+  private marker: L.Marker | null = null;
+  private destroy$ = new Subject<void>();
+
+  readonly numeroSolicitudGenerado = 'ST-' + new Date().getFullYear() + '-001';
+  fechaActual = new Date();
+  readonly COLOR_PRIMARIO = '#1e3a8a';
+  readonly STORAGE_KEY = 'lims_solicitudes_trabajo'; 
+  
   entidadesMock = [
     { id: 'ENT-001', nombre: 'Secretaría de Ambiente' },
     { id: 'ENT-002', nombre: 'Dirección Metropolitana' },
-    { id: 'ENT-003', nombre: 'Unidad Técnica Ambiental' },
+    { id: 'ENT-003', nombre: 'Unidad Técnica Ambiental' }
   ];
 
   tecnicosMock = [
     { id: 'TEC-001', entidadId: 'ENT-001', nombre: 'Juan Pérez', cargo: 'Analista Ambiental' },
     { id: 'TEC-002', entidadId: 'ENT-001', nombre: 'María López', cargo: 'Técnico de Laboratorio' },
-    { id: 'TEC-003', entidadId: 'ENT-002', nombre: 'Carlos Ruiz', cargo: 'Inspector Ambiental' },
-    { id: 'TEC-004', entidadId: 'ENT-003', nombre: 'Ana Torres', cargo: 'Coordinadora Técnica' },
+    { id: 'TEC-003', entidadId: 'ENT-002', nombre: 'Carlos Ruiz', cargo: 'Inspector Ambiental' }
   ];
-
-  tecnicosFiltrados: Array<{
-    id: string;
-    entidadId: string;
-    nombre: string;
-    cargo: string;
-  }> = [];
-
-  selectedEntidadNombre = '';
-  selectedTecnicoNombre = '';
-
-  readonly sections: FieldSectionConfig[] = [
-    {
-      id: 'identificacion',
-      title: 'Identificación',
-      description: 'Define el tipo de identificación y habilita los campos relacionados.',
-    },
-    {
-      id: 'operador',
-      title: 'Información del operador',
-      description: 'Datos principales del operador que solicita el servicio.',
-    },
-    {
-      id: 'ubicacion',
-      title: 'Ubicación',
-      description: 'Coordenadas geográficas capturadas desde el mapa.',
-    },
-    {
-      id: 'horario',
-      title: 'Jornadas laborales',
-      description: 'Disponibilidad horaria del operador según el formulario.',
-    },
-    {
-      id: 'contacto',
-      title: 'Contacto del caso',
-      description: 'Información adicional para denuncias o seguimiento.',
-    },
-    {
-      id: 'observaciones',
-      title: 'Observaciones',
-      description: 'Comentarios finales antes del envío.',
-    },
-  ];
+  tecnicosFiltrados: any[] = [];
+  selectedTecnicoNombre = 'Usuario';
 
   readonly terminosCondiciones = [
     'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
-    'Los resultados serán entregados en 15 días calendario a partir de realizada la toma de muestra para Ensayos Físico-Químico para Aguas Residuales y Superficiales y para Ensayos de Muestreo para Aguas Superficiales.',
-    'Los resultados serán entregados en 10 días calendario a partir de realizada la toma de muestra para Ensayos Físico–Químicos de Emisiones Gaseosas de Fuentes Fijas a la Atmósfera y para Ensayos para Acústica Ambiental.',
-    'Los resultados obtenidos podrán utilizarse para elaboración de informes técnicos cuando requiera la Secretaría de Ambiente.',
-    'Los resultados de la red de monitoreo del recurso hídrico serán entregados hasta los primeros 15 días del siguiente mes del monitoreo.',
-    'Si el plazo establecido para la entrega de los resultados coincide con fin de semana o feriado, los mismos se entregarán al siguiente día hábil.',
-    'En caso de que el cliente tenga algún reclamo o queja respecto los servicios brindados por IAM-Q, podrá emitir la misma al laboratorio IAM-Q siguiendo lo dispuesto en el procedimiento PG/IAM-Q/11 Quejas.',
+    'Los resultados serán entregados en 15 días calendario a partir de realizada la toma de muestra.',
+    'Los resultados obtenidos podrán utilizarse para elaboración de informes técnicos.',
+    'Si el plazo establecido coincide con fin de semana o feriado, se entregarán al siguiente día hábil.'
   ];
 
-  readonly acuerdoConfidencialidad = `OBJETO.-
-El presente acuerdo tiene por objeto establecer con el cliente, la manera en la que el laboratorio IAM-Q maneja la información obtenida o creada durante la realización de sus actividades, en el servicio solicitado por el cliente.
+  readonly acuerdoConfidencialidad = `OBJETO.-\nEl presente acuerdo tiene por objeto establecer con el cliente, la manera en la que el laboratorio IAM-Q maneja la información obtenida o creada durante la realización de sus actividades.\n\nEl laboratorio IAM-Q al ser parte de una entidad del sector público, está obligado a acatar las disposiciones establecidas en la Ley Orgánica de Transparencia y Acceso a La Información.\n\nAdemás, cuando el laboratorio sea requerido por ley o autorizado por las disposiciones contractuales, para revelar información confidencial, notificará al cliente salvo que esté prohibido por ley.`;
 
-El laboratorio IAM-Q al ser parte de una entidad del sector público, está obligado a acatar las disposiciones establecidas en la Ley Orgánica de Transparencia y Acceso a La Información, con respecto a la información obtenida o creada durante la realización de sus actividades.
-
-Además, cuando el laboratorio sea requerido por ley o autorizado por las disposiciones contractuales, para revelar información confidencial, notificará mediante memorando u oficio al cliente o a la persona interesada la información proporcionada, salvo que esté prohibido por ley.`;
-
+  // Catálogos
   selectedScheduleIndexes = new Set<number>();
-  savedElaboradoPor = '';
-  fechaSolicitud = '';
-  readonly numeroSolicitud = 'ST-' + new Date().getFullYear() + '-001';
-
   catalogoServicios = [
-    {
-      matriz: 'AGUA',
-      collapsed: false,
-      servicios: [
-        { nombre: 'AGUAS SUPERFICIALES', aplicable: 'NÚMERO DE MUESTRAS', activo: false, cantidad: null as number | null },
-        { nombre: 'AGUAS RESIDUALES', aplicable: 'NÚMERO DE MUESTRAS', activo: false, cantidad: null as number | null },
-      ],
-    },
-    {
-      matriz: 'AIRE',
-      collapsed: false,
-      servicios: [
-        { nombre: 'FUENTES FIJAS DE COMBUSTIÓN', aplicable: 'NÚMERO DE FUENTES', activo: false, cantidad: null as number | null },
-      ],
-    },
-    {
-      matriz: 'RUIDO',
-      collapsed: false,
-      servicios: [
-        { nombre: 'RUIDO AMBIENTE', aplicable: 'NÚMERO DE PUNTOS CRÍTICOS DE AFECTACIÓN', activo: false, cantidad: null as number | null },
-      ],
-    },
+    { matriz: 'AGUA', collapsed: false, servicios: [ { nombre: 'AGUAS SUPERFICIALES', aplicable: 'NÚMERO DE MUESTRAS', activo: false, cantidad: null as number | null }, { nombre: 'AGUAS RESIDUALES', aplicable: 'NÚMERO DE MUESTRAS', activo: false, cantidad: null as number | null } ] },
+    { matriz: 'AIRE', collapsed: false, servicios: [ { nombre: 'FUENTES FIJAS DE COMBUSTIÓN', aplicable: 'NÚMERO DE FUENTES', activo: false, cantidad: null as number | null } ] },
+    { matriz: 'RUIDO', collapsed: false, servicios: [ { nombre: 'RUIDO AMBIENTE', aplicable: 'NÚMERO DE PUNTOS CRÍTICOS DE AFECTACIÓN', activo: false, cantidad: null as number | null } ] },
   ];
 
-  ensayosMuestreo = [
-    {
-      activo: false,
-      producto: 'AGUAS SUPERFICIALES',
-      parametro: 'SÓLIDOS SUSPENDIDOS TOTALES',
-      metodoInterno: 'PEE/IAM-Q/42',
-      metodoReferencia: 'NTE INEN ISO 5667-1 | UNE EN ISO 5667-6 | UNE EN ISO 5667-14',
-    },
-  ];
-
+  ensayosMuestreo = [{ activo: false, producto: 'AGUAS SUPERFICIALES', parametro: 'SÓLIDOS SUSPENDIDOS TOTALES', metodoInterno: 'PEE/IAM-Q/42', metodoReferencia: 'NTE INEN ISO 5667-1' }];
   ensayosResiduales = [
     { activo: false, ensayo: 'DEMANDA QUÍMICA DE OXÍGENO', identificacion: 'DQO', metodoInterno: 'PEE/IAM-Q/03', metodoReferencia: 'APHA 5220 C', unidad: 'mg/L', naturaleza: 'Laboratorio' },
     { activo: false, ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES', identificacion: 'SST', metodoInterno: 'PEE/IAM-Q/02', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L', naturaleza: 'Laboratorio' },
+    { activo: false, ensayo: 'CONDUCTIVIDAD ELÉCTRICA*', identificacion: 'CE', metodoInterno: 'PEE/IAM-Q/15', metodoReferencia: 'APHA 2510', unidad: 'Us/cm', naturaleza: 'In situ' },
+    { activo: false, ensayo: 'TEMPERATURA', identificacion: 'T', metodoInterno: 'PEE/IAM-Q/04', metodoReferencia: 'APHA 2550 B', unidad: '°C', naturaleza: 'In situ' },
   ];
-
   ensayosAire = [
     { activo: false, ensayo: 'MONÓXIDO DE CARBONO', identificacion: 'CO', metodoInterno: 'PEE/IAM-Q/07', metodoReferencia: 'EPA CTM-030', unidad: 'ppm / mg/Nm³*' },
-    { activo: false, ensayo: 'DIÓXIDO DE AZUFRE', identificacion: 'SO2', metodoInterno: 'PEE/IAM-Q/07', metodoReferencia: 'EPA CTM-030', unidad: 'ppm / mg/Nm³*' },
+    { activo: false, ensayo: 'MATERIAL PARTICULADO*', identificacion: 'MP', metodoInterno: 'PEE/IAM-Q/14', metodoReferencia: 'EPA 60, Apéndice A, Método 5', unidad: 'ppm / mg/Nm³*' },
   ];
+  ensayosRuido = [{ activo: false, ensayo: 'RUIDO AMBIENTAL', identificacion: '---', metodoInterno: 'PEE/IAM-Q/11', metodoReferencia: 'ISO 1996-2:2017', unidad: 'dB' }];
+  
+  ruidoInfo = { tipoUsoSueloOperador: '', tipoUsoSueloPCA: '', direccionPCA: '', telefonoPCA: '' };
 
-  ensayosRuido = [
-    { activo: false, ensayo: 'RUIDO AMBIENTAL', identificacion: '---', metodoInterno: 'PEE/IAM-Q/11', metodoReferencia: 'ANEXO 5 AM 097A | ISO 1996-2:2017', unidad: 'dB' },
-  ];
-
-  ruidoInfo = {
-    tipoUsoSueloOperador: '',
-    tipoUsoSueloPCA: '',
-    direccionPCA: '',
-    telefonoPCA: '',
-  };
-
-  readonly notasAgua = [
+  // --- LAS VARIABLES QUE FALTABAN PARA QUE COMPILE EL HTML ---
+  notasAgua = [
     'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
-    'Las muestras serán descartadas del laboratorio en 28 días calendario después de recibidas.',
-    'Los resultados serán entregados en 15 días calendario a partir del ingreso de las muestras al Laboratorio IAM-Q.',
-    'Los resultados obtenidos podrán utilizarse para elaboración de informes técnicos cuando requiera la Secretaría de Ambiente.',
+    'Las muestras serán descartadas del laboratorio en 28 días calendario.',
+    'Los resultados serán entregados en 15 días calendario a partir del ingreso de las muestras.',
   ];
-
-  readonly notasAire = [
+  notasAire = [
     'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
     'Los resultados serán entregados en 10 días calendario después de realizado el monitoreo.',
-    'Los resultados obtenidos podrán utilizarse para la elaboración de Informes Técnicos cuando requiera la Secretaría de Ambiente.',
   ];
-
-  readonly notasRuido = [
+  notasRuido = [
     'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
     'Los resultados serán entregados en 10 días calendario después de realizado el monitoreo.',
-    'Los resultados obtenidos podrán utilizarse para la elaboración de Informes Técnicos cuando requiera la Secretaría de Ambiente.',
   ];
-
-  private map: L.Map | null = null;
-  private marker: L.Marker | null = null;
-  private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -216,486 +115,361 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     private authService: AuthService,
     private zone: NgZone,
     private router: Router,
-    private route: ActivatedRoute,
-    private toastr: ToastrAlertService,
+    private route: ActivatedRoute
   ) {
     this.form = this.fb.group({
-      entidad_id: this.fb.control('', Validators.required),
-      tecnico_id: this.fb.control('', Validators.required),
-
-      jefatura_display: this.fb.control({ value: '', disabled: true }),
-      solicitado_por: this.fb.control({ value: '', disabled: true }),
-      cargo_usuario: this.fb.control({ value: '', disabled: true }),
-
-      motivo_flujo: this.fb.control<MotivoFlujo>('', Validators.required),
+      entidad_id: ['', Validators.required],
+      tecnico_id: ['', Validators.required],
+      cargo_usuario: [{ value: '', disabled: true }],
+      numero_solicitud: [{ value: this.numeroSolicitudGenerado, disabled: true }, Validators.required],
       val_pasaporte: this.fb.control(''),
     });
   }
 
   ngOnInit(): void {
     this.setupStepOneLogic();
-
     const idTipoFormulario = this.route.snapshot.paramMap.get('idTipoFrmulario') || '380';
-
-    this.service.getFormulario(idTipoFormulario)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
+    this.service.getFormulario(idTipoFormulario).pipe(takeUntil(this.destroy$)).subscribe({
         next: (formulario) => {
           this.formulario = formulario;
-          this.fields = formulario.preguntas
-            .filter((pregunta) => pregunta.estado !== false)
-            .map((pregunta) => this.toFieldConfig(pregunta));
-
+          this.fields = formulario.preguntas.filter((p) => p.estado !== false).map((p) => this.toFieldConfig(p));
           this.generateControls();
-          this.setUserDataFallback();
           this.applyDependencyLogic();
           this.loading = false;
         },
-        error: (err) => {
-          console.error('Error al cargar formulario', err);
+        error: () => {
           this.loading = false;
-          this.toastr.showError('No se pudo cargar el formulario', 'Error');
+          Swal.fire('Error', 'No se pudo cargar el formulario dinámico', 'error');
         },
       });
   }
 
   ngAfterViewChecked(): void {
-    if (this.showMapModal && !this.map) {
-      this.initMap();
-    }
+    if (this.showMapModal && !this.map) this.initMap();
   }
 
-  get formularioTitulo(): string {
-    return this.formulario?.tipo_formulario ?? 'Solicitud de trabajo - Ensayos';
+  esCampoInvalido(nombreCampo: string): boolean {
+    const control = this.form.get(nombreCampo);
+    return control ? control.invalid && (control.touched || control.dirty) : false;
   }
 
-  get isPasaporteSelected(): boolean {
-    const tipoField = this.fields.find((f) => f.key === 'val_ct_tipo');
-    if (!tipoField) return false;
-    const selectedId = this.getFieldControl('val_ct_tipo')?.value;
-    return tipoField.options.some(
-      (opt) => String(opt.id) === String(selectedId) && opt.nombre?.toLowerCase().includes('pasaporte'),
-    );
+  private setupStepOneLogic(): void {
+    this.form.get('entidad_id')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((entidadId: string) => {
+      this.tecnicosFiltrados = this.tecnicosMock.filter((t) => t.entidadId === entidadId);
+      this.form.patchValue({ tecnico_id: '', cargo_usuario: '' }, { emitEvent: false });
+      this.selectedTecnicoNombre = 'Usuario';
+    });
+
+    this.form.get('tecnico_id')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((tecnicoId: string) => {
+      const tecnico = this.tecnicosMock.find((t) => t.id === tecnicoId);
+      this.selectedTecnicoNombre = tecnico?.nombre || 'Usuario';
+      this.form.patchValue({ cargo_usuario: tecnico?.cargo || '' }, { emitEvent: false });
+    });
   }
 
   get isStepOneReady(): boolean {
     return !!this.form.get('entidad_id')?.value && !!this.form.get('tecnico_id')?.value;
   }
 
-  get motivoFlujo(): MotivoFlujo {
-    return (this.form.get('motivo_flujo')?.value || '') as MotivoFlujo;
-  }
-
-  getFieldControl(key: string): FormControl {
-    return this.form.get(key) as FormControl;
-  }
-
-  getSectionFields(sectionId: FieldSectionId): FieldConfig[] {
-    return this.fields.filter(
-      (field) => field.section === sectionId && !field.hidden && !this.isMotivoField(field),
-    );
-  }
-
-  getMotivoBaseFields(): FieldConfig[] {
-    return this.fields.filter(
-      (field) => !field.hidden && this.isMotivoField(field) && !this.isMotivoSpecificField(field),
-    );
-  }
-
-  getMotivoSpecificFields(flow: MotivoFlujo): FieldConfig[] {
-    if (!flow) return [];
-    return this.fields.filter(
-      (field) => !field.hidden && this.matchesMotivoFlow(field, flow),
-    );
-  }
-
-  getFieldRows(field: FieldConfig): number {
-    return field.key === 'val_obs' ? 4 : 3;
-  }
-
-  getFieldInputType(field: FieldConfig): string {
-    const key = field.key.toLowerCase();
-    if (key.includes('ruc') || key.includes('ced') || key.includes('num')) return 'tel';
-    return 'text';
-  }
-
-  getFieldHint(field: FieldConfig): string | null {
-    const integrations = [];
-    if (field.integrations.sri) integrations.push('Consulta SRI');
-    if (field.integrations.civil) integrations.push('Registro civil');
-    if (field.integrations.iess) integrations.push('Consulta IESS');
-
-    if (integrations.length > 0) return integrations.join(' | ');
-    if (field.maxLength) return `Max ${field.maxLength} caracteres`;
-    return null;
-  }
-
-  isFieldInvalid(field: FieldConfig): boolean {
-    const control = this.getFieldControl(field.key);
-    return control.invalid && (control.touched || control.dirty);
-  }
-
-  getFieldError(field: FieldConfig): string | null {
-    const control = this.getFieldControl(field.key);
-
-    if (!this.isFieldInvalid(field)) return null;
-    if (control.hasError('required')) return 'Este campo es obligatorio.';
-    if (control.hasError('maxlength')) return `Máximo ${field.maxLength} caracteres.`;
-    if (control.hasError('cedulaInvalida')) return control.getError('cedulaInvalida');
-    if (control.hasError('rucInvalido')) return control.getError('rucInvalido');
-    return 'Revise el valor ingresado.';
-  }
-
-  getCharacterCount(field: FieldConfig): number {
-    const value = this.getFieldControl(field.key)?.value;
-    return typeof value === 'string' ? value.length : 0;
-  }
-
-  toggleScheduleItem(index: number): void {
-    if (this.selectedScheduleIndexes.has(index)) {
-      this.selectedScheduleIndexes.delete(index);
-    } else {
-      this.selectedScheduleIndexes.add(index);
-    }
-  }
-
-  isScheduleSelected(index: number): boolean {
-    return this.selectedScheduleIndexes.has(index);
-  }
-
   goToStep(step: number): void {
-    if (step < 0 || step > 3) return;
-
-    if (step === 1 && !this.isStepOneReady) {
-      this.form.get('entidad_id')?.markAsTouched();
-      this.form.get('tecnico_id')?.markAsTouched();
+    if (step < 1 || step > 4) return;
+    if (step > 1 && !this.isStepOneReady) {
+      this.form.markAllAsTouched();
+      Swal.fire({ icon: 'warning', title: 'Atención', text: 'Complete los campos obligatorios de la cabecera', confirmButtonColor: this.COLOR_PRIMARIO });
       return;
     }
-
     if (step > this.currentStep + 1) return;
     this.currentStep = step;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   goNextStep(): void {
-    if (this.currentStep === 0) {
+    if (this.currentStep === 1) {
       if (!this.isStepOneReady) {
-        this.form.get('entidad_id')?.markAsTouched();
-        this.form.get('tecnico_id')?.markAsTouched();
+        this.form.markAllAsTouched();
+        Swal.fire({
+          icon: 'warning', title: 'Atención',
+          text: 'Complete los campos obligatorios de la cabecera',
+          confirmButtonColor: this.COLOR_PRIMARIO
+        });
         return;
       }
-      this.currentStep = 1;
-      return;
-    }
-
-    if (this.currentStep === 1) {
-      this.submit();
+      this.currentStep = 2;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     if (this.currentStep === 2) {
-      this.guardarCatalogo();
+      if (this.form.invalid) {
+        this.form.markAllAsTouched();
+        
+        const invalidFields = [];
+        for (const name in this.form.controls) {
+          if (this.form.controls[name].invalid) {
+            const fieldConfig = this.fields.find(f => f.key === name);
+            if (fieldConfig && !fieldConfig.hidden) {
+              invalidFields.push(fieldConfig.label || name);
+            }
+          }
+        }
+        
+        const mensajeError = invalidFields.length > 0 
+          ? 'Faltan: ' + invalidFields.join(', ') 
+          : 'Revise los campos requeridos marcados en rojo.';
+          
+        Swal.fire({
+          icon: 'warning', 
+          title: 'Complete los campos obligatorios',
+          text: mensajeError,
+          confirmButtonColor: this.COLOR_PRIMARIO
+        });
+        return;
+      }
+      this.currentStep = 3;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (this.currentStep === 3) {
+      this.currentStep = 4;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   goPrevStep(): void {
-    if (this.currentStep > 0) this.currentStep--;
-  }
-
-  openMap(): void {
-    this.showMapModal = true;
-  }
-
-  closeMap(): void {
-    this.showMapModal = false;
-    if (this.map) {
-      this.map.remove();
-      this.map = null;
+    if (this.currentStep > 1) {
+      this.currentStep--;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    this.marker = null;
   }
 
-  submit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+  // --- MAPA ---
+  openMap(): void { this.showMapModal = true; }
+  closeMap(): void { this.showMapModal = false; if (this.map) { this.map.remove(); this.map = null; } this.marker = null; }
+  
+  private initMap(): void {
+    this.zone.runOutsideAngular(() => {
+      const latControl = this.getFieldControl('val_lati');
+      const longControl = this.getFieldControl('val_long');
+      const lat = Number(latControl?.value) || -0.1807;
+      const lng = Number(longControl?.value) || -78.4678;
 
+      this.map = L.map('map-container').setView([lat, lng], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
+      this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
+      this.marker.on('dragend', () => {
+        const position = this.marker?.getLatLng();
+        if (position) this.updateCoords(position.lat, position.lng);
+      });
+      this.map.on('click', (event: L.LeafletMouseEvent) => {
+        this.marker?.setLatLng(event.latlng);
+        this.updateCoords(event.latlng.lat, event.latlng.lng);
+      });
+      setTimeout(() => this.map?.invalidateSize(), 250);
+    });
+  }
+  private updateCoords(lat: number, lng: number): void {
+    this.zone.run(() => { this.form.patchValue({ val_lati: lat.toFixed(6), val_long: lng.toFixed(6) }); });
+  }
+
+  // --- BÚSQUEDA INTEGRACIÓN SRI/CIVIL ---
+  isBuscando(key: string): boolean { return !!this.buscandoIntegracion[key]; }
+  buscarDatosIntegracion(field: FieldConfig) {
+    const control = this.getFieldControl(field.key);
+    if (!control.value) { 
+      Swal.fire({ icon: 'warning', text: 'Ingrese un documento válido para buscar', confirmButtonColor: this.COLOR_PRIMARIO, toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 }); 
+      return; 
+    }
+    
+    this.buscandoIntegracion[field.key] = true;
+    setTimeout(() => {
+      this.buscandoIntegracion[field.key] = false;
+      if (field.integrations.sri) {
+        this.form.patchValue({ val_razon_op: 'INDUSTRIA ANDINA S.A.', val_come_op: 'QUIMANDINA', val_dir_op: 'Av. Mariscal Sucre N75-270' });
+        Swal.fire({ icon: 'success', title: 'SRI', text: 'Datos recuperados', confirmButtonColor: this.COLOR_PRIMARIO, toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+      } else if (field.integrations.civil) {
+        this.form.patchValue({ val_nom_op: 'JUAN', val_ape_op: 'PEREZ', val_dire_op: 'Av. Eloy Alfaro' });
+        Swal.fire({ icon: 'success', title: 'Registro Civil', text: 'Datos recuperados', confirmButtonColor: this.COLOR_PRIMARIO, toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+      }
+    }, 1500);
+  }
+
+  // --- GUARDADO LOCAL STORAGE ---
+  iniciarAcuerdos() { this.showTerminosModal = true; }
+  aceptarTerminos() { this.showTerminosModal = false; this.showConfidencialidadModal = true; }
+  
+  aceptarConfidencialidad() { 
+    this.isGuardando = true;
     const payload = this.buildPayload();
 
-    const entry = {
-      ...payload,
-      guardado_en: new Date().toISOString(),
-      metadata_inicio: {
-        entidad_id: this.form.get('entidad_id')?.value,
-        entidad_nombre: this.selectedEntidadNombre,
-        tecnico_id: this.form.get('tecnico_id')?.value,
-        tecnico_nombre: this.selectedTecnicoNombre,
-        cargo: this.form.getRawValue().cargo_usuario,
-      },
-    };
+    try {
+      const data = localStorage.getItem(this.STORAGE_KEY);
+      const solicitudes = data ? JSON.parse(data) : [];
+      solicitudes.push({ id_local: crypto.randomUUID(), ...payload });
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(solicitudes));
 
-    this.service.saveSolicitud(entry).subscribe({
-      next: () => {
-        this.savedElaboradoPor = this.form.getRawValue().solicitado_por || 'Usuario';
-        this.fechaSolicitud = new Date().toLocaleDateString('es-EC', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        });
+      this.isGuardando = false;
+      this.showConfidencialidadModal = false;
 
-        this.toastr.showSuccess('Formulario guardado correctamente', 'Éxito');
-        this.currentStep = 2;
-      },
-      error: (err) => {
-        console.error('Error al guardar formulario', err);
-        this.toastr.showError('No se pudo guardar el formulario', 'Error');
-      },
-    });
+      Swal.fire({
+        title: '¡Guardado!',
+        text: 'La Solicitud de Trabajo ha sido almacenada correctamente.',
+        icon: 'success',
+        confirmButtonColor: this.COLOR_PRIMARIO,
+        timer: 2500
+      }).then(() => {
+        this.router.navigate(['/lista-solicitudes']);
+      });
+
+    } catch (e) {
+      this.isGuardando = false;
+      Swal.fire('Error', 'No se pudo guardar la solicitud en localStorage', 'error');
+    }
   }
 
-  guardarCatalogo(): void {
-    this.currentStep = 3;
-    this.showTerminosModal = true;
-  }
+  private buildPayload() {
+    const rawValues = this.form.getRawValue();
+    const answers = this.fields.filter((f) => !f.hidden && f.controlType !== 'schedule').map((f) => ({
+        pregunta_id: f.id, nombre: f.key, valor: rawValues[f.key],
+    }));
 
-  aceptarTerminos(): void {
-    this.showTerminosModal = false;
-    this.showConfidencialidadModal = true;
-  }
+    const scheduleField = this.fields.find((f) => f.controlType === 'schedule');
+    const selectedJornadas = (scheduleField?.scheduleItems ?? []).filter((_, i) => this.selectedScheduleIndexes.has(i));
 
-  aceptarConfidencialidad(): void {
-    this.showConfidencialidadModal = false;
-    this.ejecutarGuardado();
-  }
-
-  toggleEnsayoMuestreo(idx: number): void {
-    this.ensayosMuestreo[idx].activo = !this.ensayosMuestreo[idx].activo;
-  }
-
-  toggleEnsayoResidual(idx: number): void {
-    this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo;
-  }
-
-  toggleEnsayoAire(idx: number): void {
-    this.ensayosAire[idx].activo = !this.ensayosAire[idx].activo;
-  }
-
-  toggleEnsayoRuido(idx: number): void {
-    this.ensayosRuido[idx].activo = !this.ensayosRuido[idx].activo;
-  }
-
-  toggleMatrizCollapse(idx: number): void {
-    this.catalogoServicios[idx].collapsed = !this.catalogoServicios[idx].collapsed;
-  }
-
-  toggleServicio(matrizIdx: number, servicioIdx: number): void {
-    const servicio = this.catalogoServicios[matrizIdx].servicios[servicioIdx];
-    servicio.activo = !servicio.activo;
-    if (!servicio.activo) servicio.cantidad = null;
-  }
-
-  private ejecutarGuardado(): void {
-    const existing = this.service.getSolicitudLocal<any>() || {};
-
-    existing.catalogo_servicios = this.catalogoServicios.flatMap((g) =>
-      g.servicios
-        .filter((s) => s.activo)
-        .map((s) => ({
-          matriz: g.matriz,
-          servicio: s.nombre,
-          aplicable: s.aplicable,
-          cantidad: s.cantidad,
-        })),
+    const catalogosArray = this.catalogoServicios.flatMap((g) =>
+      g.servicios.filter((s) => s.activo).map((s) => ({ matriz: g.matriz, servicio: s.nombre, aplicable: s.aplicable, cantidad: s.cantidad }))
     );
 
-    existing.ensayos = {
-      agua_muestreo: this.ensayosMuestreo.filter((f) => f.activo),
-      agua_residuales: this.ensayosResiduales.filter((f) => f.activo),
-      aire: this.ensayosAire.filter((f) => f.activo),
-      ruido: this.ensayosRuido.filter((f) => f.activo),
-    };
-
-    existing.ruido_info = this.ruidoInfo;
-
-    existing.acuerdos = {
-      terminos_aceptados: true,
-      confidencialidad_aceptada: true,
-      fecha_aceptacion: new Date().toISOString(),
-    };
-
-    existing.metadata = {
-      numero_solicitud: this.numeroSolicitud,
-      fecha_solicitud: this.fechaSolicitud,
-      elaborado_por: this.savedElaboradoPor,
-    };
-
-    this.service.saveSolicitud(existing).subscribe({
-      next: () => {
-        this.toastr.showSuccess('Solicitud guardada correctamente', 'Éxito');
-        this.router.navigate(['/lista-solicitudes']);
+    return {
+      formulario_id: this.formulario?.formulario_id ?? null,
+      tipo_formulario_id: this.formulario?.tipo_formulario_id ?? null,
+      cabecera: {
+        entidad_id: rawValues.entidad_id, 
+        tecnico_id: rawValues.tecnico_id,
+        numero_solicitud: rawValues.numero_solicitud
       },
-      error: (err) => {
-        console.error('Error al guardar solicitud', err);
-        this.toastr.showError('No se pudo guardar la solicitud', 'Error');
+      datos_solicitante: rawValues,
+      respuestas: answers,
+      jornadas_laborales: selectedJornadas,
+      catalogo_servicios: catalogosArray,
+      ensayos: {
+        agua_muestreo: this.ensayosMuestreo.filter((f) => f.activo),
+        agua_residuales: this.ensayosResiduales.filter((f) => f.activo),
+        aire: this.ensayosAire.filter((f) => f.activo),
+        ruido: this.ensayosRuido.filter((f) => f.activo),
       },
-    });
+      ruido_info: this.ruidoInfo,
+      estado: 'GENERADA',
+      fecha_creacion: new Date().toISOString()
+    };
   }
 
-  private setupStepOneLogic(): void {
-    this.form.get('entidad_id')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((entidadId: string) => {
-        this.tecnicosFiltrados = this.tecnicosMock.filter((t) => t.entidadId === entidadId);
-
-        const entidad = this.entidadesMock.find((e) => e.id === entidadId);
-        this.selectedEntidadNombre = entidad?.nombre || '';
-
-        this.form.patchValue(
-          {
-            tecnico_id: '',
-            solicitado_por: '',
-            cargo_usuario: '',
-            jefatura_display: this.selectedEntidadNombre,
-          },
-          { emitEvent: false },
-        );
-
-        this.selectedTecnicoNombre = '';
-      });
-
-    this.form.get('tecnico_id')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((tecnicoId: string) => {
-        const tecnico = this.tecnicosMock.find((t) => t.id === tecnicoId);
-
-        this.selectedTecnicoNombre = tecnico?.nombre || '';
-
-        this.form.patchValue(
-          {
-            solicitado_por: tecnico?.nombre || '',
-            cargo_usuario: tecnico?.cargo || '',
-          },
-          { emitEvent: false },
-        );
-      });
+  // --- HELPERS DINÁMICOS Y CATÁLOGOS ---
+  get formularioTitulo(): string { return this.formulario?.tipo_formulario ?? 'Formulario Solicitud de Trabajo'; }
+  get isPasaporteSelected(): boolean {
+    const tipoField = this.fields.find((f) => f.key === 'val_ct_tipo');
+    if (!tipoField) return false;
+    const selectedId = this.getFieldControl('val_ct_tipo')?.value;
+    return tipoField.options.some((opt) => String(opt.id) === String(selectedId) && opt.nombre?.toLowerCase().includes('pasaporte'));
+  }
+  
+  // AHORA LEE EL MOTIVO REAL DE LA API
+  get motivoFlujo(): MotivoFlujo { 
+    const field = this.fields.find(f => this.isMotivoField(f) && f.options.length > 0);
+    if(!field) return '';
+    const selectedId = this.form.get(field.key)?.value;
+    const opt = field.options.find(o => String(o.id) === String(selectedId));
+    const name = opt?.nombre?.toLowerCase() || '';
+    if (name.includes('seguimiento')) return 'seguimiento';
+    if (name.includes('denuncia')) return 'denuncia';
+    if (name.includes('licenciamiento')) return 'licenciamiento';
+    return '';
   }
 
-  private setUserDataFallback(): void {
-    const user = this.authService.getCurrentUser();
-    if (!user) return;
-
-    if (!this.form.getRawValue().solicitado_por) {
-      this.form.patchValue({ solicitado_por: user.name || 'Usuario' });
-    }
-
-    if (!this.form.getRawValue().cargo_usuario) {
-      this.form.patchValue({ cargo_usuario: user.cargo || 'N/A' });
-    }
-
-    if (!this.form.getRawValue().jefatura_display) {
-      this.form.patchValue({ jefatura_display: user.jefatura || 'N/A' });
-    }
+  getFieldControl(key: string): FormControl { return this.form.get(key) as FormControl; }
+  getSectionFields(sectionId: FieldSectionId): FieldConfig[] { return this.fields.filter((field) => field.section === sectionId && !field.hidden && !this.isMotivoField(field)); }
+  getMotivoBaseFields(): FieldConfig[] { return this.fields.filter((field) => !field.hidden && this.isMotivoField(field) && !this.isMotivoSpecificField(field)); }
+  getMotivoSpecificFields(flow: MotivoFlujo): FieldConfig[] { if (!flow) return []; return this.fields.filter((field) => !field.hidden && this.matchesMotivoFlow(field, flow)); }
+  getFieldRows(field: FieldConfig): number { return field.key === 'val_obs' ? 4 : 3; }
+  getFieldInputType(field: FieldConfig): string { const key = field.key.toLowerCase(); if (key.includes('ruc') || key.includes('ced') || key.includes('num')) return 'tel'; return 'text'; }
+  isFieldInvalid(field: FieldConfig): boolean { const control = this.getFieldControl(field.key); return control.invalid && (control.touched || control.dirty); }
+  getFieldError(field: FieldConfig): string | null {
+    const control = this.getFieldControl(field.key);
+    if (!this.isFieldInvalid(field)) return null;
+    if (control.hasError('required')) return 'Obligatorio.';
+    return 'Revise el valor.';
   }
+
+  toggleScheduleItem(index: number): void { this.selectedScheduleIndexes.has(index) ? this.selectedScheduleIndexes.delete(index) : this.selectedScheduleIndexes.add(index); }
+  isScheduleSelected(index: number): boolean { return this.selectedScheduleIndexes.has(index); }
+  toggleEnsayoMuestreo(idx: number): void { this.ensayosMuestreo[idx].activo = !this.ensayosMuestreo[idx].activo; }
+  toggleEnsayoResidual(idx: number): void { this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo; }
+  toggleEnsayoAire(idx: number): void { this.ensayosAire[idx].activo = !this.ensayosAire[idx].activo; }
+  toggleEnsayoRuido(idx: number): void { this.ensayosRuido[idx].activo = !this.ensayosRuido[idx].activo; }
+  toggleMatrizCollapse(idx: number): void { this.catalogoServicios[idx].collapsed = !this.catalogoServicios[idx].collapsed; }
+  toggleServicio(matrizIdx: number, servicioIdx: number): void { const s = this.catalogoServicios[matrizIdx].servicios[servicioIdx]; s.activo = !s.activo; if (!s.activo) s.cantidad = null; }
 
   private generateControls(): void {
     for (const field of this.fields) {
       if (this.form.contains(field.key)) continue;
-      this.form.addControl(field.key, this.fb.control('', this.buildValidators(field, field.hidden)));
+      this.form.addControl(field.key, this.fb.control({value: '', disabled: field.hidden}, this.buildValidators(field, field.hidden)));
     }
   }
 
   private buildValidators(field: FieldConfig, isHidden: boolean): ValidatorFn[] {
-    if (field.controlType === 'schedule') return [];
-
+    if (field.controlType === 'schedule' || isHidden) return [];
     const validators: ValidatorFn[] = [];
-
-    if (!isHidden && field.required && !field.readonly) {
-      validators.push(Validators.required);
-    }
-
-    if (field.maxLength) {
-      validators.push(Validators.maxLength(field.maxLength));
-    }
-
-    if (!isHidden) {
-      if (field.key === 'val_ced_op' || field.key === 'val_ct_ced') validators.push(cedulaEcuatoriana());
-      if (field.key === 'val_ruc_op') validators.push(rucEcuatoriano());
-    }
-
+    if (field.required) validators.push(Validators.required);
+    if (field.maxLength) validators.push(Validators.maxLength(field.maxLength));
     return validators;
   }
 
   private applyDependencyLogic(): void {
     this.updateDependentFields();
-
-    this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      this.updateDependentFields();
-    });
+    this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.updateDependentFields());
   }
 
   private updateDependentFields(): void {
     for (const field of this.fields) {
-      if (!field.dependsOn) {
-        this.syncFieldState(field, field.source.hidden);
-        continue;
-      }
-
-      const parentField = this.fields.find((candidate) => candidate.id === field.dependsOn?.fieldId);
+      if (!field.dependsOn) { this.syncFieldState(field, field.source.hidden); continue; }
+      const parentField = this.fields.find((c) => c.id === field.dependsOn?.fieldId);
       const parentValue = parentField ? this.getFieldControl(parentField.key)?.value : null;
       const isVisible = String(parentValue ?? '') === field.dependsOn.triggerValue;
-
       this.syncFieldState(field, !isVisible);
     }
-
     const pasaporteControl = this.form.get('val_pasaporte');
-    if (this.isPasaporteSelected) {
-      pasaporteControl?.setValidators([Validators.required]);
-    } else {
-      pasaporteControl?.clearValidators();
-      pasaporteControl?.reset('', { emitEvent: false });
-    }
+    if (this.isPasaporteSelected) { pasaporteControl?.setValidators([Validators.required]); } 
+    else { pasaporteControl?.clearValidators(); pasaporteControl?.reset('', { emitEvent: false }); }
     pasaporteControl?.updateValueAndValidity({ emitEvent: false });
   }
 
   private syncFieldState(field: FieldConfig, hidden: boolean): void {
     field.hidden = hidden;
-
     const control = this.getFieldControl(field.key);
-    control.setValidators(this.buildValidators(field, hidden));
-
-    if (hidden && field.controlType !== 'coordinates' && field.controlType !== 'schedule') {
-      control.reset('', { emitEvent: false });
+    
+    if (hidden) {
+      control.disable({ emitEvent: false });
+      if (field.controlType !== 'coordinates' && field.controlType !== 'schedule') control.reset('', { emitEvent: false });
+    } else {
+      control.enable({ emitEvent: false }); 
     }
-
+    
+    control.setValidators(this.buildValidators(field, hidden));
     control.updateValueAndValidity({ emitEvent: false });
   }
 
   private toFieldConfig(pregunta: Pregunta): FieldConfig {
+    const isFieldReadonly = false;
+
     return {
-      id: pregunta.id,
-      key: pregunta.nombre,
-      label: pregunta.pregunta,
-      order: pregunta.orden,
-      controlType: this.resolveControlType(pregunta),
-      section: this.resolveSection(pregunta),
+      id: pregunta.id, key: pregunta.nombre, label: pregunta.pregunta, order: pregunta.orden,
+      controlType: this.resolveControlType(pregunta), section: this.resolveSection(pregunta),
       placeholder: typeof pregunta.ayuda === 'string' ? pregunta.ayuda : '',
-      required: pregunta.obligatorio,
-      readonly: pregunta.readonly,
-      hidden: pregunta.hidden,
+      required: pregunta.obligatorio, readonly: isFieldReadonly, hidden: pregunta.hidden,
       maxLength: typeof pregunta.num_caracter === 'number' ? pregunta.num_caracter : null,
-      options: pregunta.catalogos ?? [],
-      scheduleItems: pregunta.jornada_laboral_item ?? [],
-      dependsOn: pregunta.atributo_id
-        ? {
-            fieldId: String(pregunta.atributo_id),
-            triggerValue: String(pregunta.item_catalogo_id ?? ''),
-          }
-        : undefined,
-      integrations: {
-        sri: pregunta.is_ws_sri,
-        civil: pregunta.is_ws_civil,
-        iess: pregunta.is_ws_iess ?? false,
-      },
+      options: pregunta.catalogos ?? [], scheduleItems: pregunta.jornada_laboral_item ?? [],
+      dependsOn: pregunta.atributo_id ? { fieldId: String(pregunta.atributo_id), triggerValue: String(pregunta.item_catalogo_id ?? '') } : undefined,
+      integrations: { sri: pregunta.is_ws_sri, civil: pregunta.is_ws_civil, iess: pregunta.is_ws_iess ?? false },
       source: pregunta,
     };
   }
@@ -704,103 +478,24 @@ Además, cuando el laboratorio sea requerido por ley o autorizado por las dispos
     if (pregunta.nombre === 'val_lati' || pregunta.nombre === 'val_long') return 'coordinates';
     if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
     if (pregunta.tipo_respuesta === 'Selección Mutiple') return 'schedule';
-    if (pregunta.nombre === 'val_obs' || (typeof pregunta.num_caracter === 'number' && pregunta.num_caracter > 200)) {
-      return 'textarea';
-    }
+    if (pregunta.nombre === 'val_obs' || (typeof pregunta.num_caracter === 'number' && pregunta.num_caracter > 200)) return 'textarea';
     return 'text';
   }
 
   private resolveSection(pregunta: Pregunta): FieldSectionId {
-    if (pregunta.nombre === 'val_ct_tipo') return 'identificacion';
-    if (pregunta.nombre === 'val_lati' || pregunta.nombre === 'val_long') return 'ubicacion';
-    if (pregunta.nombre === 'val_jor_la') return 'horario';
-    if (pregunta.nombre === 'val_obs') return 'observaciones';
-    if (pregunta.nombre.startsWith('val_ct_')) return 'contacto';
+    const n = pregunta.nombre;
+    if (n === 'val_ct_tipo' || n === 'val_ruc_op' || n === 'val_ced_op' || n === 'val_pasaporte') return 'identificacion';
+    if (n === 'val_lati' || n === 'val_long') return 'ubicacion';
+    if (n === 'val_jor_la') return 'horario';
+    if (n === 'val_obs') return 'observaciones';
+    if (n.includes('motivo')) return 'operador';
+    if (n.startsWith('val_ct_') && n !== 'val_ct_tipo') return 'contacto';
     return 'operador';
   }
 
-  private isMotivoField(field: FieldConfig): boolean {
-    const key = field.key?.toLowerCase() || '';
-    const label = field.label?.toLowerCase() || '';
-    return key.includes('motivo') || label.includes('motivo');
-  }
+  private isMotivoField(field: FieldConfig): boolean { return (field.key?.toLowerCase() || '').includes('motivo') || (field.label?.toLowerCase() || '').includes('motivo'); }
+  private isMotivoSpecificField(field: FieldConfig): boolean { const text = `${field.key} ${field.label}`.toLowerCase(); return text.includes('seguimiento') || text.includes('denuncia') || text.includes('licenciamiento'); }
+  private matchesMotivoFlow(field: FieldConfig, flow: MotivoFlujo): boolean { return `${field.key} ${field.label}`.toLowerCase().includes(flow); }
 
-  private isMotivoSpecificField(field: FieldConfig): boolean {
-    const text = `${field.key} ${field.label}`.toLowerCase();
-    return text.includes('seguimiento') || text.includes('denuncia') || text.includes('licenciamiento');
-  }
-
-  private matchesMotivoFlow(field: FieldConfig, flow: MotivoFlujo): boolean {
-    const text = `${field.key} ${field.label}`.toLowerCase();
-    return text.includes(flow);
-  }
-
-  private initMap(): void {
-    this.zone.runOutsideAngular(() => {
-      const latControl = this.getFieldControl('val_lati');
-      const longControl = this.getFieldControl('val_long');
-
-      const lat = Number(latControl?.value) || -0.1807;
-      const lng = Number(longControl?.value) || -78.4678;
-
-      this.map = L.map('map-container').setView([lat, lng], 14);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
-      this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
-
-      this.marker.on('dragend', () => {
-        const position = this.marker?.getLatLng();
-        if (position) this.updateCoords(position.lat, position.lng);
-      });
-
-      this.map.on('click', (event: L.LeafletMouseEvent) => {
-        this.marker?.setLatLng(event.latlng);
-        this.updateCoords(event.latlng.lat, event.latlng.lng);
-      });
-
-      setTimeout(() => this.map?.invalidateSize(), 250);
-    });
-  }
-
-  private updateCoords(lat: number, lng: number): void {
-    this.zone.run(() => {
-      this.form.patchValue({
-        val_lati: lat.toFixed(6),
-        val_long: lng.toFixed(6),
-      });
-    });
-  }
-
-  private buildPayload() {
-    const answers = this.fields
-      .filter((field) => !field.hidden && field.controlType !== 'schedule')
-      .map((field) => ({
-        pregunta_id: field.id,
-        nombre: field.key,
-        valor: this.normalizeValue(this.getFieldControl(field.key)),
-      }));
-
-    const scheduleField = this.fields.find((field) => field.controlType === 'schedule');
-    const selectedJornadas = (scheduleField?.scheduleItems ?? []).filter((_, i) =>
-      this.selectedScheduleIndexes.has(i),
-    );
-
-    return {
-      formulario_id: this.formulario?.formulario_id ?? null,
-      tipo_formulario_id: this.formulario?.tipo_formulario_id ?? null,
-      datos_solicitante: this.form.getRawValue(),
-      respuestas: answers,
-      jornadas_laborales: selectedJornadas,
-    };
-  }
-
-  private normalizeValue(control: AbstractControl | null) {
-    const value = control?.value;
-    return typeof value === 'string' ? value.trim() : value;
-  }
-
-  ngOnDestroy(): void {
-    this.closeMap();
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  ngOnDestroy(): void { this.closeMap(); this.destroy$.next(); this.destroy$.complete(); }
 }

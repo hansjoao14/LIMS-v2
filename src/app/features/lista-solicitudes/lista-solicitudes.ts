@@ -1,34 +1,111 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import Swal from 'sweetalert2';
+
+interface SolicitudFirma {
+  id: string;
+  nombreFormulario: string;
+  firmado: boolean;
+}
 
 @Component({
   selector: 'app-lista-solicitudes',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule], 
   templateUrl: './lista-solicitudes.html',
-  styleUrl: './lista-solicitudes.css',
+  styleUrls: ['./lista-solicitudes.css'],
 })
 export class ListaSolicitudes {
-  solicitudes = [
-    { id: 'ST-001', fecha: '2026-02-10', solicitante: 'Ing. Rosa Fonseca', actividad: 'Mantenimiento Preventivo', prioridad: 'Alta', estado: 'Pendiente' },
-    { id: 'ST-002', fecha: '2026-02-11', solicitante: 'Arq. Luis Narváez', actividad: 'Inspección de Obra', prioridad: 'Media', estado: 'En Proceso' },
-    { id: 'ST-003', fecha: '2026-02-12', solicitante: 'Dra. Ana Lucía', actividad: 'Toma de Muestras', prioridad: 'Baja', estado: 'Completado' },
-    { id: 'ST-004', fecha: '2026-02-12', solicitante: 'Ing. Carlos Ruiz', actividad: 'Revisión LIMS', prioridad: 'Alta', estado: 'Cancelado' },
-    { id: 'ST-005', fecha: '2026-02-13', solicitante: 'Lcda. María López', actividad: 'Monitoreo Ambiental', prioridad: 'Media', estado: 'Pendiente' },
-    { id: 'ST-006', fecha: '2026-02-14', solicitante: 'Tec. Jorge Díaz', actividad: 'Calibración de Equipos', prioridad: 'Alta', estado: 'En Proceso' },
-    { id: 'ST-007', fecha: '2026-02-15', solicitante: 'Dra. Elena Prado', actividad: 'Auditoría Interna', prioridad: 'Media', estado: 'Pendiente' },
-    { id: 'ST-008', fecha: '2026-02-15', solicitante: 'Ing. Pablo Soria', actividad: 'Levantamiento de Datos', prioridad: 'Baja', estado: 'Completado' },
-    { id: 'ST-009', fecha: '2026-02-16', solicitante: 'Soc. Roberto Cruz', actividad: 'Gestión Comunitaria', prioridad: 'Alta', estado: 'Pendiente' },
-    { id: 'ST-010', fecha: '2026-02-17', solicitante: 'Ing. Rosa Fonseca', actividad: 'Control de Descargas', prioridad: 'Media', estado: 'Completado' },
+
+  // --- VARIABLES DE ESTADO ---
+  viewingSignature: boolean = false;
+  selectedDoc: SolicitudFirma | null = null;
+
+  // Variables del formulario de firma
+  archivoFirma: File | null = null;
+  claveFirma: string = '';
+  isFirmando: boolean = false;
+
+  readonly COLOR_PRIMARIO = '#1d2b64';
+  fechaActual = new Date();
+
+  // --- DATOS MOCKEADOS (Basados en tu imagen) ---
+  solicitudes: SolicitudFirma[] = [
+    { id: 'ST-2025-001', nombreFormulario: 'SOLICITUD DE TRABAJO DE ENSAYOS', firmado: true },
+    { id: 'ST-2025-002', nombreFormulario: 'SOLICITUD DE TRABAJO DE ENSAYOS', firmado: false },
+    { id: 'ST-2025-003', nombreFormulario: 'SOLICITUD DE TRABAJO DE ENSAYOS', firmado: true },
+    { id: 'ST-2025-004', nombreFormulario: 'SOLICITUD DE TRABAJO DE ENSAYOS', firmado: false },
+    { id: 'ST-2025-005', nombreFormulario: 'SOLICITUD DE TRABAJO DE ENSAYOS', firmado: false },
   ];
 
-  getBadgeClass(estado: string): string {
-    const classes: any = {
-      'Pendiente': 'badge-warning',
-      'En Proceso': 'badge-info',
-      'Completado': 'badge-success',
-      'Cancelado': 'badge-danger'
-    };
-    return classes[estado] || 'badge-default';
+  // --- MÉTODOS DE LA LISTA ---
+  abrirPanelFirma(doc: SolicitudFirma) {
+    this.selectedDoc = doc;
+    this.archivoFirma = null;
+    this.claveFirma = '';
+    this.viewingSignature = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // --- MÉTODOS DEL PANEL DE FIRMA ---
+  regresarLista() {
+    this.viewingSignature = false;
+    this.selectedDoc = null;
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      if (file.name.toLowerCase().endsWith('.p12')) {
+        this.archivoFirma = file;
+      } else {
+        Swal.fire({
+          title: 'Archivo no válido',
+          text: 'Solo se aceptan certificados digitales en formato .p12',
+          icon: 'warning',
+          confirmButtonColor: this.COLOR_PRIMARIO
+        });
+        input.value = ''; 
+        this.archivoFirma = null;
+      }
+    }
+  }
+
+  ejecutarFirma() {
+    if (!this.archivoFirma || !this.claveFirma) {
+      Swal.fire({
+        title: 'Datos Incompletos',
+        text: 'Por favor cargue su certificado .p12 e ingrese la contraseña para firmar.',
+        icon: 'warning',
+        confirmButtonColor: this.COLOR_PRIMARIO
+      });
+      return;
+    }
+
+    this.isFirmando = true;
+
+    // Simulamos un delay de red y proceso de firma
+    setTimeout(() => {
+      this.isFirmando = false;
+      
+      // Marcamos el documento como firmado en la lista
+      if (this.selectedDoc) {
+        this.selectedDoc.firmado = true;
+      }
+
+      Swal.fire({
+        title: '¡Documento Firmado!',
+        text: `El documento ${this.selectedDoc?.id} ha sido firmado electrónicamente con éxito.`,
+        icon: 'success',
+        confirmButtonColor: this.COLOR_PRIMARIO,
+        timer: 3000
+      }).then(() => {
+        // Regresamos a la lista automáticamente
+        this.regresarLista();
+      });
+
+    }, 1500);
   }
 }

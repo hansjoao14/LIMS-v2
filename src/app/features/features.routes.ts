@@ -26,6 +26,18 @@ export const featuresRoutes: Routes = [
       requiredRoles: RoleAccess.MANAGEMENT, // Permite: admin, direccion, analista
     },
   },
+
+    {
+    path: 'admin-formularios',
+    loadComponent: () =>
+      import('./admin-formularios/admin-formularios').then((m) => m.AdminFormularios),
+    canActivate: [canActivateWithRealmRoles],
+    data: {
+      title: 'Administración de Formularios',
+     
+    },
+  },
+
   {
     path: 'lista-solicitudes',
     loadComponent: () =>

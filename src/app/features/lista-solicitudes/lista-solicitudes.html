@@ -1,40 +1,179 @@
-<div class="table-container">
-  <div class="table-header">
-    <h2>Historial de Solicitudes de Trabajo</h2>
-    <div class="search-box">
-      <input type="text" placeholder="Buscar solicitud...">
-    </div>
-  </div>
+<div class="p-6 bg-slate-50 min-h-screen text-slate-800 font-sans pb-20">
 
-  <table class="custom-table">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Fecha</th>
-        <th>Solicitante</th>
-        <th>Actividad</th>
-        <th>Prioridad</th>
-        <th>Estado</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let s of solicitudes">
-        <td><strong>{{ s.id }}</strong></td>
-        <td>{{ s.fecha }}</td>
-        <td>{{ s.solicitante }}</td>
-        <td>{{ s.actividad }}</td>
-        <td>
-          <span [class]="'priority-' + s.prioridad.toLowerCase()">{{ s.prioridad }}</span>
-        </td>
-        <td>
-          <span class="badge" [ngClass]="getBadgeClass(s.estado)">{{ s.estado }}</span>
-        </td>
-        <td class="actions">
-          <button class="btn-icon" title="Editar">✏️</button>
-          <button class="btn-icon" title="Ver Detalles">👁️</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="max-w-6xl mx-auto bg-white p-8 rounded shadow-sm border border-slate-200 min-h-[70vh]">
+    
+    @if (!viewingSignature) {
+      <div class="animate-in fade-in">
+        <div class="mb-8">
+          <p class="text-sm font-medium text-slate-500 mb-1">Sistema LIMS / <span class="font-bold text-[#1d2b64]">Modulo de firmas</span></p>
+          <h2 class="text-2xl font-bold text-[#1d2b64]">Modulo de firmas</h2>
+          <p class="text-sm text-slate-600 mt-1">Aqui podras encontrar un listado con todos los documentos a firmar.</p>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-200 rounded">
+          <table class="w-full text-center border-collapse">
+            <thead>
+              <tr class="bg-white text-[11px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
+                <th class="p-4 border-r border-slate-100 w-48">Número de Solicitud</th>
+                <th class="p-4 border-r border-slate-100 text-left pl-8">Nombre de Formulario</th>
+                <th class="p-4 border-r border-slate-100 w-32">Firmado</th>
+                <th class="p-4 w-40">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (doc of solicitudes; track doc.id) {
+                <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors">
+                  <td class="p-4 border-r border-slate-100 font-bold text-[#1d2b64] text-sm">{{ doc.id }}</td>
+                  <td class="p-4 border-r border-slate-100 text-left pl-8 text-sm font-medium text-slate-600">{{ doc.nombreFormulario }}</td>
+                  <td class="p-4 border-r border-slate-100">
+                    @if (doc.firmado) {
+                      <span class="inline-block px-6 py-1 border border-blue-400 text-blue-600 font-bold text-xs rounded bg-blue-50/50">SI</span>
+                    } @else {
+                      <span class="inline-block px-5 py-1 border border-slate-300 text-slate-400 font-bold text-xs rounded bg-slate-50">NO</span>
+                    }
+                  </td>
+                  <td class="p-4 flex justify-center">
+                    <button (click)="abrirPanelFirma(doc)" 
+                            class="bg-[#0f172a] text-white px-5 py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-[#1e293b] transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      FIRMAR
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="p-10 text-slate-400 italic">No hay documentos pendientes por firmar.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+
+    @if (viewingSignature) {
+      <div class="animate-in slide-in-from-right-8">
+        
+        <div class="flex justify-between items-start mb-8 border-b border-slate-200 pb-6">
+          <div>
+            <p class="text-sm font-medium text-slate-500 mb-1">Sistema LIMS / <span class="font-bold text-[#1d2b64]">Solicitud de trabajo</span></p>
+            <h2 class="text-2xl font-bold text-[#1d2b64]">Solicitud de trabajo</h2>
+            <p class="text-sm text-slate-800 mt-1">Número de solicitud: <strong class="font-bold">{{ selectedDoc?.id }}</strong></p>
+          </div>
+          <div class="text-right text-[12px] leading-relaxed text-slate-600 font-medium">
+            <p class="font-bold text-[#1d2b64] text-sm mb-1 uppercase">Solicitud de trabajo - Ensayos</p>
+            <p>Elaborado por: Tec. Jorge Diaz</p>
+            <p>Fecha de solicitud: {{ fechaActual | date:'dd/MM/yyyy' }}</p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-[#1d2b64]">Firma Electrónica en Línea</h3>
+          <p class="text-sm text-slate-600">Firmar directamente usando certificado digital en archivo (solo se aceptan archivos .p12)</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          <div class="bg-[#323639] rounded-lg p-4 flex flex-col items-center justify-center overflow-hidden min-h-[500px] relative shadow-inner">
+            <div class="absolute top-0 left-0 right-0 h-10 bg-[#282c2f] flex items-center px-4 justify-between text-slate-300 text-xs">
+              <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" /></svg>
+                <span>{{ selectedDoc?.id }}.pdf</span>
+              </div>
+              <div class="flex gap-4">
+                <span>1 / 1</span>
+                <span>- 100% +</span>
+              </div>
+            </div>
+
+            <div class="w-full max-w-[380px] bg-white h-[450px] mt-8 shadow-lg p-6 flex flex-col text-[8px] text-slate-500 overflow-hidden relative">
+              <div class="flex justify-between items-center border-b pb-2 mb-4">
+                <div class="w-20 h-6 bg-blue-900 rounded"></div>
+                <div class="text-right"><strong class="text-black">ORDEN DE TRABAJO</strong><br>{{ selectedDoc?.id }}</div>
+              </div>
+              <div class="space-y-3">
+                <div class="h-2 w-full bg-slate-200 rounded"></div>
+                <div class="h-2 w-5/6 bg-slate-200 rounded"></div>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                  <div class="h-16 bg-slate-100 rounded border border-slate-200"></div>
+                  <div class="h-16 bg-slate-100 rounded border border-slate-200"></div>
+                </div>
+                <div class="h-2 w-3/4 bg-slate-200 rounded mt-4"></div>
+                <div class="h-2 w-full bg-slate-200 rounded"></div>
+                <div class="h-2 w-2/3 bg-slate-200 rounded"></div>
+              </div>
+              <div class="absolute bottom-6 left-6 w-32 h-10 border-2 border-dashed border-blue-200 flex items-center justify-center text-blue-300 font-bold bg-blue-50/50">
+                ESPACIO FIRMA
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col justify-center">
+            <h4 class="text-[#1d2b64] font-bold mb-4 text-lg">Seleccionar certificado digital (.p12)</h4>
+            
+            <div class="border-2 border-dashed border-blue-300 bg-[#f8fafc] rounded-lg p-10 text-center hover:bg-blue-50 transition-colors relative cursor-pointer group mb-6" [class.border-green-400]="archivoFirma" [class.bg-green-50]="archivoFirma">
+              
+              <input type="file" (change)="onFileSelected($event)" accept=".p12" [disabled]="isFirmando" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10">
+              
+              @if (!archivoFirma) {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-slate-400 mb-3 group-hover:text-[#1d2b64] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p class="text-sm font-bold text-slate-500 uppercase tracking-wide">ARRASTRA AQUÍ O SUBE UN ARCHIVO (.p12)</p>
+                <button type="button" class="mt-4 bg-[#1d2b64] text-white px-6 py-2 rounded text-xs font-bold uppercase shadow-sm">Escoger un archivo</button>
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-green-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-sm font-bold text-green-700">{{ archivoFirma.name }}</p>
+                <p class="text-xs text-slate-500 mt-2">Click para cambiar de archivo</p>
+              }
+            </div>
+
+            <div class="relative mb-8">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+              </div>
+              <input type="password" [(ngModel)]="claveFirma" [disabled]="isFirmando" placeholder="Ingrese su contraseña" 
+                     class="w-full bg-[#f1f4f8] border border-slate-300 text-slate-700 py-3 pl-10 pr-4 rounded outline-none focus:border-[#1d2b64] transition-colors disabled:opacity-50">
+            </div>
+
+            <div class="flex gap-4">
+              <button type="button" (click)="regresarLista()" [disabled]="isFirmando" 
+                      class="flex-1 bg-[#0f172a] text-white py-3.5 rounded text-xs font-bold uppercase tracking-widest hover:bg-[#1e293b] transition-colors disabled:opacity-50">
+                REGRESAR
+              </button>
+              
+              <button type="button" (click)="ejecutarFirma()" [disabled]="isFirmando || !archivoFirma || !claveFirma" 
+                      class="flex-1 bg-slate-400 text-white py-3.5 rounded text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                      [class.bg-slate-400]="!archivoFirma || !claveFirma"
+                      [class.bg-[#1d2b64]]="archivoFirma && claveFirma && !isFirmando"
+                      [class.hover:bg-[#2a3c85]]="archivoFirma && claveFirma && !isFirmando">
+                @if (isFirmando) {
+                  <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Firmando...
+                } @else {
+                  FIRMAR
+                }
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    }
+
+  </div>
 </div>
+
+<style>
+  .animate-in { animation: animateIn 0.3s ease-out forwards; }
+  .fade-in { opacity: 0; }
+  .slide-in-from-right-8 { transform: translateX(2rem); opacity: 0; animation: slideIn 0.3s ease-out forwards; }
+  
+  @keyframes animateIn { to { opacity: 1; transform: translate(0); } }
+  @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+</style>

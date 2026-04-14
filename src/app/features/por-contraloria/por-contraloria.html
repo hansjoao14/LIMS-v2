@@ -1,96 +1,114 @@
-<div style="padding: 30px; background-color: white; font-family: 'Segoe UI', Tahoma, sans-serif; color: #1d2b64; max-width: 1200px; margin: 0 auto;">
-  
-  <header style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px;">
-    <div>
-      <p style="margin: 0; font-size: 15px;">Sistema LIMS / <strong>Gestión de Vehículos</strong></p>
-      <h2 style="margin: 15px 0 5px; font-size: 22px; font-weight: bold;">Solicitud de transporte - Contraloria</h2>
-      <p style="margin: 0; font-size: 14px; color: #555;">Complete la siguiente infomación para solicitar un vehículo de la DMRCA</p>
+<div class="p-6 bg-slate-50 min-h-screen text-slate-800 font-sans pb-20">
+
+  <div class="max-w-7xl mx-auto bg-white p-8 rounded shadow-sm border border-slate-200 mb-10 animate-in fade-in">
+    <div class="flex justify-between items-start mb-8">
+      <div>
+        <p class="text-sm text-slate-500">Sistema LIMS / <span class="font-bold text-[#1d2b64]">Gestión de Vehículos</span></p>
+        <h2 class="text-2xl font-bold text-[#1d2b64] mt-2">Solicitud de transporte - Contraloría</h2>
+        <p class="text-xs text-slate-400 mt-1">Complete la siguiente información para solicitar un vehículo de la DMRCA</p>
+      </div>
+      <div class="text-right text-[11px] leading-relaxed text-slate-600 font-medium">
+        <p class="font-bold text-[#1d2b64] text-sm mb-1 uppercase">FOR.ADM.SVR.001.03</p>
+        <p>Elaborado por: <span class="font-bold">Tec. Jorge Diaz</span></p>
+        <p>Fecha de solicitud: <span class="font-bold">27/05/2025</span></p>
+        <p>Edición: <span class="font-bold">12</span></p>
+      </div>
     </div>
-    <div style="text-align: right; font-size: 14px; line-height: 1.6; font-weight: bold;">
-      <p style="margin: 0;">FOR.ADM.SVR.001.03</p>
-      <p style="margin: 0;">Elaborado por: <span style="font-weight: normal;">Tec. Jorge Diaz</span></p>
-      <p style="margin: 0;">Fecha de solicitud: <span style="font-weight: normal;">27/05/2025</span></p>
-      <p style="margin: 0;">Edición: <span style="font-weight: normal;">12</span></p>
-    </div>
-  </header>
 
-  <form>
-    <h3 style="margin-bottom: 25px; font-size: 18px; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 10px;">Orden de movilización de vehículo</h3>
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <h3 class="text-lg font-bold text-[#1d2b64] border-b border-slate-100 pb-2 mb-6 tracking-tight">Orden de movilización de vehículo</h3>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px;">
-      
-      <div style="display: flex; flex-direction: column; gap: 20px;">
-        <div style="display: flex; flex-direction: column;">
-          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Día y Fecha*</label>
-          <input type="date" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
+        <div class="flex flex-col">
+          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('fecha')">Día y Fecha*</label>
+          <input type="date" formControlName="fecha" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('fecha')">
         </div>
-
-        <div style="display: flex; flex-direction: column;">
-          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Ocupantes (Con el conductor)*</label>
-          <input type="number" placeholder="e.g. 5" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        <div class="flex flex-col">
+          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('ocupantes')">Ocupantes*</label>
+          <input type="number" formControlName="ocupantes" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('ocupantes')">
         </div>
-
-        <div style="display: flex; flex-direction: column;">
-          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Hora de Salida*</label>
-          <input type="time" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        <div class="flex flex-col">
+          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('vehiculo')">Vehículo Asignado*</label>
+          <input type="text" formControlName="vehiculo" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('vehiculo')">
         </div>
-
-        <div style="display: flex; flex-direction: column;">
-          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Hora de Retorno*</label>
-          <input type="time" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        <div class="flex flex-col">
+          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('horaSalida')">Hora Salida*</label>
+          <input type="time" formControlName="horaSalida" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('horaSalida')">
         </div>
-
-        <div style="display: flex; flex-direction: column;">
-          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Funcionario Responsable*</label>
-          <select style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px; color: #666;">
-            <option>Selecciona un funcionario responsable</option>
+        <div class="flex flex-col">
+          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('horaRetorno')">Hora Retorno*</label>
+          <input type="time" formControlName="horaRetorno" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('horaRetorno')">
+        </div>
+        <div class="flex flex-col">
+          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('nombreSolicitante')">Nombre Solicitante*</label>
+          <input type="text" formControlName="nombreSolicitante" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('nombreSolicitante')">
+        </div>
+        <div class="flex flex-col md:col-span-2">
+          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('funcionario')">Funcionario Responsable*</label>
+          <select formControlName="funcionario" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('funcionario')">
+            <option value="" disabled selected>Seleccione...</option>
+            @for (f of funcionarios; track f.id) { <option [value]="f.nombre">{{ f.nombre }}</option> }
           </select>
         </div>
-
-        <div style="display: flex; flex-direction: column;">
-          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Motivo de movilización*</label>
-          <input type="text" placeholder="e.g. Monitoreo de descargas liquidas" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
+        <div class="flex flex-col">
+          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('cargoSolicitante')">Cargo Solicitante*</label>
+          <input type="text" formControlName="cargoSolicitante" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('cargoSolicitante')">
+        </div>
+        <div class="flex flex-col md:col-span-2">
+          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('motivo')">Motivo de movilización*</label>
+          <input type="text" formControlName="motivo" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('motivo')">
+        </div>
+        <div class="flex flex-col">
+          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('origen')">Lugar de origen*</label>
+          <input type="text" formControlName="origen" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('origen')">
+        </div>
+        <div class="flex flex-col md:col-span-2 relative h-full">
+          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('observaciones')">Observaciones*</label>
+          <textarea formControlName="observaciones" rows="4" class="h-full bg-[#f4f7fb] border border-slate-200 text-slate-700 p-3 rounded text-sm outline-none focus:border-[#1d2b64] resize-none" [class.border-red-500]="esCampoInvalido('observaciones')"></textarea>
+          <span class="absolute right-3 bottom-2 text-[10px] font-bold text-slate-400">{{ obsLen }}/250</span>
+        </div>
+        <div class="flex flex-col justify-start">
+          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('destino')">Lugares de destino*</label>
+          <input type="text" formControlName="destino" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('destino')">
         </div>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 20px;">
-        <div style="display: flex; flex-direction: column;">
-          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Vehículo Asignado*</label>
-          <input type="text" placeholder="e.g. Toyota corolla cross 2015" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
-        </div>
+      <div class="mt-10"><button type="submit" class="bg-[#1d2b64] text-white px-14 py-3 rounded text-xs font-bold uppercase tracking-widest hover:bg-[#2a3c85] transition-all shadow-md">GUARDAR</button></div>
+    </form>
+  </div>
 
-        <div style="display: flex; flex-direction: column;">
-          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Nombre del solicitante*</label>
-          <input type="text" placeholder="e.g. Ing. Rosa Fonseca" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
-        </div>
-
-        <div style="display: flex; flex-direction: column;">
-          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Cargo del solicitante*</label>
-          <input type="text" placeholder="e.g. Dirección Metropolitana..." style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
-        </div>
-
-        <div style="display: flex; flex-direction: column;">
-          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Lugar de origen*</label>
-          <input type="text" placeholder="e.g. Av. Mariscal sucre..." style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
-        </div>
-
-        <div style="display: flex; flex-direction: column;">
-          <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Lugares de destino*</label>
-          <input type="text" placeholder="e.g. Leonidas Plaza y Luis Cordero" style="padding: 10px; background: #f1f4f8; border: 1px solid #dce4ec; border-radius: 5px;">
-        </div>
-      </div>
-
-      <div style="grid-column: span 2; display: flex; flex-direction: column; margin-top: 10px;">
-        <label style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Observaciones*</label>
-        <div style="position: relative;">
-          <textarea style="width: 100%; height: 80px; padding: 10px; background: #f1f4f8; border: 2px solid #63b3ed; border-radius: 5px; resize: none;"></textarea>
-          <span style="position: absolute; right: 10px; bottom: 10px; font-size: 12px; color: #999;">0/250</span>
-        </div>
-      </div>
+  <div class="max-w-7xl mx-auto bg-white rounded shadow-sm border border-slate-200 overflow-hidden animate-in fade-in">
+    <div class="bg-[#1d2b64] p-4 text-white font-bold uppercase text-xs tracking-wider">Cronograma General - Contraloría</div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-center border-collapse text-[11px]">
+        <thead>
+          <tr class="bg-slate-100 font-bold text-slate-600 uppercase">
+            <th class="p-3 border-b">Fecha</th>
+            <th class="p-3 border-b">Horas</th>
+            <th class="p-3 border-b">Motivo</th>
+            <th class="p-3 border-b">Ocupantes</th>
+            <th class="p-3 border-b">Funcionario</th>
+            <th class="p-3 border-b">Solicitante</th>
+            <th class="p-3 border-b">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (grupo of solicitudesAgrupadas; track grupo.diaNombre) {
+            <tr class="bg-blue-50 text-left"><td colspan="7" class="p-2 font-black text-[#1d2b64] italic tracking-widest border-y border-blue-100 uppercase">{{ grupo.diaNombre }}</td></tr>
+            @for (sol of grupo.items; track sol.id) {
+              <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors">
+                <td class="p-3">{{ sol.fecha }}</td>
+                <td class="p-3 font-bold text-[#1d2b64]">{{ sol.horaSalida }} - {{ sol.horaRetorno }}</td>
+                <td class="p-3 uppercase">{{ sol.motivo }}</td>
+                <td class="p-3"><span class="bg-white border px-2 py-1 rounded">{{ sol.ocupantes }}</span></td>
+                <td class="p-3 text-[10px] leading-tight">{{ sol.funcionario }}</td>
+                <td class="p-3"><strong>{{ sol.nombreSolicitante }}</strong><br><span class="text-[9px]">{{ sol.cargoSolicitante }}</span></td>
+                <td class="p-3"><button (click)="eliminar(sol.id)" class="text-red-500 font-bold uppercase underline">Eliminar</button></td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
     </div>
-
-    <button type="button" style="margin-top: 30px; background-color: #233169; color: white; padding: 12px 60px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-      GUARDAR
-    </button>
-  </form>
+  </div>
 </div>

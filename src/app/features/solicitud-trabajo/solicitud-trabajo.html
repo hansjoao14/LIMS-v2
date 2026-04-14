@@ -1,344 +1,213 @@
-<div class="p-6 bg-[#f8fafc] min-h-screen text-slate-700 font-sans">
-  <div class="flex justify-between items-start mb-6 gap-4">
-    <div>
-      <h2 class="text-sm font-medium text-gray-500 italic">
-        Sistema LIMS / <span class="text-blue-700 font-bold">Solicitud de trabajo</span>
-      </h2>
-      <p class="text-xs text-slate-500 mt-2 max-w-2xl">
-        El formulario se construye desde el schema JSON, incluyendo dependencias, tipos de respuesta, validaciones e integraciones futuras.
-      </p>
+<div class="p-6 bg-slate-50 min-h-screen pb-24 font-sans text-slate-700">
+  
+  <div class="max-w-6xl mx-auto mb-8">
+    
+    <div class="flex justify-between items-start mb-8">
+      <div>
+        <h2 class="text-sm font-medium text-slate-500">Sistema LIMS / <span class="font-bold text-[#1e3a8a]">Solicitud de trabajo</span></h2>
+      </div>
+      <div class="text-right text-[13px] text-slate-700">
+        <p class="font-bold text-[#1e3a8a] text-sm mb-1">{{ formularioTitulo }}</p>
+        <p>Elaborado por: <span class="font-medium">{{ selectedTecnicoNombre }}</span></p>
+        <p>Fecha de solicitud: <span class="font-medium">{{ fechaActual | date:'dd/MM/yyyy' }}</span></p>
+      </div>
     </div>
 
-    <div class="text-right text-xs">
-      <h1 class="font-bold text-blue-900 text-sm">{{ formularioTitulo }}</h1>
-      <p class="text-gray-500">
-        Elaborado por:
-        <span class="font-semibold text-slate-700">{{ form.get('solicitado_por')?.value || 'Usuario' }}</span>
-      </p>
-      <p class="text-gray-500">
-        Jefatura:
-        <span class="font-semibold text-slate-700">{{ form.get('jefatura_display')?.value || 'N/A' }}</span>
-      </p>
-    </div>
-  </div>
-
-  <div class="bg-white rounded-sm shadow-sm p-8 border border-gray-200">
-    <div class="mb-8">
-      <div class="flex items-start gap-2 overflow-x-auto">
-        @for (label of stepLabels; track $index) {
-          <button type="button" (click)="goToStep($index)" class="flex items-center gap-3 min-w-[180px] text-left">
-            <span
-              class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2"
-              [class.bg-[#1e3a8a]]="currentStep === $index"
-              [class.text-white]="currentStep === $index"
-              [class.border-[#1e3a8a]]="currentStep === $index"
-              [class.bg-white]="currentStep !== $index"
-              [class.text-slate-600]="currentStep !== $index"
-              [class.border-slate-300]="currentStep !== $index"
-            >
-              {{ $index + 1 }}
-            </span>
-
-            <div>
-              <div
-                class="text-[11px] font-bold uppercase"
-                [class.text-[#1e3a8a]]="currentStep === $index"
-                [class.text-slate-700]="currentStep !== $index"
-              >
-                {{ label }}
-              </div>
-            </div>
-          </button>
-
-          @if ($index < stepLabels.length - 1) {
-            <div class="w-10 h-[2px] bg-slate-300 mt-4 shrink-0"></div>
-          }
+    <div class="mb-6">
+      <div class="flex justify-between items-center mb-3">
+        <h1 class="text-xl font-extrabold text-[#1e3a8a] uppercase tracking-tight">RF02 - SOLICITUD DE ORDEN DE TRABAJO</h1>
+        <span class="text-[10px] font-bold text-[#1e3a8a] bg-blue-100 px-3 py-1 rounded-full uppercase tracking-widest">PASO {{currentStep}} DE 4</span>
+      </div>
+      <div class="flex items-center gap-2">
+        @for (s of [1,2,3,4]; track $index) {
+          <div class="flex-1 h-2.5 rounded-full transition-all duration-500 cursor-pointer" 
+               (click)="goToStep(s)"
+               [class.bg-[#2541b2]]="currentStep >= s" [class.bg-slate-200]="currentStep < s"></div>
         }
       </div>
     </div>
 
-    @if (loading) {
-      <div class="flex flex-col items-center justify-center p-20">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mb-4"></div>
-        <span class="font-bold text-blue-900">Cargando formulario LIMS...</span>
-      </div>
-    } @else {
-
-      <!-- PASO 1 -->
-      @if (currentStep === 0) {
-        <div [formGroup]="form" class="space-y-6">
-          <div>
-            <h3 class="text-xl font-bold mb-1 text-slate-800">Solicitud de trabajo</h3>
-            <p class="text-sm text-slate-600">
-              Primero seleccione la entidad, luego el técnico, y se precargará el cargo.
-            </p>
+    <form [formGroup]="form">
+      
+      @if (currentStep === 1) {
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 animate-in fade-in slide-in-from-bottom-4">
+          
+          <div class="mb-6 border-b border-slate-300 pb-4">
+            <h3 class="text-lg font-bold text-[#1e3a8a] mb-1">Solicitud de trabajo</h3>
+            <p class="text-sm text-slate-800">Número de solicitud: <strong class="font-bold">{{ form.get('numero_solicitud')?.value }}</strong></p>
           </div>
-
-          <div class="grid grid-cols-12 gap-6 rounded-sm bg-slate-50 border border-slate-200 p-5">
+          
+          <div class="grid grid-cols-12 gap-6 pb-6 border-b border-slate-300 mb-6">
             <div class="col-span-12 md:col-span-4">
-              <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Entidad *</label>
-              <select formControlName="entidad_id" class="w-full border border-gray-300 rounded p-2 text-sm bg-white outline-none">
-                <option value="">Seleccione una entidad</option>
-                @for (entidad of entidadesMock; track entidad.id) {
-                  <option [value]="entidad.id">{{ entidad.nombre }}</option>
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido('entidad_id')">LISTADO DE JEFATURAS O DIRECCIÓN *</label>
+              <select formControlName="entidad_id" class="w-full border border-slate-300 p-2.5 rounded text-sm bg-white outline-none focus:border-blue-500" [class.border-red-500]="esCampoInvalido('entidad_id')">
+                <option value="">Seleccione...</option>
+                @for (e of entidadesMock; track e.id) {
+                  <option [value]="e.id">{{ e.nombre }}</option>
                 }
               </select>
             </div>
-
             <div class="col-span-12 md:col-span-4">
-              <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Técnico *</label>
-              <select formControlName="tecnico_id" class="w-full border border-gray-300 rounded p-2 text-sm bg-white outline-none">
-                <option value="">Seleccione un técnico</option>
-                @for (tecnico of tecnicosFiltrados; track tecnico.id) {
-                  <option [value]="tecnico.id">{{ tecnico.nombre }}</option>
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido('tecnico_id')">SOLICITADO POR *</label>
+              <select formControlName="tecnico_id" class="w-full border border-slate-300 p-2.5 rounded text-sm bg-white outline-none focus:border-blue-500" [class.border-red-500]="esCampoInvalido('tecnico_id')">
+                <option value="">Seleccione...</option>
+                @for (t of tecnicosFiltrados; track t.id) {
+                  <option [value]="t.id">{{ t.nombre }}</option>
                 }
               </select>
             </div>
-
             <div class="col-span-12 md:col-span-4">
-              <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Cargo</label>
-              <input type="text" formControlName="cargo_usuario" readonly class="w-full border border-gray-200 rounded p-2 bg-white text-sm text-gray-600 outline-none" />
-            </div>
-
-            <div class="col-span-12 md:col-span-6">
-              <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Jefatura o dirección</label>
-              <input type="text" formControlName="jefatura_display" readonly class="w-full border border-gray-200 rounded p-2 bg-white text-sm text-gray-600 outline-none" />
-            </div>
-
-            <div class="col-span-12 md:col-span-6">
-              <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Solicitado por</label>
-              <input type="text" formControlName="solicitado_por" readonly class="w-full border border-gray-200 rounded p-2 bg-white text-sm text-gray-600 outline-none" />
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">CARGO</label>
+              <input formControlName="cargo_usuario" type="text" class="w-full border border-slate-200 p-2.5 rounded text-sm bg-slate-50 text-slate-500 outline-none">
             </div>
           </div>
 
           <div class="flex justify-end">
-            <button type="button" (click)="goNextStep()" class="bg-[#1e3a8a] text-white px-12 py-3 rounded font-bold uppercase text-xs shadow-md hover:bg-blue-800 transition-all">
-              Siguiente
+            <button type="button" (click)="goNextStep()" class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all">
+              SIGUIENTE
             </button>
           </div>
         </div>
       }
 
-      <!-- PASO 2 -->
-      @if (currentStep === 1) {
-        <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-8">
-          <div class="grid grid-cols-12 gap-6 rounded-sm bg-slate-50 border border-slate-200 p-5">
-            <div class="col-span-12 md:col-span-6">
-              <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Jefatura o dirección</label>
-              <input type="text" formControlName="jefatura_display" class="w-full border border-gray-200 rounded p-2 bg-white text-sm text-gray-600 outline-none" />
-            </div>
-
-            <div class="col-span-12 md:col-span-3">
-              <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Solicitado por</label>
-              <input type="text" formControlName="solicitado_por" class="w-full border border-gray-200 rounded p-2 bg-white text-sm text-gray-600 outline-none" />
-            </div>
-
-            <div class="col-span-12 md:col-span-3">
-              <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Cargo</label>
-              <input type="text" formControlName="cargo_usuario" class="w-full border border-gray-200 rounded p-2 bg-white text-sm text-gray-500 outline-none" />
-            </div>
+      @if (currentStep === 2) {
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 space-y-8 animate-in fade-in">
+          
+          <div class="flex justify-between items-center border-b pb-2 mb-4">
+            <h3 class="text-lg font-bold text-[#1e3a8a]">2. Información del Operador y Ubicación</h3>
           </div>
 
-          <!-- Identificación -->
           @if (getSectionFields('identificacion').length > 0) {
-            <section class="border border-slate-200 rounded-sm overflow-hidden">
-              <div class="bg-slate-50 border-b border-slate-200 px-5 py-4">
-                <h4 class="font-bold text-blue-900 text-base">Identificación</h4>
-                <p class="text-xs text-slate-500 mt-1">Seleccione el tipo de identificación y complete los datos requeridos.</p>
+            <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+              <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+                <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Identificación</h4>
               </div>
-
-              <div class="p-5">
-                <div class="grid grid-cols-12 gap-5">
-                  @for (field of getSectionFields('identificacion'); track field.id) {
-                    <div class="col-span-12 md:col-span-6">
-                      <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">
-                        {{ field.label }} @if (field.required && !field.readonly) { <span>*</span> }
-                      </label>
-
-                      <select
-                        [formControl]="getFieldControl(field.key)"
-                        class="w-full border rounded p-2 text-sm bg-white outline-none transition-colors"
-                        [class.border-red-300]="isFieldInvalid(field)"
-                        [class.border-gray-300]="!isFieldInvalid(field)"
-                      >
-                        <option value="">Seleccione una opción</option>
-                        @for (opt of field.options; track opt.id) {
-                          <option [value]="opt.id">{{ opt.nombre }}</option>
+              <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                @for (f of getSectionFields('identificacion'); track f.id) {
+                  <div class="relative">
+                    <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido(f.key)">
+                      {{f.label}} @if (f.required) { <span class="text-red-500">*</span> }
+                    </label>
+                    
+                    @if (f.controlType === 'select') {
+                      <select [formControlName]="f.key" class="w-full border border-slate-300 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido(f.key)">
+                        <option value="">Seleccione...</option>
+                        @for (opt of f.options; track opt.id) {
+                          <option [value]="opt.id">{{opt.nombre}}</option>
                         }
                       </select>
-
-                      @if (getFieldError(field); as error) {
-                        <p class="text-[11px] text-red-600 mt-1">{{ error }}</p>
-                      }
-                    </div>
-                  }
-
-                  @if (isPasaporteSelected) {
-                    <div class="col-span-12 md:col-span-6">
-                      <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">
-                        Número de pasaporte *
-                      </label>
-                      <input
-                        type="text"
-                        formControlName="val_pasaporte"
-                        placeholder="Ingrese el número de pasaporte"
-                        class="w-full border border-gray-300 rounded p-2 text-sm outline-none transition-colors"
-                      />
-                    </div>
-                  }
-                </div>
-              </div>
-            </section>
-          }
-
-          <!-- Operador -->
-          @if (getSectionFields('operador').length > 0) {
-            <section class="border border-slate-200 rounded-sm overflow-hidden">
-              <div class="bg-slate-50 border-b border-slate-200 px-5 py-4">
-                <h4 class="font-bold text-blue-900 text-base">Información del operador</h4>
-                <p class="text-xs text-slate-500 mt-1">Complete los datos principales del operador.</p>
-              </div>
-
-              <div class="p-5">
-                <div class="grid grid-cols-12 gap-5">
-                  @for (field of getSectionFields('operador'); track field.id) {
-                    <div class="col-span-12" [class.md:col-span-6]="field.controlType !== 'textarea'">
-                      <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">
-                        {{ field.label }} @if (field.required && !field.readonly) { <span>*</span> }
-                      </label>
-
-                      @switch (field.controlType) {
-                        @case ('select') {
-                          <select
-                            [formControl]="getFieldControl(field.key)"
-                            class="w-full border rounded p-2 text-sm bg-white outline-none transition-colors"
-                            [class.border-red-300]="isFieldInvalid(field)"
-                            [class.border-gray-300]="!isFieldInvalid(field)"
-                          >
-                            <option value="">Seleccione una opción</option>
-                            @for (opt of field.options; track opt.id) {
-                              <option [value]="opt.id">{{ opt.nombre }}</option>
-                            }
-                          </select>
-                        }
-                        @case ('textarea') {
-                          <div class="relative">
-                            <textarea
-                              [formControl]="getFieldControl(field.key)"
-                              [readonly]="field.readonly"
-                              [rows]="getFieldRows(field)"
-                              [placeholder]="field.placeholder"
-                              class="w-full border rounded p-3 text-sm resize-none outline-none transition-colors"
-                              [class.border-red-300]="isFieldInvalid(field)"
-                              [class.border-gray-300]="!isFieldInvalid(field)"
-                              [class.bg-gray-50]="field.readonly"
-                            ></textarea>
-                          </div>
-                        }
-                        @default {
-                          <input
-                            [type]="getFieldInputType(field)"
-                            [formControl]="getFieldControl(field.key)"
-                            [readonly]="field.readonly"
-                            [placeholder]="field.placeholder"
-                            class="w-full border rounded p-2 text-sm outline-none transition-colors"
-                            [class.border-red-300]="isFieldInvalid(field)"
-                            [class.border-gray-300]="!isFieldInvalid(field)"
-                            [class.bg-gray-50]="field.readonly"
-                          />
-                        }
-                      }
-
-                      @if (getFieldError(field); as error) {
-                        <p class="text-[11px] text-red-600 mt-1">{{ error }}</p>
-                      }
-                    </div>
-                  }
-                </div>
-              </div>
-            </section>
-          }
-
-          <!-- Ubicación y mapa -->
-          @if (getSectionFields('ubicacion').length > 0) {
-            <section class="border border-slate-200 rounded-sm overflow-hidden">
-              <div class="bg-slate-50 border-b border-slate-200 px-5 py-4">
-                <h4 class="font-bold text-blue-900 text-base">Ubicación</h4>
-                <p class="text-xs text-slate-500 mt-1">Seleccione las coordenadas geográficas y marque la ubicación en el mapa.</p>
-              </div>
-
-              <div class="p-5">
-                <div class="p-4 bg-slate-50 rounded-sm border border-slate-100">
-                  <label class="block text-[11px] font-bold text-blue-900 uppercase mb-3">
-                    Coordenadas geográficas del operador
-                  </label>
-
-                  <div class="flex flex-wrap items-center gap-4">
-                    @for (field of getSectionFields('ubicacion'); track field.id) {
-                      <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold text-slate-500 uppercase">{{ field.label }}:</span>
-                        <input
-                          type="text"
-                          [formControl]="getFieldControl(field.key)"
-                          readonly
-                          class="w-32 bg-white border border-gray-200 rounded p-1.5 text-sm text-center font-mono"
-                        />
-                      </div>
                     }
 
-                    <button
-                      type="button"
-                      (click)="openMap()"
-                      class="bg-[#1e3a8a] text-white px-5 py-2 rounded text-[10px] font-bold uppercase shadow-sm hover:bg-blue-800 transition-all flex items-center gap-2"
-                    >
-                      <span class="text-sm">+</span> AGREGAR UBICACIÓN
-                    </button>
+                    @if (f.controlType === 'text') {
+                      <div class="flex gap-0">
+                        <input [formControlName]="f.key" 
+                               (keydown.enter)="$event.preventDefault(); buscarDatosIntegracion(f)"
+                               class="w-full border border-slate-300 p-2.5 text-sm outline-none focus:border-[#1e3a8a] bg-white"
+                               [class.border-red-500]="esCampoInvalido(f.key)"
+                               [class.rounded]="!f.integrations.sri && !f.integrations.civil"
+                               [class.rounded-l]="f.integrations.sri || f.integrations.civil"
+                               [placeholder]="f.label" [type]="f.key.includes('ruc') || f.key.includes('ced') ? 'number' : 'text'">
+                        
+                        @if (f.integrations.sri || f.integrations.civil) {
+                          <button type="button" (click)="buscarDatosIntegracion(f)"
+                                  class="bg-[#25377f] text-white px-4 rounded-r hover:bg-[#1e2d6b] transition-colors flex items-center justify-center border border-[#25377f]">
+                            @if (!buscandoIntegracion[f.key]) { 
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            }
+                            @if (buscandoIntegracion[f.key]) { <span class="animate-spin block">⏳</span> }
+                          </button>
+                        }
+                      </div>
+                    }
                   </div>
-                </div>
+                }
+                
+                @if (isPasaporteSelected) {
+                  <div class="animate-in fade-in">
+                    <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido('val_pasaporte')">Número de pasaporte <span class="text-red-500">*</span></label>
+                    <input type="text" formControlName="val_pasaporte" class="w-full border border-slate-300 rounded p-2.5 text-sm outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido('val_pasaporte')">
+                  </div>
+                }
               </div>
             </section>
           }
 
-          <!-- Horarios -->
-          @if (getSectionFields('horario').length > 0) {
-            <section class="border border-slate-200 rounded-sm overflow-hidden">
-              <div class="bg-slate-50 border-b border-slate-200 px-5 py-4">
-                <h4 class="font-bold text-blue-900 text-base">Horarios o jornadas laborales</h4>
-                <p class="text-xs text-slate-500 mt-1">Seleccione los horarios aplicables.</p>
+          @if (getSectionFields('operador').length > 0) {
+            <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+              <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+                <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Datos del Operador</h4>
               </div>
+              <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                @for (f of getSectionFields('operador'); track f.id) {
+                  <div [class.col-span-2]="f.controlType === 'textarea'" class="relative">
+                    <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido(f.key)">
+                      {{f.label}} @if (f.required) { <span class="text-red-500">*</span> }
+                    </label>
+                    
+                    @if (f.controlType === 'textarea') {
+                      <textarea [formControlName]="f.key" [rows]="getFieldRows(f)" class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido(f.key)"></textarea>
+                    }
+                    
+                    @if (f.controlType === 'text') {
+                      <div class="flex gap-0">
+                        <input [formControlName]="f.key" (keydown.enter)="$event.preventDefault(); buscarDatosIntegracion(f)" class="w-full border border-slate-300 p-2.5 text-sm outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido(f.key)" [class.rounded]="!f.integrations.sri && !f.integrations.civil" [class.rounded-l]="f.integrations.sri || f.integrations.civil" [placeholder]="f.label">
+                        
+                        @if (f.integrations.sri || f.integrations.civil) {
+                          <button type="button" (click)="buscarDatosIntegracion(f)" class="bg-[#25377f] text-white px-4 rounded-r hover:bg-[#1e2d6b] transition-colors border border-[#25377f]">
+                            @if (!buscandoIntegracion[f.key]) { 
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            }
+                            @if (buscandoIntegracion[f.key]) { <span class="animate-spin block">⏳</span> }
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </section>
+          }
 
+          @if (getSectionFields('ubicacion').length > 0) {
+            <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+              <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+                <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Ubicación Geo-Referenciada</h4>
+              </div>
+              <div class="p-5 bg-white flex flex-wrap items-center gap-4">
+                @for (f of getSectionFields('ubicacion'); track f.id) {
+                  <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold text-[#1e3a8a] uppercase" [class.text-red-600]="esCampoInvalido(f.key)">{{ f.label }}:</span>
+                    <input type="text" [formControlName]="f.key" readonly class="w-32 bg-slate-50 border border-slate-300 rounded p-2 text-sm text-center font-mono text-[#1e3a8a] outline-none" [class.border-red-500]="esCampoInvalido(f.key)"/>
+                  </div>
+                }
+                <button type="button" (click)="openMap()" class="bg-[#25377f] text-white px-5 py-2 rounded text-[10px] font-bold uppercase shadow-sm hover:bg-[#1e2d6b] transition-colors border border-[#25377f]">
+                  Abrir Mapa
+                </button>
+              </div>
+            </section>
+          }
+
+          @if (getSectionFields('horario').length > 0) {
+            <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+              <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+                <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Horarios Laborales</h4>
+              </div>
               <div class="p-5">
-                @for (field of getSectionFields('horario'); track field.id) {
+                @for (f of getSectionFields('horario'); track f.id) {
                   <div>
                     <div class="flex items-center justify-between mb-2">
-                      <label class="block text-[11px] font-bold text-blue-900 uppercase">{{ field.label }}</label>
-                      <span class="text-[10px] text-slate-500">{{ selectedScheduleIndexes.size }} seleccionado(s)</span>
+                      <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase">{{ f.label }}</label>
+                      <span class="text-[10px] bg-blue-100 text-[#1e3a8a] px-3 py-1 rounded-full font-bold">{{ selectedScheduleIndexes.size }} Seleccionados</span>
                     </div>
-
-                    <div class="border border-gray-300 rounded overflow-hidden">
-                      <div class="max-h-80 overflow-y-auto bg-white">
-                        <table class="w-full text-[11px]">
+                    <div class="border border-slate-300 rounded overflow-hidden">
+                      <div class="max-h-60 overflow-y-auto bg-white custom-scroll">
+                        <table class="w-full text-sm">
                           <tbody>
-                            @for (item of field.scheduleItems; track $index) {
-                              <tr
-                                class="border-b last:border-0 cursor-pointer transition-colors"
-                                [class.bg-blue-50]="isScheduleSelected($index)"
-                                [class.hover:bg-slate-50]="!isScheduleSelected($index)"
-                                (click)="toggleScheduleItem($index)"
-                              >
-                                <td class="p-2.5 w-8">
-                                  <input
-                                    type="checkbox"
-                                    [checked]="isScheduleSelected($index)"
-                                    (click)="$event.stopPropagation()"
-                                    (change)="toggleScheduleItem($index)"
-                                    class="accent-blue-800 cursor-pointer"
-                                  />
-                                </td>
-                                <td class="p-2.5 text-slate-600 font-medium">{{ item.dia_laboral.trim() }}</td>
-                                <td class="p-2.5 text-right text-blue-800 font-mono font-bold tracking-tight">
-                                  {{ item.hora_inicio }} - {{ item.hora_fin }}
-                                </td>
+                            @for (item of f.scheduleItems; track $index; let i = $index) {
+                              <tr class="border-b border-slate-200 last:border-0 cursor-pointer transition-colors" [class.bg-blue-50]="isScheduleSelected(i)" [class.hover:bg-slate-50]="!isScheduleSelected(i)" (click)="toggleScheduleItem(i)">
+                                <td class="p-3 w-10 text-center"><input type="checkbox" [checked]="isScheduleSelected(i)" class="accent-[#25377f] cursor-pointer w-4 h-4" (click)="$event.stopPropagation(); toggleScheduleItem(i)"/></td>
+                                <td class="p-3 text-slate-700">{{ item.dia_laboral.trim() }}</td>
+                                <td class="p-3 text-right text-[#1e3a8a] font-mono font-bold">{{ item.hora_inicio }} - {{ item.hora_fin }}</td>
                               </tr>
                             }
                           </tbody>
@@ -351,125 +220,43 @@
             </section>
           }
 
-          <!-- Motivo -->
-          <section class="border border-slate-200 rounded-sm overflow-hidden">
-            <div class="bg-slate-50 border-b border-slate-200 px-5 py-4">
-              <h4 class="font-bold text-blue-900 text-base">Motivo</h4>
-              <p class="text-xs text-slate-500 mt-1">Seleccione el tipo de trámite y complete el bloque correspondiente.</p>
+          <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+            <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+              <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Motivo del Trámite</h4>
             </div>
-
             <div class="p-5 space-y-6">
               <div class="grid grid-cols-12 gap-5">
-                <div class="col-span-12 md:col-span-6">
-                  <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Tipo de motivo *</label>
-                  <select formControlName="motivo_flujo" class="w-full border border-gray-300 rounded p-2 text-sm bg-white outline-none">
-                    <option value="">Seleccione una opción</option>
-                    <option value="seguimiento">Seguimiento</option>
-                    <option value="denuncia">Denuncia</option>
-                    <option value="licenciamiento">Licenciamiento</option>
-                  </select>
-                </div>
-
-                @for (field of getMotivoBaseFields(); track field.id) {
-                  <div class="col-span-12" [class.md:col-span-6]="field.controlType !== 'textarea'">
-                    <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">
-                      {{ field.label }} @if (field.required && !field.readonly) { <span>*</span> }
+                @for (f of getMotivoBaseFields(); track f.id) {
+                  <div class="col-span-12 md:col-span-6 relative">
+                    <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido(f.key)">
+                      {{ f.label }} @if (f.required) { <span class="text-red-500">*</span> } 
                     </label>
-
-                    @switch (field.controlType) {
-                      @case ('select') {
-                        <select
-                          [formControl]="getFieldControl(field.key)"
-                          class="w-full border rounded p-2 text-sm bg-white outline-none transition-colors"
-                          [class.border-red-300]="isFieldInvalid(field)"
-                          [class.border-gray-300]="!isFieldInvalid(field)"
-                        >
-                          <option value="">Seleccione una opción</option>
-                          @for (opt of field.options; track opt.id) {
-                            <option [value]="opt.id">{{ opt.nombre }}</option>
-                          }
-                        </select>
-                      }
-                      @case ('textarea') {
-                        <textarea
-                          [formControl]="getFieldControl(field.key)"
-                          [rows]="getFieldRows(field)"
-                          [placeholder]="field.placeholder"
-                          class="w-full border rounded p-3 text-sm resize-none outline-none transition-colors"
-                          [class.border-red-300]="isFieldInvalid(field)"
-                          [class.border-gray-300]="!isFieldInvalid(field)"
-                        ></textarea>
-                      }
-                      @default {
-                        <input
-                          [type]="getFieldInputType(field)"
-                          [formControl]="getFieldControl(field.key)"
-                          [placeholder]="field.placeholder"
-                          class="w-full border rounded p-2 text-sm outline-none transition-colors"
-                          [class.border-red-300]="isFieldInvalid(field)"
-                          [class.border-gray-300]="!isFieldInvalid(field)"
-                        />
-                      }
-                    }
-
-                    @if (getFieldError(field); as error) {
-                      <p class="text-[11px] text-red-600 mt-1">{{ error }}</p>
+                    
+                    @if (f.controlType === 'select') {
+                      <select [formControlName]="f.key" class="w-full border border-slate-300 rounded p-2.5 text-sm bg-white outline-none focus:border-[#1e3a8a] transition-colors" [class.border-red-500]="esCampoInvalido(f.key)">
+                        <option value="">Seleccione una opción</option>
+                        @for (opt of f.options; track opt.id) {
+                          <option [value]="opt.id">{{ opt.nombre }}</option>
+                        }
+                      </select>
                     }
                   </div>
                 }
               </div>
 
               @if (motivoFlujo) {
-                <div class="border border-slate-200 rounded-sm p-4">
-                  <h5 class="text-sm font-bold text-slate-800 mb-4 uppercase">
-                    Detalle de {{ motivoFlujo }}
-                  </h5>
-
-                  <div class="grid grid-cols-12 gap-5">
-                    @for (field of getMotivoSpecificFields(motivoFlujo); track field.id) {
-                      <div class="col-span-12" [class.md:col-span-6]="field.controlType !== 'textarea'">
-                        <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">
-                          {{ field.label }} @if (field.required && !field.readonly) { <span>*</span> }
-                        </label>
-
-                        @switch (field.controlType) {
-                          @case ('select') {
-                            <select
-                              [formControl]="getFieldControl(field.key)"
-                              class="w-full border rounded p-2 text-sm bg-white outline-none transition-colors"
-                              [class.border-red-300]="isFieldInvalid(field)"
-                              [class.border-gray-300]="!isFieldInvalid(field)"
-                            >
-                              <option value="">Seleccione una opción</option>
-                              @for (opt of field.options; track opt.id) {
-                                <option [value]="opt.id">{{ opt.nombre }}</option>
-                              }
-                            </select>
-                          }
-                          @case ('textarea') {
-                            <textarea
-                              [formControl]="getFieldControl(field.key)"
-                              [rows]="getFieldRows(field)"
-                              [placeholder]="field.placeholder"
-                              class="w-full border rounded p-3 text-sm resize-none outline-none transition-colors"
-                              [class.border-red-300]="isFieldInvalid(field)"
-                              [class.border-gray-300]="!isFieldInvalid(field)"
-                            ></textarea>
-                          }
-                          @default {
-                            <input
-                              [type]="getFieldInputType(field)"
-                              [formControl]="getFieldControl(field.key)"
-                              [placeholder]="field.placeholder"
-                              class="w-full border rounded p-2 text-sm outline-none transition-colors"
-                              [class.border-red-300]="isFieldInvalid(field)"
-                              [class.border-gray-300]="!isFieldInvalid(field)"
-                            />
-                          }
+                <div class="border border-blue-200 bg-[#f4f7fb] rounded p-5 animate-in fade-in">
+                  <h5 class="text-sm font-bold text-[#1e3a8a] mb-4 uppercase border-b border-blue-200 pb-2">Detalle de {{ motivoFlujo }}</h5>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    @for (f of getMotivoSpecificFields(motivoFlujo); track f.id) {
+                      <div [class.col-span-2]="f.controlType === 'textarea'">
+                        <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido(f.key)">{{ f.label }} @if (f.required) { <span class="text-red-500">*</span> } </label>
+                        
+                        @if (f.controlType === 'textarea') {
+                          <textarea [formControlName]="f.key" [rows]="getFieldRows(f)" class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido(f.key)"></textarea>
                         }
-
-                        @if (getFieldError(field); as error) {
-                          <p class="text-[11px] text-red-600 mt-1">{{ error }}</p>
+                        @if (f.controlType === 'text') {
+                          <input [type]="getFieldInputType(f)" [formControlName]="f.key" class="w-full border border-slate-300 rounded p-2.5 text-sm outline-none focus:border-[#1e3a8a] bg-white" [placeholder]="f.placeholder" [class.border-red-500]="esCampoInvalido(f.key)">
                         }
                       </div>
                     }
@@ -479,201 +266,96 @@
             </div>
           </section>
 
-          <!-- Contacto -->
           @if (getSectionFields('contacto').length > 0) {
-            <section class="border border-slate-200 rounded-sm overflow-hidden">
-              <div class="bg-slate-50 border-b border-slate-200 px-5 py-4">
-                <h4 class="font-bold text-blue-900 text-base">Contacto</h4>
-                <p class="text-xs text-slate-500 mt-1">Información adicional para el caso.</p>
+            <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+              <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+                <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Contacto</h4>
               </div>
-
-              <div class="p-5">
-                <div class="grid grid-cols-12 gap-5">
-                  @for (field of getSectionFields('contacto'); track field.id) {
-                    <div class="col-span-12" [class.md:col-span-6]="field.controlType !== 'textarea'">
-                      <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">
-                        {{ field.label }} @if (field.required && !field.readonly) { <span>*</span> }
-                      </label>
-
-                      @switch (field.controlType) {
-                        @case ('select') {
-                          <select
-                            [formControl]="getFieldControl(field.key)"
-                            class="w-full border rounded p-2 text-sm bg-white outline-none transition-colors"
-                            [class.border-red-300]="isFieldInvalid(field)"
-                            [class.border-gray-300]="!isFieldInvalid(field)"
-                          >
-                            <option value="">Seleccione una opción</option>
-                            @for (opt of field.options; track opt.id) {
-                              <option [value]="opt.id">{{ opt.nombre }}</option>
-                            }
-                          </select>
-                        }
-                        @case ('textarea') {
-                          <textarea
-                            [formControl]="getFieldControl(field.key)"
-                            [rows]="getFieldRows(field)"
-                            [placeholder]="field.placeholder"
-                            class="w-full border rounded p-3 text-sm resize-none outline-none transition-colors"
-                            [class.border-red-300]="isFieldInvalid(field)"
-                            [class.border-gray-300]="!isFieldInvalid(field)"
-                          ></textarea>
-                        }
-                        @default {
-                          <input
-                            [type]="getFieldInputType(field)"
-                            [formControl]="getFieldControl(field.key)"
-                            [placeholder]="field.placeholder"
-                            class="w-full border rounded p-2 text-sm outline-none transition-colors"
-                            [class.border-red-300]="isFieldInvalid(field)"
-                            [class.border-gray-300]="!isFieldInvalid(field)"
-                          />
-                        }
-                      }
-
-                      @if (getFieldError(field); as error) {
-                        <p class="text-[11px] text-red-600 mt-1">{{ error }}</p>
-                      }
-                    </div>
-                  }
-                </div>
+              <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                @for (f of getSectionFields('contacto'); track f.id) {
+                  <div [class.col-span-2]="f.controlType === 'textarea'">
+                    <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido(f.key)">{{f.label}} @if (f.required) { <span class="text-red-500">*</span> } </label>
+                    
+                    @if (f.controlType === 'textarea') {
+                      <textarea [formControlName]="f.key" [rows]="getFieldRows(f)" class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido(f.key)"></textarea>
+                    }
+                    @if (f.controlType === 'text') {
+                      <input [formControlName]="f.key" class="w-full border border-slate-300 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] bg-white" [placeholder]="f.placeholder" [class.border-red-500]="esCampoInvalido(f.key)">
+                    }
+                  </div>
+                }
               </div>
             </section>
           }
 
-          <!-- Observaciones -->
           @if (getSectionFields('observaciones').length > 0) {
-            <section class="border border-slate-200 rounded-sm overflow-hidden">
-              <div class="bg-slate-50 border-b border-slate-200 px-5 py-4">
-                <h4 class="font-bold text-blue-900 text-base">Observaciones</h4>
-                <p class="text-xs text-slate-500 mt-1">Ingrese las observaciones finales.</p>
+            <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+              <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+                <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Observaciones</h4>
               </div>
-
               <div class="p-5">
-                <div class="grid grid-cols-12 gap-5">
-                  @for (field of getSectionFields('observaciones'); track field.id) {
-                    <div class="col-span-12">
-                      <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">
-                        {{ field.label }} @if (field.required && !field.readonly) { <span>*</span> }
-                      </label>
-
-                      <textarea
-                        [formControl]="getFieldControl(field.key)"
-                        [rows]="getFieldRows(field)"
-                        [placeholder]="field.placeholder"
-                        class="w-full border rounded p-3 text-sm resize-none outline-none transition-colors"
-                        [class.border-red-300]="isFieldInvalid(field)"
-                        [class.border-gray-300]="!isFieldInvalid(field)"
-                      ></textarea>
-
-                      @if (getFieldError(field); as error) {
-                        <p class="text-[11px] text-red-600 mt-1">{{ error }}</p>
-                      }
-                    </div>
-                  }
-                </div>
+                @for (f of getSectionFields('observaciones'); track f.id) {
+                  <div>
+                    <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido(f.key)">{{f.label}} @if (f.required) { <span class="text-red-500">*</span> } </label>
+                    <textarea [formControlName]="f.key" [rows]="getFieldRows(f)" class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido(f.key)"></textarea>
+                  </div>
+                }
               </div>
             </section>
           }
 
-          <div class="flex flex-col md:flex-row gap-4 pt-2">
-            <button
-              type="button"
-              (click)="goPrevStep()"
-              class="bg-gray-400 text-white px-12 py-3 rounded font-bold uppercase text-xs hover:bg-gray-500 transition-all shadow-sm"
-            >
-              Regresar
-            </button>
-            <button
-              type="submit"
-              [disabled]="form.invalid"
-              class="bg-[#1e3a8a] text-white px-12 py-3 rounded font-bold uppercase text-xs shadow-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-800 transition-all"
-            >
-              Siguiente
-            </button>
+          <div class="flex justify-between pt-4 border-t border-slate-300">
+            <button type="button" (click)="goPrevStep()" class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">REGRESAR</button>
+            <button type="button" (click)="goNextStep()" class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all">SIGUIENTE</button>
           </div>
-        </form>
+        </div>
       }
 
-      <!-- PASO 3 -->
-      @if (currentStep === 2) {
-        <div class="space-y-8">
-          <div class="mb-6">
-            <h3 class="text-xl font-bold text-slate-800">Solicitud de trabajo</h3>
-            <p class="text-sm mt-1 text-slate-600">
-              Número de solicitud: <strong class="text-slate-800">{{ numeroSolicitud }}</strong>
-            </p>
+      @if (currentStep === 3) {
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 space-y-8 animate-in fade-in slide-in-from-right-4">
+          <div class="mb-6 border-b pb-4">
+            <h3 class="text-xl font-bold text-[#1e3a8a]">Catálogo de Servicios</h3>
+            <p class="text-sm mt-1 text-slate-600">Active la matriz ambiental y los servicios requeridos.</p>
           </div>
 
-          <div class="border border-gray-200 rounded overflow-hidden">
-            <div class="grid grid-cols-[1fr_1fr_1fr] bg-gray-50 border-b border-gray-200">
-              <div class="px-4 py-3 text-[11px] font-bold text-slate-700 uppercase tracking-wide text-center">
-                Matriz ambiental
-              </div>
-              <div class="px-4 py-3 text-[11px] font-bold text-slate-700 uppercase tracking-wide text-center border-l border-gray-200">
-                Servicios aplicables
-              </div>
-              <div class="px-4 py-3 text-[11px] font-bold text-slate-700 uppercase tracking-wide text-center border-l border-gray-200">
-                Activar servicio requerido
-              </div>
+          <div class="border border-gray-200 rounded overflow-hidden shadow-sm">
+            <div class="grid grid-cols-[1fr_1fr_1fr] bg-white border-b border-gray-200">
+              <div class="px-4 py-3 text-[11px] font-bold text-slate-700 uppercase tracking-wide text-center">Matriz ambiental</div>
+              <div class="px-4 py-3 text-[11px] font-bold text-slate-700 uppercase tracking-wide text-center border-l border-gray-200">Servicios aplicables</div>
+              <div class="px-4 py-3 text-[11px] font-bold text-slate-700 uppercase tracking-wide text-center border-l border-gray-200">Activar servicio</div>
             </div>
 
             @for (grupo of catalogoServicios; track $index; let gi = $index) {
               <div class="border-b last:border-0 border-gray-200 relative">
-                <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-gray-100 cursor-pointer select-none" (click)="toggleMatrizCollapse(gi)">
-                  <span class="flex items-center justify-center w-5 h-5 rounded bg-blue-900 text-white text-[10px] font-bold transition-transform" [class.rotate-180]="grupo.collapsed">
-                    &#8964;
-                  </span>
+                <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-gray-100 cursor-pointer hover:bg-slate-100 transition-colors" (click)="toggleMatrizCollapse(gi)">
+                  <span class="flex items-center justify-center w-5 h-5 rounded bg-[#1e3a8a] text-white text-[10px] font-bold transition-transform" [class.rotate-180]="grupo.collapsed">&#8964;</span>
+                  <span class="text-[11px] font-bold text-[#1e3a8a] uppercase ml-1">{{ grupo.matriz }}</span>
                 </div>
 
                 @if (!grupo.collapsed) {
                   <div class="flex">
-                    <div class="flex flex-col items-center justify-center min-w-30 px-4 py-4 border-r border-gray-200 bg-white">
-                      <div class="w-12 h-12 rounded-full bg-[#1e3a8a] flex items-center justify-center mb-2">
-                        {{ grupo.matriz[0] }}
-                      </div>
+                    <div class="flex flex-col items-center justify-center min-w-[120px] px-4 py-4 border-r border-gray-200 bg-white">
+                      <div class="w-12 h-12 rounded-full bg-[#1e3a8a] flex items-center justify-center mb-2 text-white font-bold text-lg shadow-inner">{{ grupo.matriz[0] }}</div>
                       <span class="text-[11px] font-bold text-slate-700 uppercase">{{ grupo.matriz }}</span>
                     </div>
-
                     <div class="flex-1 divide-y divide-gray-100">
                       @for (servicio of grupo.servicios; track $index; let si = $index) {
-                        <div class="grid grid-cols-2 items-center">
-                          <div class="px-4 py-4 text-[11px] font-semibold text-slate-600 uppercase border-r border-gray-200">
-                            {{ servicio.nombre }}
-                          </div>
+                        <div class="grid grid-cols-2 items-center bg-white hover:bg-slate-50 transition-colors">
+                          <div class="px-4 py-4 text-[11px] font-semibold text-slate-700 uppercase border-r border-gray-200">{{ servicio.nombre }}</div>
                           <div class="grid grid-cols-2 items-center">
                             <div class="px-4 py-4 border-r border-gray-200">
                               @if (servicio.activo) {
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                                  {{ servicio.aplicable }}
-                                </label>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  [value]="servicio.cantidad"
-                                  (input)="servicio.cantidad = +$any($event.target).value || null"
-                                  placeholder="0"
-                                  class="w-full border border-gray-300 rounded p-1.5 text-sm outline-none"
-                                />
+                                <label class="block text-[10px] font-bold text-[#1e3a8a] uppercase mb-1">{{ servicio.aplicable }}</label>
+                                <input type="number" min="1" [(ngModel)]="servicio.cantidad" [ngModelOptions]="{standalone: true}" placeholder="Ej: 2" class="w-full border border-gray-300 rounded p-1.5 text-sm outline-none focus:border-[#1e3a8a]" />
                               } @else {
-                                <span class="text-[11px] text-slate-600 uppercase">{{ servicio.aplicable }}</span>
+                                <span class="text-[11px] text-slate-400 uppercase">{{ servicio.aplicable }}</span>
                               }
                             </div>
                             <div class="px-4 py-4 flex items-center gap-3 justify-center">
-                              <button
-                                type="button"
-                                (click)="toggleServicio(gi, si)"
-                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
-                                [class.bg-blue-900]="servicio.activo"
-                                [class.bg-gray-300]="!servicio.activo"
-                              >
-                                <span
-                                  class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-                                  [class.translate-x-6]="servicio.activo"
-                                  [class.translate-x-1]="!servicio.activo"
-                                ></span>
+                              <button type="button" (click)="toggleServicio(gi, si)" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none" [class.bg-[#1e3a8a]]="servicio.activo" [class.bg-gray-300]="!servicio.activo">
+                                <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform" [class.translate-x-6]="servicio.activo" [class.translate-x-1]="!servicio.activo"></span>
                               </button>
-                              <span class="text-xs text-slate-500 w-4">{{ servicio.activo ? 'Sí' : 'No' }}</span>
+                              <span class="text-xs font-bold w-6" [class.text-[#1e3a8a]]="servicio.activo" [class.text-slate-400]="!servicio.activo">{{ servicio.activo ? 'SÍ' : 'NO' }}</span>
                             </div>
                           </div>
                         </div>
@@ -681,211 +363,308 @@
                     </div>
                   </div>
                 }
-
+                
                 @if (grupo.matriz === 'AGUA' && !grupo.collapsed && (grupo.servicios[0].activo || grupo.servicios[1].activo)) {
-                  <div class="border-t border-gray-200 bg-white px-4 py-5">
-                    <div class="bg-slate-50 border border-slate-200 rounded p-4">
-                      <p class="text-[11px] font-bold text-slate-700 mb-2">ⓘ Notas:</p>
-                      <ol class="list-decimal list-inside space-y-1">
-                        @for (nota of notasAgua; track $index) {
-                          <li class="text-[11px] text-slate-600">{{ nota }}</li>
+                  <div class="border-t border-gray-200 bg-white px-6 py-6 space-y-8 animate-in fade-in">
+                    @if (grupo.servicios[0].activo) {
+                      <div class="bg-white rounded border shadow-sm">
+                        <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">Tabla 2. Ensayos Físico-Químicos para Aguas de Muestreo <span class="text-slate-500 text-xs font-normal capitalize">(Solo aguas superficiales)</span></h5>
+                        <div class="overflow-hidden">
+                          <div class="grid grid-cols-[80px_1fr_1fr_1fr_1fr] bg-slate-50 border-y border-gray-200">
+                            <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Requerido</div>
+                            <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Producto / Material</div>
+                            <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Parámetro</div>
+                            <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Método Interno</div>
+                            <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center">Referencia</div>
+                          </div>
+                          @for (fila of ensayosMuestreo; track $index; let fi = $index) {
+                            <div class="grid grid-cols-[80px_1fr_1fr_1fr_1fr] border-b border-gray-100 items-center hover:bg-slate-50 transition-colors">
+                              <div class="px-3 py-3 flex justify-center border-r">
+                                <button type="button" (click)="toggleEnsayoMuestreo(fi)" class="relative inline-flex h-5 w-10 items-center rounded-full transition-colors" [class.bg-[#1e3a8a]]="fila.activo" [class.bg-gray-300]="!fila.activo">
+                                  <span class="inline-block h-3 w-3 transform rounded-full bg-white transition-transform" [class.translate-x-6]="fila.activo" [class.translate-x-1]="!fila.activo"></span>
+                                </button>
+                              </div>
+                              <div class="px-3 py-3 text-[11px] text-slate-700 text-center border-r">{{ fila.producto }}</div>
+                              <div class="px-3 py-3 text-[11px] text-slate-700 font-semibold text-center border-r">{{ fila.parametro }}</div>
+                              <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r">{{ fila.metodoInterno }}</div>
+                              <div class="px-3 py-3 text-[11px] text-slate-500 text-center">{{ fila.metodoReferencia }}</div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+
+                    <div class="bg-white rounded border shadow-sm">
+                      <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">Tabla 1. Ensayos Físico-Químico para Aguas Residuales y Superficiales</h5>
+                      <div class="overflow-hidden overflow-x-auto custom-scroll">
+                        <div class="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr_1fr] bg-slate-50 border-y border-gray-200 min-w-[800px]">
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Requerido</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase border-r">Ensayo</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Identificación</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Método Interno</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Método Referencia</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Unidad</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center">Naturaleza</div>
+                        </div>
+                        @for (fila of ensayosResiduales; track $index; let ri = $index) {
+                          <div class="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr_1fr] border-b border-gray-100 items-center min-w-[800px] hover:bg-slate-50 transition-colors">
+                            <div class="px-3 py-3 flex justify-center border-r">
+                               <button type="button" (click)="toggleEnsayoResidual(ri)" class="relative inline-flex h-5 w-10 items-center rounded-full transition-colors" [class.bg-[#1e3a8a]]="fila.activo" [class.bg-gray-300]="!fila.activo">
+                                 <span class="inline-block h-3 w-3 transform rounded-full bg-white transition-transform" [class.translate-x-6]="fila.activo" [class.translate-x-1]="!fila.activo"></span>
+                               </button>
+                            </div>
+                            <div class="px-3 py-3 text-[11px] text-slate-800 font-semibold border-r">{{ fila.ensayo }}</div>
+                            <div class="px-3 py-3 text-[11px] text-[#1e3a8a] font-mono text-center border-r">{{ fila.identificacion }}</div>
+                            <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r">{{ fila.metodoInterno || 'N/A' }}</div>
+                            <div class="px-3 py-3 text-[11px] text-slate-500 text-center border-r">{{ fila.metodoReferencia }}</div>
+                            <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r">{{ fila.unidad }}</div>
+                            <div class="px-3 py-3 text-[11px] text-slate-600 text-center">
+                              <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase" [class.bg-purple-100]="fila.naturaleza==='Laboratorio'" [class.text-purple-800]="fila.naturaleza==='Laboratorio'" [class.bg-orange-100]="fila.naturaleza==='In situ'" [class.text-orange-800]="fila.naturaleza==='In situ'">
+                                {{ fila.naturaleza }}
+                              </span>
+                            </div>
+                          </div>
                         }
-                      </ol>
+                      </div>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                      <p class="text-[11px] font-bold text-slate-800 mb-2">ⓘ Notas Importantes de Agua:</p>
+                      <ul class="list-decimal pl-4 space-y-1">
+                        @for (nota of notasAgua; track $index) {
+                          <li class="text-[11px] text-slate-600 leading-tight">{{ nota }}</li>
+                        }
+                      </ul>
                     </div>
                   </div>
                 }
 
                 @if (grupo.matriz === 'AIRE' && !grupo.collapsed && grupo.servicios[0].activo) {
-                  <div class="border-t border-gray-200 bg-white px-4 py-5">
-                    <div class="bg-slate-50 border border-slate-200 rounded p-4">
-                      <p class="text-[11px] font-bold text-slate-700 mb-2">ⓘ Notas:</p>
-                      <ol class="list-decimal list-inside space-y-1">
-                        @for (nota of notasAire; track $index) {
-                          <li class="text-[11px] text-slate-600">{{ nota }}</li>
+                  <div class="border-t border-gray-200 bg-white px-6 py-6 space-y-8 animate-in fade-in">
+                    <div class="bg-white rounded border shadow-sm">
+                      <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">Ensayos para Calidad de Aire</h5>
+                      <div class="overflow-hidden overflow-x-auto custom-scroll">
+                        <div class="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr] bg-slate-50 border-y border-gray-200 min-w-[700px]">
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Requerido</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase border-r">Ensayo</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Identificación</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Método Interno</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Referencia</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center">Unidad</div>
+                        </div>
+                        @for (fila of ensayosAire; track $index; let ai = $index) {
+                          <div class="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr] border-b border-gray-100 items-center min-w-[700px] hover:bg-slate-50 transition-colors">
+                            <div class="px-3 py-3 flex justify-center border-r">
+                              <button type="button" (click)="toggleEnsayoAire(ai)" class="relative inline-flex h-5 w-10 items-center rounded-full transition-colors" [class.bg-[#1e3a8a]]="fila.activo" [class.bg-gray-300]="!fila.activo">
+                                 <span class="inline-block h-3 w-3 transform rounded-full bg-white transition-transform" [class.translate-x-6]="fila.activo" [class.translate-x-1]="!fila.activo"></span>
+                               </button>
+                            </div>
+                            <div class="px-3 py-3 text-[11px] text-slate-800 font-semibold border-r">{{ fila.ensayo }}</div>
+                            <div class="px-3 py-3 text-[11px] text-[#1e3a8a] font-mono text-center border-r">{{ fila.identificacion }}</div>
+                            <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r">{{ fila.metodoInterno }}</div>
+                            <div class="px-3 py-3 text-[11px] text-slate-500 text-center border-r">{{ fila.metodoReferencia }}</div>
+                            <div class="px-3 py-3 text-[11px] text-slate-600 text-center">{{ fila.unidad }}</div>
+                          </div>
                         }
-                      </ol>
+                      </div>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                      <p class="text-[11px] font-bold text-slate-800 mb-2">ⓘ Notas Importantes de Aire:</p>
+                      <ul class="list-decimal pl-4 space-y-1">
+                        @for (nota of notasAire; track $index) {
+                          <li class="text-[11px] text-slate-600 leading-tight">{{ nota }}</li>
+                        }
+                      </ul>
                     </div>
                   </div>
                 }
 
                 @if (grupo.matriz === 'RUIDO' && !grupo.collapsed && grupo.servicios[0].activo) {
-                  <div class="border-t border-gray-200 bg-white px-4 py-5 space-y-6">
-                    <div class="grid grid-cols-12 gap-4">
-                      <div class="col-span-12 md:col-span-6">
-                        <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Tipo de uso de suelo operador</label>
-                        <input [(ngModel)]="ruidoInfo.tipoUsoSueloOperador" [ngModelOptions]="{standalone: true}" type="text" class="w-full border border-gray-300 rounded p-2 text-sm outline-none" />
+                  <div class="border-t border-gray-200 bg-white px-6 py-6 space-y-8 animate-in fade-in">
+                    <div class="bg-white rounded border shadow-sm">
+                      <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">Ensayos para Acústica Ambiental</h5>
+                      <div class="overflow-hidden overflow-x-auto custom-scroll mb-6">
+                        <div class="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr] bg-slate-50 border-y border-gray-200 min-w-[700px]">
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Requerido</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase border-r">Ensayo</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Identificación</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Método Interno</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Referencia</div>
+                          <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center">Unidad</div>
+                        </div>
+                        @for (fila of ensayosRuido; track $index; let rui = $index) {
+                          <div class="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr] border-b border-gray-100 items-center min-w-[700px] hover:bg-slate-50 transition-colors">
+                            <div class="px-3 py-3 flex justify-center border-r">
+                              <button type="button" (click)="toggleEnsayoRuido(rui)" class="relative inline-flex h-5 w-10 items-center rounded-full transition-colors" [class.bg-[#1e3a8a]]="fila.activo" [class.bg-gray-300]="!fila.activo">
+                                 <span class="inline-block h-3 w-3 transform rounded-full bg-white transition-transform" [class.translate-x-6]="fila.activo" [class.translate-x-1]="!fila.activo"></span>
+                               </button>
+                            </div>
+                            <div class="px-3 py-3 text-[11px] text-slate-800 font-semibold border-r">{{ fila.ensayo }}</div>
+                            <div class="px-3 py-3 text-[11px] text-[#1e3a8a] font-mono text-center border-r">{{ fila.identificacion }}</div>
+                            <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r">{{ fila.metodoInterno }}</div>
+                            <div class="px-3 py-3 text-[11px] text-slate-500 text-center border-r">{{ fila.metodoReferencia }}</div>
+                            <div class="px-3 py-3 text-[11px] text-slate-600 text-center">{{ fila.unidad }}</div>
+                          </div>
+                        }
                       </div>
 
-                      <div class="col-span-12 md:col-span-6">
-                        <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Tipo de uso de suelo PCA</label>
-                        <input [(ngModel)]="ruidoInfo.tipoUsoSueloPCA" [ngModelOptions]="{standalone: true}" type="text" class="w-full border border-gray-300 rounded p-2 text-sm outline-none" />
-                      </div>
-
-                      <div class="col-span-12 md:col-span-6">
-                        <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Dirección de PCA</label>
-                        <input [(ngModel)]="ruidoInfo.direccionPCA" [ngModelOptions]="{standalone: true}" type="text" class="w-full border border-gray-300 rounded p-2 text-sm outline-none" />
-                      </div>
-
-                      <div class="col-span-12 md:col-span-6">
-                        <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">Teléfono de contacto PCA</label>
-                        <input [(ngModel)]="ruidoInfo.telefonoPCA" [ngModelOptions]="{standalone: true}" type="text" class="w-full border border-gray-300 rounded p-2 text-sm outline-none" />
+                      <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase border-t pt-4 px-3">Información Adicional (PCA)</h5>
+                      <div class="grid grid-cols-12 gap-5 px-3 pb-4">
+                        <div class="col-span-12 md:col-span-6">
+                          <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Tipo de uso de suelo operador</label>
+                          <input [(ngModel)]="ruidoInfo.tipoUsoSueloOperador" [ngModelOptions]="{standalone: true}" type="text" class="w-full border border-gray-300 rounded p-2 text-sm outline-none focus:border-blue-500" />
+                        </div>
+                        <div class="col-span-12 md:col-span-6">
+                          <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Tipo de uso de suelo PCA</label>
+                          <input [(ngModel)]="ruidoInfo.tipoUsoSueloPCA" [ngModelOptions]="{standalone: true}" type="text" class="w-full border border-gray-300 rounded p-2 text-sm outline-none focus:border-blue-500" />
+                        </div>
+                        <div class="col-span-12 md:col-span-6">
+                          <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Dirección de PCA</label>
+                          <input [(ngModel)]="ruidoInfo.direccionPCA" [ngModelOptions]="{standalone: true}" type="text" class="w-full border border-gray-300 rounded p-2 text-sm outline-none focus:border-blue-500" />
+                        </div>
+                        <div class="col-span-12 md:col-span-6">
+                          <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Teléfono de contacto PCA</label>
+                          <input [(ngModel)]="ruidoInfo.telefonoPCA" [ngModelOptions]="{standalone: true}" type="text" class="w-full border border-gray-300 rounded p-2 text-sm outline-none focus:border-blue-500" />
+                        </div>
                       </div>
                     </div>
-
                     <div class="bg-slate-50 border border-slate-200 rounded p-4">
-                      <p class="text-[11px] font-bold text-slate-700 mb-2">ⓘ Notas:</p>
-                      <ol class="list-decimal list-inside space-y-1">
+                      <p class="text-[11px] font-bold text-slate-800 mb-2">ⓘ Notas Importantes de Ruido:</p>
+                      <ul class="list-decimal pl-4 space-y-1">
                         @for (nota of notasRuido; track $index) {
-                          <li class="text-[11px] text-slate-600">{{ nota }}</li>
+                          <li class="text-[11px] text-slate-600 leading-tight">{{ nota }}</li>
                         }
-                      </ol>
+                      </ul>
                     </div>
                   </div>
                 }
+
               </div>
             }
           </div>
 
-          <div class="flex gap-4 pt-2">
-            <button type="button" (click)="goPrevStep()" class="bg-[#1e3a8a] text-white px-12 py-3 rounded font-bold uppercase text-xs hover:bg-blue-800 transition-all shadow-sm">
-              Regresar
-            </button>
-            <button type="button" (click)="guardarCatalogo()" class="bg-[#1e3a8a] text-white px-12 py-3 rounded font-bold uppercase text-xs shadow-md hover:bg-blue-800 transition-all">
-              Guardar
-            </button>
+          <div class="flex justify-between pt-4 border-t border-slate-300">
+            <button type="button" (click)="goPrevStep()" class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">REGRESAR</button>
+            <button type="button" (click)="goNextStep()" class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all">SIGUIENTE</button>
           </div>
         </div>
       }
 
-      <!-- PASO 4 -->
-      @if (currentStep === 3) {
-        <div class="space-y-6">
-          <div>
-            <h3 class="text-xl font-bold text-slate-800">Confirmación</h3>
-            <p class="text-sm text-slate-500 mt-1">Revise los acuerdos y confirme el guardado final.</p>
+      @if (currentStep === 4) {
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 animate-in fade-in slide-in-from-right-4">
+          <div class="border-b pb-2 mb-6">
+            <h3 class="text-xl font-bold text-[#1e3a8a]">Confirmación Final</h3>
+            <p class="text-sm text-slate-500 mt-1">Revise los acuerdos legales para proceder a guardar la orden de trabajo.</p>
           </div>
 
-          <div class="border border-slate-200 rounded-sm p-5 bg-slate-50">
-            <p class="text-sm text-slate-700">
-              Número de solicitud:
-              <strong class="text-slate-800">{{ numeroSolicitud }}</strong>
-            </p>
-            <p class="text-sm text-slate-700 mt-2">
-              Técnico:
-              <strong class="text-slate-800">{{ form.get('solicitado_por')?.value }}</strong>
-            </p>
-            <p class="text-sm text-slate-700 mt-2">
-              Entidad:
-              <strong class="text-slate-800">{{ form.get('jefatura_display')?.value }}</strong>
-            </p>
-          </div>
-
-          <div class="flex gap-4 pt-2">
-            <button type="button" (click)="goPrevStep()" class="bg-gray-400 text-white px-12 py-3 rounded font-bold uppercase text-xs hover:bg-gray-500 transition-all shadow-sm">
-              Regresar
-            </button>
-            <button type="button" (click)="showTerminosModal = true" class="bg-[#1e3a8a] text-white px-12 py-3 rounded font-bold uppercase text-xs shadow-md hover:bg-blue-800 transition-all">
-              Continuar
-            </button>
-          </div>
-        </div>
-      }
-
-      @if (showTerminosModal) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div class="bg-white rounded-lg shadow-2xl w-full max-w-xl mx-4 flex flex-col max-h-[85vh]">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h3 class="text-base font-bold text-slate-800 uppercase tracking-wide">Términos y Condiciones</h3>
-              <button type="button" (click)="showTerminosModal = false" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
+          <div class="border border-blue-200 rounded-lg p-6 bg-blue-50/30 flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+            <div>
+              <p class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wide">Orden de Trabajo Generada</p>
+              <p class="text-2xl font-mono font-bold text-slate-800 mt-1">{{ form.get('numero_solicitud')?.value }}</p>
             </div>
-            <div class="overflow-y-auto px-6 py-4 flex-1">
-              <ul class="space-y-3">
-                @for (item of terminosCondiciones; track $index) {
-                  <li class="flex gap-2 text-sm text-slate-700">
-                    <span class="mt-1 shrink-0 w-2 h-2 rounded-full bg-blue-900"></span>
-                    <span>{{ item }}</span>
-                  </li>
-                }
-              </ul>
-            </div>
-            <div class="px-6 py-3 border-t border-gray-200">
-              <p class="text-[11px] text-blue-900 font-semibold italic mb-3">
-                *El cliente entiende y acepta los términos, condiciones y acuerdos establecidos en la presente solicitud de trabajo.
-              </p>
-              <div class="flex gap-3">
-                <button type="button" (click)="showTerminosModal = false" class="flex-1 border border-gray-300 text-slate-700 font-bold uppercase text-xs py-3 rounded hover:bg-gray-50 transition-all">
-                  Cerrar
-                </button>
-                <button type="button" (click)="aceptarTerminos()" class="flex-1 bg-[#1e3a8a] text-white font-bold uppercase text-xs py-3 rounded hover:bg-blue-800 transition-all shadow-sm">
-                  Aceptar
-                </button>
+            <div class="text-center md:text-right">
+              <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-[#1e3a8a] mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
+              <p class="text-xs font-bold text-[#1e3a8a] uppercase">Lista para Guardar</p>
             </div>
           </div>
-        </div>
-      }
 
-      @if (showConfidencialidadModal) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div class="bg-white rounded-lg shadow-2xl w-full max-w-xl mx-4 flex flex-col max-h-[85vh]">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h3 class="text-base font-bold text-slate-800 uppercase tracking-wide">Acuerdo de Confidencialidad</h3>
-              <button type="button" (click)="showConfidencialidadModal = false" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
-            </div>
-            <div class="overflow-y-auto px-6 py-4 flex-1">
-              <div class="space-y-4">
-                @for (parrafo of acuerdoConfidencialidad.split('\n\n'); track $index) {
-                  <p class="text-sm text-slate-700 leading-relaxed" [class.font-bold]="$index === 0">{{ parrafo }}</p>
-                }
-              </div>
-            </div>
-            <div class="px-6 py-3 border-t border-gray-200">
-              <p class="text-[11px] text-blue-900 font-semibold italic mb-3">
-                *El cliente entiende y acepta los términos, condiciones y acuerdos establecidos en la presente solicitud de trabajo.
-              </p>
-              <div class="flex gap-3">
-                <button type="button" (click)="showConfidencialidadModal = false" class="flex-1 border border-gray-300 text-slate-700 font-bold uppercase text-xs py-3 rounded hover:bg-gray-50 transition-all">
-                  Cerrar
-                </button>
-                <button type="button" (click)="aceptarConfidencialidad()" class="flex-1 bg-[#1e3a8a] text-white font-bold uppercase text-xs py-3 rounded hover:bg-blue-800 transition-all shadow-sm">
-                  Confirmar y guardar
-                </button>
-              </div>
-            </div>
+          <div class="flex flex-col md:flex-row gap-4 pt-4 border-t border-slate-300">
+            <button type="button" (click)="goPrevStep()" class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">
+              REGRESAR
+            </button>
+            <button type="button" (click)="iniciarAcuerdos()" class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all flex items-center justify-center gap-2">
+              ACUERDOS Y GUARDAR
+            </button>
           </div>
         </div>
       }
-    }
+    </form>
   </div>
 </div>
 
-@if (showMapModal) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-    <div class="bg-white rounded shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200">
-      <div class="p-4 border-b flex justify-between items-center bg-slate-50">
-        <h3 class="font-bold text-xs uppercase text-blue-900 flex items-center gap-2">
-          <span class="text-lg">📍</span> Mapa de Ubicación del Operador
-        </h3>
-        <button type="button" (click)="closeMap()" class="text-2xl font-light text-slate-400 hover:text-red-500 transition-colors">
-          &times;
-        </button>
+@if (showTerminosModal) {
+  <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in p-4">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-xl mx-4 flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h3 class="text-base font-bold text-[#1e3a8a] uppercase tracking-wide">Términos y Condiciones</h3>
+        <button type="button" (click)="showTerminosModal = false" class="text-slate-400 hover:text-red-500 text-xl leading-none">&times;</button>
       </div>
-
-      <div class="p-4 bg-white">
-        <div id="map-container" class="h-80 w-full rounded border border-gray-200 shadow-inner"></div>
-        <p class="text-[10px] text-slate-400 mt-2 italic">
-          Haga clic o arrastre el marcador para seleccionar la ubicación exacta.
-        </p>
+      <div class="overflow-y-auto px-6 py-4 flex-1 custom-scroll">
+        <ul class="space-y-3">
+          @for (item of terminosCondiciones; track $index) {
+            <li class="flex gap-2 text-sm text-slate-700">
+              <span class="mt-1 shrink-0 w-2 h-2 rounded-full bg-[#1e3a8a]"></span>
+              <span>{{ item }}</span>
+            </li>
+          }
+        </ul>
       </div>
-
-      <div class="p-4 flex justify-end gap-2 border-t bg-slate-50">
-        <button type="button" (click)="closeMap()" class="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors uppercase">
-          Cancelar
-        </button>
-        <button type="button" (click)="closeMap()" class="px-6 py-2 bg-[#1e3a8a] text-white rounded text-xs font-bold uppercase shadow-sm hover:bg-blue-900 transition-all">
-          Confirmar coordenadas
-        </button>
+      <div class="px-6 py-3 border-t border-gray-200">
+        <p class="text-[11px] text-blue-900 font-semibold italic mb-3">*El cliente entiende y acepta los términos de esta solicitud.</p>
+        <div class="flex gap-3">
+          <button (click)="showTerminosModal = false" class="flex-1 border border-gray-300 text-slate-700 font-bold uppercase text-xs py-3 rounded hover:bg-gray-50">Cerrar</button>
+          <button (click)="aceptarTerminos()" class="flex-1 bg-[#1e3a8a] text-white font-bold uppercase text-xs py-3 rounded hover:bg-[#2541b2]">Aceptar y Continuar</button>
+        </div>
       </div>
     </div>
   </div>
 }
+
+@if (showConfidencialidadModal) {
+  <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in p-4">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-xl mx-4 flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h3 class="text-base font-bold text-[#1e3a8a] uppercase tracking-wide">Acuerdo de Confidencialidad</h3>
+        <button (click)="showConfidencialidadModal = false" class="text-slate-400 hover:text-red-500 text-xl leading-none">&times;</button>
+      </div>
+      <div class="overflow-y-auto px-6 py-4 flex-1 custom-scroll">
+        <div class="space-y-4">
+          @for (parrafo of acuerdoConfidencialidad.split('\n\n'); track $index; let first = $first) {
+            <p class="text-sm text-slate-700 leading-relaxed" [class.font-bold]="first">{{ parrafo }}</p>
+          }
+        </div>
+      </div>
+      <div class="px-6 py-3 border-t border-gray-200">
+        <div class="flex gap-3">
+          <button (click)="showConfidencialidadModal = false" [disabled]="isGuardando" class="flex-1 border border-gray-300 text-slate-700 font-bold uppercase text-xs py-3 rounded hover:bg-gray-50 disabled:opacity-50">Cerrar</button>
+          <button (click)="aceptarConfidencialidad()" [disabled]="isGuardando" class="flex-1 bg-[#1e3a8a] text-white font-bold uppercase text-xs py-3 rounded hover:bg-[#2541b2] disabled:opacity-50 flex justify-center items-center gap-2">
+            @if (isGuardando) {
+              <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Guardando...
+            } @else {
+              Aceptar y Guardar Solicitud
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showMapModal) {
+  <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
+      <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
+        <h3 class="font-bold text-[#1e3a8a] uppercase tracking-wide">Ubicación Exacta</h3>
+        <button (click)="closeMap()" class="text-slate-400 hover:text-red-500 text-2xl font-light">&times;</button>
+      </div>
+      <div class="p-0"><div id="map-container" class="h-[400px] w-full shadow-inner"></div></div>
+      <div class="p-4 border-t bg-slate-50 text-right">
+        <button (click)="closeMap()" class="bg-[#1e3a8a] text-white px-8 py-2 rounded text-xs font-bold uppercase hover:bg-[#2541b2]">Confirmar Coordenadas</button>
+      </div>
+    </div>
+  </div>
+}
+
+<style>
+  .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+  .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+  .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  .animate-in { animation: animateIn 0.3s ease-out forwards; }
+  .fade-in { opacity: 0; }
+  .slide-in-from-bottom-4 { transform: translateY(1rem); }
+  .slide-in-from-right-4 { transform: translateX(1rem); }
+  @keyframes animateIn { to { opacity: 1; transform: translate(0); } }
+</style>

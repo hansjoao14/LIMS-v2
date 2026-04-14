@@ -33,6 +33,13 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     icon: CarpetaIcon, 
     requiredRoles: RoleAccess.MANAGEMENT // [admin, direccion, analista] 
   },
+
+    { 
+    path: '/admin-formularios', 
+    label: 'Administración de Formularios', 
+    icon: CarpetaIcon, 
+   // requiredRoles: RoleAccess.MANAGEMENT // [admin, direccion, analista] 
+  },
   { 
     path: '/lista-solicitudes', 
     label: 'Bandeja de solicitudes', 
