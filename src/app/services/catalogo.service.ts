@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Apollo, gql } from 'apollo-angular';
 import { Observable, map, switchMap } from 'rxjs';
-import { CollectionItemCatalogoResponse, ItemCatalogo } from './interfaces/catalogos/catalogo.interface';
+import { CollectionItemCatalogoResponse, ItemCatalogo } from '../interfaces/catalogos/catalogo.interface';
 
 const CLIENT_NAME = 'catalogo';
 

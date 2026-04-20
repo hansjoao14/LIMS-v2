@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
 import { CatalogoService } from '../../../../services/catalogo.service';
-import { ItemCatalogo } from '../../../../services/interfaces/catalogos/catalogo.interface';
+import { ItemCatalogo } from '../../../../interfaces/catalogos/catalogo.interface';
 
 export interface ItemCatalogoUI extends ItemCatalogo {
   activo: boolean;

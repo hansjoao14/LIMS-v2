@@ -22,6 +22,14 @@ import {
 } from './model/solicitud-trabajo.model';
 import { SolicitudService } from './service/solicitud-trabajo-service';
 import { AuthService } from '../auth/service/auth-service';
+import { EntidadService } from '../../services/solicitud-trabajo/entidad.service';
+import { EnsayoService } from '../../services/solicitud-trabajo/ensayo.service';
+import { DocumentoLegalService } from '../../services/solicitud-trabajo/documento-legal.service';
+import { IntegracionService } from '../../services/solicitud-trabajo/integracion.service';
+import { Entidad } from '../../interfaces/solicitud-trabajo/entidad.interface';
+import { Tecnico } from '../../interfaces/solicitud-trabajo/tecnico.interface';
+import { EnsayoLaboratorio, EnsayoMuestreo } from '../../interfaces/solicitud-trabajo/ensayo.interface';
+import { DatosSRI, DatosRegistroCivil } from '../../interfaces/solicitud-trabajo/integracion.interface';
 import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud';
 import { Step2OperadorComponent } from './steps/step2-operador/step2-operador';
 import { Step3CatalogoComponent, MatrizConHijosUI } from './steps/step3-catalogo/step3-catalogo';
@@ -67,127 +75,34 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   readonly COLOR_PRIMARIO = '#1e3a8a';
   readonly STORAGE_KEY = 'lims_solicitudes_trabajo';
 
-  entidadesMock = [
-    { id: 'ENT-001', nombre: 'Secretaría de Ambiente' },
-    { id: 'ENT-002', nombre: 'Dirección Metropolitana' },
-    { id: 'ENT-003', nombre: 'Unidad Técnica Ambiental' },
-  ];
-
-  tecnicosMock = [
-    { id: 'TEC-001', entidadId: 'ENT-001', nombre: 'Juan Pérez', cargo: 'Analista Ambiental' },
-    { id: 'TEC-002', entidadId: 'ENT-001', nombre: 'María López', cargo: 'Técnico de Laboratorio' },
-    { id: 'TEC-003', entidadId: 'ENT-002', nombre: 'Carlos Ruiz', cargo: 'Inspector Ambiental' },
-  ];
-  tecnicosFiltrados: any[] = [];
+  entidades: Entidad[] = [];
+  tecnicosFiltrados: Tecnico[] = [];
   selectedTecnicoNombre = 'Usuario';
 
-  readonly terminosCondiciones = [
-    'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
-    'Los resultados serán entregados en 15 días calendario a partir de realizada la toma de muestra.',
-    'Los resultados obtenidos podrán utilizarse para elaboración de informes técnicos.',
-    'Si el plazo establecido coincide con fin de semana o feriado, se entregarán al siguiente día hábil.',
-  ];
-
-  readonly acuerdoConfidencialidad = `OBJETO.-\nEl presente acuerdo tiene por objeto establecer con el cliente, la manera en la que el laboratorio IAM-Q maneja la información obtenida o creada durante la realización de sus actividades.\n\nEl laboratorio IAM-Q al ser parte de una entidad del sector público, está obligado a acatar las disposiciones establecidas en la Ley Orgánica de Transparencia y Acceso a La Información.\n\nAdemás, cuando el laboratorio sea requerido por ley o autorizado por las disposiciones contractuales, para revelar información confidencial, notificará al cliente salvo que esté prohibido por ley.`;
+  terminosCondiciones: string[] = [];
+  acuerdoConfidencialidad = '';
 
   selectedScheduleIndexes = new Set<number>();
 
-  ensayosMuestreo = [
-    {
-      activo: false,
-      producto: 'AGUAS SUPERFICIALES',
-      parametro: 'SÓLIDOS SUSPENDIDOS TOTALES',
-      metodoInterno: 'PEE/IAM-Q/42',
-      metodoReferencia: 'NTE INEN ISO 5667-1',
-    },
-  ];
-  ensayosResiduales = [
-    {
-      activo: false,
-      ensayo: 'DEMANDA QUÍMICA DE OXÍGENO',
-      identificacion: 'DQO',
-      metodoInterno: 'PEE/IAM-Q/03',
-      metodoReferencia: 'APHA 5220 C',
-      unidad: 'mg/L',
-      naturaleza: 'Laboratorio',
-    },
-    {
-      activo: false,
-      ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES',
-      identificacion: 'SST',
-      metodoInterno: 'PEE/IAM-Q/02',
-      metodoReferencia: 'APHA 2540 D',
-      unidad: 'mg/L',
-      naturaleza: 'Laboratorio',
-    },
-    {
-      activo: false,
-      ensayo: 'CONDUCTIVIDAD ELÉCTRICA*',
-      identificacion: 'CE',
-      metodoInterno: 'PEE/IAM-Q/15',
-      metodoReferencia: 'APHA 2510',
-      unidad: 'Us/cm',
-      naturaleza: 'In situ',
-    },
-    {
-      activo: false,
-      ensayo: 'TEMPERATURA',
-      identificacion: 'T',
-      metodoInterno: 'PEE/IAM-Q/04',
-      metodoReferencia: 'APHA 2550 B',
-      unidad: '°C',
-      naturaleza: 'In situ',
-    },
-  ];
-  ensayosAire = [
-    {
-      activo: false,
-      ensayo: 'MONÓXIDO DE CARBONO',
-      identificacion: 'CO',
-      metodoInterno: 'PEE/IAM-Q/07',
-      metodoReferencia: 'EPA CTM-030',
-      unidad: 'ppm / mg/Nm³*',
-    },
-    {
-      activo: false,
-      ensayo: 'MATERIAL PARTICULADO*',
-      identificacion: 'MP',
-      metodoInterno: 'PEE/IAM-Q/14',
-      metodoReferencia: 'EPA 60, Apéndice A, Método 5',
-      unidad: 'ppm / mg/Nm³*',
-    },
-  ];
-  ensayosRuido = [
-    {
-      activo: false,
-      ensayo: 'RUIDO AMBIENTAL',
-      identificacion: '---',
-      metodoInterno: 'PEE/IAM-Q/11',
-      metodoReferencia: 'ISO 1996-2:2017',
-      unidad: 'dB',
-    },
-  ];
+  ensayosMuestreo: EnsayoMuestreo[] = [];
+  ensayosResiduales: EnsayoLaboratorio[] = [];
+  ensayosAire: EnsayoLaboratorio[] = [];
+  ensayosRuido: EnsayoLaboratorio[] = [];
 
   ruidoInfo = { tipoUsoSueloOperador: '', tipoUsoSueloPCA: '', direccionPCA: '', telefonoPCA: '' };
 
-  notasAgua = [
-    'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
-    'Las muestras serán descartadas del laboratorio en 28 días calendario.',
-    'Los resultados serán entregados en 15 días calendario a partir del ingreso de las muestras.',
-  ];
-  notasAire = [
-    'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
-    'Los resultados serán entregados en 10 días calendario después de realizado el monitoreo.',
-  ];
-  notasRuido = [
-    'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
-    'Los resultados serán entregados en 10 días calendario después de realizado el monitoreo.',
-  ];
+  notasAgua: string[] = [];
+  notasAire: string[] = [];
+  notasRuido: string[] = [];
 
   constructor(
     private fb: FormBuilder,
     private service: SolicitudService,
     private authService: AuthService,
+    private entidadService: EntidadService,
+    private ensayoService: EnsayoService,
+    private documentoLegalService: DocumentoLegalService,
+    private integracionService: IntegracionService,
     private zone: NgZone,
     private router: Router,
     private route: ActivatedRoute,
@@ -205,6 +120,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.cargarDatosIniciales();
     this.setupStepOneLogic();
     const idTipoFormulario = this.route.snapshot.paramMap.get('idTipoFrmulario') || '380';
     this.service
@@ -227,6 +143,21 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       });
   }
 
+  private cargarDatosIniciales(): void {
+    this.entidadService.getEntidades().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.entidades = e));
+
+    this.ensayoService.getEnsayosMuestreo().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.ensayosMuestreo = e));
+    this.ensayoService.getEnsayosResiduales().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.ensayosResiduales = e));
+    this.ensayoService.getEnsayosAire().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.ensayosAire = e));
+    this.ensayoService.getEnsayosRuido().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.ensayosRuido = e));
+    this.ensayoService.getNotasAgua().pipe(takeUntil(this.destroy$)).subscribe((n) => (this.notasAgua = n));
+    this.ensayoService.getNotasAire().pipe(takeUntil(this.destroy$)).subscribe((n) => (this.notasAire = n));
+    this.ensayoService.getNotasRuido().pipe(takeUntil(this.destroy$)).subscribe((n) => (this.notasRuido = n));
+
+    this.documentoLegalService.getTerminosCondiciones().pipe(takeUntil(this.destroy$)).subscribe((t) => (this.terminosCondiciones = t));
+    this.documentoLegalService.getAcuerdoConfidencialidad().pipe(takeUntil(this.destroy$)).subscribe((a) => (this.acuerdoConfidencialidad = a));
+  }
+
   ngAfterViewChecked(): void {
     if (this.showMapModal && !this.map) this.initMap();
   }
@@ -236,7 +167,10 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       .get('entidad_id')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((entidadId: string) => {
-        this.tecnicosFiltrados = this.tecnicosMock.filter((t) => t.entidadId === entidadId);
+        this.entidadService
+          .getTecnicosByEntidad(entidadId)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe((tecnicos) => (this.tecnicosFiltrados = tecnicos));
         this.form.patchValue({ tecnico_id: '', cargo_usuario: '' }, { emitEvent: false });
         this.selectedTecnicoNombre = 'Usuario';
       });
@@ -245,7 +179,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       .get('tecnico_id')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((tecnicoId: string) => {
-        const tecnico = this.tecnicosMock.find((t) => t.id === tecnicoId);
+        const tecnico = this.entidadService.getTecnicoById(tecnicoId);
         this.selectedTecnicoNombre = tecnico?.nombre || 'Usuario';
         this.form.patchValue({ cargo_usuario: tecnico?.cargo || '' }, { emitEvent: false });
       });
@@ -383,43 +317,52 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       });
       return;
     }
+    const documento = control.value as string;
     this.buscandoIntegracion[field.key] = true;
-    setTimeout(() => {
-      this.buscandoIntegracion[field.key] = false;
-      if (field.integrations.sri) {
-        this.form.patchValue({
-          val_razon_op: 'INDUSTRIA ANDINA S.A.',
-          val_come_op: 'QUIMANDINA',
-          val_dir_op: 'Av. Mariscal Sucre N75-270',
+
+    if (field.integrations.sri) {
+      this.integracionService
+        .buscarPorSRI(documento)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (datos: DatosSRI) => {
+            this.buscandoIntegracion[field.key] = false;
+            this.form.patchValue(datos);
+            Swal.fire({
+              icon: 'success',
+              title: 'SRI',
+              text: 'Datos recuperados',
+              confirmButtonColor: this.COLOR_PRIMARIO,
+              toast: true,
+              position: 'top-end',
+              showConfirmButton: false,
+              timer: 3000,
+            });
+          },
+          error: () => (this.buscandoIntegracion[field.key] = false),
         });
-        Swal.fire({
-          icon: 'success',
-          title: 'SRI',
-          text: 'Datos recuperados',
-          confirmButtonColor: this.COLOR_PRIMARIO,
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000,
+    } else if (field.integrations.civil) {
+      this.integracionService
+        .buscarPorRegistroCivil(documento)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (datos: DatosRegistroCivil) => {
+            this.buscandoIntegracion[field.key] = false;
+            this.form.patchValue(datos);
+            Swal.fire({
+              icon: 'success',
+              title: 'Registro Civil',
+              text: 'Datos recuperados',
+              confirmButtonColor: this.COLOR_PRIMARIO,
+              toast: true,
+              position: 'top-end',
+              showConfirmButton: false,
+              timer: 3000,
+            });
+          },
+          error: () => (this.buscandoIntegracion[field.key] = false),
         });
-      } else if (field.integrations.civil) {
-        this.form.patchValue({
-          val_nom_op: 'JUAN',
-          val_ape_op: 'PEREZ',
-          val_dire_op: 'Av. Eloy Alfaro',
-        });
-        Swal.fire({
-          icon: 'success',
-          title: 'Registro Civil',
-          text: 'Datos recuperados',
-          confirmButtonColor: this.COLOR_PRIMARIO,
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000,
-        });
-      }
-    }, 1500);
+    }
   }
 
   catalogosSeleccionados: MatrizConHijosUI[] = [];
