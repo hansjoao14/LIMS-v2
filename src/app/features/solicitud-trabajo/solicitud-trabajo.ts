@@ -28,8 +28,14 @@ import { DocumentoLegalService } from '../../services/solicitud-trabajo/document
 import { IntegracionService } from '../../services/solicitud-trabajo/integracion.service';
 import { Entidad } from '../../interfaces/solicitud-trabajo/entidad.interface';
 import { Tecnico } from '../../interfaces/solicitud-trabajo/tecnico.interface';
-import { EnsayoLaboratorio, EnsayoMuestreo } from '../../interfaces/solicitud-trabajo/ensayo.interface';
-import { DatosSRI, DatosRegistroCivil } from '../../interfaces/solicitud-trabajo/integracion.interface';
+import {
+  EnsayoLaboratorio,
+  EnsayoMuestreo,
+} from '../../interfaces/solicitud-trabajo/ensayo.interface';
+import {
+  DatosSRI,
+  DatosRegistroCivil,
+} from '../../interfaces/solicitud-trabajo/integracion.interface';
 import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud';
 import { Step2OperadorComponent } from './steps/step2-operador/step2-operador';
 import { Step3CatalogoComponent, MatrizConHijosUI } from './steps/step3-catalogo/step3-catalogo';
@@ -144,18 +150,48 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private cargarDatosIniciales(): void {
-    this.entidadService.getEntidades().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.entidades = e));
+    this.entidadService
+      .getEntidades()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((e) => (this.entidades = e));
 
-    this.ensayoService.getEnsayosMuestreo().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.ensayosMuestreo = e));
-    this.ensayoService.getEnsayosResiduales().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.ensayosResiduales = e));
-    this.ensayoService.getEnsayosAire().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.ensayosAire = e));
-    this.ensayoService.getEnsayosRuido().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.ensayosRuido = e));
-    this.ensayoService.getNotasAgua().pipe(takeUntil(this.destroy$)).subscribe((n) => (this.notasAgua = n));
-    this.ensayoService.getNotasAire().pipe(takeUntil(this.destroy$)).subscribe((n) => (this.notasAire = n));
-    this.ensayoService.getNotasRuido().pipe(takeUntil(this.destroy$)).subscribe((n) => (this.notasRuido = n));
+    this.ensayoService
+      .getEnsayosMuestreo()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((e) => (this.ensayosMuestreo = e));
+    this.ensayoService
+      .getEnsayosResiduales()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((e) => (this.ensayosResiduales = e));
+    this.ensayoService
+      .getEnsayosAire()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((e) => (this.ensayosAire = e));
+    this.ensayoService
+      .getEnsayosRuido()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((e) => (this.ensayosRuido = e));
+    this.ensayoService
+      .getNotasAgua()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((n) => (this.notasAgua = n));
+    this.ensayoService
+      .getNotasAire()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((n) => (this.notasAire = n));
+    this.ensayoService
+      .getNotasRuido()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((n) => (this.notasRuido = n));
 
-    this.documentoLegalService.getTerminosCondiciones().pipe(takeUntil(this.destroy$)).subscribe((t) => (this.terminosCondiciones = t));
-    this.documentoLegalService.getAcuerdoConfidencialidad().pipe(takeUntil(this.destroy$)).subscribe((a) => (this.acuerdoConfidencialidad = a));
+    this.documentoLegalService
+      .getTerminosCondiciones()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((t) => (this.terminosCondiciones = t));
+    this.documentoLegalService
+      .getAcuerdoConfidencialidad()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((a) => (this.acuerdoConfidencialidad = a));
   }
 
   ngAfterViewChecked(): void {
