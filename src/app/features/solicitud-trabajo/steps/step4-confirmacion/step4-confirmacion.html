@@ -1,0 +1,28 @@
+<div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 animate-in fade-in slide-in-from-right-4">
+  <div class="border-b pb-2 mb-6">
+    <h3 class="text-xl font-bold text-[#1e3a8a]">Confirmación Final</h3>
+    <p class="text-sm text-slate-500 mt-1">Revise los acuerdos legales para proceder a guardar la orden de trabajo.</p>
+  </div>
+
+  <div class="border border-blue-200 rounded-lg p-6 bg-blue-50/30 flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+    <div>
+      <p class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wide">Orden de Trabajo Generada</p>
+      <p class="text-2xl font-mono font-bold text-slate-800 mt-1">{{ form.get('numero_solicitud')?.value }}</p>
+    </div>
+    <div class="text-center md:text-right">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-[#1e3a8a] mb-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      </div>
+      <p class="text-xs font-bold text-[#1e3a8a] uppercase">Lista para Guardar</p>
+    </div>
+  </div>
+
+  <div class="flex flex-col md:flex-row gap-4 pt-4 border-t border-slate-300">
+    <button type="button" (click)="prev.emit()" class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">
+      REGRESAR
+    </button>
+    <button type="button" (click)="iniciarAcuerdos.emit()" class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all flex items-center justify-center gap-2">
+      ACUERDOS Y GUARDAR
+    </button>
+  </div>
+</div>

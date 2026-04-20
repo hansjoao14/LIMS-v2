@@ -1,21 +1,46 @@
 import { CommonModule } from '@angular/common';
 import { Component, NgZone, OnDestroy, OnInit, AfterViewChecked } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidatorFn, Validators, FormControl } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  ValidatorFn,
+  Validators,
+  FormControl,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import * as L from 'leaflet';
-import Swal from 'sweetalert2'; 
+import Swal from 'sweetalert2';
 
-import { FieldConfig, FieldSectionId, FormularioLaboratorio, Pregunta } from './model/solicitud-trabajo.model';
+import {
+  FieldConfig,
+  FieldSectionId,
+  FormularioLaboratorio,
+  Pregunta,
+} from './model/solicitud-trabajo.model';
 import { SolicitudService } from './service/solicitud-trabajo-service';
 import { AuthService } from '../auth/service/auth-service';
+import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud';
+import { Step2OperadorComponent } from './steps/step2-operador/step2-operador';
+import { Step3CatalogoComponent } from './steps/step3-catalogo/step3-catalogo';
+import { Step4ConfirmacionComponent } from './steps/step4-confirmacion/step4-confirmacion';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
 @Component({
   selector: 'app-solicitud-trabajo',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    Step1SolicitudComponent,
+    Step2OperadorComponent,
+    Step3CatalogoComponent,
+    Step4ConfirmacionComponent,
+  ],
   templateUrl: './solicitud-trabajo.html',
   styleUrls: ['./solicitud-trabajo.css'],
 })
@@ -26,19 +51,13 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   loading = true;
   currentStep = 1;
 
-  // Integraciones y Modales
   buscandoIntegracion: { [key: string]: boolean } = {};
   showMapModal = false;
   showTerminosModal = false;
   showConfidencialidadModal = false;
-  showFirmaModal = false;
 
-  archivoFirma: File | null = null;
-  claveFirma = '';
-  isFirmando = false;
   isGuardando = false;
 
-  // Mapa
   private map: L.Map | null = null;
   private marker: L.Marker | null = null;
   private destroy$ = new Subject<void>();
@@ -46,18 +65,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   readonly numeroSolicitudGenerado = 'ST-' + new Date().getFullYear() + '-001';
   fechaActual = new Date();
   readonly COLOR_PRIMARIO = '#1e3a8a';
-  readonly STORAGE_KEY = 'lims_solicitudes_trabajo'; 
-  
+  readonly STORAGE_KEY = 'lims_solicitudes_trabajo';
+
   entidadesMock = [
     { id: 'ENT-001', nombre: 'Secretaría de Ambiente' },
     { id: 'ENT-002', nombre: 'Dirección Metropolitana' },
-    { id: 'ENT-003', nombre: 'Unidad Técnica Ambiental' }
+    { id: 'ENT-003', nombre: 'Unidad Técnica Ambiental' },
   ];
 
   tecnicosMock = [
     { id: 'TEC-001', entidadId: 'ENT-001', nombre: 'Juan Pérez', cargo: 'Analista Ambiental' },
     { id: 'TEC-002', entidadId: 'ENT-001', nombre: 'María López', cargo: 'Técnico de Laboratorio' },
-    { id: 'TEC-003', entidadId: 'ENT-002', nombre: 'Carlos Ruiz', cargo: 'Inspector Ambiental' }
+    { id: 'TEC-003', entidadId: 'ENT-002', nombre: 'Carlos Ruiz', cargo: 'Inspector Ambiental' },
   ];
   tecnicosFiltrados: any[] = [];
   selectedTecnicoNombre = 'Usuario';
@@ -66,35 +85,135 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
     'Los resultados serán entregados en 15 días calendario a partir de realizada la toma de muestra.',
     'Los resultados obtenidos podrán utilizarse para elaboración de informes técnicos.',
-    'Si el plazo establecido coincide con fin de semana o feriado, se entregarán al siguiente día hábil.'
+    'Si el plazo establecido coincide con fin de semana o feriado, se entregarán al siguiente día hábil.',
   ];
 
   readonly acuerdoConfidencialidad = `OBJETO.-\nEl presente acuerdo tiene por objeto establecer con el cliente, la manera en la que el laboratorio IAM-Q maneja la información obtenida o creada durante la realización de sus actividades.\n\nEl laboratorio IAM-Q al ser parte de una entidad del sector público, está obligado a acatar las disposiciones establecidas en la Ley Orgánica de Transparencia y Acceso a La Información.\n\nAdemás, cuando el laboratorio sea requerido por ley o autorizado por las disposiciones contractuales, para revelar información confidencial, notificará al cliente salvo que esté prohibido por ley.`;
 
-  // Catálogos
   selectedScheduleIndexes = new Set<number>();
   catalogoServicios = [
-    { matriz: 'AGUA', collapsed: false, servicios: [ { nombre: 'AGUAS SUPERFICIALES', aplicable: 'NÚMERO DE MUESTRAS', activo: false, cantidad: null as number | null }, { nombre: 'AGUAS RESIDUALES', aplicable: 'NÚMERO DE MUESTRAS', activo: false, cantidad: null as number | null } ] },
-    { matriz: 'AIRE', collapsed: false, servicios: [ { nombre: 'FUENTES FIJAS DE COMBUSTIÓN', aplicable: 'NÚMERO DE FUENTES', activo: false, cantidad: null as number | null } ] },
-    { matriz: 'RUIDO', collapsed: false, servicios: [ { nombre: 'RUIDO AMBIENTE', aplicable: 'NÚMERO DE PUNTOS CRÍTICOS DE AFECTACIÓN', activo: false, cantidad: null as number | null } ] },
+    {
+      matriz: 'AGUA',
+      collapsed: false,
+      servicios: [
+        {
+          nombre: 'AGUAS SUPERFICIALES',
+          aplicable: 'NÚMERO DE MUESTRAS',
+          activo: false,
+          cantidad: null as number | null,
+        },
+        {
+          nombre: 'AGUAS RESIDUALES',
+          aplicable: 'NÚMERO DE MUESTRAS',
+          activo: false,
+          cantidad: null as number | null,
+        },
+      ],
+    },
+    {
+      matriz: 'AIRE',
+      collapsed: false,
+      servicios: [
+        {
+          nombre: 'FUENTES FIJAS DE COMBUSTIÓN',
+          aplicable: 'NÚMERO DE FUENTES',
+          activo: false,
+          cantidad: null as number | null,
+        },
+      ],
+    },
+    {
+      matriz: 'RUIDO',
+      collapsed: false,
+      servicios: [
+        {
+          nombre: 'RUIDO AMBIENTE',
+          aplicable: 'NÚMERO DE PUNTOS CRÍTICOS DE AFECTACIÓN',
+          activo: false,
+          cantidad: null as number | null,
+        },
+      ],
+    },
   ];
 
-  ensayosMuestreo = [{ activo: false, producto: 'AGUAS SUPERFICIALES', parametro: 'SÓLIDOS SUSPENDIDOS TOTALES', metodoInterno: 'PEE/IAM-Q/42', metodoReferencia: 'NTE INEN ISO 5667-1' }];
+  ensayosMuestreo = [
+    {
+      activo: false,
+      producto: 'AGUAS SUPERFICIALES',
+      parametro: 'SÓLIDOS SUSPENDIDOS TOTALES',
+      metodoInterno: 'PEE/IAM-Q/42',
+      metodoReferencia: 'NTE INEN ISO 5667-1',
+    },
+  ];
   ensayosResiduales = [
-    { activo: false, ensayo: 'DEMANDA QUÍMICA DE OXÍGENO', identificacion: 'DQO', metodoInterno: 'PEE/IAM-Q/03', metodoReferencia: 'APHA 5220 C', unidad: 'mg/L', naturaleza: 'Laboratorio' },
-    { activo: false, ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES', identificacion: 'SST', metodoInterno: 'PEE/IAM-Q/02', metodoReferencia: 'APHA 2540 D', unidad: 'mg/L', naturaleza: 'Laboratorio' },
-    { activo: false, ensayo: 'CONDUCTIVIDAD ELÉCTRICA*', identificacion: 'CE', metodoInterno: 'PEE/IAM-Q/15', metodoReferencia: 'APHA 2510', unidad: 'Us/cm', naturaleza: 'In situ' },
-    { activo: false, ensayo: 'TEMPERATURA', identificacion: 'T', metodoInterno: 'PEE/IAM-Q/04', metodoReferencia: 'APHA 2550 B', unidad: '°C', naturaleza: 'In situ' },
+    {
+      activo: false,
+      ensayo: 'DEMANDA QUÍMICA DE OXÍGENO',
+      identificacion: 'DQO',
+      metodoInterno: 'PEE/IAM-Q/03',
+      metodoReferencia: 'APHA 5220 C',
+      unidad: 'mg/L',
+      naturaleza: 'Laboratorio',
+    },
+    {
+      activo: false,
+      ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES',
+      identificacion: 'SST',
+      metodoInterno: 'PEE/IAM-Q/02',
+      metodoReferencia: 'APHA 2540 D',
+      unidad: 'mg/L',
+      naturaleza: 'Laboratorio',
+    },
+    {
+      activo: false,
+      ensayo: 'CONDUCTIVIDAD ELÉCTRICA*',
+      identificacion: 'CE',
+      metodoInterno: 'PEE/IAM-Q/15',
+      metodoReferencia: 'APHA 2510',
+      unidad: 'Us/cm',
+      naturaleza: 'In situ',
+    },
+    {
+      activo: false,
+      ensayo: 'TEMPERATURA',
+      identificacion: 'T',
+      metodoInterno: 'PEE/IAM-Q/04',
+      metodoReferencia: 'APHA 2550 B',
+      unidad: '°C',
+      naturaleza: 'In situ',
+    },
   ];
   ensayosAire = [
-    { activo: false, ensayo: 'MONÓXIDO DE CARBONO', identificacion: 'CO', metodoInterno: 'PEE/IAM-Q/07', metodoReferencia: 'EPA CTM-030', unidad: 'ppm / mg/Nm³*' },
-    { activo: false, ensayo: 'MATERIAL PARTICULADO*', identificacion: 'MP', metodoInterno: 'PEE/IAM-Q/14', metodoReferencia: 'EPA 60, Apéndice A, Método 5', unidad: 'ppm / mg/Nm³*' },
+    {
+      activo: false,
+      ensayo: 'MONÓXIDO DE CARBONO',
+      identificacion: 'CO',
+      metodoInterno: 'PEE/IAM-Q/07',
+      metodoReferencia: 'EPA CTM-030',
+      unidad: 'ppm / mg/Nm³*',
+    },
+    {
+      activo: false,
+      ensayo: 'MATERIAL PARTICULADO*',
+      identificacion: 'MP',
+      metodoInterno: 'PEE/IAM-Q/14',
+      metodoReferencia: 'EPA 60, Apéndice A, Método 5',
+      unidad: 'ppm / mg/Nm³*',
+    },
   ];
-  ensayosRuido = [{ activo: false, ensayo: 'RUIDO AMBIENTAL', identificacion: '---', metodoInterno: 'PEE/IAM-Q/11', metodoReferencia: 'ISO 1996-2:2017', unidad: 'dB' }];
-  
+  ensayosRuido = [
+    {
+      activo: false,
+      ensayo: 'RUIDO AMBIENTAL',
+      identificacion: '---',
+      metodoInterno: 'PEE/IAM-Q/11',
+      metodoReferencia: 'ISO 1996-2:2017',
+      unidad: 'dB',
+    },
+  ];
+
   ruidoInfo = { tipoUsoSueloOperador: '', tipoUsoSueloPCA: '', direccionPCA: '', telefonoPCA: '' };
 
-  // --- LAS VARIABLES QUE FALTABAN PARA QUE COMPILE EL HTML ---
   notasAgua = [
     'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
     'Las muestras serán descartadas del laboratorio en 28 días calendario.',
@@ -115,13 +234,16 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     private authService: AuthService,
     private zone: NgZone,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
   ) {
     this.form = this.fb.group({
       entidad_id: ['', Validators.required],
       tecnico_id: ['', Validators.required],
       cargo_usuario: [{ value: '', disabled: true }],
-      numero_solicitud: [{ value: this.numeroSolicitudGenerado, disabled: true }, Validators.required],
+      numero_solicitud: [
+        { value: this.numeroSolicitudGenerado, disabled: true },
+        Validators.required,
+      ],
       val_pasaporte: this.fb.control(''),
     });
   }
@@ -129,10 +251,15 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   ngOnInit(): void {
     this.setupStepOneLogic();
     const idTipoFormulario = this.route.snapshot.paramMap.get('idTipoFrmulario') || '380';
-    this.service.getFormulario(idTipoFormulario).pipe(takeUntil(this.destroy$)).subscribe({
+    this.service
+      .getFormulario(idTipoFormulario)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
         next: (formulario) => {
           this.formulario = formulario;
-          this.fields = formulario.preguntas.filter((p) => p.estado !== false).map((p) => this.toFieldConfig(p));
+          this.fields = formulario.preguntas
+            .filter((p) => p.estado !== false)
+            .map((p) => this.toFieldConfig(p));
           this.generateControls();
           this.applyDependencyLogic();
           this.loading = false;
@@ -148,23 +275,24 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     if (this.showMapModal && !this.map) this.initMap();
   }
 
-  esCampoInvalido(nombreCampo: string): boolean {
-    const control = this.form.get(nombreCampo);
-    return control ? control.invalid && (control.touched || control.dirty) : false;
-  }
-
   private setupStepOneLogic(): void {
-    this.form.get('entidad_id')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((entidadId: string) => {
-      this.tecnicosFiltrados = this.tecnicosMock.filter((t) => t.entidadId === entidadId);
-      this.form.patchValue({ tecnico_id: '', cargo_usuario: '' }, { emitEvent: false });
-      this.selectedTecnicoNombre = 'Usuario';
-    });
+    this.form
+      .get('entidad_id')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe((entidadId: string) => {
+        this.tecnicosFiltrados = this.tecnicosMock.filter((t) => t.entidadId === entidadId);
+        this.form.patchValue({ tecnico_id: '', cargo_usuario: '' }, { emitEvent: false });
+        this.selectedTecnicoNombre = 'Usuario';
+      });
 
-    this.form.get('tecnico_id')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((tecnicoId: string) => {
-      const tecnico = this.tecnicosMock.find((t) => t.id === tecnicoId);
-      this.selectedTecnicoNombre = tecnico?.nombre || 'Usuario';
-      this.form.patchValue({ cargo_usuario: tecnico?.cargo || '' }, { emitEvent: false });
-    });
+    this.form
+      .get('tecnico_id')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe((tecnicoId: string) => {
+        const tecnico = this.tecnicosMock.find((t) => t.id === tecnicoId);
+        this.selectedTecnicoNombre = tecnico?.nombre || 'Usuario';
+        this.form.patchValue({ cargo_usuario: tecnico?.cargo || '' }, { emitEvent: false });
+      });
   }
 
   get isStepOneReady(): boolean {
@@ -175,7 +303,12 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     if (step < 1 || step > 4) return;
     if (step > 1 && !this.isStepOneReady) {
       this.form.markAllAsTouched();
-      Swal.fire({ icon: 'warning', title: 'Atención', text: 'Complete los campos obligatorios de la cabecera', confirmButtonColor: this.COLOR_PRIMARIO });
+      Swal.fire({
+        icon: 'warning',
+        title: 'Atención',
+        text: 'Complete los campos obligatorios de la cabecera',
+        confirmButtonColor: this.COLOR_PRIMARIO,
+      });
       return;
     }
     if (step > this.currentStep + 1) return;
@@ -188,9 +321,10 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       if (!this.isStepOneReady) {
         this.form.markAllAsTouched();
         Swal.fire({
-          icon: 'warning', title: 'Atención',
+          icon: 'warning',
+          title: 'Atención',
           text: 'Complete los campos obligatorios de la cabecera',
-          confirmButtonColor: this.COLOR_PRIMARIO
+          confirmButtonColor: this.COLOR_PRIMARIO,
         });
         return;
       }
@@ -202,26 +336,22 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     if (this.currentStep === 2) {
       if (this.form.invalid) {
         this.form.markAllAsTouched();
-        
         const invalidFields = [];
         for (const name in this.form.controls) {
           if (this.form.controls[name].invalid) {
-            const fieldConfig = this.fields.find(f => f.key === name);
-            if (fieldConfig && !fieldConfig.hidden) {
-              invalidFields.push(fieldConfig.label || name);
-            }
+            const fieldConfig = this.fields.find((f) => f.key === name);
+            if (fieldConfig && !fieldConfig.hidden) invalidFields.push(fieldConfig.label || name);
           }
         }
-        
-        const mensajeError = invalidFields.length > 0 
-          ? 'Faltan: ' + invalidFields.join(', ') 
-          : 'Revise los campos requeridos marcados en rojo.';
-          
+        const mensajeError =
+          invalidFields.length > 0
+            ? 'Faltan: ' + invalidFields.join(', ')
+            : 'Revise los campos requeridos marcados en rojo.';
         Swal.fire({
-          icon: 'warning', 
+          icon: 'warning',
           title: 'Complete los campos obligatorios',
           text: mensajeError,
-          confirmButtonColor: this.COLOR_PRIMARIO
+          confirmButtonColor: this.COLOR_PRIMARIO,
         });
         return;
       }
@@ -243,10 +373,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  // --- MAPA ---
-  openMap(): void { this.showMapModal = true; }
-  closeMap(): void { this.showMapModal = false; if (this.map) { this.map.remove(); this.map = null; } this.marker = null; }
-  
+  openMap(): void {
+    this.showMapModal = true;
+  }
+  closeMap(): void {
+    this.showMapModal = false;
+    if (this.map) {
+      this.map.remove();
+      this.map = null;
+    }
+    this.marker = null;
+  }
+
   private initMap(): void {
     this.zone.runOutsideAngular(() => {
       const latControl = this.getFieldControl('val_lati');
@@ -268,59 +406,99 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       setTimeout(() => this.map?.invalidateSize(), 250);
     });
   }
+
   private updateCoords(lat: number, lng: number): void {
-    this.zone.run(() => { this.form.patchValue({ val_lati: lat.toFixed(6), val_long: lng.toFixed(6) }); });
+    this.zone.run(() => {
+      this.form.patchValue({ val_lati: lat.toFixed(6), val_long: lng.toFixed(6) });
+    });
   }
 
-  // --- BÚSQUEDA INTEGRACIÓN SRI/CIVIL ---
-  isBuscando(key: string): boolean { return !!this.buscandoIntegracion[key]; }
-  buscarDatosIntegracion(field: FieldConfig) {
+  buscarDatosIntegracion(field: FieldConfig): void {
     const control = this.getFieldControl(field.key);
-    if (!control.value) { 
-      Swal.fire({ icon: 'warning', text: 'Ingrese un documento válido para buscar', confirmButtonColor: this.COLOR_PRIMARIO, toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 }); 
-      return; 
+    if (!control.value) {
+      Swal.fire({
+        icon: 'warning',
+        text: 'Ingrese un documento válido para buscar',
+        confirmButtonColor: this.COLOR_PRIMARIO,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+      return;
     }
-    
     this.buscandoIntegracion[field.key] = true;
     setTimeout(() => {
       this.buscandoIntegracion[field.key] = false;
       if (field.integrations.sri) {
-        this.form.patchValue({ val_razon_op: 'INDUSTRIA ANDINA S.A.', val_come_op: 'QUIMANDINA', val_dir_op: 'Av. Mariscal Sucre N75-270' });
-        Swal.fire({ icon: 'success', title: 'SRI', text: 'Datos recuperados', confirmButtonColor: this.COLOR_PRIMARIO, toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+        this.form.patchValue({
+          val_razon_op: 'INDUSTRIA ANDINA S.A.',
+          val_come_op: 'QUIMANDINA',
+          val_dir_op: 'Av. Mariscal Sucre N75-270',
+        });
+        Swal.fire({
+          icon: 'success',
+          title: 'SRI',
+          text: 'Datos recuperados',
+          confirmButtonColor: this.COLOR_PRIMARIO,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+        });
       } else if (field.integrations.civil) {
-        this.form.patchValue({ val_nom_op: 'JUAN', val_ape_op: 'PEREZ', val_dire_op: 'Av. Eloy Alfaro' });
-        Swal.fire({ icon: 'success', title: 'Registro Civil', text: 'Datos recuperados', confirmButtonColor: this.COLOR_PRIMARIO, toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+        this.form.patchValue({
+          val_nom_op: 'JUAN',
+          val_ape_op: 'PEREZ',
+          val_dire_op: 'Av. Eloy Alfaro',
+        });
+        Swal.fire({
+          icon: 'success',
+          title: 'Registro Civil',
+          text: 'Datos recuperados',
+          confirmButtonColor: this.COLOR_PRIMARIO,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+        });
       }
     }, 1500);
   }
 
-  // --- GUARDADO LOCAL STORAGE ---
-  iniciarAcuerdos() { this.showTerminosModal = true; }
-  aceptarTerminos() { this.showTerminosModal = false; this.showConfidencialidadModal = true; }
-  
-  aceptarConfidencialidad() { 
+  toggleScheduleItem(index: number): void {
+    this.selectedScheduleIndexes.has(index)
+      ? this.selectedScheduleIndexes.delete(index)
+      : this.selectedScheduleIndexes.add(index);
+  }
+
+  iniciarAcuerdos(): void {
+    this.showTerminosModal = true;
+  }
+  aceptarTerminos(): void {
+    this.showTerminosModal = false;
+    this.showConfidencialidadModal = true;
+  }
+
+  aceptarConfidencialidad(): void {
     this.isGuardando = true;
     const payload = this.buildPayload();
-
     try {
       const data = localStorage.getItem(this.STORAGE_KEY);
       const solicitudes = data ? JSON.parse(data) : [];
       solicitudes.push({ id_local: crypto.randomUUID(), ...payload });
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(solicitudes));
-
       this.isGuardando = false;
       this.showConfidencialidadModal = false;
-
       Swal.fire({
         title: '¡Guardado!',
         text: 'La Solicitud de Trabajo ha sido almacenada correctamente.',
         icon: 'success',
         confirmButtonColor: this.COLOR_PRIMARIO,
-        timer: 2500
+        timer: 2500,
       }).then(() => {
         this.router.navigate(['/lista-solicitudes']);
       });
-
     } catch (e) {
       this.isGuardando = false;
       Swal.fire('Error', 'No se pudo guardar la solicitud en localStorage', 'error');
@@ -329,24 +507,34 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   private buildPayload() {
     const rawValues = this.form.getRawValue();
-    const answers = this.fields.filter((f) => !f.hidden && f.controlType !== 'schedule').map((f) => ({
-        pregunta_id: f.id, nombre: f.key, valor: rawValues[f.key],
-    }));
-
+    const answers = this.fields
+      .filter((f) => !f.hidden && f.controlType !== 'schedule')
+      .map((f) => ({
+        pregunta_id: f.id,
+        nombre: f.key,
+        valor: rawValues[f.key],
+      }));
     const scheduleField = this.fields.find((f) => f.controlType === 'schedule');
-    const selectedJornadas = (scheduleField?.scheduleItems ?? []).filter((_, i) => this.selectedScheduleIndexes.has(i));
-
-    const catalogosArray = this.catalogoServicios.flatMap((g) =>
-      g.servicios.filter((s) => s.activo).map((s) => ({ matriz: g.matriz, servicio: s.nombre, aplicable: s.aplicable, cantidad: s.cantidad }))
+    const selectedJornadas = (scheduleField?.scheduleItems ?? []).filter((_, i) =>
+      this.selectedScheduleIndexes.has(i),
     );
-
+    const catalogosArray = this.catalogoServicios.flatMap((g) =>
+      g.servicios
+        .filter((s) => s.activo)
+        .map((s) => ({
+          matriz: g.matriz,
+          servicio: s.nombre,
+          aplicable: s.aplicable,
+          cantidad: s.cantidad,
+        })),
+    );
     return {
       formulario_id: this.formulario?.formulario_id ?? null,
       tipo_formulario_id: this.formulario?.tipo_formulario_id ?? null,
       cabecera: {
-        entidad_id: rawValues.entidad_id, 
+        entidad_id: rawValues.entidad_id,
         tecnico_id: rawValues.tecnico_id,
-        numero_solicitud: rawValues.numero_solicitud
+        numero_solicitud: rawValues.numero_solicitud,
       },
       datos_solicitante: rawValues,
       respuestas: answers,
@@ -360,25 +548,29 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       },
       ruido_info: this.ruidoInfo,
       estado: 'GENERADA',
-      fecha_creacion: new Date().toISOString()
+      fecha_creacion: new Date().toISOString(),
     };
   }
 
-  // --- HELPERS DINÁMICOS Y CATÁLOGOS ---
-  get formularioTitulo(): string { return this.formulario?.tipo_formulario ?? 'Formulario Solicitud de Trabajo'; }
+  get formularioTitulo(): string {
+    return this.formulario?.tipo_formulario ?? 'Formulario Solicitud de Trabajo';
+  }
+
   get isPasaporteSelected(): boolean {
     const tipoField = this.fields.find((f) => f.key === 'val_ct_tipo');
     if (!tipoField) return false;
     const selectedId = this.getFieldControl('val_ct_tipo')?.value;
-    return tipoField.options.some((opt) => String(opt.id) === String(selectedId) && opt.nombre?.toLowerCase().includes('pasaporte'));
+    return tipoField.options.some(
+      (opt) =>
+        String(opt.id) === String(selectedId) && opt.nombre?.toLowerCase().includes('pasaporte'),
+    );
   }
-  
-  // AHORA LEE EL MOTIVO REAL DE LA API
-  get motivoFlujo(): MotivoFlujo { 
-    const field = this.fields.find(f => this.isMotivoField(f) && f.options.length > 0);
-    if(!field) return '';
+
+  get motivoFlujo(): MotivoFlujo {
+    const field = this.fields.find((f) => this.isMotivoField(f) && f.options.length > 0);
+    if (!field) return '';
     const selectedId = this.form.get(field.key)?.value;
-    const opt = field.options.find(o => String(o.id) === String(selectedId));
+    const opt = field.options.find((o) => String(o.id) === String(selectedId));
     const name = opt?.nombre?.toLowerCase() || '';
     if (name.includes('seguimiento')) return 'seguimiento';
     if (name.includes('denuncia')) return 'denuncia';
@@ -386,33 +578,20 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     return '';
   }
 
-  getFieldControl(key: string): FormControl { return this.form.get(key) as FormControl; }
-  getSectionFields(sectionId: FieldSectionId): FieldConfig[] { return this.fields.filter((field) => field.section === sectionId && !field.hidden && !this.isMotivoField(field)); }
-  getMotivoBaseFields(): FieldConfig[] { return this.fields.filter((field) => !field.hidden && this.isMotivoField(field) && !this.isMotivoSpecificField(field)); }
-  getMotivoSpecificFields(flow: MotivoFlujo): FieldConfig[] { if (!flow) return []; return this.fields.filter((field) => !field.hidden && this.matchesMotivoFlow(field, flow)); }
-  getFieldRows(field: FieldConfig): number { return field.key === 'val_obs' ? 4 : 3; }
-  getFieldInputType(field: FieldConfig): string { const key = field.key.toLowerCase(); if (key.includes('ruc') || key.includes('ced') || key.includes('num')) return 'tel'; return 'text'; }
-  isFieldInvalid(field: FieldConfig): boolean { const control = this.getFieldControl(field.key); return control.invalid && (control.touched || control.dirty); }
-  getFieldError(field: FieldConfig): string | null {
-    const control = this.getFieldControl(field.key);
-    if (!this.isFieldInvalid(field)) return null;
-    if (control.hasError('required')) return 'Obligatorio.';
-    return 'Revise el valor.';
+  getFieldControl(key: string): FormControl {
+    return this.form.get(key) as FormControl;
   }
-
-  toggleScheduleItem(index: number): void { this.selectedScheduleIndexes.has(index) ? this.selectedScheduleIndexes.delete(index) : this.selectedScheduleIndexes.add(index); }
-  isScheduleSelected(index: number): boolean { return this.selectedScheduleIndexes.has(index); }
-  toggleEnsayoMuestreo(idx: number): void { this.ensayosMuestreo[idx].activo = !this.ensayosMuestreo[idx].activo; }
-  toggleEnsayoResidual(idx: number): void { this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo; }
-  toggleEnsayoAire(idx: number): void { this.ensayosAire[idx].activo = !this.ensayosAire[idx].activo; }
-  toggleEnsayoRuido(idx: number): void { this.ensayosRuido[idx].activo = !this.ensayosRuido[idx].activo; }
-  toggleMatrizCollapse(idx: number): void { this.catalogoServicios[idx].collapsed = !this.catalogoServicios[idx].collapsed; }
-  toggleServicio(matrizIdx: number, servicioIdx: number): void { const s = this.catalogoServicios[matrizIdx].servicios[servicioIdx]; s.activo = !s.activo; if (!s.activo) s.cantidad = null; }
 
   private generateControls(): void {
     for (const field of this.fields) {
       if (this.form.contains(field.key)) continue;
-      this.form.addControl(field.key, this.fb.control({value: '', disabled: field.hidden}, this.buildValidators(field, field.hidden)));
+      this.form.addControl(
+        field.key,
+        this.fb.control(
+          { value: '', disabled: field.hidden },
+          this.buildValidators(field, field.hidden),
+        ),
+      );
     }
   }
 
@@ -426,50 +605,72 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   private applyDependencyLogic(): void {
     this.updateDependentFields();
-    this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.updateDependentFields());
+    this.form.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.updateDependentFields());
   }
 
   private updateDependentFields(): void {
     for (const field of this.fields) {
-      if (!field.dependsOn) { this.syncFieldState(field, field.source.hidden); continue; }
+      if (!field.dependsOn) {
+        this.syncFieldState(field, field.source.hidden);
+        continue;
+      }
       const parentField = this.fields.find((c) => c.id === field.dependsOn?.fieldId);
       const parentValue = parentField ? this.getFieldControl(parentField.key)?.value : null;
       const isVisible = String(parentValue ?? '') === field.dependsOn.triggerValue;
       this.syncFieldState(field, !isVisible);
     }
     const pasaporteControl = this.form.get('val_pasaporte');
-    if (this.isPasaporteSelected) { pasaporteControl?.setValidators([Validators.required]); } 
-    else { pasaporteControl?.clearValidators(); pasaporteControl?.reset('', { emitEvent: false }); }
+    if (this.isPasaporteSelected) {
+      pasaporteControl?.setValidators([Validators.required]);
+    } else {
+      pasaporteControl?.clearValidators();
+      pasaporteControl?.reset('', { emitEvent: false });
+    }
     pasaporteControl?.updateValueAndValidity({ emitEvent: false });
   }
 
   private syncFieldState(field: FieldConfig, hidden: boolean): void {
     field.hidden = hidden;
     const control = this.getFieldControl(field.key);
-    
     if (hidden) {
       control.disable({ emitEvent: false });
-      if (field.controlType !== 'coordinates' && field.controlType !== 'schedule') control.reset('', { emitEvent: false });
+      if (field.controlType !== 'coordinates' && field.controlType !== 'schedule')
+        control.reset('', { emitEvent: false });
     } else {
-      control.enable({ emitEvent: false }); 
+      control.enable({ emitEvent: false });
     }
-    
     control.setValidators(this.buildValidators(field, hidden));
     control.updateValueAndValidity({ emitEvent: false });
   }
 
   private toFieldConfig(pregunta: Pregunta): FieldConfig {
-    const isFieldReadonly = false;
-
     return {
-      id: pregunta.id, key: pregunta.nombre, label: pregunta.pregunta, order: pregunta.orden,
-      controlType: this.resolveControlType(pregunta), section: this.resolveSection(pregunta),
+      id: pregunta.id,
+      key: pregunta.nombre,
+      label: pregunta.pregunta,
+      order: pregunta.orden,
+      controlType: this.resolveControlType(pregunta),
+      section: this.resolveSection(pregunta),
       placeholder: typeof pregunta.ayuda === 'string' ? pregunta.ayuda : '',
-      required: pregunta.obligatorio, readonly: isFieldReadonly, hidden: pregunta.hidden,
+      required: pregunta.obligatorio,
+      readonly: false,
+      hidden: pregunta.hidden,
       maxLength: typeof pregunta.num_caracter === 'number' ? pregunta.num_caracter : null,
-      options: pregunta.catalogos ?? [], scheduleItems: pregunta.jornada_laboral_item ?? [],
-      dependsOn: pregunta.atributo_id ? { fieldId: String(pregunta.atributo_id), triggerValue: String(pregunta.item_catalogo_id ?? '') } : undefined,
-      integrations: { sri: pregunta.is_ws_sri, civil: pregunta.is_ws_civil, iess: pregunta.is_ws_iess ?? false },
+      options: pregunta.catalogos ?? [],
+      scheduleItems: pregunta.jornada_laboral_item ?? [],
+      dependsOn: pregunta.atributo_id
+        ? {
+            fieldId: String(pregunta.atributo_id),
+            triggerValue: String(pregunta.item_catalogo_id ?? ''),
+          }
+        : undefined,
+      integrations: {
+        sri: pregunta.is_ws_sri,
+        civil: pregunta.is_ws_civil,
+        iess: pregunta.is_ws_iess ?? false,
+      },
       source: pregunta,
     };
   }
@@ -478,13 +679,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     if (pregunta.nombre === 'val_lati' || pregunta.nombre === 'val_long') return 'coordinates';
     if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
     if (pregunta.tipo_respuesta === 'Selección Mutiple') return 'schedule';
-    if (pregunta.nombre === 'val_obs' || (typeof pregunta.num_caracter === 'number' && pregunta.num_caracter > 200)) return 'textarea';
+    if (
+      pregunta.nombre === 'val_obs' ||
+      (typeof pregunta.num_caracter === 'number' && pregunta.num_caracter > 200)
+    )
+      return 'textarea';
     return 'text';
   }
 
   private resolveSection(pregunta: Pregunta): FieldSectionId {
     const n = pregunta.nombre;
-    if (n === 'val_ct_tipo' || n === 'val_ruc_op' || n === 'val_ced_op' || n === 'val_pasaporte') return 'identificacion';
+    if (n === 'val_ct_tipo' || n === 'val_ruc_op' || n === 'val_ced_op' || n === 'val_pasaporte')
+      return 'identificacion';
     if (n === 'val_lati' || n === 'val_long') return 'ubicacion';
     if (n === 'val_jor_la') return 'horario';
     if (n === 'val_obs') return 'observaciones';
@@ -493,9 +699,16 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     return 'operador';
   }
 
-  private isMotivoField(field: FieldConfig): boolean { return (field.key?.toLowerCase() || '').includes('motivo') || (field.label?.toLowerCase() || '').includes('motivo'); }
-  private isMotivoSpecificField(field: FieldConfig): boolean { const text = `${field.key} ${field.label}`.toLowerCase(); return text.includes('seguimiento') || text.includes('denuncia') || text.includes('licenciamiento'); }
-  private matchesMotivoFlow(field: FieldConfig, flow: MotivoFlujo): boolean { return `${field.key} ${field.label}`.toLowerCase().includes(flow); }
+  private isMotivoField(field: FieldConfig): boolean {
+    return (
+      (field.key?.toLowerCase() || '').includes('motivo') ||
+      (field.label?.toLowerCase() || '').includes('motivo')
+    );
+  }
 
-  ngOnDestroy(): void { this.closeMap(); this.destroy$.next(); this.destroy$.complete(); }
+  ngOnDestroy(): void {
+    this.closeMap();
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 }
