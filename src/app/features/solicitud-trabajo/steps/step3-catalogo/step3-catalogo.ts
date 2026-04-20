@@ -2,12 +2,17 @@ import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angu
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
+
 import { Subject, takeUntil } from 'rxjs';
 import { CatalogoService } from '../../../../services/catalogo.service';
 import { EnsayoItemService } from '../../../../services/solicitud-trabajo/ensayo-item.service';
-import { ItemCatalogo } from '../../../../interfaces/catalogos/catalogo.interface';
-import { EnsayoItem } from '../../../../interfaces/solicitud-trabajo/ensayo-item.interface';
-import { EnsayoLaboratorio, EnsayoMuestreo } from '../../../../interfaces/solicitud-trabajo/ensayo.interface';
+
+import {
+  ItemCatalogo,
+  EnsayoItem,
+  EnsayoLaboratorio,
+  EnsayoMuestreo,
+} from '../../../../interfaces';
 
 export interface ItemCatalogoUI extends ItemCatalogo {
   activo: boolean;
@@ -56,21 +61,7 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.spinner.show('catalogo-step3');
-    this.catalogoService.getMatricesConHijos(this.CATALOGO_MATRICES_ID).subscribe({
-      next: (data) => {
-        this.matricesConHijos = data.map((item) => ({
-          collapsed: false,
-          matriz: item.matriz,
-          hijos: item.hijos.map((h) => ({ ...h, activo: false, cantidad: null })),
-        }));
-        this.loading = false;
-        this.spinner.hide('catalogo-step3');
-      },
-      error: () => {
-        this.loading = false;
-        this.spinner.hide('catalogo-step3');
-      },
-    });
+    this.getMatricesConHijos();
   }
 
   toggleMatrizCollapse(idx: number): void {
@@ -86,6 +77,24 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
     if (this.isMatriz(grupo, 'agua')) {
       this.cargarEnsayosAgua(grupo);
     }
+  }
+
+  private getMatricesConHijos(): void {
+    this.catalogoService.getMatricesConHijos(this.CATALOGO_MATRICES_ID).subscribe({
+      next: (data) => {
+        this.matricesConHijos = data.map((item) => ({
+          collapsed: false,
+          matriz: item.matriz,
+          hijos: item.hijos.map((h) => ({ ...h, activo: false, cantidad: null })),
+        }));
+        this.loading = false;
+        this.spinner.hide('catalogo-step3');
+      },
+      error: () => {
+        this.loading = false;
+        this.spinner.hide('catalogo-step3');
+      },
+    });
   }
 
   private cargarEnsayosAgua(grupo: MatrizConHijosUI): void {
