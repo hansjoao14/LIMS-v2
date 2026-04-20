@@ -1,23 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Apollo, gql } from 'apollo-angular';
 import { Observable, map } from 'rxjs';
-
-export interface ItemCatalogo {
-  catalogo_id: number;
-  estado: boolean;
-  grupo: string | null;
-  id: number;
-  item_catalogo_id: number | null;
-  nombre: string;
-  orden: number | null;
-  sigla: string | null;
-  valor: string | null;
-}
-
-export interface CollectionItemCatalogoResponse {
-  count: number;
-  data: ItemCatalogo[];
-}
+import { CollectionItemCatalogoResponse } from './interfaces/catalogo.interface';
 
 const GET_CATALOGO = gql`
   query GetCatalogo {
@@ -31,7 +15,9 @@ const GET_CATALOGO = gql`
 
 const GET_ITEMS_BY_CATALOGO_ID = gql`
   query CollectionItemCatalogo($catalogoId: Int!) {
-    collectionItemCatalogo(query: { where: { catalogo_id: { equals: $catalogoId }, estado: { equals: true } } }) {
+    collectionItemCatalogo(
+      query: { where: { catalogo_id: { equals: $catalogoId }, estado: { equals: true } } }
+    ) {
       count
       data {
         catalogo_id
@@ -67,7 +53,13 @@ export class CatalogoService {
         variables: { catalogoId },
       })
       .valueChanges.pipe(
-        map((result) => (result.data?.collectionItemCatalogo ?? { count: 0, data: [] }) as CollectionItemCatalogoResponse)
+        map(
+          (result) =>
+            (result.data?.collectionItemCatalogo ?? {
+              count: 0,
+              data: [],
+            }) as CollectionItemCatalogoResponse,
+        ),
       );
   }
 }
