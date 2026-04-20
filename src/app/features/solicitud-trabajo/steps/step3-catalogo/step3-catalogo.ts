@@ -77,6 +77,14 @@ export class Step3CatalogoComponent implements OnInit {
     return grupo.matriz.nombre.toLowerCase() === nombre.toLowerCase();
   }
 
+  getAplicableLabel(matrizNombre: string): string {
+    const nombre = matrizNombre.toLowerCase();
+    if (nombre === 'agua') return 'NÚMERO DE MUESTRAS';
+    if (nombre === 'aire') return 'NÚMERO DE FUENTES';
+    if (nombre === 'ruido') return 'NÚMERO DE PUNTOS CRÍTICOS DE AFECTACIÓN';
+    return 'CANTIDAD';
+  }
+
   toggleEnsayoMuestreo(idx: number): void { this.ensayosMuestreo[idx].activo = !this.ensayosMuestreo[idx].activo; }
   toggleEnsayoResidual(idx: number): void { this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo; }
   toggleEnsayoAire(idx: number): void { this.ensayosAire[idx].activo = !this.ensayosAire[idx].activo; }
