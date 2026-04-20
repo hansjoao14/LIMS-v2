@@ -1,9 +1,13 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
+import { Subject, takeUntil } from 'rxjs';
 import { CatalogoService } from '../../../../services/catalogo.service';
+import { EnsayoItemService } from '../../../../services/solicitud-trabajo/ensayo-item.service';
 import { ItemCatalogo } from '../../../../interfaces/catalogos/catalogo.interface';
+import { EnsayoItem } from '../../../../interfaces/solicitud-trabajo/ensayo-item.interface';
+import { EnsayoLaboratorio, EnsayoMuestreo } from '../../../../interfaces/solicitud-trabajo/ensayo.interface';
 
 export interface ItemCatalogoUI extends ItemCatalogo {
   activo: boolean;
@@ -22,11 +26,9 @@ export interface MatrizConHijosUI {
   imports: [CommonModule, FormsModule, NgxSpinnerModule],
   templateUrl: './step3-catalogo.html',
 })
-export class Step3CatalogoComponent implements OnInit {
-  @Input() ensayosMuestreo: any[] = [];
-  @Input() ensayosResiduales: any[] = [];
-  @Input() ensayosAire: any[] = [];
-  @Input() ensayosRuido: any[] = [];
+export class Step3CatalogoComponent implements OnInit, OnDestroy {
+  @Input() ensayosAire: EnsayoLaboratorio[] = [];
+  @Input() ensayosRuido: EnsayoLaboratorio[] = [];
   @Input() ruidoInfo: any = {};
   @Input() notasAgua: string[] = [];
   @Input() notasAire: string[] = [];
@@ -35,12 +37,20 @@ export class Step3CatalogoComponent implements OnInit {
   @Output() prev = new EventEmitter<void>();
 
   readonly CATALOGO_MATRICES_ID = 17;
+  readonly ENSAYO_ID_MUESTREO = 19;
 
   matricesConHijos: MatrizConHijosUI[] = [];
   loading = true;
+  loadingEnsayos = false;
+
+  ensayosMuestreo: EnsayoMuestreo[] = [];
+  ensayosResiduales: EnsayoLaboratorio[] = [];
+
+  private destroy$ = new Subject<void>();
 
   constructor(
     private catalogoService: CatalogoService,
+    private ensayoItemService: EnsayoItemService,
     private spinner: NgxSpinnerService,
   ) {}
 
@@ -68,9 +78,63 @@ export class Step3CatalogoComponent implements OnInit {
   }
 
   toggleHijo(matrizIdx: number, hijoIdx: number): void {
-    const hijo = this.matricesConHijos[matrizIdx].hijos[hijoIdx];
+    const grupo = this.matricesConHijos[matrizIdx];
+    const hijo = grupo.hijos[hijoIdx];
     hijo.activo = !hijo.activo;
     if (!hijo.activo) hijo.cantidad = null;
+
+    if (this.isMatriz(grupo, 'agua')) {
+      this.cargarEnsayosAgua(grupo);
+    }
+  }
+
+  private cargarEnsayosAgua(grupo: MatrizConHijosUI): void {
+    const hijoActivo = grupo.hijos.find((h) => h.activo);
+    if (!hijoActivo) {
+      this.ensayosMuestreo = [];
+      this.ensayosResiduales = [];
+      return;
+    }
+
+    this.loadingEnsayos = true;
+    this.ensayoItemService
+      .getEnsayosByCtAmbiental(hijoActivo.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (items) => {
+          this.ensayosMuestreo = items
+            .filter((i) => i.ensayo_id === this.ENSAYO_ID_MUESTREO)
+            .map((i) => this.mapToMuestreo(i));
+          this.ensayosResiduales = items
+            .filter((i) => i.ensayo_id !== this.ENSAYO_ID_MUESTREO)
+            .map((i) => this.mapToLaboratorio(i));
+          this.loadingEnsayos = false;
+        },
+        error: () => (this.loadingEnsayos = false),
+      });
+  }
+
+  private mapToMuestreo(item: EnsayoItem): EnsayoMuestreo {
+    const partes = item.ensayo.metodo.split(',');
+    return {
+      activo: false,
+      producto: item.ensayo.analisis,
+      parametro: item.ensayo.identificacion,
+      metodoInterno: partes[0]?.trim() ?? '',
+      metodoReferencia: partes.slice(1).join(',').trim(),
+    };
+  }
+
+  private mapToLaboratorio(item: EnsayoItem): EnsayoLaboratorio {
+    const partes = item.ensayo.metodo.split(',');
+    return {
+      activo: false,
+      ensayo: item.ensayo.analisis,
+      identificacion: item.ensayo.identificacion,
+      metodoInterno: partes[0]?.trim() ?? '',
+      metodoReferencia: partes.slice(1).join(',').trim(),
+      unidad: item.ensayo.item_catalogo?.sigla ?? item.ensayo.item_catalogo?.nombre ?? '',
+    };
   }
 
   isMatriz(grupo: MatrizConHijosUI, nombre: string): boolean {
@@ -85,8 +149,21 @@ export class Step3CatalogoComponent implements OnInit {
     return 'CANTIDAD';
   }
 
-  toggleEnsayoMuestreo(idx: number): void { this.ensayosMuestreo[idx].activo = !this.ensayosMuestreo[idx].activo; }
-  toggleEnsayoResidual(idx: number): void { this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo; }
-  toggleEnsayoAire(idx: number): void { this.ensayosAire[idx].activo = !this.ensayosAire[idx].activo; }
-  toggleEnsayoRuido(idx: number): void { this.ensayosRuido[idx].activo = !this.ensayosRuido[idx].activo; }
+  toggleEnsayoMuestreo(idx: number): void {
+    this.ensayosMuestreo[idx].activo = !this.ensayosMuestreo[idx].activo;
+  }
+  toggleEnsayoResidual(idx: number): void {
+    this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo;
+  }
+  toggleEnsayoAire(idx: number): void {
+    this.ensayosAire[idx].activo = !this.ensayosAire[idx].activo;
+  }
+  toggleEnsayoRuido(idx: number): void {
+    this.ensayosRuido[idx].activo = !this.ensayosRuido[idx].activo;
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 }

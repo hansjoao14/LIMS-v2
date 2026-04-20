@@ -1,64 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { EnsayoLaboratorio, EnsayoMuestreo } from '../../interfaces/solicitud-trabajo/ensayo.interface';
+import { EnsayoLaboratorio } from '../../interfaces/solicitud-trabajo/ensayo.interface';
 
 @Injectable({
   providedIn: 'root',
 })
 export class EnsayoService {
-  getEnsayosMuestreo(): Observable<EnsayoMuestreo[]> {
-    return of([
-      {
-        activo: false,
-        producto: 'AGUAS SUPERFICIALES',
-        parametro: 'SÓLIDOS SUSPENDIDOS TOTALES',
-        metodoInterno: 'PEE/IAM-Q/42',
-        metodoReferencia: 'NTE INEN ISO 5667-1',
-      },
-    ]);
-  }
-
-  getEnsayosResiduales(): Observable<EnsayoLaboratorio[]> {
-    return of([
-      {
-        activo: false,
-        ensayo: 'DEMANDA QUÍMICA DE OXÍGENO',
-        identificacion: 'DQO',
-        metodoInterno: 'PEE/IAM-Q/03',
-        metodoReferencia: 'APHA 5220 C',
-        unidad: 'mg/L',
-        naturaleza: 'Laboratorio',
-      },
-      {
-        activo: false,
-        ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES',
-        identificacion: 'SST',
-        metodoInterno: 'PEE/IAM-Q/02',
-        metodoReferencia: 'APHA 2540 D',
-        unidad: 'mg/L',
-        naturaleza: 'Laboratorio',
-      },
-      {
-        activo: false,
-        ensayo: 'CONDUCTIVIDAD ELÉCTRICA*',
-        identificacion: 'CE',
-        metodoInterno: 'PEE/IAM-Q/15',
-        metodoReferencia: 'APHA 2510',
-        unidad: 'Us/cm',
-        naturaleza: 'In situ',
-      },
-      {
-        activo: false,
-        ensayo: 'TEMPERATURA',
-        identificacion: 'T',
-        metodoInterno: 'PEE/IAM-Q/04',
-        metodoReferencia: 'APHA 2550 B',
-        unidad: '°C',
-        naturaleza: 'In situ',
-      },
-    ]);
-  }
-
   getEnsayosAire(): Observable<EnsayoLaboratorio[]> {
     return of([
       {

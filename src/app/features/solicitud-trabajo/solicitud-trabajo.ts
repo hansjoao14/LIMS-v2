@@ -28,10 +28,7 @@ import { DocumentoLegalService } from '../../services/solicitud-trabajo/document
 import { IntegracionService } from '../../services/solicitud-trabajo/integracion.service';
 import { Entidad } from '../../interfaces/solicitud-trabajo/entidad.interface';
 import { Tecnico } from '../../interfaces/solicitud-trabajo/tecnico.interface';
-import {
-  EnsayoLaboratorio,
-  EnsayoMuestreo,
-} from '../../interfaces/solicitud-trabajo/ensayo.interface';
+import { EnsayoLaboratorio } from '../../interfaces/solicitud-trabajo/ensayo.interface';
 import {
   DatosSRI,
   DatosRegistroCivil,
@@ -90,8 +87,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   selectedScheduleIndexes = new Set<number>();
 
-  ensayosMuestreo: EnsayoMuestreo[] = [];
-  ensayosResiduales: EnsayoLaboratorio[] = [];
   ensayosAire: EnsayoLaboratorio[] = [];
   ensayosRuido: EnsayoLaboratorio[] = [];
 
@@ -155,14 +150,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((e) => (this.entidades = e));
 
-    this.ensayoService
-      .getEnsayosMuestreo()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((e) => (this.ensayosMuestreo = e));
-    this.ensayoService
-      .getEnsayosResiduales()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((e) => (this.ensayosResiduales = e));
     this.ensayoService
       .getEnsayosAire()
       .pipe(takeUntil(this.destroy$))
@@ -482,10 +469,8 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       jornadas_laborales: selectedJornadas,
       catalogo_servicios: catalogosArray,
       ensayos: {
-        agua_muestreo: this.ensayosMuestreo.filter((f) => f.activo),
-        agua_residuales: this.ensayosResiduales.filter((f) => f.activo),
-        aire: this.ensayosAire.filter((f) => f.activo),
-        ruido: this.ensayosRuido.filter((f) => f.activo),
+        aire: this.ensayosAire.filter((f: EnsayoLaboratorio) => f.activo),
+        ruido: this.ensayosRuido.filter((f: EnsayoLaboratorio) => f.activo),
       },
       ruido_info: this.ruidoInfo,
       estado: 'GENERADA',
