@@ -10,7 +10,20 @@ export interface ItemCatalogo {
   valor: string | null;
 }
 
+export interface PaginationMeta {
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  limit: number;
+  nextPage: number | null;
+  page: number;
+  prevPage: number | null;
+  skip: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface CollectionItemCatalogoResponse {
   count: number;
   data: ItemCatalogo[];
+  meta: PaginationMeta;
 }

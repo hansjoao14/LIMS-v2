@@ -11,6 +11,7 @@ export const environment = {
 
   keycloak_api: 'http://185.197.251.149:8080',
   graphql: 'https://api-sgia.demo-peav-quito.com/api/graphql',
+  graphql_catalogo: 'https://api-lims-test.demo-peav-quito.com/graphql-catalogo',
 
   //api_login_kc: 'http://localhost:3700',
 

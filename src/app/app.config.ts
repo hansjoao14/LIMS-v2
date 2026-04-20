@@ -6,29 +6,18 @@ import { provideToastr } from 'ngx-toastr';
 import { registerLocaleData } from '@angular/common';
 import { environment } from '../environments/environment';
 import localeEsEc from '@angular/common/locales/es-EC';
-import { InMemoryCache, ApolloClient } from '@apollo/client/core';
+import { InMemoryCache } from '@apollo/client/core';
 import { HttpLink } from 'apollo-angular/http';
-import { provideApollo } from 'apollo-angular';
+import { provideApollo, APOLLO_NAMED_OPTIONS } from 'apollo-angular';
 import { provideHttpClient } from '@angular/common/http';
 
 registerLocaleData(localeEsEc);
 
-// Se elimina el <any> para corregir el error de tipado
-export function apolloOptionsFactory(
-  httpLink: HttpLink
-): ApolloClient.Options { 
-  return {
-    link: httpLink.create({ uri: environment.graphql }),
-    cache: new InMemoryCache(),
-  };
-}
-
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    // Fundamental para que el renderizado automático detecte cambios
     provideZoneChangeDetection({ eventCoalescing: true }),
-  
+
     provideHttpClient(),
     provideRouter(routes),
     provideAnimationsAsync(),
@@ -38,7 +27,23 @@ export const appConfig: ApplicationConfig = {
       progressBar: true,
     }),
 
-    // Se eliminó provideClientHydration para evitar el error NG0505
-    provideApollo(() => apolloOptionsFactory(inject(HttpLink))),
+    provideApollo(() => {
+      const httpLink = inject(HttpLink);
+      return {
+        link: httpLink.create({ uri: environment.graphql }),
+        cache: new InMemoryCache(),
+      };
+    }),
+
+    {
+      provide: APOLLO_NAMED_OPTIONS,
+      useFactory: (httpLink: HttpLink) => ({
+        catalogo: {
+          link: httpLink.create({ uri: environment.graphql_catalogo }),
+          cache: new InMemoryCache(),
+        },
+      }),
+      deps: [HttpLink],
+    },
   ]
 };

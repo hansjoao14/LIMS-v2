@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Apollo, gql } from 'apollo-angular';
-import { Observable, map } from 'rxjs';
-import { CollectionItemCatalogoResponse } from './interfaces/catalogo.interface';
+import { Observable, map, switchMap } from 'rxjs';
+import { CollectionItemCatalogoResponse, ItemCatalogo } from './interfaces/catalogo.interface';
+
+const CLIENT_NAME = 'catalogo';
 
 const GET_CATALOGO = gql`
   query GetCatalogo {
@@ -30,6 +32,49 @@ const GET_ITEMS_BY_CATALOGO_ID = gql`
         sigla
         valor
       }
+      meta {
+        hasNextPage
+        hasPrevPage
+        limit
+        nextPage
+        page
+        prevPage
+        skip
+        total
+        totalPages
+      }
+    }
+  }
+`;
+
+const GET_CHILDREN_BY_PARENT_IDS = gql`
+  query CollectionItemCatalogoChildren($parentIds: [Int!]!) {
+    collectionItemCatalogo(
+      query: { where: { estado: { equals: true }, item_catalogo_id: { in: $parentIds } } }
+    ) {
+      count
+      data {
+        catalogo_id
+        estado
+        grupo
+        id
+        item_catalogo_id
+        nombre
+        orden
+        sigla
+        valor
+      }
+      meta {
+        hasNextPage
+        hasPrevPage
+        limit
+        nextPage
+        page
+        prevPage
+        skip
+        total
+        totalPages
+      }
     }
   }
 `;
@@ -48,6 +93,7 @@ export class CatalogoService {
 
   getItemsByCatalogoId(catalogoId: number): Observable<CollectionItemCatalogoResponse> {
     return this.apollo
+      .use(CLIENT_NAME)
       .watchQuery<{ collectionItemCatalogo: CollectionItemCatalogoResponse }>({
         query: GET_ITEMS_BY_CATALOGO_ID,
         variables: { catalogoId },
@@ -61,5 +107,40 @@ export class CatalogoService {
             }) as CollectionItemCatalogoResponse,
         ),
       );
+  }
+
+  getChildrenByParentIds(parentIds: number[]): Observable<CollectionItemCatalogoResponse> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .watchQuery<{ collectionItemCatalogo: CollectionItemCatalogoResponse }>({
+        query: GET_CHILDREN_BY_PARENT_IDS,
+        variables: { parentIds },
+      })
+      .valueChanges.pipe(
+        map(
+          (result) =>
+            (result.data?.collectionItemCatalogo ?? {
+              count: 0,
+              data: [],
+            }) as CollectionItemCatalogoResponse,
+        ),
+      );
+  }
+
+  getMatricesConHijos(catalogoId: number): Observable<{ matriz: ItemCatalogo; hijos: ItemCatalogo[] }[]> {
+    return this.getItemsByCatalogoId(catalogoId).pipe(
+      switchMap((response) => {
+        const matrices = response.data;
+        const parentIds = matrices.map((m) => m.id);
+        return this.getChildrenByParentIds(parentIds).pipe(
+          map((hijosResponse) => {
+            return matrices.map((matriz) => ({
+              matriz,
+              hijos: hijosResponse.data.filter((h) => h.item_catalogo_id === matriz.id),
+            }));
+          }),
+        );
+      }),
+    );
   }
 }

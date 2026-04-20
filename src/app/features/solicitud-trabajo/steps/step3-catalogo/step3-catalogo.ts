@@ -1,15 +1,28 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
+import { CatalogoService } from '../../../../services/catalogo.service';
+import { ItemCatalogo } from '../../../../services/interfaces/catalogo.interface';
+
+export interface ItemCatalogoUI extends ItemCatalogo {
+  activo: boolean;
+  cantidad: number | null;
+}
+
+export interface MatrizConHijosUI {
+  matriz: ItemCatalogo;
+  hijos: ItemCatalogoUI[];
+  collapsed: boolean;
+}
 
 @Component({
   selector: 'app-step3-catalogo',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NgxSpinnerModule],
   templateUrl: './step3-catalogo.html',
 })
-export class Step3CatalogoComponent {
-  @Input() catalogoServicios: any[] = [];
+export class Step3CatalogoComponent implements OnInit {
   @Input() ensayosMuestreo: any[] = [];
   @Input() ensayosResiduales: any[] = [];
   @Input() ensayosAire: any[] = [];
@@ -18,17 +31,50 @@ export class Step3CatalogoComponent {
   @Input() notasAgua: string[] = [];
   @Input() notasAire: string[] = [];
   @Input() notasRuido: string[] = [];
-  @Output() next = new EventEmitter<void>();
+  @Output() next = new EventEmitter<MatrizConHijosUI[]>();
   @Output() prev = new EventEmitter<void>();
 
-  toggleMatrizCollapse(idx: number): void {
-    this.catalogoServicios[idx].collapsed = !this.catalogoServicios[idx].collapsed;
+  readonly CATALOGO_MATRICES_ID = 17;
+
+  matricesConHijos: MatrizConHijosUI[] = [];
+  loading = true;
+
+  constructor(
+    private catalogoService: CatalogoService,
+    private spinner: NgxSpinnerService,
+  ) {}
+
+  ngOnInit(): void {
+    this.spinner.show('catalogo-step3');
+    this.catalogoService.getMatricesConHijos(this.CATALOGO_MATRICES_ID).subscribe({
+      next: (data) => {
+        this.matricesConHijos = data.map((item) => ({
+          collapsed: false,
+          matriz: item.matriz,
+          hijos: item.hijos.map((h) => ({ ...h, activo: false, cantidad: null })),
+        }));
+        this.loading = false;
+        this.spinner.hide('catalogo-step3');
+      },
+      error: () => {
+        this.loading = false;
+        this.spinner.hide('catalogo-step3');
+      },
+    });
   }
 
-  toggleServicio(matrizIdx: number, servicioIdx: number): void {
-    const s = this.catalogoServicios[matrizIdx].servicios[servicioIdx];
-    s.activo = !s.activo;
-    if (!s.activo) s.cantidad = null;
+  toggleMatrizCollapse(idx: number): void {
+    this.matricesConHijos[idx].collapsed = !this.matricesConHijos[idx].collapsed;
+  }
+
+  toggleHijo(matrizIdx: number, hijoIdx: number): void {
+    const hijo = this.matricesConHijos[matrizIdx].hijos[hijoIdx];
+    hijo.activo = !hijo.activo;
+    if (!hijo.activo) hijo.cantidad = null;
+  }
+
+  isMatriz(grupo: MatrizConHijosUI, nombre: string): boolean {
+    return grupo.matriz.nombre.toLowerCase() === nombre.toLowerCase();
   }
 
   toggleEnsayoMuestreo(idx: number): void { this.ensayosMuestreo[idx].activo = !this.ensayosMuestreo[idx].activo; }

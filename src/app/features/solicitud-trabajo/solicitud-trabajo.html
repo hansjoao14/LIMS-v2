@@ -54,7 +54,6 @@
 
       @if (currentStep === 3) {
         <app-step3-catalogo
-          [catalogoServicios]="catalogoServicios"
           [ensayosMuestreo]="ensayosMuestreo"
           [ensayosResiduales]="ensayosResiduales"
           [ensayosAire]="ensayosAire"
@@ -63,7 +62,7 @@
           [notasAgua]="notasAgua"
           [notasAire]="notasAire"
           [notasRuido]="notasRuido"
-          (next)="goNextStep()"
+          (next)="onStep3Next($event)"
           (prev)="goPrevStep()">
         </app-step3-catalogo>
       }
@@ -151,15 +150,3 @@
     </div>
   </div>
 }
-
-<style>
-  .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-  .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-  .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-  .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-  .animate-in { animation: animateIn 0.3s ease-out forwards; }
-  .fade-in { opacity: 0; }
-  .slide-in-from-bottom-4 { transform: translateY(1rem); }
-  .slide-in-from-right-4 { transform: translateX(1rem); }
-  @keyframes animateIn { to { opacity: 1; transform: translate(0); } }
-</style>

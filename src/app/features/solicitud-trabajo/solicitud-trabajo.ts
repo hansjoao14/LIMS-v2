@@ -24,7 +24,7 @@ import { SolicitudService } from './service/solicitud-trabajo-service';
 import { AuthService } from '../auth/service/auth-service';
 import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud';
 import { Step2OperadorComponent } from './steps/step2-operador/step2-operador';
-import { Step3CatalogoComponent } from './steps/step3-catalogo/step3-catalogo';
+import { Step3CatalogoComponent, MatrizConHijosUI } from './steps/step3-catalogo/step3-catalogo';
 import { Step4ConfirmacionComponent } from './steps/step4-confirmacion/step4-confirmacion';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
@@ -91,50 +91,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   readonly acuerdoConfidencialidad = `OBJETO.-\nEl presente acuerdo tiene por objeto establecer con el cliente, la manera en la que el laboratorio IAM-Q maneja la información obtenida o creada durante la realización de sus actividades.\n\nEl laboratorio IAM-Q al ser parte de una entidad del sector público, está obligado a acatar las disposiciones establecidas en la Ley Orgánica de Transparencia y Acceso a La Información.\n\nAdemás, cuando el laboratorio sea requerido por ley o autorizado por las disposiciones contractuales, para revelar información confidencial, notificará al cliente salvo que esté prohibido por ley.`;
 
   selectedScheduleIndexes = new Set<number>();
-  catalogoServicios = [
-    {
-      matriz: 'AGUA',
-      collapsed: false,
-      servicios: [
-        {
-          nombre: 'AGUAS SUPERFICIALES',
-          aplicable: 'NÚMERO DE MUESTRAS',
-          activo: false,
-          cantidad: null as number | null,
-        },
-        {
-          nombre: 'AGUAS RESIDUALES',
-          aplicable: 'NÚMERO DE MUESTRAS',
-          activo: false,
-          cantidad: null as number | null,
-        },
-      ],
-    },
-    {
-      matriz: 'AIRE',
-      collapsed: false,
-      servicios: [
-        {
-          nombre: 'FUENTES FIJAS DE COMBUSTIÓN',
-          aplicable: 'NÚMERO DE FUENTES',
-          activo: false,
-          cantidad: null as number | null,
-        },
-      ],
-    },
-    {
-      matriz: 'RUIDO',
-      collapsed: false,
-      servicios: [
-        {
-          nombre: 'RUIDO AMBIENTE',
-          aplicable: 'NÚMERO DE PUNTOS CRÍTICOS DE AFECTACIÓN',
-          activo: false,
-          cantidad: null as number | null,
-        },
-      ],
-    },
-  ];
 
   ensayosMuestreo = [
     {
@@ -466,6 +422,13 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     }, 1500);
   }
 
+  catalogosSeleccionados: MatrizConHijosUI[] = [];
+
+  onStep3Next(data: MatrizConHijosUI[]): void {
+    this.catalogosSeleccionados = data;
+    this.goNextStep();
+  }
+
   toggleScheduleItem(index: number): void {
     this.selectedScheduleIndexes.has(index)
       ? this.selectedScheduleIndexes.delete(index)
@@ -518,14 +481,13 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     const selectedJornadas = (scheduleField?.scheduleItems ?? []).filter((_, i) =>
       this.selectedScheduleIndexes.has(i),
     );
-    const catalogosArray = this.catalogoServicios.flatMap((g) =>
-      g.servicios
-        .filter((s) => s.activo)
-        .map((s) => ({
-          matriz: g.matriz,
-          servicio: s.nombre,
-          aplicable: s.aplicable,
-          cantidad: s.cantidad,
+    const catalogosArray = this.catalogosSeleccionados.flatMap((g) =>
+      g.hijos
+        .filter((h) => h.activo)
+        .map((h) => ({
+          matriz: g.matriz.nombre,
+          servicio: h.nombre,
+          cantidad: h.cantidad,
         })),
     );
     return {
