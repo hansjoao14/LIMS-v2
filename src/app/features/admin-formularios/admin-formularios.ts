@@ -44,8 +44,6 @@ export class AdminFormularios implements OnInit, OnDestroy {
   }
 
   configurarFormulario(formularioId: string): void {
-    // TODO: Aquí navegaremos al componente de edición de preguntas pasándole el ID
-    console.log('Ir a configurar formulario:', formularioId);
     this.toastr.showSuccess(`Abriendo configuración del formulario ${formularioId}...`, 'Cargando');
   }
 

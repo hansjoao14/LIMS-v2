@@ -31,9 +31,9 @@ export const canActivateWithRealmRoles: CanActivateFn = (route, state) => {
   const hasRole = userRoles?.some((role) => requiredRolesList.includes(role));
 
   // DEBUG LOGS
-  console.group('Roles Guard Debug');
-  console.log('Roles Requeridos:', requiredRolesList);
-  console.log('Roles Usuario:', userRoles);
+  // console.group('Roles Guard Debug');
+  // console.log('Roles Requeridos:', requiredRolesList);
+  // console.log('Roles Usuario:', userRoles);
   console.groupEnd();
 
   if (hasRole) {

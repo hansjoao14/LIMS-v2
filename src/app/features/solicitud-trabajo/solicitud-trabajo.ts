@@ -20,7 +20,12 @@ import {
   FormularioLaboratorio,
   Pregunta,
 } from './model/solicitud-trabajo.model';
-import { SolicitudService, SolicitudPayload, ValorSolicitudItem } from './service/solicitud-trabajo-service';
+import {
+  SolicitudService,
+  SolicitudPayload,
+  ValorSolicitudItem,
+  SolicitudEnsayoItem,
+} from './service/solicitud-trabajo-service';
 import { EstablecimientoUsuarioService } from '../../services/solicitud-trabajo/establecimiento-usuario.service';
 import { EstablecimientoService } from '../../services/solicitud-trabajo/establecimiento.service';
 import { EnsayoService } from '../../services/solicitud-trabajo/ensayo.service';
@@ -269,18 +274,51 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
           valor_fecha: null,
           valor_booleano: null,
           valor_multiple: null,
-          valor_catalogo: esSelect ? (Number(value) || 0) : 0,
+          valor_catalogo: esSelect ? Number(value) || 0 : 0,
         };
       });
     const payload = { valorSolicitud };
-    console.log('[valorSolicitud payload]', JSON.stringify(payload, null, 2));
 
     try {
       await firstValueFrom(this.service.guardarValoresSolicitud(payload));
       this.zone.run(() => this.avanzarPaso());
     } catch (err: any) {
-      const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo guardar los valores de la solicitud';
-      Swal.fire({ icon: 'error', title: 'Error', text: mensaje, confirmButtonColor: this.COLOR_PRIMARIO });
+      const mensaje =
+        err?.error?.message ?? err?.message ?? 'No se pudo guardar los valores de la solicitud';
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: mensaje,
+        confirmButtonColor: this.COLOR_PRIMARIO,
+      });
+    }
+  }
+
+  private async guardarEnsayosYAvanzar(catalogos: MatrizConHijosUI[]): Promise<void> {
+    const solicitudEnsayo: SolicitudEnsayoItem[] = catalogos.flatMap((grupo) =>
+      grupo.hijos
+        .filter((h) => h.activo)
+        .map((h) => ({
+          solicitud_id: this.solicitudRegistradaId,
+          ensayo_id: h.id,
+          ensayo_aux_id: 0,
+        })),
+    );
+
+    const payload = { solicitudEnsayo };
+
+    try {
+      await firstValueFrom(this.service.guardarEnsayosSolicitud(payload));
+      this.zone.run(() => this.avanzarPaso());
+    } catch (err: any) {
+      const mensaje =
+        err?.error?.message ?? err?.message ?? 'No se pudo guardar los ensayos de la solicitud';
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: mensaje,
+        confirmButtonColor: this.COLOR_PRIMARIO,
+      });
     }
   }
 
@@ -309,7 +347,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         descripcion: '',
         ejercicio_id: ejercicio.id,
       };
-      console.log('[SolicitudPayload]', JSON.stringify(payload, null, 2));
       const res = await firstValueFrom(this.service.registrarSolicitud(payload));
       this.zone.run(() => {
         this.solicitudRegistradaId = res?.data?.id ?? res?.id ?? null;
@@ -374,7 +411,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       return;
     }
 
-    if (this.currentStep === 3) this.avanzarPaso();
   }
 
   goPrevStep(): void {
@@ -386,7 +422,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   onStep3Next(data: MatrizConHijosUI[]): void {
     this.catalogosSeleccionados = data;
-    this.goNextStep();
+    this.guardarEnsayosYAvanzar(data);
   }
 
   private avanzarPaso(): void {

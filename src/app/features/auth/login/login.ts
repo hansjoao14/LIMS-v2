@@ -33,12 +33,12 @@ export class Login implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.startCarousel();
-    
+
     // 1. Intentar cargar credenciales recordadas del localStorage
     this.loadSavedCredentials();
-    
-    // Nota: Si decides que el logout() debe borrar el storage, 
-    // asegúrate de llamar a logout ANTES de loadSavedCredentials o 
+
+    // Nota: Si decides que el logout() debe borrar el storage,
+    // asegúrate de llamar a logout ANTES de loadSavedCredentials o
     // manejarlo según tu lógica de negocio.
   }
 
@@ -59,7 +59,7 @@ export class Login implements OnInit, OnDestroy {
     if (savedUser && savedPass) {
       this.user = savedUser;
       this.password = savedPass;
-      console.log('Credenciales cargadas desde el almacenamiento local.');
+      // console.log('Credenciales cargadas desde el almacenamiento local.');
     }
   }
 

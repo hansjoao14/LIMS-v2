@@ -15,6 +15,12 @@ export interface ValorSolicitudItem {
   valor_catalogo: number;
 }
 
+export interface SolicitudEnsayoItem {
+  solicitud_id: string | null;
+  ensayo_id: number;
+  ensayo_aux_id: number;
+}
+
 export interface SolicitudPayload {
   formulario_id: string | number | null;
   usuario_id: string;
@@ -65,9 +71,11 @@ export class SolicitudService {
   }
 
   registrarSolicitud(payload: SolicitudPayload): Observable<any> {
-    console.log(payload);
-    let req = this.http.post<any>(`${this.api_solicitud}/solicitud`, payload);
-    return req;
+    return this.http.post<any>(`${this.api_solicitud}/solicitud`, payload);
+  }
+
+  guardarEnsayosSolicitud(payload: { solicitudEnsayo: SolicitudEnsayoItem[] }): Observable<any> {
+    return this.http.post<any>(`${this.api_solicitud}/solicitud-ensayo/create-many`, payload);
   }
 
   createSolicitud(payload: any): Observable<any> {
