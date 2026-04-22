@@ -8,16 +8,15 @@ export interface SolicitudPayload {
   formulario_id: string | number | null;
   usuario_id: string;
   entidad_id: string;
-  secuencial: null;
+  secuencial_id: null;
   ctestado_id: number;
-  periodo_id: number;
+  periodo_id: number | null;
   descripcion: string;
   ejercicio_id: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudService {
-
   api_reportes: string = environment.api_reportes;
   private api_solicitud: string = environment.api_solicitud;
 
@@ -44,22 +43,20 @@ export class SolicitudService {
           // Ordenamos las preguntas usando el campo "orden" de tu JSON
           preguntas: formRaw.preguntas
             ? [...formRaw.preguntas].sort((a: any, b: any) => a.orden - b.orden)
-            : []
+            : [],
         } as FormularioLaboratorio;
-      })
+      }),
     );
   }
 
   registrarSolicitud(payload: SolicitudPayload): Observable<any> {
-    return this.http.post(this.api_solicitud, payload);
+    return this.http.post<any>(this.api_solicitud + '/solicitud', payload);
   }
 
-  // Persistencia real en base de datos
   createSolicitud(payload: any): Observable<any> {
-    return this.http.post(`${this.api_reportes}/solicitud-trabajo`, payload);
+    return this.http.post<any>(`${this.api_reportes}/solicitud-trabajo`, payload);
   }
 
-  // Para el listado del panel de administración
   getSolicitudes(): Observable<any[]> {
     return this.http.get<any[]>(`${this.api_reportes}/solicitud-trabajo`);
   }

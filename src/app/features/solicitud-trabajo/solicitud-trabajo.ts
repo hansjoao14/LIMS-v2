@@ -10,7 +10,7 @@ import {
   FormControl,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, takeUntil, switchMap } from 'rxjs';
+import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import * as L from 'leaflet';
 import Swal from 'sweetalert2';
 
@@ -30,6 +30,7 @@ import { DocumentoLegalService } from '../../services/solicitud-trabajo/document
 import { IntegracionService } from '../../services/solicitud-trabajo/integracion.service';
 import { PeriodoService } from '../../services/solicitud-trabajo/periodo.service';
 import { SolicitudPayload } from './service/solicitud-trabajo-service';
+
 import { Entidad } from '../../interfaces/solicitud-trabajo/entidad.interface';
 import { Establecimiento } from '../../interfaces/solicitud-trabajo/establecimiento.interface';
 import { Tecnico } from '../../interfaces/solicitud-trabajo/tecnico.interface';
@@ -264,51 +265,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         });
         return;
       }
-      this.isCreandoSolicitud = true;
-      const anio = new Date().getFullYear();
-      const mes = new Date().getMonth() + 1;
-      const raw = this.form.getRawValue();
-
-      this.periodoService.getEjercicioByAnio(anio).pipe(
-        switchMap((ejercicio) => {
-          if (!ejercicio) throw new Error(`No hay ejercicio activo para el año ${anio}`);
-          this.ejercicioId = ejercicio.id;
-          return this.periodoService.getPeriodoByEjercicioAndMes(ejercicio.id, mes);
-        }),
-        switchMap((periodo) => {
-          if (!periodo) throw new Error(`No hay periodo activo para el mes ${mes}`);
-          this.periodoId = periodo.id;
-          const payload: SolicitudPayload = {
-            formulario_id: this.formulario?.formulario_id ?? null,
-            usuario_id: raw.tecnico_id,
-            entidad_id: raw.entidad_id,
-            secuencial: null,
-            ctestado_id: 2,
-            periodo_id: periodo.id,
-            descripcion: '',
-            ejercicio_id: this.ejercicioId!,
-          };
-          console.log('[SolicitudPayload]', JSON.stringify(payload, null, 2));
-          return this.service.registrarSolicitud(payload);
-        }),
-        takeUntil(this.destroy$),
-      ).subscribe({
-        next: (res) => {
-          this.solicitudRegistradaId = res?.id ?? res?.data?.id ?? null;
-          this.isCreandoSolicitud = false;
-          this.currentStep = 2;
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        },
-        error: (err) => {
-          this.isCreandoSolicitud = false;
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: err?.message || 'No se pudo registrar la solicitud',
-            confirmButtonColor: this.COLOR_PRIMARIO,
-          });
-        },
-      });
+      this.crearSolicitudYAvanzar();
       return;
     }
 
@@ -342,6 +299,49 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     if (this.currentStep === 3) {
       this.currentStep = 4;
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  private async crearSolicitudYAvanzar(): Promise<void> {
+    this.isCreandoSolicitud = true;
+    const anio = new Date().getFullYear();
+    const mes = new Date().getMonth() + 1;
+    const raw = this.form.getRawValue();
+
+    try {
+      const ejercicio = await this.periodoService.getEjercicioByAnio(anio);
+      if (!ejercicio) throw new Error(`No hay ejercicio activo para el año ${anio}`);
+      this.ejercicioId = ejercicio.id;
+
+      const periodo = await this.periodoService.getPeriodoByEjercicioAndMes(ejercicio.id, mes);
+      if (!periodo) throw new Error(`No hay periodo activo para el mes ${mes}`);
+      this.periodoId = periodo.id;
+
+      const payload: SolicitudPayload = {
+        formulario_id: this.formulario?.formulario_id ?? null,
+        usuario_id: raw.tecnico_id,
+        entidad_id: raw.entidad_id,
+        secuencial_id: null,
+        ctestado_id: 2,
+        periodo_id: periodo.id,
+        descripcion: '',
+        ejercicio_id: ejercicio.id,
+      };
+      console.log('[SolicitudPayload]', JSON.stringify(payload, null, 2));
+
+      const res = await firstValueFrom(this.service.registrarSolicitud(payload));
+      this.solicitudRegistradaId = res?.id ?? res?.data?.id ?? null;
+      this.isCreandoSolicitud = false;
+      this.currentStep = 2;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err: any) {
+      this.isCreandoSolicitud = false;
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err?.message || 'No se pudo registrar la solicitud',
+        confirmButtonColor: this.COLOR_PRIMARIO,
+      });
     }
   }
 

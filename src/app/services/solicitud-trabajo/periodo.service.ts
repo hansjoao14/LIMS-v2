@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Apollo, gql } from 'apollo-angular';
-import { Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   Ejercicio,
@@ -59,35 +59,29 @@ const GET_PERIODO_BY_EJERCICIO_MES = gql`
 export class PeriodoService {
   constructor(private apollo: Apollo) {}
 
-  getEjercicioByAnio(anio: number): Observable<Ejercicio | null> {
-    return this.apollo
-      .use(CLIENT_NAME)
-      .query<{ collectionEjercicio: EjercicioCollectionResponse }>({
-        query: GET_EJERCICIO_BY_ANIO,
-        variables: { anio },
-      })
-      .pipe(
-        map((result) => {
-          console.log(result);
-
-          const data = (result.data?.collectionEjercicio?.data ?? []) as Ejercicio[];
-          return data[0] ?? null;
+  async getEjercicioByAnio(anio: number): Promise<Ejercicio | null> {
+    const result = await firstValueFrom(
+      this.apollo
+        .use(CLIENT_NAME)
+        .query<{ collectionEjercicio: EjercicioCollectionResponse }>({
+          query: GET_EJERCICIO_BY_ANIO,
+          variables: { anio },
         })
-      );
+        .pipe(map((r) => (r.data?.collectionEjercicio?.data ?? []) as Ejercicio[]))
+    );
+    return result[0] ?? null;
   }
 
-  getPeriodoByEjercicioAndMes(ejercicioId: number, mes: number): Observable<Periodo | null> {
-    return this.apollo
-      .use(CLIENT_NAME)
-      .query<{ collectionPeriodo: PeriodoCollectionResponse }>({
-        query: GET_PERIODO_BY_EJERCICIO_MES,
-        variables: { ejercicioId, mes },
-      })
-      .pipe(
-        map((result) => {
-          const data = (result.data?.collectionPeriodo?.data ?? []) as Periodo[];
-          return data[0] ?? null;
+  async getPeriodoByEjercicioAndMes(ejercicioId: number, mes: number): Promise<Periodo | null> {
+    const result = await firstValueFrom(
+      this.apollo
+        .use(CLIENT_NAME)
+        .query<{ collectionPeriodo: PeriodoCollectionResponse }>({
+          query: GET_PERIODO_BY_EJERCICIO_MES,
+          variables: { ejercicioId, mes },
         })
-      );
+        .pipe(map((r) => (r.data?.collectionPeriodo?.data ?? []) as Periodo[]))
+    );
+    return result[0] ?? null;
   }
 }
