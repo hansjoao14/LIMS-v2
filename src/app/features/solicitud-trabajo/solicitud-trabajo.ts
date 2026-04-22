@@ -9,7 +9,7 @@ import {
   Validators,
   FormControl,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import * as L from 'leaflet';
 import Swal from 'sweetalert2';
@@ -20,31 +20,25 @@ import {
   FormularioLaboratorio,
   Pregunta,
 } from './model/solicitud-trabajo.model';
-import { SolicitudService } from './service/solicitud-trabajo-service';
-import { AuthService } from '../auth/service/auth-service';
-import { EntidadService } from '../../services/solicitud-trabajo/entidad.service';
+import { SolicitudService, SolicitudPayload } from './service/solicitud-trabajo-service';
 import { EstablecimientoUsuarioService } from '../../services/solicitud-trabajo/establecimiento-usuario.service';
 import { EstablecimientoService } from '../../services/solicitud-trabajo/establecimiento.service';
 import { EnsayoService } from '../../services/solicitud-trabajo/ensayo.service';
 import { DocumentoLegalService } from '../../services/solicitud-trabajo/documento-legal.service';
 import { IntegracionService } from '../../services/solicitud-trabajo/integracion.service';
 import { PeriodoService } from '../../services/solicitud-trabajo/periodo.service';
-import { SolicitudPayload } from './service/solicitud-trabajo-service';
 
-import { Entidad } from '../../interfaces/solicitud-trabajo/entidad.interface';
 import { Establecimiento } from '../../interfaces/solicitud-trabajo/establecimiento.interface';
 import { Tecnico } from '../../interfaces/solicitud-trabajo/tecnico.interface';
 import { EnsayoLaboratorio } from '../../interfaces/solicitud-trabajo/ensayo.interface';
-import {
-  DatosSRI,
-  DatosRegistroCivil,
-} from '../../interfaces/solicitud-trabajo/integracion.interface';
+import { DatosSRI, DatosRegistroCivil } from '../../interfaces/solicitud-trabajo/integracion.interface';
+import { SolicitudPdfData } from '../../interfaces/solicitud-trabajo/solicitud-pdf.interface';
+
 import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud';
 import { Step2OperadorComponent } from './steps/step2-operador/step2-operador';
 import { Step3CatalogoComponent, MatrizConHijosUI } from './steps/step3-catalogo/step3-catalogo';
 import { Step4ConfirmacionComponent } from './steps/step4-confirmacion/step4-confirmacion';
 import { SolicitudPdfComponent } from './solicitud-pdf/solicitud-pdf';
-import { SolicitudPdfData } from '../../interfaces/solicitud-trabajo/solicitud-pdf.interface';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
@@ -65,81 +59,107 @@ type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
   styleUrls: ['./solicitud-trabajo.css'],
 })
 export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
+
+  // ── Formulario dinámico ──────────────────────────────────────────────────
   form: FormGroup;
   formulario: FormularioLaboratorio | null = null;
   fields: FieldConfig[] = [];
   loading = true;
+
+  // ── Navegación por pasos ─────────────────────────────────────────────────
   currentStep = 1;
 
-  buscandoIntegracion: { [key: string]: boolean } = {};
+  // ── Estado de modales ────────────────────────────────────────────────────
   showMapModal = false;
   showTerminosModal = false;
   showConfidencialidadModal = false;
 
+  // ── Estado de carga ──────────────────────────────────────────────────────
   isGuardando = false;
   isCreandoSolicitud = false;
+
+  // ── Datos de la solicitud registrada ────────────────────────────────────
   solicitudRegistradaId: string | null = null;
   ejercicioId: number | null = null;
   periodoId: number | null = null;
 
-  private map: L.Map | null = null;
-  private marker: L.Marker | null = null;
-  private destroy$ = new Subject<void>();
-
-  readonly numeroSolicitudGenerado = 'ST-' + new Date().getFullYear() + '-001';
-  fechaActual = new Date();
-  readonly COLOR_PRIMARIO = '#1e3a8a';
-  readonly STORAGE_KEY = 'lims_solicitudes_trabajo';
-
-  entidades: Entidad[] = [];
+  // ── Step 1: establecimientos y técnicos ──────────────────────────────────
   establecimientos: Establecimiento[] = [];
   tecnicosFiltrados: Tecnico[] = [];
   selectedTecnicoNombre = 'Usuario';
 
-  terminosCondiciones: string[] = [];
-  acuerdoConfidencialidad = '';
-
+  // ── Step 2: campos del formulario dinámico ───────────────────────────────
+  buscandoIntegracion: { [key: string]: boolean } = {};
   selectedScheduleIndexes = new Set<number>();
 
+  // ── Step 3: catálogos y ensayos ──────────────────────────────────────────
+  catalogosSeleccionados: MatrizConHijosUI[] = [];
   ensayosAire: EnsayoLaboratorio[] = [];
   ensayosRuido: EnsayoLaboratorio[] = [];
-
   ruidoInfo = { tipoUsoSueloOperador: '', tipoUsoSueloPCA: '', direccionPCA: '', telefonoPCA: '' };
-
   notasAgua: string[] = [];
   notasAire: string[] = [];
   notasRuido: string[] = [];
 
+  // ── Step 4: acuerdos y PDF ───────────────────────────────────────────────
+  terminosCondiciones: string[] = [];
+  acuerdoConfidencialidad = '';
+  mostrarPDF = false;
+  pdfData: SolicitudPdfData | null = null;
+
+  // ── Mapa ─────────────────────────────────────────────────────────────────
+  private map: L.Map | null = null;
+  private marker: L.Marker | null = null;
+
+  // ── Constantes ───────────────────────────────────────────────────────────
+  readonly fechaActual = new Date();
+  readonly numeroSolicitudGenerado = 'ST-' + new Date().getFullYear() + '-001';
+  private readonly COLOR_PRIMARIO = '#1e3a8a';
+  private readonly STORAGE_KEY = 'lims_solicitudes_trabajo';
+  private readonly destroy$ = new Subject<void>();
+
   constructor(
     private fb: FormBuilder,
     private service: SolicitudService,
-    private authService: AuthService,
-    private entidadService: EntidadService,
-    private establecimientoUsuarioService: EstablecimientoUsuarioService,
     private establecimientoService: EstablecimientoService,
+    private establecimientoUsuarioService: EstablecimientoUsuarioService,
     private ensayoService: EnsayoService,
     private documentoLegalService: DocumentoLegalService,
     private integracionService: IntegracionService,
     private periodoService: PeriodoService,
     private zone: NgZone,
-    private router: Router,
     private route: ActivatedRoute,
   ) {
     this.form = this.fb.group({
       entidad_id: ['', Validators.required],
       tecnico_id: ['', Validators.required],
       cargo_usuario: [{ value: '', disabled: true }],
-      numero_solicitud: [
-        { value: this.numeroSolicitudGenerado, disabled: true },
-        Validators.required,
-      ],
+      numero_solicitud: [{ value: this.numeroSolicitudGenerado, disabled: true }, Validators.required],
       val_pasaporte: this.fb.control(''),
     });
   }
 
+  // ── Lifecycle ────────────────────────────────────────────────────────────
+
   ngOnInit(): void {
     this.cargarDatosIniciales();
     this.setupStepOneLogic();
+    this.cargarFormularioDinamico();
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.showMapModal && !this.map) this.initMap();
+  }
+
+  ngOnDestroy(): void {
+    this.closeMap();
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ── Carga inicial ────────────────────────────────────────────────────────
+
+  private cargarFormularioDinamico(): void {
     const idTipoFormulario = this.route.snapshot.paramMap.get('idTipoFrmulario') || '380';
     this.service
       .getFormulario(idTipoFormulario)
@@ -162,55 +182,26 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private cargarDatosIniciales(): void {
-    this.entidadService
-      .getEntidades()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((e) => (this.entidades = e));
-
     this.establecimientoService
       .getEstablecimientos()
       .pipe(takeUntil(this.destroy$))
       .subscribe((e) => (this.establecimientos = e));
 
-    this.ensayoService
-      .getEnsayosAire()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((e) => (this.ensayosAire = e));
-    this.ensayoService
-      .getEnsayosRuido()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((e) => (this.ensayosRuido = e));
-    this.ensayoService
-      .getNotasAgua()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((n) => (this.notasAgua = n));
-    this.ensayoService
-      .getNotasAire()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((n) => (this.notasAire = n));
-    this.ensayoService
-      .getNotasRuido()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((n) => (this.notasRuido = n));
+    this.ensayoService.getEnsayosAire().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.ensayosAire = e));
+    this.ensayoService.getEnsayosRuido().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.ensayosRuido = e));
+    this.ensayoService.getNotasAgua().pipe(takeUntil(this.destroy$)).subscribe((n) => (this.notasAgua = n));
+    this.ensayoService.getNotasAire().pipe(takeUntil(this.destroy$)).subscribe((n) => (this.notasAire = n));
+    this.ensayoService.getNotasRuido().pipe(takeUntil(this.destroy$)).subscribe((n) => (this.notasRuido = n));
 
-    this.documentoLegalService
-      .getTerminosCondiciones()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((t) => (this.terminosCondiciones = t));
-    this.documentoLegalService
-      .getAcuerdoConfidencialidad()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((a) => (this.acuerdoConfidencialidad = a));
+    this.documentoLegalService.getTerminosCondiciones().pipe(takeUntil(this.destroy$)).subscribe((t) => (this.terminosCondiciones = t));
+    this.documentoLegalService.getAcuerdoConfidencialidad().pipe(takeUntil(this.destroy$)).subscribe((a) => (this.acuerdoConfidencialidad = a));
   }
 
-  ngAfterViewChecked(): void {
-    if (this.showMapModal && !this.map) this.initMap();
-  }
+  // ── Step 1 ───────────────────────────────────────────────────────────────
 
   private setupStepOneLogic(): void {
-    this.form
-      .get('entidad_id')
-      ?.valueChanges.pipe(takeUntil(this.destroy$))
+    this.form.get('entidad_id')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
       .subscribe((establecimientoId: string) => {
         this.tecnicosFiltrados = [];
         this.form.patchValue({ tecnico_id: '', cargo_usuario: '' }, { emitEvent: false });
@@ -222,9 +213,8 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
           .subscribe((tecnicos) => (this.tecnicosFiltrados = tecnicos));
       });
 
-    this.form
-      .get('tecnico_id')
-      ?.valueChanges.pipe(takeUntil(this.destroy$))
+    this.form.get('tecnico_id')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
       .subscribe((tecnicoId: string) => {
         const tecnico = this.tecnicosFiltrados.find((t) => t.id === tecnicoId);
         this.selectedTecnicoNombre = tecnico?.nombre || 'Usuario';
@@ -234,72 +224,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   get isStepOneReady(): boolean {
     return !!this.form.get('entidad_id')?.value && !!this.form.get('tecnico_id')?.value;
-  }
-
-  goToStep(step: number): void {
-    if (step < 1 || step > 4) return;
-    if (step > 1 && !this.isStepOneReady) {
-      this.form.markAllAsTouched();
-      Swal.fire({
-        icon: 'warning',
-        title: 'Atención',
-        text: 'Complete los campos obligatorios de la cabecera',
-        confirmButtonColor: this.COLOR_PRIMARIO,
-      });
-      return;
-    }
-    if (step > this.currentStep + 1) return;
-    this.currentStep = step;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  goNextStep(): void {
-    if (this.currentStep === 1) {
-      if (!this.isStepOneReady) {
-        this.form.markAllAsTouched();
-        Swal.fire({
-          icon: 'warning',
-          title: 'Atención',
-          text: 'Complete los campos obligatorios de la cabecera',
-          confirmButtonColor: this.COLOR_PRIMARIO,
-        });
-        return;
-      }
-      this.crearSolicitudYAvanzar();
-      return;
-    }
-
-    if (this.currentStep === 2) {
-      if (this.form.invalid) {
-        this.form.markAllAsTouched();
-        const invalidFields = [];
-        for (const name in this.form.controls) {
-          if (this.form.controls[name].invalid) {
-            const fieldConfig = this.fields.find((f) => f.key === name);
-            if (fieldConfig && !fieldConfig.hidden) invalidFields.push(fieldConfig.label || name);
-          }
-        }
-        const mensajeError =
-          invalidFields.length > 0
-            ? 'Faltan: ' + invalidFields.join(', ')
-            : 'Revise los campos requeridos marcados en rojo.';
-        Swal.fire({
-          icon: 'warning',
-          title: 'Complete los campos obligatorios',
-          text: mensajeError,
-          confirmButtonColor: this.COLOR_PRIMARIO,
-        });
-        return;
-      }
-      this.currentStep = 3;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-
-    if (this.currentStep === 3) {
-      this.currentStep = 4;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
   }
 
   private async crearSolicitudYAvanzar(): Promise<void> {
@@ -332,17 +256,53 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       const res = await firstValueFrom(this.service.registrarSolicitud(payload));
       this.solicitudRegistradaId = res?.id ?? res?.data?.id ?? null;
       this.isCreandoSolicitud = false;
-      this.currentStep = 2;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.avanzarPaso();
     } catch (err: any) {
       this.isCreandoSolicitud = false;
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: err?.message || 'No se pudo registrar la solicitud',
-        confirmButtonColor: this.COLOR_PRIMARIO,
-      });
+      Swal.fire({ icon: 'error', title: 'Error', text: err?.message || 'No se pudo registrar la solicitud', confirmButtonColor: this.COLOR_PRIMARIO });
     }
+  }
+
+  // ── Navegación ───────────────────────────────────────────────────────────
+
+  goToStep(step: number): void {
+    if (step < 1 || step > 4) return;
+    if (step > 1 && !this.isStepOneReady) {
+      this.alertCamposObligatorios();
+      return;
+    }
+    if (step > this.currentStep + 1) return;
+    this.currentStep = step;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  goNextStep(): void {
+    if (this.currentStep === 1) {
+      if (!this.isStepOneReady) { this.alertCamposObligatorios(); return; }
+      this.crearSolicitudYAvanzar();
+      return;
+    }
+
+    if (this.currentStep === 2) {
+      if (this.form.invalid) {
+        this.form.markAllAsTouched();
+        const invalidos = Object.entries(this.form.controls)
+          .filter(([, ctrl]) => ctrl.invalid)
+          .map(([name]) => this.fields.find((f) => f.key === name && !f.hidden)?.label || name)
+          .filter(Boolean);
+        Swal.fire({
+          icon: 'warning',
+          title: 'Complete los campos obligatorios',
+          text: invalidos.length ? 'Faltan: ' + invalidos.join(', ') : 'Revise los campos marcados en rojo.',
+          confirmButtonColor: this.COLOR_PRIMARIO,
+        });
+        return;
+      }
+      this.avanzarPaso();
+      return;
+    }
+
+    if (this.currentStep === 3) this.avanzarPaso();
   }
 
   goPrevStep(): void {
@@ -352,115 +312,45 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  openMap(): void {
-    this.showMapModal = true;
-  }
-  closeMap(): void {
-    this.showMapModal = false;
-    if (this.map) {
-      this.map.remove();
-      this.map = null;
-    }
-    this.marker = null;
+  onStep3Next(data: MatrizConHijosUI[]): void {
+    this.catalogosSeleccionados = data;
+    this.goNextStep();
   }
 
-  private initMap(): void {
-    this.zone.runOutsideAngular(() => {
-      const latControl = this.getFieldControl('val_lati');
-      const longControl = this.getFieldControl('val_long');
-      const lat = Number(latControl?.value) || -0.1807;
-      const lng = Number(longControl?.value) || -78.4678;
-
-      this.map = L.map('map-container').setView([lat, lng], 14);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
-      this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
-      this.marker.on('dragend', () => {
-        const position = this.marker?.getLatLng();
-        if (position) this.updateCoords(position.lat, position.lng);
-      });
-      this.map.on('click', (event: L.LeafletMouseEvent) => {
-        this.marker?.setLatLng(event.latlng);
-        this.updateCoords(event.latlng.lat, event.latlng.lng);
-      });
-      setTimeout(() => this.map?.invalidateSize(), 250);
-    });
+  private avanzarPaso(): void {
+    this.currentStep++;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  private updateCoords(lat: number, lng: number): void {
-    this.zone.run(() => {
-      this.form.patchValue({ val_lati: lat.toFixed(6), val_long: lng.toFixed(6) });
-    });
+  private alertCamposObligatorios(): void {
+    this.form.markAllAsTouched();
+    Swal.fire({ icon: 'warning', title: 'Atención', text: 'Complete los campos obligatorios de la cabecera', confirmButtonColor: this.COLOR_PRIMARIO });
   }
+
+  // ── Step 2: integración SRI / Civil ──────────────────────────────────────
 
   buscarDatosIntegracion(field: FieldConfig): void {
     const control = this.getFieldControl(field.key);
     if (!control.value) {
-      Swal.fire({
-        icon: 'warning',
-        text: 'Ingrese un documento válido para buscar',
-        confirmButtonColor: this.COLOR_PRIMARIO,
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-      });
+      this.alertToast('warning', 'Ingrese un documento válido para buscar');
       return;
     }
+
     const documento = control.value as string;
     this.buscandoIntegracion[field.key] = true;
+    const resetBuscando = () => (this.buscandoIntegracion[field.key] = false);
 
     if (field.integrations.sri) {
-      this.integracionService
-        .buscarPorSRI(documento)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (datos: DatosSRI) => {
-            this.buscandoIntegracion[field.key] = false;
-            this.form.patchValue(datos);
-            Swal.fire({
-              icon: 'success',
-              title: 'SRI',
-              text: 'Datos recuperados',
-              confirmButtonColor: this.COLOR_PRIMARIO,
-              toast: true,
-              position: 'top-end',
-              showConfirmButton: false,
-              timer: 3000,
-            });
-          },
-          error: () => (this.buscandoIntegracion[field.key] = false),
-        });
+      this.integracionService.buscarPorSRI(documento).pipe(takeUntil(this.destroy$)).subscribe({
+        next: (datos: DatosSRI) => { resetBuscando(); this.form.patchValue(datos); this.alertToast('success', 'Datos SRI recuperados'); },
+        error: resetBuscando,
+      });
     } else if (field.integrations.civil) {
-      this.integracionService
-        .buscarPorRegistroCivil(documento)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (datos: DatosRegistroCivil) => {
-            this.buscandoIntegracion[field.key] = false;
-            this.form.patchValue(datos);
-            Swal.fire({
-              icon: 'success',
-              title: 'Registro Civil',
-              text: 'Datos recuperados',
-              confirmButtonColor: this.COLOR_PRIMARIO,
-              toast: true,
-              position: 'top-end',
-              showConfirmButton: false,
-              timer: 3000,
-            });
-          },
-          error: () => (this.buscandoIntegracion[field.key] = false),
-        });
+      this.integracionService.buscarPorRegistroCivil(documento).pipe(takeUntil(this.destroy$)).subscribe({
+        next: (datos: DatosRegistroCivil) => { resetBuscando(); this.form.patchValue(datos); this.alertToast('success', 'Datos Registro Civil recuperados'); },
+        error: resetBuscando,
+      });
     }
-  }
-
-  catalogosSeleccionados: MatrizConHijosUI[] = [];
-  mostrarPDF = false;
-  pdfData: SolicitudPdfData | null = null;
-
-  onStep3Next(data: MatrizConHijosUI[]): void {
-    this.catalogosSeleccionados = data;
-    this.goNextStep();
   }
 
   toggleScheduleItem(index: number): void {
@@ -469,9 +359,10 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       : this.selectedScheduleIndexes.add(index);
   }
 
-  iniciarAcuerdos(): void {
-    this.showTerminosModal = true;
-  }
+  // ── Step 4: acuerdos y guardado ──────────────────────────────────────────
+
+  iniciarAcuerdos(): void { this.showTerminosModal = true; }
+
   aceptarTerminos(): void {
     this.showTerminosModal = false;
     this.showConfidencialidadModal = true;
@@ -479,21 +370,22 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   aceptarConfidencialidad(): void {
     this.isGuardando = true;
-    const payload = this.buildPayload();
     try {
       const data = localStorage.getItem(this.STORAGE_KEY);
       const solicitudes = data ? JSON.parse(data) : [];
-      solicitudes.push({ id_local: crypto.randomUUID(), ...payload });
+      solicitudes.push({ id_local: crypto.randomUUID(), ...this.buildPayload() });
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(solicitudes));
       this.isGuardando = false;
       this.showConfidencialidadModal = false;
       this.pdfData = this.buildPdfData();
       this.mostrarPDF = true;
-    } catch (e) {
+    } catch {
       this.isGuardando = false;
       Swal.fire('Error', 'No se pudo guardar la solicitud en localStorage', 'error');
     }
   }
+
+  // ── Construcción de payloads ─────────────────────────────────────────────
 
   private buildPdfData(): SolicitudPdfData {
     const raw = this.form.getRawValue();
@@ -527,26 +419,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   private buildPayload() {
     const rawValues = this.form.getRawValue();
-    const answers = this.fields
-      .filter((f) => !f.hidden && f.controlType !== 'schedule')
-      .map((f) => ({
-        pregunta_id: f.id,
-        nombre: f.key,
-        valor: rawValues[f.key],
-      }));
     const scheduleField = this.fields.find((f) => f.controlType === 'schedule');
-    const selectedJornadas = (scheduleField?.scheduleItems ?? []).filter((_, i) =>
-      this.selectedScheduleIndexes.has(i),
-    );
-    const catalogosArray = this.catalogosSeleccionados.flatMap((g) =>
-      g.hijos
-        .filter((h) => h.activo)
-        .map((h) => ({
-          matriz: g.matriz.nombre,
-          servicio: h.nombre,
-          cantidad: h.cantidad,
-        })),
-    );
     return {
       formulario_id: this.formulario?.formulario_id ?? null,
       tipo_formulario_id: this.formulario?.tipo_formulario_id ?? null,
@@ -556,17 +429,62 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         numero_solicitud: rawValues.numero_solicitud,
       },
       datos_solicitante: rawValues,
-      respuestas: answers,
-      jornadas_laborales: selectedJornadas,
-      catalogo_servicios: catalogosArray,
+      respuestas: this.fields
+        .filter((f) => !f.hidden && f.controlType !== 'schedule')
+        .map((f) => ({ pregunta_id: f.id, nombre: f.key, valor: rawValues[f.key] })),
+      jornadas_laborales: (scheduleField?.scheduleItems ?? []).filter((_, i) => this.selectedScheduleIndexes.has(i)),
+      catalogo_servicios: this.catalogosSeleccionados.flatMap((g) =>
+        g.hijos.filter((h) => h.activo).map((h) => ({ matriz: g.matriz.nombre, servicio: h.nombre, cantidad: h.cantidad }))
+      ),
       ensayos: {
-        aire: this.ensayosAire.filter((f: EnsayoLaboratorio) => f.activo),
-        ruido: this.ensayosRuido.filter((f: EnsayoLaboratorio) => f.activo),
+        aire: this.ensayosAire.filter((f) => f.activo),
+        ruido: this.ensayosRuido.filter((f) => f.activo),
       },
       ruido_info: this.ruidoInfo,
       estado: 'GENERADA',
       fecha_creacion: new Date().toISOString(),
     };
+  }
+
+  // ── Mapa ─────────────────────────────────────────────────────────────────
+
+  openMap(): void { this.showMapModal = true; }
+
+  closeMap(): void {
+    this.showMapModal = false;
+    this.map?.remove();
+    this.map = null;
+    this.marker = null;
+  }
+
+  private initMap(): void {
+    this.zone.runOutsideAngular(() => {
+      const lat = Number(this.getFieldControl('val_lati')?.value) || -0.1807;
+      const lng = Number(this.getFieldControl('val_long')?.value) || -78.4678;
+
+      this.map = L.map('map-container').setView([lat, lng], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
+      this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
+      this.marker.on('dragend', () => {
+        const pos = this.marker?.getLatLng();
+        if (pos) this.updateCoords(pos.lat, pos.lng);
+      });
+      this.map.on('click', (e: L.LeafletMouseEvent) => {
+        this.marker?.setLatLng(e.latlng);
+        this.updateCoords(e.latlng.lat, e.latlng.lng);
+      });
+      setTimeout(() => this.map?.invalidateSize(), 250);
+    });
+  }
+
+  private updateCoords(lat: number, lng: number): void {
+    this.zone.run(() => this.form.patchValue({ val_lati: lat.toFixed(6), val_long: lng.toFixed(6) }));
+  }
+
+  // ── Formulario dinámico ──────────────────────────────────────────────────
+
+  getFieldControl(key: string): FormControl {
+    return this.form.get(key) as FormControl;
   }
 
   get formularioTitulo(): string {
@@ -578,37 +496,24 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     if (!tipoField) return false;
     const selectedId = this.getFieldControl('val_ct_tipo')?.value;
     return tipoField.options.some(
-      (opt) =>
-        String(opt.id) === String(selectedId) && opt.nombre?.toLowerCase().includes('pasaporte'),
+      (opt) => String(opt.id) === String(selectedId) && opt.nombre?.toLowerCase().includes('pasaporte')
     );
   }
 
   get motivoFlujo(): MotivoFlujo {
     const field = this.fields.find((f) => this.isMotivoField(f) && f.options.length > 0);
     if (!field) return '';
-    const selectedId = this.form.get(field.key)?.value;
-    const opt = field.options.find((o) => String(o.id) === String(selectedId));
-    const name = opt?.nombre?.toLowerCase() || '';
+    const name = field.options.find((o) => String(o.id) === String(this.form.get(field.key)?.value))?.nombre?.toLowerCase() || '';
     if (name.includes('seguimiento')) return 'seguimiento';
     if (name.includes('denuncia')) return 'denuncia';
     if (name.includes('licenciamiento')) return 'licenciamiento';
     return '';
   }
 
-  getFieldControl(key: string): FormControl {
-    return this.form.get(key) as FormControl;
-  }
-
   private generateControls(): void {
     for (const field of this.fields) {
       if (this.form.contains(field.key)) continue;
-      this.form.addControl(
-        field.key,
-        this.fb.control(
-          { value: '', disabled: field.hidden },
-          this.buildValidators(field, field.hidden),
-        ),
-      );
+      this.form.addControl(field.key, this.fb.control({ value: '', disabled: field.hidden }, this.buildValidators(field, field.hidden)));
     }
   }
 
@@ -622,9 +527,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   private applyDependencyLogic(): void {
     this.updateDependentFields();
-    this.form.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.updateDependentFields());
+    this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.updateDependentFields());
   }
 
   private updateDependentFields(): void {
@@ -635,8 +538,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       }
       const parentField = this.fields.find((c) => c.id === field.dependsOn?.fieldId);
       const parentValue = parentField ? this.getFieldControl(parentField.key)?.value : null;
-      const isVisible = String(parentValue ?? '') === field.dependsOn.triggerValue;
-      this.syncFieldState(field, !isVisible);
+      this.syncFieldState(field, String(parentValue ?? '') !== field.dependsOn.triggerValue);
     }
     const pasaporteControl = this.form.get('val_pasaporte');
     if (this.isPasaporteSelected) {
@@ -678,16 +580,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       options: pregunta.catalogos ?? [],
       scheduleItems: pregunta.jornada_laboral_item ?? [],
       dependsOn: pregunta.atributo_id
-        ? {
-            fieldId: String(pregunta.atributo_id),
-            triggerValue: String(pregunta.item_catalogo_id ?? ''),
-          }
+        ? { fieldId: String(pregunta.atributo_id), triggerValue: String(pregunta.item_catalogo_id ?? '') }
         : undefined,
-      integrations: {
-        sri: pregunta.is_ws_sri,
-        civil: pregunta.is_ws_civil,
-        iess: pregunta.is_ws_iess ?? false,
-      },
+      integrations: { sri: pregunta.is_ws_sri, civil: pregunta.is_ws_civil, iess: pregunta.is_ws_iess ?? false },
       source: pregunta,
     };
   }
@@ -696,18 +591,13 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     if (pregunta.nombre === 'val_lati' || pregunta.nombre === 'val_long') return 'coordinates';
     if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
     if (pregunta.tipo_respuesta === 'Selección Mutiple') return 'schedule';
-    if (
-      pregunta.nombre === 'val_obs' ||
-      (typeof pregunta.num_caracter === 'number' && pregunta.num_caracter > 200)
-    )
-      return 'textarea';
+    if (pregunta.nombre === 'val_obs' || (typeof pregunta.num_caracter === 'number' && pregunta.num_caracter > 200)) return 'textarea';
     return 'text';
   }
 
   private resolveSection(pregunta: Pregunta): FieldSectionId {
     const n = pregunta.nombre;
-    if (n === 'val_ct_tipo' || n === 'val_ruc_op' || n === 'val_ced_op' || n === 'val_pasaporte')
-      return 'identificacion';
+    if (n === 'val_ct_tipo' || n === 'val_ruc_op' || n === 'val_ced_op' || n === 'val_pasaporte') return 'identificacion';
     if (n === 'val_lati' || n === 'val_long') return 'ubicacion';
     if (n === 'val_jor_la') return 'horario';
     if (n === 'val_obs') return 'observaciones';
@@ -717,15 +607,12 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private isMotivoField(field: FieldConfig): boolean {
-    return (
-      (field.key?.toLowerCase() || '').includes('motivo') ||
-      (field.label?.toLowerCase() || '').includes('motivo')
-    );
+    return field.key?.toLowerCase().includes('motivo') || field.label?.toLowerCase().includes('motivo');
   }
 
-  ngOnDestroy(): void {
-    this.closeMap();
-    this.destroy$.next();
-    this.destroy$.complete();
+  // ── Helpers UI ───────────────────────────────────────────────────────────
+
+  private alertToast(icon: 'success' | 'warning' | 'error', text: string): void {
+    Swal.fire({ icon, text, confirmButtonColor: this.COLOR_PRIMARIO, toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
   }
 }
