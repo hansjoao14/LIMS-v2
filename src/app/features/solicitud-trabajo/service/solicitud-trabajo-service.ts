@@ -4,10 +4,22 @@ import { Observable, map } from 'rxjs';
 import { FormularioLaboratorio } from '../model/solicitud-trabajo.model';
 import { environment } from '../../../../environments/environment';
 
+export interface SolicitudPayload {
+  formulario_id: string | number | null;
+  usuario_id: string;
+  entidad_id: string;
+  secuencial: null;
+  ctestado_id: number;
+  periodo_id: number;
+  descripcion: string;
+  ejercicio_id: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SolicitudService {
 
   api_reportes: string = environment.api_reportes;
+  private api_solicitud: string = environment.api_solicitud;
 
   constructor(private http: HttpClient) {}
 
@@ -36,6 +48,10 @@ export class SolicitudService {
         } as FormularioLaboratorio;
       })
     );
+  }
+
+  registrarSolicitud(payload: SolicitudPayload): Observable<any> {
+    return this.http.post(this.api_solicitud, payload);
   }
 
   // Persistencia real en base de datos

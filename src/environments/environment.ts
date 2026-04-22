@@ -11,6 +11,7 @@ export const environment = {
   urlDownload: `${SGIA_BASE}/api/upload/download`,
 
   api_reportes: `${LIMS_BASE}/api/reportes`,
+  api_solicitud: `${LIMS_BASE}/api/solicitud`,
 
   keycloak_api: 'http://185.197.251.149:8080',
   graphql: `${SGIA_BASE}/api/graphql`,

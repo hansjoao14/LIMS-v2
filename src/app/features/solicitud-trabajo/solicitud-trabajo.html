@@ -45,6 +45,7 @@
         <app-step1-solicitud
           [entidadesMock]="establecimientos"
           [tecnicosFiltrados]="tecnicosFiltrados"
+          [cargando]="isCreandoSolicitud"
           (next)="goNextStep()"
         >
         </app-step1-solicitud>

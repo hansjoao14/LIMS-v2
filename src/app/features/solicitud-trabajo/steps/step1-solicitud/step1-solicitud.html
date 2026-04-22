@@ -31,8 +31,14 @@
   </div>
 
   <div class="flex justify-end">
-    <button type="button" (click)="next.emit()" class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all">
-      SIGUIENTE
+    <button type="button" (click)="next.emit()" [disabled]="cargando"
+      class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
+      @if (cargando) {
+        <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+        Creando solicitud...
+      } @else {
+        SIGUIENTE
+      }
     </button>
   </div>
 </div>

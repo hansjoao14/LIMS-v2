@@ -13,6 +13,7 @@ import { Establecimiento } from '../../../../interfaces/solicitud-trabajo/establ
 export class Step1SolicitudComponent {
   @Input() entidadesMock: Establecimiento[] = [];
   @Input() tecnicosFiltrados: { id: string; nombre: string }[] = [];
+  @Input() cargando = false;
   @Output() next = new EventEmitter<void>();
 
   private controlContainer = inject(ControlContainer);
