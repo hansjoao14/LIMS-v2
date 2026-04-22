@@ -43,7 +43,7 @@
     <form [formGroup]="form">
       @if (currentStep === 1) {
         <app-step1-solicitud
-          [entidadesMock]="entidades"
+          [entidadesMock]="establecimientos"
           [tecnicosFiltrados]="tecnicosFiltrados"
           (next)="goNextStep()"
         >
@@ -87,6 +87,10 @@
     </form>
   </div>
 </div>
+
+@if (mostrarPDF && pdfData) {
+  <app-solicitud-pdf [datos]="pdfData" (cerrar)="mostrarPDF = false"></app-solicitud-pdf>
+}
 
 @if (showTerminosModal) {
   <div

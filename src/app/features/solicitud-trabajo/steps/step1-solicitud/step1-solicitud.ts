@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlContainer, FormGroup, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
+import { Establecimiento } from '../../../../interfaces/solicitud-trabajo/establecimiento.interface';
 
 @Component({
   selector: 'app-step1-solicitud',
@@ -10,7 +11,7 @@ import { ControlContainer, FormGroup, FormGroupDirective, ReactiveFormsModule } 
   templateUrl: './step1-solicitud.html',
 })
 export class Step1SolicitudComponent {
-  @Input() entidadesMock: { id: string; nombre: string }[] = [];
+  @Input() entidadesMock: Establecimiento[] = [];
   @Input() tecnicosFiltrados: { id: string; nombre: string }[] = [];
   @Output() next = new EventEmitter<void>();
 

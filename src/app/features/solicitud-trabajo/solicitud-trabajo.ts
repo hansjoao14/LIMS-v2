@@ -23,10 +23,13 @@ import {
 import { SolicitudService } from './service/solicitud-trabajo-service';
 import { AuthService } from '../auth/service/auth-service';
 import { EntidadService } from '../../services/solicitud-trabajo/entidad.service';
+import { EstablecimientoUsuarioService } from '../../services/solicitud-trabajo/establecimiento-usuario.service';
+import { EstablecimientoService } from '../../services/solicitud-trabajo/establecimiento.service';
 import { EnsayoService } from '../../services/solicitud-trabajo/ensayo.service';
 import { DocumentoLegalService } from '../../services/solicitud-trabajo/documento-legal.service';
 import { IntegracionService } from '../../services/solicitud-trabajo/integracion.service';
 import { Entidad } from '../../interfaces/solicitud-trabajo/entidad.interface';
+import { Establecimiento } from '../../interfaces/solicitud-trabajo/establecimiento.interface';
 import { Tecnico } from '../../interfaces/solicitud-trabajo/tecnico.interface';
 import { EnsayoLaboratorio } from '../../interfaces/solicitud-trabajo/ensayo.interface';
 import {
@@ -37,6 +40,8 @@ import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud
 import { Step2OperadorComponent } from './steps/step2-operador/step2-operador';
 import { Step3CatalogoComponent, MatrizConHijosUI } from './steps/step3-catalogo/step3-catalogo';
 import { Step4ConfirmacionComponent } from './steps/step4-confirmacion/step4-confirmacion';
+import { SolicitudPdfComponent } from './solicitud-pdf/solicitud-pdf';
+import { SolicitudPdfData } from '../../interfaces/solicitud-trabajo/solicitud-pdf.interface';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
@@ -51,6 +56,7 @@ type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
     Step2OperadorComponent,
     Step3CatalogoComponent,
     Step4ConfirmacionComponent,
+    SolicitudPdfComponent,
   ],
   templateUrl: './solicitud-trabajo.html',
   styleUrls: ['./solicitud-trabajo.css'],
@@ -79,6 +85,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   readonly STORAGE_KEY = 'lims_solicitudes_trabajo';
 
   entidades: Entidad[] = [];
+  establecimientos: Establecimiento[] = [];
   tecnicosFiltrados: Tecnico[] = [];
   selectedTecnicoNombre = 'Usuario';
 
@@ -101,6 +108,8 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     private service: SolicitudService,
     private authService: AuthService,
     private entidadService: EntidadService,
+    private establecimientoUsuarioService: EstablecimientoUsuarioService,
+    private establecimientoService: EstablecimientoService,
     private ensayoService: EnsayoService,
     private documentoLegalService: DocumentoLegalService,
     private integracionService: IntegracionService,
@@ -150,6 +159,11 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((e) => (this.entidades = e));
 
+    this.establecimientoService
+      .getEstablecimientos()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((e) => (this.establecimientos = e));
+
     this.ensayoService
       .getEnsayosAire()
       .pipe(takeUntil(this.destroy$))
@@ -189,20 +203,22 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     this.form
       .get('entidad_id')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
-      .subscribe((entidadId: string) => {
-        this.entidadService
-          .getTecnicosByEntidad(entidadId)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe((tecnicos) => (this.tecnicosFiltrados = tecnicos));
+      .subscribe((establecimientoId: string) => {
+        this.tecnicosFiltrados = [];
         this.form.patchValue({ tecnico_id: '', cargo_usuario: '' }, { emitEvent: false });
         this.selectedTecnicoNombre = 'Usuario';
+        if (!establecimientoId) return;
+        this.establecimientoUsuarioService
+          .getUsuariosByEstablecimiento(establecimientoId)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe((tecnicos) => (this.tecnicosFiltrados = tecnicos));
       });
 
     this.form
       .get('tecnico_id')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((tecnicoId: string) => {
-        const tecnico = this.entidadService.getTecnicoById(tecnicoId);
+        const tecnico = this.tecnicosFiltrados.find((t) => t.id === tecnicoId);
         this.selectedTecnicoNombre = tecnico?.nombre || 'Usuario';
         this.form.patchValue({ cargo_usuario: tecnico?.cargo || '' }, { emitEvent: false });
       });
@@ -389,6 +405,8 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   catalogosSeleccionados: MatrizConHijosUI[] = [];
+  mostrarPDF = false;
+  pdfData: SolicitudPdfData | null = null;
 
   onStep3Next(data: MatrizConHijosUI[]): void {
     this.catalogosSeleccionados = data;
@@ -419,19 +437,44 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(solicitudes));
       this.isGuardando = false;
       this.showConfidencialidadModal = false;
-      Swal.fire({
-        title: '¡Guardado!',
-        text: 'La Solicitud de Trabajo ha sido almacenada correctamente.',
-        icon: 'success',
-        confirmButtonColor: this.COLOR_PRIMARIO,
-        timer: 2500,
-      }).then(() => {
-        this.router.navigate(['/lista-solicitudes']);
-      });
+      this.pdfData = this.buildPdfData();
+      this.mostrarPDF = true;
     } catch (e) {
       this.isGuardando = false;
       Swal.fire('Error', 'No se pudo guardar la solicitud en localStorage', 'error');
     }
+  }
+
+  private buildPdfData(): SolicitudPdfData {
+    const raw = this.form.getRawValue();
+    const establecimiento = this.establecimientos.find((e) => e.id === raw.entidad_id);
+    const scheduleField = this.fields.find((f) => f.controlType === 'schedule');
+    const horarios = (scheduleField?.scheduleItems ?? [])
+      .filter((_: any, i: number) => this.selectedScheduleIndexes.has(i))
+      .map((j: any) => j.nombre || j.label || JSON.stringify(j))
+      .join(' / ');
+
+    return {
+      numeroSolicitud: raw.numero_solicitud ?? this.numeroSolicitudGenerado,
+      fechaEmision: new Date(),
+      entidadNombre: establecimiento?.nombre ?? raw.entidad_id ?? '',
+      tecnicoNombre: this.selectedTecnicoNombre,
+      tecnicoCargo: raw.cargo_usuario ?? '',
+      rucOperador: raw.val_ruc_op ?? '',
+      razonSocial: raw.val_razon_op ?? '',
+      nombreComercial: raw.val_come_op ?? '',
+      direccionOperador: raw.val_dir_op ?? '',
+      latitud: raw.val_lati ?? '',
+      longitud: raw.val_long ?? '',
+      horarios,
+      motivo: this.motivoFlujo,
+      nombreContacto: raw.val_nom_op
+        ? `${raw.val_nom_op} ${raw.val_ape_op ?? ''}`.trim()
+        : '',
+      telefonoContacto: raw.val_ct_tel ?? raw.val_ct_cel ?? '',
+      direccionContacto: raw.val_dire_op ?? '',
+      observaciones: raw.val_obs ?? '',
+    };
   }
 
   private buildPayload() {

@@ -42,6 +42,14 @@ export const appConfig: ApplicationConfig = {
           link: httpLink.create({ uri: environment.graphql_catalogo }),
           cache: new InMemoryCache(),
         },
+        establecimiento: {
+          link: httpLink.create({ uri: environment.graphql_establecimiento }),
+          cache: new InMemoryCache(),
+        },
+        reportes: {
+          link: httpLink.create({ uri: environment.graphql_reportes }),
+          cache: new InMemoryCache(),
+        },
       }),
       deps: [HttpLink],
     },

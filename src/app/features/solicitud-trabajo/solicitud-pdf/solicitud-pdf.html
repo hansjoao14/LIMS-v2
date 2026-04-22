@@ -1,0 +1,172 @@
+<div class="fixed inset-0 z-[200] bg-slate-100 overflow-y-auto no-print-bg">
+
+  <!-- Toolbar -->
+  <div class="no-print sticky top-0 z-10 flex justify-between items-center px-6 py-3 bg-[#1e3a8a] shadow text-white">
+    <span class="font-bold text-sm uppercase tracking-wide">Vista previa — Solicitud de Trabajo de Ensayos</span>
+    <div class="flex gap-3">
+      <button (click)="imprimirPDF()"
+        class="flex items-center gap-2 bg-white text-[#1e3a8a] font-bold text-xs px-4 py-2 rounded shadow hover:bg-slate-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+        </svg>
+        Imprimir / Guardar PDF
+      </button>
+      <button (click)="cerrar.emit()"
+        class="flex items-center gap-2 border border-white/50 text-white font-bold text-xs px-4 py-2 rounded hover:bg-white/10 transition">
+        ✕ Cerrar
+      </button>
+    </div>
+  </div>
+
+  <!-- Página A4 -->
+  <div class="pdf-page mx-auto my-6 bg-white shadow-xl print:shadow-none print:my-0"
+    style="width:794px; min-height:1123px; font-family:Arial,sans-serif; position:relative; overflow:hidden;">
+
+    <!-- Marca de agua -->
+    <div style="position:absolute; right:-10px; top:80px; width:340px; height:420px; opacity:0.06;
+      background-image:url('/logodondgerman.png'); background-size:contain;
+      background-repeat:no-repeat; background-position:center; pointer-events:none; z-index:0;">
+    </div>
+
+    <div style="position:relative; z-index:1;">
+
+      <!-- CABECERA -->
+      <div style="display:flex; align-items:stretch; border-bottom:2px solid #1e3a8a; padding:12px 16px; gap:16px;">
+        <div style="display:flex; align-items:center; flex:0 0 auto;">
+          <img src="/quitologonew 2.png" alt="Quito" style="height:52px; object-fit:contain;" />
+        </div>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center;
+          border-left:1px solid #ccc; border-right:1px solid #ccc; padding:0 16px;">
+          <span style="font-size:18px; font-weight:bold; color:#1e3a8a; letter-spacing:2px;">IAM-Q / LIMS</span>
+        </div>
+        <div style="flex:0 0 auto; font-size:11px; color:#1a1a1a; min-width:180px;">
+          <div style="font-weight:bold; margin-bottom:4px;">Solicitud de trabajo de ensayos:</div>
+          <div style="display:flex; align-items:flex-start; gap:6px;">
+            <div>
+              <div style="font-weight:bold; color:#1e3a8a;">F-PG-09-08</div>
+              <div style="margin-top:4px;">Fecha de emisión:<br />
+                <span style="font-weight:600;">{{ datos.fechaEmision | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </div>
+            <div style="background:#1e3a8a; color:white; font-weight:bold; font-size:10px;
+              padding:4px 8px; border-radius:4px; white-space:nowrap;">
+              Edición: 16
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NÚMERO DE SOLICITUD -->
+      <div style="display:flex; align-items:center;">
+        <div style="background:#1e3a8a; color:white; font-weight:bold; font-size:13px;
+          padding:10px 16px; letter-spacing:1px; text-transform:uppercase; white-space:nowrap;">
+          NÚMERO DE SOLICITUD:
+        </div>
+        <div style="border:1px solid #d1d5db; border-left:none; flex:1;
+          padding:10px 16px; font-weight:bold; font-size:14px; color:#1a1a1a; letter-spacing:1px;">
+          {{ datos.numeroSolicitud }}
+        </div>
+      </div>
+
+      <!-- DATOS SOLICITUD -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border:1px solid #d1d5db; border-top:none;">
+        <div style="padding:10px 14px; border-right:1px solid #e5e7eb;">
+          <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">Dirección o unidades:</div>
+          <div style="font-size:11px; color:#4b5563;">{{ datos.entidadNombre || '—' }}</div>
+        </div>
+        <div style="padding:10px 14px; border-right:1px solid #e5e7eb;">
+          <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">Solicitado por:</div>
+          <div style="font-size:11px; color:#4b5563;">{{ datos.tecnicoNombre || '—' }}</div>
+        </div>
+        <div style="padding:10px 14px;">
+          <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">Cargo:</div>
+          <div style="font-size:11px; color:#4b5563;">{{ datos.tecnicoCargo || '—' }}</div>
+        </div>
+      </div>
+
+      <!-- BANNER OPERADOR -->
+      <div style="background:#1e3a8a; color:white; font-weight:bold; font-size:13px;
+        padding:10px 16px; margin-top:12px; text-transform:uppercase; letter-spacing:1px;">
+        INFORMACIÓN DEL OPERADOR
+      </div>
+
+      <!-- RUC / Razón social / Nombre comercial -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border:1px solid #d1d5db; border-top:none;">
+        <div style="padding:10px 14px; border-right:1px solid #e5e7eb;">
+          <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">RUC del operador:</div>
+          <div style="font-size:11px; color:#4b5563;">{{ datos.rucOperador || '—' }}</div>
+        </div>
+        <div style="padding:10px 14px; border-right:1px solid #e5e7eb;">
+          <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">Razón social:</div>
+          <div style="font-size:11px; color:#4b5563;">{{ datos.razonSocial || '—' }}</div>
+        </div>
+        <div style="padding:10px 14px;">
+          <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">Nombre comercial:</div>
+          <div style="font-size:11px; color:#4b5563;">{{ datos.nombreComercial || '—' }}</div>
+        </div>
+      </div>
+
+      <!-- Dirección + Coordenadas -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; border:1px solid #d1d5db; border-top:none;">
+        <div style="padding:12px 14px; border-right:1px solid #e5e7eb;">
+          <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">Dirección del operador:</div>
+          <div style="font-size:11px; color:#4b5563; line-height:1.5;">{{ datos.direccionOperador || '—' }}</div>
+        </div>
+        <div style="padding:12px 14px;">
+          <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:8px;">Coordenadas geográficas</div>
+          <div style="font-size:11px; color:#1a1a1a; margin-bottom:4px;">
+            <strong>Latitud:</strong> <span style="color:#4b5563;">{{ datos.latitud || '—' }}</span>
+          </div>
+          <div style="font-size:11px; color:#1a1a1a; margin-bottom:4px;">
+            <strong>Longitud:</strong> <span style="color:#4b5563;">{{ datos.longitud || '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Horarios -->
+      <div style="border:1px solid #d1d5db; border-top:none; padding:12px 14px;">
+        <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">Horarios laborales del operador:</div>
+        <div style="font-size:11px; color:#4b5563;">{{ datos.horarios || '—' }}</div>
+      </div>
+
+      <!-- Motivo / Nombre / Teléfono -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border:1px solid #d1d5db; border-top:none;">
+        <div style="padding:10px 14px; border-right:1px solid #e5e7eb;">
+          <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">Motivo:</div>
+          <div style="font-size:11px; color:#4b5563;">{{ datos.motivo || '—' }}</div>
+        </div>
+        <div style="padding:10px 14px; border-right:1px solid #e5e7eb;">
+          <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">Nombre:</div>
+          <div style="font-size:11px; color:#4b5563;">{{ datos.nombreContacto || '—' }}</div>
+        </div>
+        <div style="padding:10px 14px;">
+          <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">Número de teléfono</div>
+          <div style="font-size:11px; color:#4b5563;">{{ datos.telefonoContacto || '—' }}</div>
+        </div>
+      </div>
+
+      <!-- Dirección contacto -->
+      <div style="border:1px solid #d1d5db; border-top:none; padding:12px 14px;">
+        <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">Dirección:</div>
+        <div style="font-size:11px; color:#4b5563;">{{ datos.direccionContacto || '—' }}</div>
+      </div>
+
+      <!-- Observaciones -->
+      <div style="border:1px solid #d1d5db; border-top:none; padding:12px 14px;">
+        <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">Observaciones:</div>
+        <div style="font-size:11px; color:#4b5563; line-height:1.6;">{{ datos.observaciones || '—' }}</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<style>
+  @media print {
+    .no-print { display: none !important; }
+    .no-print-bg { background: none !important; overflow: visible !important; position: static !important; }
+    .pdf-page { margin: 0 !important; box-shadow: none !important; width: 100% !important; }
+  }
+</style>

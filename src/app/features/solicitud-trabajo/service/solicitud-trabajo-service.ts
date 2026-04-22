@@ -13,16 +13,16 @@ export class SolicitudService {
 
   getFormulario(idTipoFormulario: string | number): Observable<FormularioLaboratorio> {
     const url = `${this.api_reportes}/report-parametro/formulario-dinamico/${idTipoFormulario}`;
-    
+
     return this.http.get<any>(url).pipe(
       map((res) => {
         // ---------------------------------------------------------
-        // AQUI ESTÁ LA CORRECCIÓN: 
+        // AQUI ESTÁ LA CORRECCIÓN:
         // Tu API devuelve un objeto { success: true, data: [ ... ] }
         // Entramos a res.data y tomamos el primer elemento [0]
         // ---------------------------------------------------------
         const formRaw = res.data && res.data.length > 0 ? res.data[0] : null;
-        
+
         if (!formRaw) {
           throw new Error('El arreglo data de la API vino vacío');
         }
@@ -30,9 +30,9 @@ export class SolicitudService {
         return {
           ...formRaw,
           // Ordenamos las preguntas usando el campo "orden" de tu JSON
-          preguntas: formRaw.preguntas 
-            ? [...formRaw.preguntas].sort((a: any, b: any) => a.orden - b.orden) 
-            : [] 
+          preguntas: formRaw.preguntas
+            ? [...formRaw.preguntas].sort((a: any, b: any) => a.orden - b.orden)
+            : []
         } as FormularioLaboratorio;
       })
     );
