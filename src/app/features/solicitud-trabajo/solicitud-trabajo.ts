@@ -20,7 +20,7 @@ import {
   FormularioLaboratorio,
   Pregunta,
 } from './model/solicitud-trabajo.model';
-import { SolicitudService, SolicitudPayload } from './service/solicitud-trabajo-service';
+import { SolicitudService, SolicitudPayload, ValorSolicitudItem } from './service/solicitud-trabajo-service';
 import { EstablecimientoUsuarioService } from '../../services/solicitud-trabajo/establecimiento-usuario.service';
 import { EstablecimientoService } from '../../services/solicitud-trabajo/establecimiento.service';
 import { EnsayoService } from '../../services/solicitud-trabajo/ensayo.service';
@@ -31,7 +31,10 @@ import { PeriodoService } from '../../services/solicitud-trabajo/periodo.service
 import { Establecimiento } from '../../interfaces/solicitud-trabajo/establecimiento.interface';
 import { Tecnico } from '../../interfaces/solicitud-trabajo/tecnico.interface';
 import { EnsayoLaboratorio } from '../../interfaces/solicitud-trabajo/ensayo.interface';
-import { DatosSRI, DatosRegistroCivil } from '../../interfaces/solicitud-trabajo/integracion.interface';
+import {
+  DatosSRI,
+  DatosRegistroCivil,
+} from '../../interfaces/solicitud-trabajo/integracion.interface';
 import { SolicitudPdfData } from '../../interfaces/solicitud-trabajo/solicitud-pdf.interface';
 
 import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud';
@@ -59,7 +62,6 @@ type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
   styleUrls: ['./solicitud-trabajo.css'],
 })
 export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
-
   // ── Formulario dinámico ──────────────────────────────────────────────────
   form: FormGroup;
   formulario: FormularioLaboratorio | null = null;
@@ -134,7 +136,10 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       entidad_id: ['', Validators.required],
       tecnico_id: ['', Validators.required],
       cargo_usuario: [{ value: '', disabled: true }],
-      numero_solicitud: [{ value: this.numeroSolicitudGenerado, disabled: true }, Validators.required],
+      numero_solicitud: [
+        { value: this.numeroSolicitudGenerado, disabled: true },
+        Validators.required,
+      ],
       val_pasaporte: this.fb.control(''),
     });
   }
@@ -187,21 +192,43 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((e) => (this.establecimientos = e));
 
-    this.ensayoService.getEnsayosAire().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.ensayosAire = e));
-    this.ensayoService.getEnsayosRuido().pipe(takeUntil(this.destroy$)).subscribe((e) => (this.ensayosRuido = e));
-    this.ensayoService.getNotasAgua().pipe(takeUntil(this.destroy$)).subscribe((n) => (this.notasAgua = n));
-    this.ensayoService.getNotasAire().pipe(takeUntil(this.destroy$)).subscribe((n) => (this.notasAire = n));
-    this.ensayoService.getNotasRuido().pipe(takeUntil(this.destroy$)).subscribe((n) => (this.notasRuido = n));
+    this.ensayoService
+      .getEnsayosAire()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((e) => (this.ensayosAire = e));
+    this.ensayoService
+      .getEnsayosRuido()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((e) => (this.ensayosRuido = e));
+    this.ensayoService
+      .getNotasAgua()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((n) => (this.notasAgua = n));
+    this.ensayoService
+      .getNotasAire()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((n) => (this.notasAire = n));
+    this.ensayoService
+      .getNotasRuido()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((n) => (this.notasRuido = n));
 
-    this.documentoLegalService.getTerminosCondiciones().pipe(takeUntil(this.destroy$)).subscribe((t) => (this.terminosCondiciones = t));
-    this.documentoLegalService.getAcuerdoConfidencialidad().pipe(takeUntil(this.destroy$)).subscribe((a) => (this.acuerdoConfidencialidad = a));
+    this.documentoLegalService
+      .getTerminosCondiciones()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((t) => (this.terminosCondiciones = t));
+    this.documentoLegalService
+      .getAcuerdoConfidencialidad()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((a) => (this.acuerdoConfidencialidad = a));
   }
 
   // ── Step 1 ───────────────────────────────────────────────────────────────
 
   private setupStepOneLogic(): void {
-    this.form.get('entidad_id')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
+    this.form
+      .get('entidad_id')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((establecimientoId: string) => {
         this.tecnicosFiltrados = [];
         this.form.patchValue({ tecnico_id: '', cargo_usuario: '' }, { emitEvent: false });
@@ -213,8 +240,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
           .subscribe((tecnicos) => (this.tecnicosFiltrados = tecnicos));
       });
 
-    this.form.get('tecnico_id')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
+    this.form
+      .get('tecnico_id')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((tecnicoId: string) => {
         const tecnico = this.tecnicosFiltrados.find((t) => t.id === tecnicoId);
         this.selectedTecnicoNombre = tecnico?.nombre || 'Usuario';
@@ -224,6 +252,36 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   get isStepOneReady(): boolean {
     return !!this.form.get('entidad_id')?.value && !!this.form.get('tecnico_id')?.value;
+  }
+
+  private async guardarValoresYAvanzar(): Promise<void> {
+    const raw = this.form.getRawValue();
+    const valorSolicitud: ValorSolicitudItem[] = this.fields
+      .filter((f) => !f.hidden && f.controlType !== 'schedule')
+      .map((f) => {
+        const value = raw[f.key];
+        const esSelect = f.controlType === 'select';
+        return {
+          solicitud_id: this.solicitudRegistradaId,
+          atributo_formulario_id: String(f.id),
+          valor_texto: !esSelect ? (value ?? null) : null,
+          valor_numero: null,
+          valor_fecha: null,
+          valor_booleano: null,
+          valor_multiple: null,
+          valor_catalogo: esSelect ? (Number(value) || 0) : 0,
+        };
+      });
+    const payload = { valorSolicitud };
+    console.log('[valorSolicitud payload]', JSON.stringify(payload, null, 2));
+
+    try {
+      await firstValueFrom(this.service.guardarValoresSolicitud(payload));
+      this.zone.run(() => this.avanzarPaso());
+    } catch (err: any) {
+      const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo guardar los valores de la solicitud';
+      Swal.fire({ icon: 'error', title: 'Error', text: mensaje, confirmButtonColor: this.COLOR_PRIMARIO });
+    }
   }
 
   private async crearSolicitudYAvanzar(): Promise<void> {
@@ -252,14 +310,23 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         ejercicio_id: ejercicio.id,
       };
       console.log('[SolicitudPayload]', JSON.stringify(payload, null, 2));
-
       const res = await firstValueFrom(this.service.registrarSolicitud(payload));
-      this.solicitudRegistradaId = res?.id ?? res?.data?.id ?? null;
-      this.isCreandoSolicitud = false;
-      this.avanzarPaso();
+      this.zone.run(() => {
+        this.solicitudRegistradaId = res?.data?.id ?? res?.id ?? null;
+        this.isCreandoSolicitud = false;
+        this.avanzarPaso();
+      });
     } catch (err: any) {
-      this.isCreandoSolicitud = false;
-      Swal.fire({ icon: 'error', title: 'Error', text: err?.message || 'No se pudo registrar la solicitud', confirmButtonColor: this.COLOR_PRIMARIO });
+      this.zone.run(() => {
+        this.isCreandoSolicitud = false;
+        const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo registrar la solicitud';
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: mensaje,
+          confirmButtonColor: this.COLOR_PRIMARIO,
+        });
+      });
     }
   }
 
@@ -278,7 +345,10 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   goNextStep(): void {
     if (this.currentStep === 1) {
-      if (!this.isStepOneReady) { this.alertCamposObligatorios(); return; }
+      if (!this.isStepOneReady) {
+        this.alertCamposObligatorios();
+        return;
+      }
       this.crearSolicitudYAvanzar();
       return;
     }
@@ -293,12 +363,14 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         Swal.fire({
           icon: 'warning',
           title: 'Complete los campos obligatorios',
-          text: invalidos.length ? 'Faltan: ' + invalidos.join(', ') : 'Revise los campos marcados en rojo.',
+          text: invalidos.length
+            ? 'Faltan: ' + invalidos.join(', ')
+            : 'Revise los campos marcados en rojo.',
           confirmButtonColor: this.COLOR_PRIMARIO,
         });
         return;
       }
-      this.avanzarPaso();
+      this.guardarValoresYAvanzar();
       return;
     }
 
@@ -324,7 +396,12 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   private alertCamposObligatorios(): void {
     this.form.markAllAsTouched();
-    Swal.fire({ icon: 'warning', title: 'Atención', text: 'Complete los campos obligatorios de la cabecera', confirmButtonColor: this.COLOR_PRIMARIO });
+    Swal.fire({
+      icon: 'warning',
+      title: 'Atención',
+      text: 'Complete los campos obligatorios de la cabecera',
+      confirmButtonColor: this.COLOR_PRIMARIO,
+    });
   }
 
   // ── Step 2: integración SRI / Civil ──────────────────────────────────────
@@ -341,15 +418,29 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     const resetBuscando = () => (this.buscandoIntegracion[field.key] = false);
 
     if (field.integrations.sri) {
-      this.integracionService.buscarPorSRI(documento).pipe(takeUntil(this.destroy$)).subscribe({
-        next: (datos: DatosSRI) => { resetBuscando(); this.form.patchValue(datos); this.alertToast('success', 'Datos SRI recuperados'); },
-        error: resetBuscando,
-      });
+      this.integracionService
+        .buscarPorSRI(documento)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (datos: DatosSRI) => {
+            resetBuscando();
+            this.form.patchValue(datos);
+            this.alertToast('success', 'Datos SRI recuperados');
+          },
+          error: resetBuscando,
+        });
     } else if (field.integrations.civil) {
-      this.integracionService.buscarPorRegistroCivil(documento).pipe(takeUntil(this.destroy$)).subscribe({
-        next: (datos: DatosRegistroCivil) => { resetBuscando(); this.form.patchValue(datos); this.alertToast('success', 'Datos Registro Civil recuperados'); },
-        error: resetBuscando,
-      });
+      this.integracionService
+        .buscarPorRegistroCivil(documento)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (datos: DatosRegistroCivil) => {
+            resetBuscando();
+            this.form.patchValue(datos);
+            this.alertToast('success', 'Datos Registro Civil recuperados');
+          },
+          error: resetBuscando,
+        });
     }
   }
 
@@ -361,7 +452,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   // ── Step 4: acuerdos y guardado ──────────────────────────────────────────
 
-  iniciarAcuerdos(): void { this.showTerminosModal = true; }
+  iniciarAcuerdos(): void {
+    this.showTerminosModal = true;
+  }
 
   aceptarTerminos(): void {
     this.showTerminosModal = false;
@@ -432,9 +525,13 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       respuestas: this.fields
         .filter((f) => !f.hidden && f.controlType !== 'schedule')
         .map((f) => ({ pregunta_id: f.id, nombre: f.key, valor: rawValues[f.key] })),
-      jornadas_laborales: (scheduleField?.scheduleItems ?? []).filter((_, i) => this.selectedScheduleIndexes.has(i)),
+      jornadas_laborales: (scheduleField?.scheduleItems ?? []).filter((_, i) =>
+        this.selectedScheduleIndexes.has(i),
+      ),
       catalogo_servicios: this.catalogosSeleccionados.flatMap((g) =>
-        g.hijos.filter((h) => h.activo).map((h) => ({ matriz: g.matriz.nombre, servicio: h.nombre, cantidad: h.cantidad }))
+        g.hijos
+          .filter((h) => h.activo)
+          .map((h) => ({ matriz: g.matriz.nombre, servicio: h.nombre, cantidad: h.cantidad })),
       ),
       ensayos: {
         aire: this.ensayosAire.filter((f) => f.activo),
@@ -448,7 +545,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   // ── Mapa ─────────────────────────────────────────────────────────────────
 
-  openMap(): void { this.showMapModal = true; }
+  openMap(): void {
+    this.showMapModal = true;
+  }
 
   closeMap(): void {
     this.showMapModal = false;
@@ -478,7 +577,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private updateCoords(lat: number, lng: number): void {
-    this.zone.run(() => this.form.patchValue({ val_lati: lat.toFixed(6), val_long: lng.toFixed(6) }));
+    this.zone.run(() =>
+      this.form.patchValue({ val_lati: lat.toFixed(6), val_long: lng.toFixed(6) }),
+    );
   }
 
   // ── Formulario dinámico ──────────────────────────────────────────────────
@@ -496,14 +597,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     if (!tipoField) return false;
     const selectedId = this.getFieldControl('val_ct_tipo')?.value;
     return tipoField.options.some(
-      (opt) => String(opt.id) === String(selectedId) && opt.nombre?.toLowerCase().includes('pasaporte')
+      (opt) =>
+        String(opt.id) === String(selectedId) && opt.nombre?.toLowerCase().includes('pasaporte'),
     );
   }
 
   get motivoFlujo(): MotivoFlujo {
     const field = this.fields.find((f) => this.isMotivoField(f) && f.options.length > 0);
     if (!field) return '';
-    const name = field.options.find((o) => String(o.id) === String(this.form.get(field.key)?.value))?.nombre?.toLowerCase() || '';
+    const name =
+      field.options
+        .find((o) => String(o.id) === String(this.form.get(field.key)?.value))
+        ?.nombre?.toLowerCase() || '';
     if (name.includes('seguimiento')) return 'seguimiento';
     if (name.includes('denuncia')) return 'denuncia';
     if (name.includes('licenciamiento')) return 'licenciamiento';
@@ -513,7 +618,13 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   private generateControls(): void {
     for (const field of this.fields) {
       if (this.form.contains(field.key)) continue;
-      this.form.addControl(field.key, this.fb.control({ value: '', disabled: field.hidden }, this.buildValidators(field, field.hidden)));
+      this.form.addControl(
+        field.key,
+        this.fb.control(
+          { value: '', disabled: field.hidden },
+          this.buildValidators(field, field.hidden),
+        ),
+      );
     }
   }
 
@@ -527,7 +638,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   private applyDependencyLogic(): void {
     this.updateDependentFields();
-    this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.updateDependentFields());
+    this.form.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.updateDependentFields());
   }
 
   private updateDependentFields(): void {
@@ -580,9 +693,16 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       options: pregunta.catalogos ?? [],
       scheduleItems: pregunta.jornada_laboral_item ?? [],
       dependsOn: pregunta.atributo_id
-        ? { fieldId: String(pregunta.atributo_id), triggerValue: String(pregunta.item_catalogo_id ?? '') }
+        ? {
+            fieldId: String(pregunta.atributo_id),
+            triggerValue: String(pregunta.item_catalogo_id ?? ''),
+          }
         : undefined,
-      integrations: { sri: pregunta.is_ws_sri, civil: pregunta.is_ws_civil, iess: pregunta.is_ws_iess ?? false },
+      integrations: {
+        sri: pregunta.is_ws_sri,
+        civil: pregunta.is_ws_civil,
+        iess: pregunta.is_ws_iess ?? false,
+      },
       source: pregunta,
     };
   }
@@ -591,13 +711,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     if (pregunta.nombre === 'val_lati' || pregunta.nombre === 'val_long') return 'coordinates';
     if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
     if (pregunta.tipo_respuesta === 'Selección Mutiple') return 'schedule';
-    if (pregunta.nombre === 'val_obs' || (typeof pregunta.num_caracter === 'number' && pregunta.num_caracter > 200)) return 'textarea';
+    if (
+      pregunta.nombre === 'val_obs' ||
+      (typeof pregunta.num_caracter === 'number' && pregunta.num_caracter > 200)
+    )
+      return 'textarea';
     return 'text';
   }
 
   private resolveSection(pregunta: Pregunta): FieldSectionId {
     const n = pregunta.nombre;
-    if (n === 'val_ct_tipo' || n === 'val_ruc_op' || n === 'val_ced_op' || n === 'val_pasaporte') return 'identificacion';
+    if (n === 'val_ct_tipo' || n === 'val_ruc_op' || n === 'val_ced_op' || n === 'val_pasaporte')
+      return 'identificacion';
     if (n === 'val_lati' || n === 'val_long') return 'ubicacion';
     if (n === 'val_jor_la') return 'horario';
     if (n === 'val_obs') return 'observaciones';
@@ -607,12 +732,22 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private isMotivoField(field: FieldConfig): boolean {
-    return field.key?.toLowerCase().includes('motivo') || field.label?.toLowerCase().includes('motivo');
+    return (
+      field.key?.toLowerCase().includes('motivo') || field.label?.toLowerCase().includes('motivo')
+    );
   }
 
   // ── Helpers UI ───────────────────────────────────────────────────────────
 
   private alertToast(icon: 'success' | 'warning' | 'error', text: string): void {
-    Swal.fire({ icon, text, confirmButtonColor: this.COLOR_PRIMARIO, toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+    Swal.fire({
+      icon,
+      text,
+      confirmButtonColor: this.COLOR_PRIMARIO,
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+    });
   }
 }

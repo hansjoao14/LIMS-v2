@@ -4,6 +4,17 @@ import { Observable, map } from 'rxjs';
 import { FormularioLaboratorio } from '../model/solicitud-trabajo.model';
 import { environment } from '../../../../environments/environment';
 
+export interface ValorSolicitudItem {
+  solicitud_id: string | null;
+  atributo_formulario_id: string;
+  valor_texto: string | null;
+  valor_numero: string | null;
+  valor_fecha: string | null;
+  valor_booleano: boolean | null;
+  valor_multiple: string | null;
+  valor_catalogo: number;
+}
+
 export interface SolicitudPayload {
   formulario_id: string | number | null;
   usuario_id: string;
@@ -49,8 +60,14 @@ export class SolicitudService {
     );
   }
 
+  guardarValoresSolicitud(payload: { valorSolicitud: ValorSolicitudItem[] }): Observable<any> {
+    return this.http.post<any>(`${this.api_solicitud}/valor-solicitud/create-many`, payload);
+  }
+
   registrarSolicitud(payload: SolicitudPayload): Observable<any> {
-    return this.http.post<any>(this.api_solicitud + '/solicitud', payload);
+    console.log(payload);
+    let req = this.http.post<any>(`${this.api_solicitud}/solicitud`, payload);
+    return req;
   }
 
   createSolicitud(payload: any): Observable<any> {
