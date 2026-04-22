@@ -1,36 +1,15 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { FormularioLaboratorio } from '../model/solicitud-trabajo.model';
-import { environment } from '../../../../environments/environment';
+import { FormularioLaboratorio } from '../../features/solicitud-trabajo/model/solicitud-trabajo.model';
+import { environment } from '../../../environments/environment';
+import {
+  ValorSolicitudItem,
+  SolicitudEnsayoItem,
+  SolicitudPayload,
+} from '../../interfaces/solicitud-trabajo/solicitud.interface';
 
-export interface ValorSolicitudItem {
-  solicitud_id: string | null;
-  atributo_formulario_id: string;
-  valor_texto: string | null;
-  valor_numero: string | null;
-  valor_fecha: string | null;
-  valor_booleano: boolean | null;
-  valor_multiple: string | null;
-  valor_catalogo: number;
-}
-
-export interface SolicitudEnsayoItem {
-  solicitud_id: string | null;
-  ensayo_id: number;
-  ensayo_aux_id: number;
-}
-
-export interface SolicitudPayload {
-  formulario_id: string | number | null;
-  usuario_id: string;
-  entidad_id: string;
-  secuencial_id: null;
-  ctestado_id: number;
-  periodo_id: number | null;
-  descripcion: string;
-  ejercicio_id: number;
-}
+export type { ValorSolicitudItem, SolicitudEnsayoItem, SolicitudPayload };
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudService {
@@ -44,11 +23,6 @@ export class SolicitudService {
 
     return this.http.get<any>(url).pipe(
       map((res) => {
-        // ---------------------------------------------------------
-        // AQUI ESTÁ LA CORRECCIÓN:
-        // Tu API devuelve un objeto { success: true, data: [ ... ] }
-        // Entramos a res.data y tomamos el primer elemento [0]
-        // ---------------------------------------------------------
         const formRaw = res.data && res.data.length > 0 ? res.data[0] : null;
 
         if (!formRaw) {
@@ -57,7 +31,6 @@ export class SolicitudService {
 
         return {
           ...formRaw,
-          // Ordenamos las preguntas usando el campo "orden" de tu JSON
           preguntas: formRaw.preguntas
             ? [...formRaw.preguntas].sort((a: any, b: any) => a.orden - b.orden)
             : [],

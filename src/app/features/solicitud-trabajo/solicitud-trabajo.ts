@@ -25,7 +25,7 @@ import {
   SolicitudPayload,
   ValorSolicitudItem,
   SolicitudEnsayoItem,
-} from './service/solicitud-trabajo-service';
+} from '../../services/solicitud-trabajo/solicitud-trabajo.service';
 import { EstablecimientoUsuarioService } from '../../services/solicitud-trabajo/establecimiento-usuario.service';
 import { EstablecimientoService } from '../../services/solicitud-trabajo/establecimiento.service';
 import { EnsayoService } from '../../services/solicitud-trabajo/ensayo.service';
