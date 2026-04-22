@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Apollo, gql } from 'apollo-angular';
 import { Observable, map, switchMap } from 'rxjs';
 import { CollectionItemCatalogoResponse, ItemCatalogo } from '../interfaces/catalogos/catalogo.interface';
+import { META_FIELDS } from '../graphql/fragments';
 
 const CLIENT_NAME = 'catalogo';
 
@@ -32,17 +33,7 @@ const GET_ITEMS_BY_CATALOGO_ID = gql`
         sigla
         valor
       }
-      meta {
-        hasNextPage
-        hasPrevPage
-        limit
-        nextPage
-        page
-        prevPage
-        skip
-        total
-        totalPages
-      }
+      meta { ${META_FIELDS} }
     }
   }
 `;
@@ -64,17 +55,7 @@ const GET_CHILDREN_BY_PARENT_IDS = gql`
         sigla
         valor
       }
-      meta {
-        hasNextPage
-        hasPrevPage
-        limit
-        nextPage
-        page
-        prevPage
-        skip
-        total
-        totalPages
-      }
+      meta { ${META_FIELDS} }
     }
   }
 `;

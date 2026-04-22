@@ -468,9 +468,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       longitud: raw.val_long ?? '',
       horarios,
       motivo: this.motivoFlujo,
-      nombreContacto: raw.val_nom_op
-        ? `${raw.val_nom_op} ${raw.val_ape_op ?? ''}`.trim()
-        : '',
+      nombreContacto: raw.val_nom_op ? `${raw.val_nom_op} ${raw.val_ape_op ?? ''}`.trim() : '',
       telefonoContacto: raw.val_ct_tel ?? raw.val_ct_cel ?? '',
       direccionContacto: raw.val_dire_op ?? '',
       observaciones: raw.val_obs ?? '',
