@@ -25,6 +25,7 @@ import {
   SolicitudPayload,
   ValorSolicitudItem,
   SolicitudEnsayoItem,
+  FinalizarSolicitudPayload,
 } from '../../services/solicitud-trabajo/solicitud-trabajo.service';
 import { EstablecimientoUsuarioService } from '../../services/solicitud-trabajo/establecimiento-usuario.service';
 import { EstablecimientoService } from '../../services/solicitud-trabajo/establecimiento.service';
@@ -122,8 +123,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   readonly fechaActual = new Date();
   readonly numeroSolicitudGenerado = 'ST-' + new Date().getFullYear() + '-001';
   private readonly COLOR_PRIMARIO = '#1e3a8a';
-  private readonly STORAGE_KEY = 'lims_solicitudes_trabajo';
-  private readonly destroy$ = new Subject<void>();
+private readonly destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -497,20 +497,34 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     this.showConfidencialidadModal = true;
   }
 
-  aceptarConfidencialidad(): void {
+  async aceptarConfidencialidad(): Promise<void> {
     this.isGuardando = true;
     try {
-      const data = localStorage.getItem(this.STORAGE_KEY);
-      const solicitudes = data ? JSON.parse(data) : [];
-      solicitudes.push({ id_local: crypto.randomUUID(), ...this.buildPayload() });
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(solicitudes));
-      this.isGuardando = false;
-      this.showConfidencialidadModal = false;
-      this.pdfData = this.buildPdfData();
-      this.mostrarPDF = true;
-    } catch {
-      this.isGuardando = false;
-      Swal.fire('Error', 'No se pudo guardar la solicitud en localStorage', 'error');
+      const payload: FinalizarSolicitudPayload = {
+        idSolicitud: this.solicitudRegistradaId ?? '',
+        identifcadorSecuecnial: 'SOLI_SECU_2025',
+        ctestado: 3,
+      };
+      console.log('[FinalizarSolicitudPayload]', JSON.stringify(payload, null, 2));
+      await firstValueFrom(this.service.finalizarSolicitud(payload));
+
+      this.zone.run(() => {
+        this.isGuardando = false;
+        this.showConfidencialidadModal = false;
+        this.pdfData = this.buildPdfData();
+        this.mostrarPDF = true;
+      });
+    } catch (err: any) {
+      this.zone.run(() => {
+        this.isGuardando = false;
+        const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo finalizar la solicitud';
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: mensaje,
+          confirmButtonColor: this.COLOR_PRIMARIO,
+        });
+      });
     }
   }
 
@@ -543,39 +557,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       telefonoContacto: raw.val_ct_tel ?? raw.val_ct_cel ?? '',
       direccionContacto: raw.val_dire_op ?? '',
       observaciones: raw.val_obs ?? '',
-    };
-  }
-
-  private buildPayload() {
-    const rawValues = this.form.getRawValue();
-    const scheduleField = this.fields.find((f) => f.controlType === 'schedule');
-    return {
-      formulario_id: this.formulario?.formulario_id ?? null,
-      tipo_formulario_id: this.formulario?.tipo_formulario_id ?? null,
-      cabecera: {
-        entidad_id: rawValues.entidad_id,
-        tecnico_id: rawValues.tecnico_id,
-        numero_solicitud: rawValues.numero_solicitud,
-      },
-      datos_solicitante: rawValues,
-      respuestas: this.fields
-        .filter((f) => !f.hidden && f.controlType !== 'schedule')
-        .map((f) => ({ pregunta_id: f.id, nombre: f.key, valor: rawValues[f.key] })),
-      jornadas_laborales: (scheduleField?.scheduleItems ?? []).filter((_, i) =>
-        this.selectedScheduleIndexes.has(i),
-      ),
-      catalogo_servicios: this.catalogosSeleccionados.flatMap((g) =>
-        g.hijos
-          .filter((h) => h.activo)
-          .map((h) => ({ matriz: g.matriz.nombre, servicio: h.nombre, cantidad: h.cantidad })),
-      ),
-      ensayos: {
-        aire: this.ensayosAire.filter((f) => f.activo),
-        ruido: this.ensayosRuido.filter((f) => f.activo),
-      },
-      ruido_info: this.ruidoInfo,
-      estado: 'GENERADA',
-      fecha_creacion: new Date().toISOString(),
     };
   }
 

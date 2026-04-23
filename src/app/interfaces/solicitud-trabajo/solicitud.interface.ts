@@ -15,6 +15,12 @@ export interface SolicitudEnsayoItem {
   ensayo_aux_id: number;
 }
 
+export interface FinalizarSolicitudPayload {
+  idSolicitud: string;
+  identifcadorSecuecnial: string;
+  ctestado: number;
+}
+
 export interface SolicitudPayload {
   formulario_id: string | number | null;
   usuario_id: string;

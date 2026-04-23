@@ -7,9 +7,10 @@ import {
   ValorSolicitudItem,
   SolicitudEnsayoItem,
   SolicitudPayload,
+  FinalizarSolicitudPayload,
 } from '../../interfaces/solicitud-trabajo/solicitud.interface';
 
-export type { ValorSolicitudItem, SolicitudEnsayoItem, SolicitudPayload };
+export type { ValorSolicitudItem, SolicitudEnsayoItem, SolicitudPayload, FinalizarSolicitudPayload };
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudService {
@@ -49,6 +50,10 @@ export class SolicitudService {
 
   guardarEnsayosSolicitud(payload: { solicitudEnsayo: SolicitudEnsayoItem[] }): Observable<any> {
     return this.http.post<any>(`${this.api_solicitud}/solicitud-ensayo/create-many`, payload);
+  }
+
+  finalizarSolicitud(payload: FinalizarSolicitudPayload): Observable<any> {
+    return this.http.post<any>(`${this.api_solicitud}/solicitud/finalizar`, payload);
   }
 
   createSolicitud(payload: any): Observable<any> {
