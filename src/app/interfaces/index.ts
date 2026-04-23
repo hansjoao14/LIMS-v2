@@ -1,2 +1,2 @@
 export * from './catalogos';
-export * from './solicitud-trabajo';
+export * from './solicitudes/solicitud-trabajo';

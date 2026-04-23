@@ -5,8 +5,8 @@ import { map } from 'rxjs/operators';
 import {
   EstablecimientoUsuario,
   EstablecimientoUsuarioCollectionResponse,
-} from '../../interfaces/solicitud-trabajo/establecimiento-usuario.interface';
-import { Tecnico } from '../../interfaces/solicitud-trabajo/tecnico.interface';
+} from '../../../interfaces/solicitud-trabajo/establecimiento-usuario.interface';
+import { Tecnico } from '../../../interfaces/solicitud-trabajo/tecnico.interface';
 
 const CLIENT_NAME = 'reportes';
 

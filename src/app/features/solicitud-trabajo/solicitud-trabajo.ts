@@ -26,22 +26,22 @@ import {
   ValorSolicitudItem,
   SolicitudEnsayoItem,
   FinalizarSolicitudPayload,
-} from '../../services/solicitud-trabajo/solicitud-trabajo.service';
-import { EstablecimientoUsuarioService } from '../../services/solicitud-trabajo/establecimiento-usuario.service';
-import { EstablecimientoService } from '../../services/solicitud-trabajo/establecimiento.service';
-import { EnsayoService } from '../../services/solicitud-trabajo/ensayo.service';
-import { DocumentoLegalService } from '../../services/solicitud-trabajo/documento-legal.service';
-import { IntegracionService } from '../../services/solicitud-trabajo/integracion.service';
-import { PeriodoService } from '../../services/solicitud-trabajo/periodo.service';
+} from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { EstablecimientoUsuarioService } from '../../services/solicitudes/solicitud-trabajo/establecimiento-usuario.service';
+import { EstablecimientoService } from '../../services/solicitudes/solicitud-trabajo/establecimiento.service';
+import { EnsayoService } from '../../services/solicitudes/solicitud-trabajo/ensayo.service';
+import { DocumentoLegalService } from '../../services/solicitudes/solicitud-trabajo/documento-legal.service';
+import { IntegracionService } from '../../services/solicitudes/solicitud-trabajo/integracion.service';
+import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/periodo.service';
 
-import { Establecimiento } from '../../interfaces/solicitud-trabajo/establecimiento.interface';
-import { Tecnico } from '../../interfaces/solicitud-trabajo/tecnico.interface';
-import { EnsayoLaboratorio } from '../../interfaces/solicitud-trabajo/ensayo.interface';
+import { Establecimiento } from '../../interfaces/solicitudes/solicitud-trabajo/establecimiento.interface';
+import { Tecnico } from '../../interfaces/solicitudes/solicitud-trabajo/tecnico.interface';
+import { EnsayoLaboratorio } from '../../interfaces/solicitudes/solicitud-trabajo/ensayo.interface';
 import {
   DatosSRI,
   DatosRegistroCivil,
-} from '../../interfaces/solicitud-trabajo/integracion.interface';
-import { SolicitudPdfData } from '../../interfaces/solicitud-trabajo/solicitud-pdf.interface';
+} from '../../interfaces/solicitudes/solicitud-trabajo/integracion.interface';
+import { SolicitudPdfData } from '../../interfaces/solicitudes/solicitud-trabajo/solicitud-pdf.interface';
 
 import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud';
 import { Step2OperadorComponent } from './steps/step2-operador/step2-operador';

@@ -5,7 +5,7 @@ import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
 
 import { Subject, takeUntil } from 'rxjs';
 import { CatalogoService } from '../../../../services/catalogo.service';
-import { EnsayoItemService } from '../../../../services/solicitud-trabajo/ensayo-item.service';
+import { EnsayoItemService } from '../../../../services/solicitudes/solicitud-trabajo/ensayo-item.service';
 
 import {
   ItemCatalogo,

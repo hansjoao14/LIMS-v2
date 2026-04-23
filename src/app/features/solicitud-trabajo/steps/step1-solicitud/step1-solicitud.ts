@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlContainer, FormGroup, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
-import { Establecimiento } from '../../../../interfaces/solicitud-trabajo/establecimiento.interface';
+import { Establecimiento } from '../../../../interfaces/solicitudes/solicitud-trabajo/establecimiento.interface';
 
 @Component({
   selector: 'app-step1-solicitud',

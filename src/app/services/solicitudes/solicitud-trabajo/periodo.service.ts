@@ -7,8 +7,8 @@ import {
   EjercicioCollectionResponse,
   Periodo,
   PeriodoCollectionResponse,
-} from '../../interfaces/catalogos/periodo.interface';
-import { META_FIELDS } from '../../graphql/fragments';
+} from '../../../interfaces/catalogos/periodo.interface';
+import { META_FIELDS } from '../../../graphql/fragments';
 
 const CLIENT_NAME = 'catalogo';
 

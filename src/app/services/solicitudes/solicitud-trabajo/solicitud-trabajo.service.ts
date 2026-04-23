@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { FormularioLaboratorio } from '../../features/solicitud-trabajo/model/solicitud-trabajo.model';
-import { environment } from '../../../environments/environment';
+import { FormularioLaboratorio } from '../../../features/solicitud-trabajo/model/solicitud-trabajo.model';
+import { environment } from '../../../../environments/environment';
 import {
   ValorSolicitudItem,
   SolicitudEnsayoItem,
   SolicitudPayload,
   FinalizarSolicitudPayload,
-} from '../../interfaces/solicitud-trabajo/solicitud.interface';
+} from '../../../interfaces/solicitud-trabajo/solicitud.interface';
 
 export type { ValorSolicitudItem, SolicitudEnsayoItem, SolicitudPayload, FinalizarSolicitudPayload };
 

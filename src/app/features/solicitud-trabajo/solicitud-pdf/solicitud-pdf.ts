@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { SolicitudPdfData } from '../../../interfaces/solicitud-trabajo/solicitud-pdf.interface';
+import { SolicitudPdfData } from '../../../interfaces/solicitudes/solicitud-trabajo/solicitud-pdf.interface';
 
 @Component({
   selector: 'app-solicitud-pdf',

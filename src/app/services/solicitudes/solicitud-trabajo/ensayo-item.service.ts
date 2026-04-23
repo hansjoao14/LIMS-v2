@@ -4,7 +4,7 @@ import { Observable, map } from 'rxjs';
 import {
   EnsayoItem,
   EnsayoItemCollectionResponse,
-} from '../../interfaces/solicitud-trabajo/ensayo-item.interface';
+} from '../../../interfaces/solicitudes/solicitud-trabajo';
 
 const CLIENT_NAME = 'catalogo';
 
