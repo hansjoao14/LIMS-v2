@@ -10,7 +10,12 @@ import {
   FinalizarSolicitudPayload,
 } from '../../../interfaces/solicitudes/solicitud-trabajo/solicitud.interface';
 
-export type { ValorSolicitudItem, SolicitudEnsayoItem, SolicitudPayload, FinalizarSolicitudPayload };
+export type {
+  ValorSolicitudItem,
+  SolicitudEnsayoItem,
+  SolicitudPayload,
+  FinalizarSolicitudPayload,
+};
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudService {
@@ -53,7 +58,17 @@ export class SolicitudService {
   }
 
   finalizarSolicitud(payload: FinalizarSolicitudPayload): Observable<any> {
-    return this.http.post<any>(`${this.api_solicitud}/solicitud/finalizar`, payload);
+    const result = this.http.post<any>(`${this.api_solicitud}/solicitud/finalizar`, payload);
+    //imprimir el resultado del observable de
+    result.subscribe({
+      next: (res) => {
+        console.log('Solicitud finalizada con éxito:', res);
+      },
+      error: (err) => {
+        console.error('Error al finalizar la solicitud:', err);
+      },
+    });
+    return result;
   }
 
   createSolicitud(payload: any): Observable<any> {

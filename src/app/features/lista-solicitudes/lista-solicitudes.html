@@ -68,14 +68,27 @@
                         </span>
                       }
                     </td>
-                    <td class="p-3 text-center">
-                      <button (click)="abrirPanelFirma(doc)"
-                              class="bg-[#0f172a] text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center gap-2 mx-auto hover:bg-[#1e293b] transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                        FIRMAR
-                      </button>
+                    <td class="p-3 text-center w-56">
+                      <div class="flex items-center justify-center gap-2">
+                        @if (doc.estado_solicitud === 'Pendiente') {
+                          <button (click)="editarSolicitud(doc)"
+                                  class="border border-amber-400 text-amber-700 bg-amber-50 px-3 py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 hover:bg-amber-100 transition-colors w-24 justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            EDITAR
+                          </button>
+                        } @else {
+                          <span class="w-24"></span>
+                        }
+                        <button (click)="abrirPanelFirma(doc)"
+                                class="bg-[#0f172a] text-white px-3 py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 hover:bg-[#1e293b] transition-colors w-24 justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                          FIRMAR
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 } @empty {

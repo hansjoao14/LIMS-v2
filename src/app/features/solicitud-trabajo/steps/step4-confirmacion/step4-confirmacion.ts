@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlContainer, FormGroup, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 
@@ -10,6 +10,7 @@ import { ControlContainer, FormGroup, FormGroupDirective, ReactiveFormsModule } 
   templateUrl: './step4-confirmacion.html',
 })
 export class Step4ConfirmacionComponent {
+  @Input() secuencialAsignado: string | null = null;
   @Output() prev = new EventEmitter<void>();
   @Output() iniciarAcuerdos = new EventEmitter<void>();
 

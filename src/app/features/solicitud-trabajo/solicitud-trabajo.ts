@@ -25,7 +25,6 @@ import {
   SolicitudPayload,
   ValorSolicitudItem,
   SolicitudEnsayoItem,
-  FinalizarSolicitudPayload,
 } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
 import { EstablecimientoUsuarioService } from '../../services/solicitudes/solicitud-trabajo/establecimiento-usuario.service';
 import { EstablecimientoService } from '../../services/solicitudes/solicitud-trabajo/establecimiento.service';
@@ -88,6 +87,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   // ── Datos de la solicitud registrada ────────────────────────────────────
   solicitudRegistradaId: string | null = null;
+  secuencialAsignado: string | null = null;
   ejercicioId: number | null = null;
   periodoId: number | null = null;
 
@@ -309,7 +309,20 @@ private readonly destroy$ = new Subject<void>();
 
     try {
       await firstValueFrom(this.service.guardarEnsayosSolicitud(payload));
-      this.zone.run(() => this.avanzarPaso());
+
+      const finRes = await firstValueFrom(
+        this.service.finalizarSolicitud({
+          idSolicitud: this.solicitudRegistradaId ?? '',
+          identifcadorSecuecnial: 'SOLI_SECU_2025',
+          ctestado: 3,
+        }),
+      );
+      const secuencial = finRes?.data?.[0]?.secuencialAsignado ?? null;
+
+      this.zone.run(() => {
+        this.secuencialAsignado = secuencial;
+        this.avanzarPaso();
+      });
     } catch (err: any) {
       const mensaje =
         err?.error?.message ?? err?.message ?? 'No se pudo guardar los ensayos de la solicitud';
@@ -373,6 +386,10 @@ private readonly destroy$ = new Subject<void>();
     if (step < 1 || step > 4) return;
     if (step > 1 && !this.isStepOneReady) {
       this.alertCamposObligatorios();
+      return;
+    }
+    if (step === 4 && !this.secuencialAsignado) {
+      this.alertToast('warning', 'Debe completar el paso 3 antes de continuar');
       return;
     }
     if (step > this.currentStep + 1) return;
@@ -497,35 +514,10 @@ private readonly destroy$ = new Subject<void>();
     this.showConfidencialidadModal = true;
   }
 
-  async aceptarConfidencialidad(): Promise<void> {
-    this.isGuardando = true;
-    try {
-      const payload: FinalizarSolicitudPayload = {
-        idSolicitud: this.solicitudRegistradaId ?? '',
-        identifcadorSecuecnial: 'SOLI_SECU_2025',
-        ctestado: 3,
-      };
-      console.log('[FinalizarSolicitudPayload]', JSON.stringify(payload, null, 2));
-      await firstValueFrom(this.service.finalizarSolicitud(payload));
-
-      this.zone.run(() => {
-        this.isGuardando = false;
-        this.showConfidencialidadModal = false;
-        this.pdfData = this.buildPdfData();
-        this.mostrarPDF = true;
-      });
-    } catch (err: any) {
-      this.zone.run(() => {
-        this.isGuardando = false;
-        const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo finalizar la solicitud';
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: mensaje,
-          confirmButtonColor: this.COLOR_PRIMARIO,
-        });
-      });
-    }
+  aceptarConfidencialidad(): void {
+    this.showConfidencialidadModal = false;
+    this.pdfData = this.buildPdfData();
+    this.mostrarPDF = true;
   }
 
   // ── Construcción de payloads ─────────────────────────────────────────────

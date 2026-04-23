@@ -82,7 +82,10 @@
       }
 
       @if (currentStep === 4) {
-        <app-step4-confirmacion (prev)="goPrevStep()" (iniciarAcuerdos)="iniciarAcuerdos()">
+        <app-step4-confirmacion
+          [secuencialAsignado]="secuencialAsignado"
+          (prev)="goPrevStep()"
+          (iniciarAcuerdos)="iniciarAcuerdos()">
         </app-step4-confirmacion>
       }
     </form>

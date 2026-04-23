@@ -71,6 +71,11 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
 
   // ── Firma ────────────────────────────────────────────────────────────────
 
+  editarSolicitud(doc: ReportSolicitud): void {
+    // TODO: navegar a la edición de la solicitud con doc.id_solicitud
+    console.log('[Editar solicitud]', doc.id_solicitud);
+  }
+
   abrirPanelFirma(doc: ReportSolicitud): void {
     this.selectedDoc = doc;
     this.archivoFirma = null;
