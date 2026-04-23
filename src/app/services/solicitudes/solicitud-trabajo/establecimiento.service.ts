@@ -4,7 +4,7 @@ import { Observable, map } from 'rxjs';
 import {
   Establecimiento,
   EstablecimientoCollectionResponse,
-} from '../../../interfaces/solicitud-trabajo/establecimiento.interface';
+} from '../../../interfaces/solicitudes/solicitud-trabajo/establecimiento.interface';
 
 const CLIENT_NAME = 'establecimiento';
 

@@ -8,7 +8,7 @@ import {
   SolicitudEnsayoItem,
   SolicitudPayload,
   FinalizarSolicitudPayload,
-} from '../../../interfaces/solicitud-trabajo/solicitud.interface';
+} from '../../../interfaces/solicitudes/solicitud-trabajo/solicitud.interface';
 
 export type { ValorSolicitudItem, SolicitudEnsayoItem, SolicitudPayload, FinalizarSolicitudPayload };
 

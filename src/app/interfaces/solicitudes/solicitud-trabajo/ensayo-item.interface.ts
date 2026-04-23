@@ -1,4 +1,4 @@
-import { ItemCatalogo } from '../catalogos/catalogo.interface';
+import { ItemCatalogo } from '../../catalogos/catalogo.interface';
 
 export interface EnsayoDetalle {
   analisis: string;

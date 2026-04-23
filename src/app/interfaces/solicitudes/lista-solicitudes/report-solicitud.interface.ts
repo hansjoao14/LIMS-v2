@@ -1,4 +1,4 @@
-import { PaginationMeta } from '../catalogos/catalogo.interface';
+import { PaginationMeta } from '../../catalogos';
 
 export interface ReportSolicitud {
   ctestado_id: number;

@@ -1,6 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, delay } from 'rxjs';
-import { DatosSRI, DatosRegistroCivil } from '../../../interfaces/solicitud-trabajo/integracion.interface';
+import {
+  DatosSRI,
+  DatosRegistroCivil,
+} from '../../../interfaces/solicitudes/solicitud-trabajo/integracion.interface';
 
 @Injectable({
   providedIn: 'root',

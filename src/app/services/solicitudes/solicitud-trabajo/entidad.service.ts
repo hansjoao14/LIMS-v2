@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { Entidad } from '../../../interfaces/solicitud-trabajo/entidad.interface';
-import { Tecnico } from '../../../interfaces/solicitud-trabajo/tecnico.interface';
+import { Entidad } from '../../../interfaces/solicitudes/solicitud-trabajo/entidad.interface';
+import { Tecnico } from '../../../interfaces/solicitudes/solicitud-trabajo/tecnico.interface';
 
 @Injectable({
   providedIn: 'root',

@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators';
 import {
   ReportSolicitud,
   ReportSolicitudCollectionResponse,
-} from '../../../interfaces/lista-solicitudes/report-solicitud.interface';
+} from '../../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import { META_FIELDS } from '../../../graphql/fragments';
 
