@@ -1,0 +1,121 @@
+<div class="p-6 bg-slate-50 min-h-screen">
+  <div class="max-w-7xl mx-auto">
+
+    @if (!formularioSeleccionado) {
+      <!-- ── LISTA ──────────────────────────────────────────────────────────── -->
+      <div class="animate-in fade-in">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <p class="text-sm font-medium text-slate-500 mb-1">
+              Sistema LIMS / <span class="font-bold text-[#1e3a8a]">Administración de Formularios</span>
+            </p>
+            <h1 class="text-2xl font-bold text-[#1e3a8a]">Administración de Formularios</h1>
+            <p class="text-sm text-slate-500 mt-1">Gestione la configuración y atributos de los formularios dinámicos.</p>
+          </div>
+          <button class="bg-[#1e3a8a] text-white px-6 py-2.5 rounded text-xs font-bold uppercase shadow-md hover:bg-blue-800 transition-colors flex items-center gap-2">
+            <span class="text-lg leading-none">+</span> Nuevo Formulario
+          </button>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+          @if (loading) {
+            <div class="flex flex-col items-center justify-center p-24">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1e3a8a] mb-4"></div>
+              <span class="text-sm font-bold text-[#1e3a8a] uppercase tracking-wide">Cargando formularios...</span>
+            </div>
+          } @else {
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+              <div class="relative w-80">
+                <input type="text" [(ngModel)]="busqueda" (ngModelChange)="filtrar()"
+                       placeholder="Buscar por nombre, tipo o sigla..."
+                       class="w-full border border-slate-300 rounded-md pl-10 pr-4 py-2 text-sm outline-none focus:border-[#1e3a8a] transition-colors">
+                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <span class="text-xs font-bold text-slate-500 uppercase">
+                {{ formulariosFiltrados.length }} de {{ formularios.length }} formularios
+              </span>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th class="p-4">Nombre</th>
+                    <th class="p-4">Tipo de Formulario</th>
+                    <th class="p-4 text-center">Sigla</th>
+                    <th class="p-4 text-center">Versión</th>
+                    <th class="p-4 text-center">Estado</th>
+                    <th class="p-4 text-center">Fecha Creación</th>
+                    <th class="p-4 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  @for (form of formulariosFiltrados; track form.id) {
+                    <tr class="hover:bg-blue-50/40 transition-colors cursor-pointer" (click)="abrirDetalle(form)">
+                      <td class="p-4">
+                        <p class="font-bold text-slate-800">{{ form.nombre }}</p>
+                        <p class="text-[10px] text-slate-400 font-mono mt-0.5">{{ form.id }}</p>
+                      </td>
+                      <td class="p-4">
+                        <span class="bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase">
+                          {{ form.tipo_formulario }}
+                        </span>
+                      </td>
+                      <td class="p-4 text-center font-mono font-bold text-slate-700 text-xs">{{ form.sigla }}</td>
+                      <td class="p-4 text-center">
+                        <span class="bg-slate-100 text-slate-600 font-bold text-xs px-2.5 py-1 rounded">v{{ form.version }}</span>
+                      </td>
+                      <td class="p-4 text-center">
+                        @if (form.estado) {
+                          <span class="px-3 py-1 border border-green-400 text-green-700 font-bold text-xs rounded bg-green-50">Activo</span>
+                        } @else {
+                          <span class="px-3 py-1 border border-slate-300 text-slate-500 font-bold text-xs rounded bg-slate-50">Inactivo</span>
+                        }
+                      </td>
+                      <td class="p-4 text-center text-slate-500 text-xs whitespace-nowrap">
+                        {{ form.fecha_creacion | date:'dd/MM/yyyy' }}
+                      </td>
+                      <td class="p-4 text-right" (click)="$event.stopPropagation()">
+                        <button (click)="abrirDetalle(form)"
+                                class="text-[#1e3a8a] hover:text-white font-bold text-[11px] uppercase px-4 py-2 border border-[#1e3a8a] hover:bg-[#1e3a8a] rounded transition-all">
+                          Configurar
+                        </button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="7" class="p-12 text-center">
+                        <p class="text-sm font-bold text-slate-500 uppercase">No se encontraron formularios</p>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            @if (meta) {
+              <div class="p-3 border-t border-slate-200 bg-slate-50 text-center">
+                <p class="text-xs text-slate-500">Total: <strong>{{ meta.total }}</strong> formularios</p>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    } @else {
+      <!-- ── DETALLE ─────────────────────────────────────────────────────────── -->
+      <app-formulario-detalle
+        [formulario]="formularioSeleccionado"
+        (regresar)="regresarLista()">
+      </app-formulario-detalle>
+    }
+
+  </div>
+</div>
+
+<style>
+  .animate-in { animation: fadeIn 0.25s ease-out forwards; }
+  .fade-in { opacity: 0; }
+  @keyframes fadeIn { to { opacity: 1; } }
+</style>

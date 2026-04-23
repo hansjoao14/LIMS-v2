@@ -30,11 +30,11 @@ export const featuresRoutes: Routes = [
     {
     path: 'admin-formularios',
     loadComponent: () =>
-      import('./admin-formularios/admin-formularios').then((m) => m.AdminFormularios),
+      import('./formularios/admin-formularios/admin-formularios').then((m) => m.AdminFormularios),
     canActivate: [canActivateWithRealmRoles],
     data: {
       title: 'Administración de Formularios',
-     
+
     },
   },
 
@@ -69,7 +69,7 @@ export const featuresRoutes: Routes = [
   },
   {
     path: 'orden-trabajo-in-situ',
-    loadComponent: () => 
+    loadComponent: () =>
       import('./orden-trabajo-in-situ/orden-trabajo-in-situ').then((m) => m.OrdenTrabajoInSitu),
     canActivate: [canActivateWithRealmRoles],
     data: {
