@@ -94,16 +94,16 @@
                   }
                 </td>
                 <td class="p-3">
-                  <span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded text-[10px] font-bold">
-                    {{ attr.ctipo_respuesta_nombre }}
+                  <span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap">
+                    {{ shortTipoRespuesta(attr.ctipo_respuesta_nombre) }}
                   </span>
                 </td>
                 <td class="p-3">
-                  <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">
-                    {{ attr.ctipo_dato_nombre }}
+                  <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap">
+                    {{ shortTipoRespuesta(attr.ctipo_dato_nombre) }}
                   </span>
                   @if (attr.num_caracter) {
-                    <span class="text-[10px] text-slate-400 ml-1">máx. {{ attr.num_caracter }}</span>
+                    <span class="text-[10px] text-slate-400 ml-1 whitespace-nowrap">máx. {{ attr.num_caracter }}</span>
                   }
                 </td>
                 <td class="p-3 text-center">

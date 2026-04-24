@@ -72,6 +72,10 @@ export class FormularioDetalle implements OnChanges, OnDestroy {
     this.atributoEditando = null;
   }
 
+  shortTipoRespuesta(nombre: string): string {
+    return nombre?.split(' ').pop() ?? nombre ?? '';
+  }
+
   onGuardado(): void {
     this.cerrarFormulario();
     this.cargarAtributos();

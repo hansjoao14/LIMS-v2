@@ -7,7 +7,7 @@ import {
   ReportSolicitudCollectionResponse,
 } from '../../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
-import { META_FIELDS } from '../../../graphql/fragments';
+import { META_FIELDS, REPORT_SOLICITUD_FIELDS } from '../../../graphql/fragments';
 
 const CLIENT_NAME = 'reportes';
 
@@ -19,30 +19,19 @@ const GET_COLLECTION_REPORT_SOLICITUD = gql`
         pagination: { page: $page, take: $take }
       }
     ) {
-      data {
-        ctestado_id
-        descripcion_solicitud
-        establecimiento_id
-        establecimiento_nombre
-        estado_logico_solicitud
-        estado_solicitud
-        fecha_actualizacion
-        fecha_creacion
-        formulario_id
-        formulario_nombre
-        id_solicitud
-        nombres_completos
-        num_secuencial
-        periodo_id
-        periodo_nombre
-        secuencial_id
-        usuario_actualizacion
-        usuario_creacion
-        usuario_id
-        usuario_nombre
-      }
+      data { ${REPORT_SOLICITUD_FIELDS} }
       count
       meta { ${META_FIELDS} }
+    }
+  }
+`;
+
+const GET_SOLICITUD_BY_ID = gql`
+  query CollectionReportSolicitudById($id: String!) {
+    collectionReportSolicitud(
+      query: { where: { id_solicitud: { equals: $id } } }
+    ) {
+      data { ${REPORT_SOLICITUD_FIELDS} }
     }
   }
 `;
@@ -55,6 +44,17 @@ export interface SolicitudesPage {
 @Injectable({ providedIn: 'root' })
 export class ReportSolicitudService {
   constructor(private apollo: Apollo) {}
+
+  getSolicitudById(id: string): Observable<ReportSolicitud | null> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionReportSolicitud: ReportSolicitudCollectionResponse }>({
+        query: GET_SOLICITUD_BY_ID,
+        variables: { id },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(map((result) => result.data?.collectionReportSolicitud?.data?.[0] ?? null));
+  }
 
   getSolicitudes(page: number, limit: number): Observable<SolicitudesPage> {
     return this.apollo

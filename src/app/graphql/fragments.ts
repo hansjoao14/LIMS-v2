@@ -9,3 +9,26 @@ export const META_FIELDS = `
   total
   totalPages
 `;
+
+export const REPORT_SOLICITUD_FIELDS = `
+  ctestado_id
+  descripcion_solicitud
+  establecimiento_id
+  establecimiento_nombre
+  estado_logico_solicitud
+  estado_solicitud
+  fecha_actualizacion
+  fecha_creacion
+  formulario_id
+  formulario_nombre
+  id_solicitud
+  nombres_completos
+  num_secuencial
+  periodo_id
+  periodo_nombre
+  secuencial_id
+  usuario_actualizacion
+  usuario_creacion
+  usuario_id
+  usuario_nombre
+`;

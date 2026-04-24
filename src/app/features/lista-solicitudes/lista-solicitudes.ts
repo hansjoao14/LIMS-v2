@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 
@@ -27,6 +28,7 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   solicitudes: ReportSolicitud[] = [];
   meta: PaginationMeta | null = null;
   loading = true;
+  cargandoEdicionId: string | null = null;
   currentPage = 1;
   readonly PAGE_SIZE = 10;
 
@@ -34,7 +36,10 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   readonly fechaActual = new Date();
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private reportSolicitudService: ReportSolicitudService) {}
+  constructor(
+    private reportSolicitudService: ReportSolicitudService,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     this.cargarPagina(1);
@@ -72,8 +77,24 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   // ── Firma ────────────────────────────────────────────────────────────────
 
   editarSolicitud(doc: ReportSolicitud): void {
-    // TODO: navegar a la edición de la solicitud con doc.id_solicitud
-    console.log('[Editar solicitud]', doc.id_solicitud);
+    this.cargandoEdicionId = doc.id_solicitud;
+    this.reportSolicitudService
+      .getSolicitudById(doc.id_solicitud)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (solicitud) => {
+          this.cargandoEdicionId = null;
+          if (!solicitud) {
+            Swal.fire('Error', 'No se encontró la solicitud', 'error');
+            return;
+          }
+          this.router.navigate(['/solicitud-trabajo'], { state: { solicitud } });
+        },
+        error: () => {
+          this.cargandoEdicionId = null;
+          Swal.fire('Error', 'No se pudo cargar la solicitud', 'error');
+        },
+      });
   }
 
   abrirPanelFirma(doc: ReportSolicitud): void {

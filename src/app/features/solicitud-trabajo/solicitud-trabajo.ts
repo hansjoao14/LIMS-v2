@@ -44,6 +44,7 @@ import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud
 import { Step2OperadorComponent } from './steps/step2-operador/step2-operador';
 import { Step3CatalogoComponent, MatrizConHijosUI } from './steps/step3-catalogo/step3-catalogo';
 import { Step4ConfirmacionComponent } from './steps/step4-confirmacion/step4-confirmacion';
+import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
@@ -76,6 +77,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   showMapModal = false;
   showTerminosModal = false;
   showConfidencialidadModal = false;
+
+  // ── Modo edición ─────────────────────────────────────────────────────────
+  modoEdicion = false;
 
   // ── Estado de carga ──────────────────────────────────────────────────────
   isGuardando = false;
@@ -149,6 +153,12 @@ private readonly destroy$ = new Subject<void>();
     this.cargarDatosIniciales();
     this.setupStepOneLogic();
     this.cargarFormularioDinamico();
+    const solicitud = history.state?.solicitud as ReportSolicitud | undefined;
+    if (solicitud?.id_solicitud) {
+      this.modoEdicion = true;
+      this.solicitudRegistradaId = solicitud.id_solicitud;
+      this.cargarStep1DesdeSolicitud(solicitud);
+    }
   }
 
   ngAfterViewChecked(): void {
@@ -246,6 +256,25 @@ private readonly destroy$ = new Subject<void>();
         const tecnico = this.tecnicosFiltrados.find((t) => t.id === tecnicoId);
         this.selectedTecnicoNombre = tecnico?.nombre || 'Usuario';
         this.form.patchValue({ cargo_usuario: tecnico?.cargo || '' }, { emitEvent: false });
+      });
+  }
+
+  private cargarStep1DesdeSolicitud(solicitud: ReportSolicitud): void {
+    this.establecimientoUsuarioService
+      .getUsuariosByEstablecimiento(solicitud.establecimiento_id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((tecnicos) => {
+        this.tecnicosFiltrados = tecnicos;
+        const tecnico = tecnicos.find((t) => t.id === solicitud.usuario_id);
+        this.selectedTecnicoNombre = tecnico?.nombre || 'Usuario';
+        this.form.patchValue(
+          {
+            entidad_id: solicitud.establecimiento_id,
+            tecnico_id: solicitud.usuario_id,
+            cargo_usuario: tecnico?.cargo || '',
+          },
+          { emitEvent: false },
+        );
       });
   }
 
