@@ -1,3 +1,16 @@
+export interface Catalogo {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  estado: boolean;
+}
+
+export interface CollectionCatalogoResponse {
+  count: number;
+  data: Catalogo[];
+  meta: PaginationMeta;
+}
+
 export interface ItemCatalogo {
   catalogo_id: number;
   estado: boolean;

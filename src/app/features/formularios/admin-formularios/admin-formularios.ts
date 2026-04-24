@@ -49,10 +49,17 @@ export class AdminFormularios implements OnInit, OnDestroy {
   }
 
   private cargarTiposFormulario(): void {
-    this.cataloService.getItemsByCatalogoId(9).pipe(takeUntil(this.destroy$)).subscribe({
-      next: ({ data }) => (this.tiposFormulario = data),
-      error: (err) => this.toastr.showError(err?.error?.message ?? 'No se pudo cargar los tipos de formulario', 'Error'),
-    });
+    this.cataloService
+      .getItemsByCatalogoId(9)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ data }) => (this.tiposFormulario = data),
+        error: (err) =>
+          this.toastr.showError(
+            err?.error?.message ?? 'No se pudo cargar los tipos de formulario',
+            'Error',
+          ),
+      });
   }
 
   cargarListaFormularios(): void {
@@ -69,7 +76,10 @@ export class AdminFormularios implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.loading = false;
-          this.toastr.showError(err?.error?.message ?? 'No se pudo cargar la lista de formularios', 'Error');
+          this.toastr.showError(
+            err?.error?.message ?? 'No se pudo cargar la lista de formularios',
+            'Error',
+          );
         },
       });
   }
@@ -126,7 +136,10 @@ export class AdminFormularios implements OnInit, OnDestroy {
         error: (err) => {
           this.zone.run(() => {
             this.guardando = false;
-            this.toastr.showError(err?.error?.message ?? 'No se pudo crear el formulario.', 'Error');
+            this.toastr.showError(
+              err?.error?.message ?? 'No se pudo crear el formulario.',
+              'Error',
+            );
           });
         },
       });

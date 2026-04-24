@@ -1,7 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Apollo, gql } from 'apollo-angular';
 import { Observable, map, switchMap } from 'rxjs';
-import { CollectionItemCatalogoResponse, ItemCatalogo } from '../interfaces/catalogos/catalogo.interface';
+import {
+  Catalogo,
+  CollectionCatalogoResponse,
+  CollectionItemCatalogoResponse,
+  ItemCatalogo,
+} from '../interfaces/catalogos/catalogo.interface';
 import { META_FIELDS } from '../graphql/fragments';
 
 const CLIENT_NAME = 'catalogo';
@@ -12,6 +17,21 @@ const GET_CATALOGO = gql`
       id
       nombre
       descripcion
+    }
+  }
+`;
+
+const GET_COLLECTION_CATALOGO = gql`
+  query CollectionCatalogo {
+    collectionCatalogo(query: { pagintation: { page: null, take: 100 } }) {
+      count
+      data {
+        descripcion
+        estado
+        id
+        nombre
+      }
+      meta { ${META_FIELDS} }
     }
   }
 `;
@@ -72,6 +92,18 @@ export class CatalogoService {
       .valueChanges.pipe(map((result) => result.data?.catalogo ?? []));
   }
 
+  getCollectionCatalogo(): Observable<Catalogo[]> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .watchQuery<{ collectionCatalogo: CollectionCatalogoResponse }>({
+        query: GET_COLLECTION_CATALOGO,
+        fetchPolicy: 'cache-first',
+      })
+      .valueChanges.pipe(
+        map((result) => (result.data?.collectionCatalogo?.data ?? []) as Catalogo[]),
+      );
+  }
+
   getItemsByCatalogoId(catalogoId: number): Observable<CollectionItemCatalogoResponse> {
     return this.apollo
       .use(CLIENT_NAME)
@@ -108,7 +140,9 @@ export class CatalogoService {
       );
   }
 
-  getMatricesConHijos(catalogoId: number): Observable<{ matriz: ItemCatalogo; hijos: ItemCatalogo[] }[]> {
+  getMatricesConHijos(
+    catalogoId: number,
+  ): Observable<{ matriz: ItemCatalogo; hijos: ItemCatalogo[] }[]> {
     return this.getItemsByCatalogoId(catalogoId).pipe(
       switchMap((response) => {
         const matrices = response.data;
