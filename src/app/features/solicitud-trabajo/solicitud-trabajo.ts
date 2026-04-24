@@ -40,13 +40,10 @@ import {
   DatosSRI,
   DatosRegistroCivil,
 } from '../../interfaces/solicitudes/solicitud-trabajo/integracion.interface';
-import { SolicitudPdfData } from '../../interfaces/solicitudes/solicitud-trabajo/solicitud-pdf.interface';
-
 import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud';
 import { Step2OperadorComponent } from './steps/step2-operador/step2-operador';
 import { Step3CatalogoComponent, MatrizConHijosUI } from './steps/step3-catalogo/step3-catalogo';
 import { Step4ConfirmacionComponent } from './steps/step4-confirmacion/step4-confirmacion';
-import { SolicitudPdfComponent } from './solicitud-pdf/solicitud-pdf';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
@@ -61,7 +58,6 @@ type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
     Step2OperadorComponent,
     Step3CatalogoComponent,
     Step4ConfirmacionComponent,
-    SolicitudPdfComponent,
   ],
   templateUrl: './solicitud-trabajo.html',
   styleUrls: ['./solicitud-trabajo.css'],
@@ -109,11 +105,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   notasAire: string[] = [];
   notasRuido: string[] = [];
 
-  // ── Step 4: acuerdos y PDF ───────────────────────────────────────────────
+  // ── Step 4: acuerdos ────────────────────────────────────────────────────
   terminosCondiciones: string[] = [];
   acuerdoConfidencialidad = '';
-  mostrarPDF = false;
-  pdfData: SolicitudPdfData | null = null;
 
   // ── Mapa ─────────────────────────────────────────────────────────────────
   private map: L.Map | null = null;
@@ -294,6 +288,7 @@ private readonly destroy$ = new Subject<void>();
     }
   }
 
+  // Finalizar solicitud: guardar ensayos y luego marcar solicitud como finalizada
   private async guardarEnsayosYAvanzar(catalogos: MatrizConHijosUI[]): Promise<void> {
     const solicitudEnsayo: SolicitudEnsayoItem[] = catalogos.flatMap((grupo) =>
       grupo.hijos
@@ -309,20 +304,7 @@ private readonly destroy$ = new Subject<void>();
 
     try {
       await firstValueFrom(this.service.guardarEnsayosSolicitud(payload));
-
-      const finRes = await firstValueFrom(
-        this.service.finalizarSolicitud({
-          idSolicitud: this.solicitudRegistradaId ?? '',
-          identifcadorSecuecnial: 'SOLI_SECU_2025',
-          ctestado: 3,
-        }),
-      );
-      const secuencial = finRes?.data?.[0]?.secuencialAsignado ?? null;
-
-      this.zone.run(() => {
-        this.secuencialAsignado = secuencial;
-        this.avanzarPaso();
-      });
+      this.zone.run(() => this.avanzarPaso());
     } catch (err: any) {
       const mensaje =
         err?.error?.message ?? err?.message ?? 'No se pudo guardar los ensayos de la solicitud';
@@ -388,7 +370,7 @@ private readonly destroy$ = new Subject<void>();
       this.alertCamposObligatorios();
       return;
     }
-    if (step === 4 && !this.secuencialAsignado) {
+    if (step === 4 && !this.solicitudRegistradaId) {
       this.alertToast('warning', 'Debe completar el paso 3 antes de continuar');
       return;
     }
@@ -514,42 +496,33 @@ private readonly destroy$ = new Subject<void>();
     this.showConfidencialidadModal = true;
   }
 
-  aceptarConfidencialidad(): void {
-    this.showConfidencialidadModal = false;
-    this.pdfData = this.buildPdfData();
-    this.mostrarPDF = true;
-  }
-
-  // ── Construcción de payloads ─────────────────────────────────────────────
-
-  private buildPdfData(): SolicitudPdfData {
-    const raw = this.form.getRawValue();
-    const establecimiento = this.establecimientos.find((e) => e.id === raw.entidad_id);
-    const scheduleField = this.fields.find((f) => f.controlType === 'schedule');
-    const horarios = (scheduleField?.scheduleItems ?? [])
-      .filter((_: any, i: number) => this.selectedScheduleIndexes.has(i))
-      .map((j: any) => j.nombre || j.label || JSON.stringify(j))
-      .join(' / ');
-
-    return {
-      numeroSolicitud: raw.numero_solicitud ?? this.numeroSolicitudGenerado,
-      fechaEmision: new Date(),
-      entidadNombre: establecimiento?.nombre ?? raw.entidad_id ?? '',
-      tecnicoNombre: this.selectedTecnicoNombre,
-      tecnicoCargo: raw.cargo_usuario ?? '',
-      rucOperador: raw.val_ruc_op ?? '',
-      razonSocial: raw.val_razon_op ?? '',
-      nombreComercial: raw.val_come_op ?? '',
-      direccionOperador: raw.val_dir_op ?? '',
-      latitud: raw.val_lati ?? '',
-      longitud: raw.val_long ?? '',
-      horarios,
-      motivo: this.motivoFlujo,
-      nombreContacto: raw.val_nom_op ? `${raw.val_nom_op} ${raw.val_ape_op ?? ''}`.trim() : '',
-      telefonoContacto: raw.val_ct_tel ?? raw.val_ct_cel ?? '',
-      direccionContacto: raw.val_dire_op ?? '',
-      observaciones: raw.val_obs ?? '',
-    };
+  async aceptarConfidencialidad(): Promise<void> {
+    this.isGuardando = true;
+    try {
+      const finRes = await firstValueFrom(
+        this.service.finalizarSolicitud({
+          idSolicitud: this.solicitudRegistradaId ?? '',
+          identifcadorSecuecnial: 'SOLI_SECU_2025',
+          ctestado: 3,
+        }),
+      );
+      this.zone.run(() => {
+        this.secuencialAsignado = finRes?.data?.[0]?.secuencialAsignado ?? null;
+        this.showConfidencialidadModal = false;
+        this.isGuardando = false;
+      });
+    } catch (err: any) {
+      this.zone.run(() => {
+        this.isGuardando = false;
+        const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo finalizar la solicitud';
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: mensaje,
+          confirmButtonColor: this.COLOR_PRIMARIO,
+        });
+      });
+    }
   }
 
   // ── Mapa ─────────────────────────────────────────────────────────────────

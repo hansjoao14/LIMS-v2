@@ -166,26 +166,6 @@
         </label>
       </div>
 
-      <!-- Atributo dependiente -->
-      @if (formData.is_dependent) {
-        <div>
-          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">
-            Atributo dependiente <span class="text-red-500">*</span>
-          </label>
-          @if (cargandoDependientes) {
-            <p class="text-[11px] text-slate-400 italic py-2">Cargando atributos...</p>
-          } @else {
-            <select [(ngModel)]="formData.item_catalogo_id"
-                    class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#1e3a8a] transition-colors bg-white">
-              <option [ngValue]="''">— Seleccione —</option>
-              @for (dep of atributosDependientes; track dep.atributo_formulario_id) {
-                <option [ngValue]="dep.atributo_formulario_id">{{ dep.atributo_formulario_pregunta }}</option>
-              }
-            </select>
-          }
-        </div>
-      }
-
     </div>
 
     <!-- Footer -->

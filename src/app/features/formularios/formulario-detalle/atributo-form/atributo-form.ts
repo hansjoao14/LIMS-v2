@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 
 import { AtributoFormularioService } from '../../../../services/admin-formularios/atributo-formulario.service';
-import { ReportFormularioService } from '../../../../services/admin-formularios/report-formulario.service';
 import { CatalogoService } from '../../../../services/catalogo.service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
 import { ReportFormulario } from '../../../../interfaces/admin-formularios/report-formulario.interface';
@@ -36,14 +35,10 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
   cargandoItems = false;
   selectedItemIds: string[] = [];
 
-  atributosDependientes: ReportAtributoFormulario[] = [];
-  cargandoDependientes = false;
-
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private atributoService: AtributoFormularioService,
-    private reportService: ReportFormularioService,
     private cataloService: CatalogoService,
     private toastr: ToastrAlertService,
     private zone: NgZone,
@@ -53,11 +48,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
     this.formData = this.atributo ? this.fromAtributo(this.atributo) : this.emptyForm();
     this.cargarCatalogos();
 
-    if (this.formData.is_dependent) {
-      this.cargarAtributosDependientes();
-    }
-
-    if (this.formData.catalogo_id && !this.formData.is_dependent) {
+    if (this.formData.catalogo_id) {
       this.selectedItemIds = this.formData.item_catalogo_id
         ? this.formData.item_catalogo_id.split(',').filter(Boolean)
         : [];
@@ -69,7 +60,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
     this.selectedItemIds = [];
     this.formData.item_catalogo_id = '';
     this.itemsCatalogo = [];
-    if (this.formData.catalogo_id && !this.formData.is_dependent) {
+    if (this.formData.catalogo_id) {
       this.cargarItemsCatalogo(this.formData.catalogo_id);
     }
   }
@@ -102,34 +93,6 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
 
   isItemSelected(id: string): boolean {
     return this.selectedItemIds.includes(id);
-  }
-
-  onIsDependentChange(): void {
-    this.formData.item_catalogo_id = '';
-    this.selectedItemIds = [];
-    if (this.formData.is_dependent) {
-      this.itemsCatalogo = [];
-      this.cargarAtributosDependientes();
-    } else {
-      this.atributosDependientes = [];
-      if (this.formData.catalogo_id) this.cargarItemsCatalogo(this.formData.catalogo_id);
-    }
-  }
-
-  cargarAtributosDependientes(): void {
-    this.cargandoDependientes = true;
-    this.reportService.getAtributosDependientes(this.formulario.id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (data) => {
-        this.zone.run(() => {
-          this.atributosDependientes = data;
-          this.cargandoDependientes = false;
-        });
-      },
-      error: (err) => {
-        this.zone.run(() => (this.cargandoDependientes = false));
-        this.toastr.showError(err?.error?.message ?? 'No se pudo cargar los atributos dependientes', 'Error');
-      },
-    });
   }
 
   private cargarCatalogos(): void {
