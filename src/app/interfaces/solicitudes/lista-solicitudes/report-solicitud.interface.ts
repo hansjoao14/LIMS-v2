@@ -23,6 +23,24 @@ export interface ReportSolicitud {
   usuario_nombre: string;
 }
 
+export interface ReportValorSolicitud {
+  atributo_formulario_id: string;
+  atributo_formulario_nombre: string;
+  ctipo_dato_nombre: string;
+  item_catalogo_id: string | null;
+  valor_texto: string | null;
+  valor_numero: number | null;
+  valor_fecha: string | null;
+  valor_booleano: boolean | null;
+  valor_multiple: string | null;
+  valor_solicitud_id: string;
+}
+
+export interface ReportValorSolicitudCollectionResponse {
+  data: ReportValorSolicitud[];
+  count: number;
+}
+
 export interface ReportSolicitudCollectionResponse {
   data: ReportSolicitud[];
   count: number;

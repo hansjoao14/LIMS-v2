@@ -44,7 +44,8 @@ import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud
 import { Step2OperadorComponent } from './steps/step2-operador/step2-operador';
 import { Step3CatalogoComponent, MatrizConHijosUI } from './steps/step3-catalogo/step3-catalogo';
 import { Step4ConfirmacionComponent } from './steps/step4-confirmacion/step4-confirmacion';
-import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
+import { ReportSolicitud, ReportValorSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
+import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
@@ -132,6 +133,7 @@ private readonly destroy$ = new Subject<void>();
     private documentoLegalService: DocumentoLegalService,
     private integracionService: IntegracionService,
     private periodoService: PeriodoService,
+    private reportSolicitudService: ReportSolicitudService,
     private zone: NgZone,
     private route: ActivatedRoute,
   ) {
@@ -152,13 +154,13 @@ private readonly destroy$ = new Subject<void>();
   ngOnInit(): void {
     this.cargarDatosIniciales();
     this.setupStepOneLogic();
-    this.cargarFormularioDinamico();
     const solicitud = history.state?.solicitud as ReportSolicitud | undefined;
     if (solicitud?.id_solicitud) {
       this.modoEdicion = true;
       this.solicitudRegistradaId = solicitud.id_solicitud;
       this.cargarStep1DesdeSolicitud(solicitud);
     }
+    this.cargarFormularioDinamico();
   }
 
   ngAfterViewChecked(): void {
@@ -187,10 +189,34 @@ private readonly destroy$ = new Subject<void>();
           this.generateControls();
           this.applyDependencyLogic();
           this.loading = false;
+          if (this.modoEdicion && this.solicitudRegistradaId) {
+            this.preCargarValoresEdicion(this.solicitudRegistradaId);
+          }
         },
         error: () => {
           this.loading = false;
           Swal.fire('Error', 'No se pudo cargar el formulario dinámico', 'error');
+        },
+      });
+  }
+
+  private preCargarValoresEdicion(solicitudId: string): void {
+    this.reportSolicitudService
+      .getValoresSolicitud(solicitudId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (valores: ReportValorSolicitud[]) => {
+          const patch: Record<string, unknown> = {};
+          for (const v of valores) {
+            const key = v.atributo_formulario_nombre;
+            if (!this.form.contains(key)) continue;
+            if (v.ctipo_dato_nombre === 'Selección Simple') {
+              patch[key] = v.item_catalogo_id != null ? Number(v.item_catalogo_id) : '';
+            } else {
+              patch[key] = v.valor_texto ?? v.valor_numero ?? v.valor_fecha ?? '';
+            }
+          }
+          this.form.patchValue(patch);
         },
       });
   }
@@ -412,6 +438,10 @@ private readonly destroy$ = new Subject<void>();
     if (this.currentStep === 1) {
       if (!this.isStepOneReady) {
         this.alertCamposObligatorios();
+        return;
+      }
+      if (this.modoEdicion) {
+        this.avanzarPaso();
         return;
       }
       this.crearSolicitudYAvanzar();

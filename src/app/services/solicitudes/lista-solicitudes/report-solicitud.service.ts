@@ -5,9 +5,11 @@ import { map } from 'rxjs/operators';
 import {
   ReportSolicitud,
   ReportSolicitudCollectionResponse,
+  ReportValorSolicitud,
+  ReportValorSolicitudCollectionResponse,
 } from '../../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
-import { META_FIELDS, REPORT_SOLICITUD_FIELDS } from '../../../graphql/fragments';
+import { META_FIELDS, REPORT_SOLICITUD_FIELDS, REPORT_VALOR_SOLICITUD_FIELDS } from '../../../graphql/fragments';
 
 const CLIENT_NAME = 'reportes';
 
@@ -22,6 +24,17 @@ const GET_COLLECTION_REPORT_SOLICITUD = gql`
       data { ${REPORT_SOLICITUD_FIELDS} }
       count
       meta { ${META_FIELDS} }
+    }
+  }
+`;
+
+const GET_VALORES_SOLICITUD = gql`
+  query CollectionReportValorSolicitud($id: String!) {
+    collectionReportValorSolicitud(
+      query: { where: { id_solicitud: { equals: $id } } }
+    ) {
+      count
+      data { ${REPORT_VALOR_SOLICITUD_FIELDS} }
     }
   }
 `;
@@ -54,6 +67,17 @@ export class ReportSolicitudService {
         fetchPolicy: 'network-only',
       })
       .pipe(map((result) => result.data?.collectionReportSolicitud?.data?.[0] ?? null));
+  }
+
+  getValoresSolicitud(id: string): Observable<ReportValorSolicitud[]> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionReportValorSolicitud: ReportValorSolicitudCollectionResponse }>({
+        query: GET_VALORES_SOLICITUD,
+        variables: { id },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(map((result) => result.data?.collectionReportValorSolicitud?.data ?? []));
   }
 
   getSolicitudes(page: number, limit: number): Observable<SolicitudesPage> {

@@ -10,6 +10,19 @@ export const META_FIELDS = `
   totalPages
 `;
 
+export const REPORT_VALOR_SOLICITUD_FIELDS = `
+  atributo_formulario_id
+  atributo_formulario_nombre
+  ctipo_dato_nombre
+  item_catalogo_id
+  valor_texto
+  valor_numero
+  valor_fecha
+  valor_booleano
+  valor_multiple
+  valor_solicitud_id
+`;
+
 export const REPORT_SOLICITUD_FIELDS = `
   ctestado_id
   descripcion_solicitud
