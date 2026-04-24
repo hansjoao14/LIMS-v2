@@ -18,6 +18,7 @@ import {
   FieldConfig,
   FieldSectionId,
   FormularioLaboratorio,
+  JornadaItem,
   Pregunta,
 } from './model/solicitud-trabajo.model';
 import {
@@ -44,7 +45,10 @@ import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud
 import { Step2OperadorComponent } from './steps/step2-operador/step2-operador';
 import { Step3CatalogoComponent, MatrizConHijosUI } from './steps/step3-catalogo/step3-catalogo';
 import { Step4ConfirmacionComponent } from './steps/step4-confirmacion/step4-confirmacion';
-import { ReportSolicitud, ReportValorSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
+import {
+  ReportSolicitud,
+  ReportValorSolicitud,
+} from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
@@ -122,7 +126,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   readonly fechaActual = new Date();
   readonly numeroSolicitudGenerado = 'ST-' + new Date().getFullYear() + '-001';
   private readonly COLOR_PRIMARIO = '#1e3a8a';
-private readonly destroy$ = new Subject<void>();
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -211,7 +215,8 @@ private readonly destroy$ = new Subject<void>();
           // el selector padre estaba en ese item_catalogo_id al guardar.
           const inferredSelectValues = new Map<string, number>();
           for (const v of valores) {
-            const tieneValor = v.valor_texto != null || v.valor_numero != null || v.valor_fecha != null;
+            const tieneValor =
+              v.valor_texto != null || v.valor_numero != null || v.valor_fecha != null;
             if (v.atributo_id && v.item_catalogo_id != null && tieneValor) {
               inferredSelectValues.set(v.atributo_id, Number(v.item_catalogo_id));
             }
@@ -224,9 +229,29 @@ private readonly destroy$ = new Subject<void>();
             const key = v.atributo_formulario_nombre;
             // Usar get() en lugar de contains() para incluir controles deshabilitados
             if (!this.form.get(key)) continue;
+
             if (v.ctipo_dato_nombre === 'Selección Simple') {
               const inferred = inferredSelectValues.get(v.atributo_formulario_id);
               if (inferred != null) selectPatch[key] = inferred;
+            } else if (v.ctipo_dato_nombre === 'Selección Mutiple' && v.valor_multiple) {
+              // Restaurar horarios seleccionados: parsear JSON guardado y buscar índices
+              try {
+                const guardados: JornadaItem[] = JSON.parse(v.valor_multiple);
+                const field = this.fields.find((f) => f.key === key);
+                if (field) {
+                  for (const guardado of guardados) {
+                    const idx = field.scheduleItems.findIndex(
+                      (item) =>
+                        item.dia_laboral === guardado.dia_laboral &&
+                        item.hora_inicio === guardado.hora_inicio &&
+                        item.hora_fin === guardado.hora_fin,
+                    );
+                    if (idx !== -1) this.selectedScheduleIndexes.add(idx);
+                  }
+                }
+              } catch {
+                // valor_multiple malformado, se ignora
+              }
             } else {
               textPatch[key] = v.valor_texto ?? v.valor_numero ?? v.valor_fecha ?? '';
             }
@@ -329,7 +354,8 @@ private readonly destroy$ = new Subject<void>();
 
   private async guardarValoresYAvanzar(): Promise<void> {
     const raw = this.form.getRawValue();
-    const valorSolicitud: ValorSolicitudItem[] = this.fields
+
+    const camposNormales: ValorSolicitudItem[] = this.fields
       .filter((f) => !f.hidden && f.controlType !== 'schedule')
       .map((f) => {
         const value = raw[f.key];
@@ -345,7 +371,30 @@ private readonly destroy$ = new Subject<void>();
           valor_catalogo: esSelect ? Number(value) || 0 : 0,
         };
       });
+
+    const camposSchedule: ValorSolicitudItem[] = this.fields
+      .filter((f) => f.controlType === 'schedule')
+      .map((f) => {
+        const itemsSeleccionados = (f.scheduleItems ?? []).filter((_, i) =>
+          this.selectedScheduleIndexes.has(i),
+        );
+        return {
+          solicitud_id: this.solicitudRegistradaId,
+          atributo_formulario_id: String(f.id),
+          valor_texto: null,
+          valor_numero: null,
+          valor_fecha: null,
+          valor_booleano: null,
+          valor_multiple: itemsSeleccionados.length > 0 ? JSON.stringify(itemsSeleccionados) : null,
+          valor_catalogo: 0,
+        };
+      });
+
+    const valorSolicitud = [...camposNormales, ...camposSchedule];
     const payload = { valorSolicitud };
+
+    console.log('[Horario Laboral] items seleccionados:', [...this.selectedScheduleIndexes]);
+    console.log('[Payload enviado al backend]:', payload);
 
     try {
       await firstValueFrom(this.service.guardarValoresSolicitud(payload));
@@ -487,7 +536,6 @@ private readonly destroy$ = new Subject<void>();
       this.guardarValoresYAvanzar();
       return;
     }
-
   }
 
   goPrevStep(): void {
