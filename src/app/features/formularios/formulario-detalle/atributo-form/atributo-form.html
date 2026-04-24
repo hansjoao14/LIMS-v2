@@ -101,7 +101,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Catálogo</label>
-            <select [(ngModel)]="formData.catalogo_id"
+            <select [(ngModel)]="formData.catalogo_id" (ngModelChange)="onCatalogoChange()"
                     class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#1e3a8a] transition-colors bg-white">
               <option [ngValue]="null">— Ninguno —</option>
               @for (c of catalogos; track c.id) {
@@ -110,9 +110,31 @@
             </select>
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Item Catálogo ID</label>
-            <input type="text" [(ngModel)]="formData.item_catalogo_id" placeholder="—"
-                   class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#1e3a8a] transition-colors font-mono">
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">
+              Items del Catálogo
+              @if (selectedItemIds.length > 0) {
+                <span class="ml-1.5 bg-[#1e3a8a] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{{ selectedItemIds.length }}</span>
+              }
+            </label>
+            @if (!formData.catalogo_id || formData.is_dependent) {
+              <p class="text-[11px] text-slate-400 italic py-2">Seleccione un catálogo primero.</p>
+            } @else if (cargandoItems) {
+              <p class="text-[11px] text-slate-400 italic py-2">Cargando items...</p>
+            } @else if (itemsCatalogo.length === 0) {
+              <p class="text-[11px] text-slate-400 italic py-2">Sin items disponibles.</p>
+            } @else {
+              <div class="border border-slate-200 rounded-md max-h-40 overflow-y-auto divide-y divide-slate-100">
+                @for (item of itemsCatalogo; track item.id) {
+                  <label class="flex items-center gap-2.5 px-3 py-2 hover:bg-blue-50 cursor-pointer transition-colors">
+                    <input type="checkbox"
+                           [checked]="isItemSelected(item.id.toString())"
+                           (change)="toggleItem(item.id.toString())"
+                           class="w-3.5 h-3.5 rounded accent-[#1e3a8a] shrink-0">
+                    <span class="text-xs text-slate-700">{{ item.nombre }}</span>
+                  </label>
+                }
+              </div>
+            }
           </div>
           <div>
             <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Jornada</label>
@@ -135,7 +157,7 @@
       <!-- Booleanos -->
       <div class="grid grid-cols-2 gap-4">
         <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-          <input type="checkbox" [(ngModel)]="formData.is_dependent" class="w-4 h-4 rounded accent-[#1e3a8a]">
+          <input type="checkbox" [(ngModel)]="formData.is_dependent" (ngModelChange)="onIsDependentChange()" class="w-4 h-4 rounded accent-[#1e3a8a]">
           <span class="text-sm font-medium text-slate-700">Es dependiente</span>
         </label>
         <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
@@ -143,6 +165,26 @@
           <span class="text-sm font-medium text-slate-700">Dependiente de catálogo</span>
         </label>
       </div>
+
+      <!-- Atributo dependiente -->
+      @if (formData.is_dependent) {
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">
+            Atributo dependiente <span class="text-red-500">*</span>
+          </label>
+          @if (cargandoDependientes) {
+            <p class="text-[11px] text-slate-400 italic py-2">Cargando atributos...</p>
+          } @else {
+            <select [(ngModel)]="formData.item_catalogo_id"
+                    class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#1e3a8a] transition-colors bg-white">
+              <option [ngValue]="''">— Seleccione —</option>
+              @for (dep of atributosDependientes; track dep.atributo_formulario_id) {
+                <option [ngValue]="dep.atributo_formulario_id">{{ dep.atributo_formulario_pregunta }}</option>
+              }
+            </select>
+          }
+        </div>
+      }
 
     </div>
 

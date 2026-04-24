@@ -39,6 +39,51 @@ const GET_COLLECTION_REPORT_FORMULARIO = gql`
   }
 `;
 
+const GET_ATRIBUTOS_DEPENDIENTES = gql`
+  query CollectionReportAtributoFormularioDependientes($formularioId: String!) {
+    collectionReportAtributoFormulario(
+      query: { where: { formulario_id: { equals: $formularioId }, is_dependent: { equals: true } } }
+    ) {
+      count
+      data {
+        atributo_formulario_id
+        atributo_formulario_nombre
+        atributo_formulario_pregunta
+        formulario_id
+        is_dependent
+        orden
+        ctipo_dato_id
+        ctipo_dato_nombre
+        ctipo_respuesta_id
+        ctipo_respuesta_nombre
+        catalogo_id
+        item_catalogo_id
+        jornada_id
+        atributo_id
+        num_caracter
+        num_rango
+        num_atras
+        num_adelante
+        is_dependent_catalogo
+        estado_atributo_formulario
+        formulario_nombre
+        formulario_sigla
+        formulario_version
+        atributo_formulario_ayuda
+        hidden
+        is_ws_civil
+        is_ws_iess
+        is_ws_sri
+        jornada_nombre
+        multivaluado
+        obligatorio
+        readonly
+        tipo_formulario
+      }
+    }
+  }
+`;
+
 const GET_ATRIBUTOS_BY_FORMULARIO = gql`
   query CollectionReportAtributoFormulario($formularioId: String!) {
     collectionReportAtributoFormulario(
@@ -96,6 +141,22 @@ export class ReportFormularioService {
       .use(CLIENT_NAME)
       .query<{ collectionReportAtributoFormulario: ReportAtributoFormularioCollectionResponse }>({
         query: GET_ATRIBUTOS_BY_FORMULARIO,
+        variables: { formularioId },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(
+        map((result) => {
+          const data = result.data?.collectionReportAtributoFormulario?.data ?? [];
+          return [...data].sort((a, b) => a.orden - b.orden) as ReportAtributoFormulario[];
+        }),
+      );
+  }
+
+  getAtributosDependientes(formularioId: string): Observable<ReportAtributoFormulario[]> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionReportAtributoFormulario: ReportAtributoFormularioCollectionResponse }>({
+        query: GET_ATRIBUTOS_DEPENDIENTES,
         variables: { formularioId },
         fetchPolicy: 'network-only',
       })

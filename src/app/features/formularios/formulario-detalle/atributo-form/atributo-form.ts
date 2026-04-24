@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 
 import { AtributoFormularioService } from '../../../../services/admin-formularios/atributo-formulario.service';
+import { ReportFormularioService } from '../../../../services/admin-formularios/report-formulario.service';
 import { CatalogoService } from '../../../../services/catalogo.service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
 import { ReportFormulario } from '../../../../interfaces/admin-formularios/report-formulario.interface';
@@ -31,10 +32,18 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
   jornadas: ItemCatalogo[] = [];
   catalogos: Catalogo[] = [];
 
+  itemsCatalogo: ItemCatalogo[] = [];
+  cargandoItems = false;
+  selectedItemIds: string[] = [];
+
+  atributosDependientes: ReportAtributoFormulario[] = [];
+  cargandoDependientes = false;
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private atributoService: AtributoFormularioService,
+    private reportService: ReportFormularioService,
     private cataloService: CatalogoService,
     private toastr: ToastrAlertService,
     private zone: NgZone,
@@ -43,6 +52,84 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.formData = this.atributo ? this.fromAtributo(this.atributo) : this.emptyForm();
     this.cargarCatalogos();
+
+    if (this.formData.is_dependent) {
+      this.cargarAtributosDependientes();
+    }
+
+    if (this.formData.catalogo_id && !this.formData.is_dependent) {
+      this.selectedItemIds = this.formData.item_catalogo_id
+        ? this.formData.item_catalogo_id.split(',').filter(Boolean)
+        : [];
+      this.cargarItemsCatalogo(this.formData.catalogo_id);
+    }
+  }
+
+  onCatalogoChange(): void {
+    this.selectedItemIds = [];
+    this.formData.item_catalogo_id = '';
+    this.itemsCatalogo = [];
+    if (this.formData.catalogo_id && !this.formData.is_dependent) {
+      this.cargarItemsCatalogo(this.formData.catalogo_id);
+    }
+  }
+
+  cargarItemsCatalogo(catalogoId: number): void {
+    this.cargandoItems = true;
+    this.cataloService.getItemsByCatalogoId(catalogoId).pipe(takeUntil(this.destroy$)).subscribe({
+      next: ({ data }) => {
+        this.zone.run(() => {
+          this.itemsCatalogo = data;
+          this.cargandoItems = false;
+        });
+      },
+      error: (err) => {
+        this.zone.run(() => (this.cargandoItems = false));
+        this.toastr.showError(err?.error?.message ?? 'No se pudo cargar los items del catálogo', 'Error');
+      },
+    });
+  }
+
+  toggleItem(id: string): void {
+    const idx = this.selectedItemIds.indexOf(id);
+    if (idx >= 0) {
+      this.selectedItemIds.splice(idx, 1);
+    } else {
+      this.selectedItemIds.push(id);
+    }
+    this.formData.item_catalogo_id = this.selectedItemIds.join(',');
+  }
+
+  isItemSelected(id: string): boolean {
+    return this.selectedItemIds.includes(id);
+  }
+
+  onIsDependentChange(): void {
+    this.formData.item_catalogo_id = '';
+    this.selectedItemIds = [];
+    if (this.formData.is_dependent) {
+      this.itemsCatalogo = [];
+      this.cargarAtributosDependientes();
+    } else {
+      this.atributosDependientes = [];
+      if (this.formData.catalogo_id) this.cargarItemsCatalogo(this.formData.catalogo_id);
+    }
+  }
+
+  cargarAtributosDependientes(): void {
+    this.cargandoDependientes = true;
+    this.reportService.getAtributosDependientes(this.formulario.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (data) => {
+        this.zone.run(() => {
+          this.atributosDependientes = data;
+          this.cargandoDependientes = false;
+        });
+      },
+      error: (err) => {
+        this.zone.run(() => (this.cargandoDependientes = false));
+        this.toastr.showError(err?.error?.message ?? 'No se pudo cargar los atributos dependientes', 'Error');
+      },
+    });
   }
 
   private cargarCatalogos(): void {
@@ -67,6 +154,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
 
   guardar(): void {
     this.guardando = true;
+    console.log('[AtributoForm] payload →', JSON.stringify(this.formData, null, 2));
     const op$ = this.atributo
       ? this.atributoService.actualizar(this.atributo.atributo_formulario_id, this.formData)
       : this.atributoService.crear(this.formData);
