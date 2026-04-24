@@ -206,17 +206,36 @@ private readonly destroy$ = new Subject<void>();
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (valores: ReportValorSolicitud[]) => {
-          const patch: Record<string, unknown> = {};
+          // valor_catalogo no está en el schema del reporte. Lo inferimos: si un campo
+          // dependiente tiene valor guardado y tiene atributo_id + item_catalogo_id,
+          // el selector padre estaba en ese item_catalogo_id al guardar.
+          const inferredSelectValues = new Map<string, number>();
           for (const v of valores) {
-            const key = v.atributo_formulario_nombre;
-            if (!this.form.contains(key)) continue;
-            if (v.ctipo_dato_nombre === 'Selección Simple') {
-              patch[key] = v.item_catalogo_id != null ? Number(v.item_catalogo_id) : '';
-            } else {
-              patch[key] = v.valor_texto ?? v.valor_numero ?? v.valor_fecha ?? '';
+            const tieneValor = v.valor_texto != null || v.valor_numero != null || v.valor_fecha != null;
+            if (v.atributo_id && v.item_catalogo_id != null && tieneValor) {
+              inferredSelectValues.set(v.atributo_id, Number(v.item_catalogo_id));
             }
           }
-          this.form.patchValue(patch);
+
+          const selectPatch: Record<string, unknown> = {};
+          const textPatch: Record<string, unknown> = {};
+
+          for (const v of valores) {
+            const key = v.atributo_formulario_nombre;
+            // Usar get() en lugar de contains() para incluir controles deshabilitados
+            if (!this.form.get(key)) continue;
+            if (v.ctipo_dato_nombre === 'Selección Simple') {
+              const inferred = inferredSelectValues.get(v.atributo_formulario_id);
+              if (inferred != null) selectPatch[key] = inferred;
+            } else {
+              textPatch[key] = v.valor_texto ?? v.valor_numero ?? v.valor_fecha ?? '';
+            }
+          }
+
+          // Paso 1: solo selects → dispara updateDependentFields → habilita campos dependientes
+          this.form.patchValue(selectPatch);
+          // Paso 2: textos sobre controles ya habilitados (syncFieldState solo enable, no reset)
+          this.form.patchValue(textPatch);
         },
       });
   }

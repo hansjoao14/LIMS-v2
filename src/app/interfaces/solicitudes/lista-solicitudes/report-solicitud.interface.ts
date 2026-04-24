@@ -26,6 +26,7 @@ export interface ReportSolicitud {
 export interface ReportValorSolicitud {
   atributo_formulario_id: string;
   atributo_formulario_nombre: string;
+  atributo_id: string | null;
   ctipo_dato_nombre: string;
   item_catalogo_id: string | null;
   valor_texto: string | null;

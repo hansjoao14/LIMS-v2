@@ -13,6 +13,7 @@ export const META_FIELDS = `
 export const REPORT_VALOR_SOLICITUD_FIELDS = `
   atributo_formulario_id
   atributo_formulario_nombre
+  atributo_id
   ctipo_dato_nombre
   item_catalogo_id
   valor_texto
