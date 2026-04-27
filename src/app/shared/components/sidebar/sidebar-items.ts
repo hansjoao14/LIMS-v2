@@ -10,7 +10,6 @@ import { OrdenTrabajoInSituIcon } from '../../../ui/icons/orden-trabajo-in-situ-
 import { PlanMuestreoIcon } from '../../../ui/icons/plan-muestreo-icon/plan-muestreo-icon';
 import { RoleAccess } from '../../../core/utils/roles.constans';
 
-
 export interface MenuItem {
   path?: string;
   label: string;
@@ -21,69 +20,69 @@ export interface MenuItem {
 }
 
 export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
-  { 
-    path: '/dashboard', 
-    label: 'Dashboard', 
-    icon: HouseComponent, 
-    requiredRoles: RoleAccess.ALL_USERS // [admin, direccion, analista, tecnico, responsable] 
+  {
+    path: '/dashboard',
+    label: 'Dashboard',
+    icon: HouseComponent,
+    requiredRoles: RoleAccess.ALL_USERS, // [admin, direccion, analista, tecnico, responsable]
   },
-  { 
-    path: '/solicitud-trabajo', 
-    label: 'Solicitud de Trabajo', 
-    icon: CarpetaIcon, 
-    requiredRoles: RoleAccess.MANAGEMENT // [admin, direccion, analista] 
+  {
+    path: '/solicitud-trabajo',
+    label: 'Solicitud de Trabajo',
+    icon: CarpetaIcon,
+    requiredRoles: RoleAccess.MANAGEMENT, // [admin, direccion, analista]
   },
-
-    { 
-    path: '/admin-formularios', 
-    label: 'Administración de Formularios', 
-    icon: CarpetaIcon, 
-   // requiredRoles: RoleAccess.MANAGEMENT // [admin, direccion, analista] 
+  {
+    path: '/lista-solicitudes',
+    label: 'Bandeja de solicitudes',
+    icon: ListaSolicitudesIcon,
+    requiredRoles: RoleAccess.MANAGEMENT, // Basado en roles de revisión y auditoría
   },
-  { 
-    path: '/lista-solicitudes', 
-    label: 'Bandeja de solicitudes', 
-    icon: ListaSolicitudesIcon, 
-    requiredRoles: RoleAccess.MANAGEMENT // Basado en roles de revisión y auditoría 
-  },
-  { 
+  {
     label: 'Gestión de Vehiculos',
     icon: CarIcon,
     expanded: false,
-    requiredRoles: RoleAccess.ADMIN_ONLY, // Acceso restringido a administración 
+    requiredRoles: RoleAccess.ADMIN_ONLY, // Acceso restringido a administración
     children: [
-      { 
-        path: '/horarios-laborales', 
-        label: 'Horarios laborales', 
-        icon: HorariosLaboralesIcon, 
-        requiredRoles: RoleAccess.ADMIN_ONLY 
+      {
+        path: '/horarios-laborales',
+        label: 'Horarios laborales',
+        icon: HorariosLaboralesIcon,
+        requiredRoles: RoleAccess.ADMIN_ONLY,
       },
-      { 
-        path: '/por-contraloria', 
-        label: 'Por contraloria', 
-        icon: PorContraloriaIcon, 
-        requiredRoles: RoleAccess.MANAGEMENT // Permite revisión por Analistas/Dirección 
+      {
+        path: '/por-contraloria',
+        label: 'Por contraloria',
+        icon: PorContraloriaIcon,
+        requiredRoles: RoleAccess.MANAGEMENT, // Permite revisión por Analistas/Dirección
       },
-    ]
+    ],
   },
-  { 
+  {
     label: 'Operaciones de Campo',
     icon: OperacionesCampoIcon,
     expanded: false,
-    requiredRoles: RoleAccess.OPERATIONAL, // [admin, tecnico, responsable_campo] 
+    requiredRoles: RoleAccess.OPERATIONAL, // [admin, tecnico, responsable_campo]
     children: [
-      { 
-        path: '/orden-trabajo-in-situ', 
-        label: 'Orden de trabajo In Situ', 
-        icon: OrdenTrabajoInSituIcon, 
-        requiredRoles: RoleAccess.OPERATIONAL 
+      {
+        path: '/orden-trabajo-in-situ',
+        label: 'Orden de trabajo In Situ',
+        icon: OrdenTrabajoInSituIcon,
+        requiredRoles: RoleAccess.OPERATIONAL,
       },
-      { 
-        path: '/plan-muestreo', 
-        label: 'Plan de Muestreo', 
-        icon: PlanMuestreoIcon, 
-        requiredRoles: RoleAccess.OPERATIONAL 
+      {
+        path: '/plan-muestreo',
+        label: 'Plan de Muestreo',
+        icon: PlanMuestreoIcon,
+        requiredRoles: RoleAccess.OPERATIONAL,
       },
-    ]
-  }
+    ],
+  },
+
+  {
+    path: '/admin-formularios',
+    label: 'Administración de Formularios',
+    icon: CarpetaIcon,
+    // requiredRoles: RoleAccess.MANAGEMENT // [admin, direccion, analista]
+  },
 ];
