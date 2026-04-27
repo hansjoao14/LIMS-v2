@@ -150,7 +150,6 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
 
   guardar(): void {
     this.guardando = true;
-    console.log('[AtributoForm] payload →', JSON.stringify(this.formData, null, 2));
     const op$ = this.atributo
       ? this.atributoService.actualizar(this.atributo.atributo_formulario_id, this.formData)
       : this.atributoService.crear(this.formData);

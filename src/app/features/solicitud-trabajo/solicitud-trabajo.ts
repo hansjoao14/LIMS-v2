@@ -93,8 +93,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   // ── Datos de la solicitud registrada ────────────────────────────────────
   solicitudRegistradaId: string | null = null;
   secuencialAsignado: string | null = null;
-  ejercicioId: number | null = null;
-  periodoId: number | null = null;
 
   // ── Step 1: establecimientos y técnicos ──────────────────────────────────
   establecimientos: Establecimiento[] = [];
@@ -393,9 +391,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     const valorSolicitud = [...camposNormales, ...camposSchedule];
     const payload = { valorSolicitud };
 
-    console.log('[Horario Laboral] items seleccionados:', [...this.selectedScheduleIndexes]);
-    console.log('[Payload enviado al backend]:', payload);
-
     try {
       await firstValueFrom(this.service.guardarValoresSolicitud(payload));
       this.zone.run(() => this.avanzarPaso());
@@ -449,11 +444,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     try {
       const ejercicio = await this.periodoService.getEjercicioByAnio(anio);
       if (!ejercicio) throw new Error(`No hay ejercicio activo para el año ${anio}`);
-      this.ejercicioId = ejercicio.id;
 
       const periodo = await this.periodoService.getPeriodoByEjercicioAndMes(ejercicio.id, mes);
       if (!periodo) throw new Error(`No hay periodo activo para el mes ${mes}`);
-      this.periodoId = periodo.id;
 
       const payload: SolicitudPayload = {
         formulario_id: this.formulario?.formulario_id ?? null,
