@@ -45,7 +45,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.formData = this.atributo ? this.fromAtributo(this.atributo) : this.emptyForm();
+    this.formData = new AtributoFormularioPayload(this.formulario?.id ?? '', this.atributo ?? undefined);
     this.cargarCatalogos();
 
     if (this.formData.catalogo_id) {
@@ -172,50 +172,6 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
         });
       },
     });
-  }
-
-  private fromAtributo(attr: ReportAtributoFormulario): AtributoFormularioPayload {
-    return {
-      formulario_id: attr.formulario_id,
-      nombre: attr.atributo_formulario_nombre,
-      pregunta: attr.atributo_formulario_pregunta,
-      ayuda: attr.atributo_formulario_ayuda ?? '',
-      cttipo_dato_id: attr.ctipo_dato_id ? Number(attr.ctipo_dato_id) : 0,
-      ctipo_respuesta_id: attr.ctipo_respuesta_id ? Number(attr.ctipo_respuesta_id) : 0,
-      orden: attr.orden,
-      catalogo_id: attr.catalogo_id ? Number(attr.catalogo_id) : null,
-      jornada_id: attr.jornada_id ?? '',
-      atributo_id: attr.atributo_id ?? '',
-      item_catalogo_id: attr.item_catalogo_id ?? '',
-      num_caracter: attr.num_caracter,
-      num_rango: attr.num_rango,
-      num_atras: attr.num_atras,
-      num_adelante: attr.num_adelante,
-      is_dependent: String(attr.is_dependent) === 'true',
-      is_dependent_catalogo: String(attr.is_dependent_catalogo) === 'true',
-    };
-  }
-
-  private emptyForm(): AtributoFormularioPayload {
-    return {
-      formulario_id: this.formulario?.id ?? '',
-      nombre: '',
-      pregunta: '',
-      ayuda: '',
-      cttipo_dato_id: 0,
-      ctipo_respuesta_id: 0,
-      orden: 1,
-      catalogo_id: null,
-      jornada_id: '',
-      atributo_id: '',
-      item_catalogo_id: '',
-      num_caracter: null,
-      num_rango: null,
-      num_atras: null,
-      num_adelante: null,
-      is_dependent: false,
-      is_dependent_catalogo: false,
-    };
   }
 
   ngOnDestroy(): void {
