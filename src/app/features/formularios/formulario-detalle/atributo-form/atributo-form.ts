@@ -20,6 +20,7 @@ import { Catalogo, ItemCatalogo } from '../../../../interfaces/catalogos/catalog
 export class AtributoFormComponent implements OnInit, OnDestroy {
   @Input() formulario!: ReportFormulario;
   @Input() atributo: ReportAtributoFormulario | null = null;
+  @Input() atributos: ReportAtributoFormulario[] = [];
   @Output() cerrado = new EventEmitter<void>();
   @Output() guardado = new EventEmitter<void>();
 
@@ -80,6 +81,12 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
           );
         },
       });
+  }
+
+  get atributosDependibles(): ReportAtributoFormulario[] {
+    return this.atributos.filter(
+      (a) => a.atributo_formulario_id !== this.atributo?.atributo_formulario_id,
+    );
   }
 
   onTipoRespuestaChange(): void {

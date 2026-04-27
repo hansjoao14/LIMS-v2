@@ -228,14 +228,20 @@
           </div>
           <div>
             <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1"
-              >Atributo ID</label
+              >Depende de</label
             >
-            <input
-              type="text"
+            <select
               [(ngModel)]="formData.atributo_id"
-              placeholder="—"
-              class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#1e3a8a] transition-colors font-mono"
-            />
+              class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#1e3a8a] transition-colors bg-white"
+            >
+              <option [ngValue]="''">— Ninguno —</option>
+              @for (a of atributosDependibles; track a.atributo_formulario_id) {
+                <option [ngValue]="a.atributo_formulario_id">
+                  {{ a.atributo_formulario_pregunta }} ({{ a.atributo_formulario_nombre }})
+                </option>
+              }
+            </select>
+
           </div>
         </div>
       </div>
