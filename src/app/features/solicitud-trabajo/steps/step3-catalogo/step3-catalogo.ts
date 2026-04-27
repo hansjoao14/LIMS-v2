@@ -38,8 +38,14 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
   @Input() notasAgua: string[] = [];
   @Input() notasAire: string[] = [];
   @Input() notasRuido: string[] = [];
+  @Input() estadoPrevio: MatrizConHijosUI[] = [];
+  @Input() ensayosMuestreoPrevio: EnsayoMuestreo[] = [];
+  @Input() ensayosResidualesPrevio: EnsayoLaboratorio[] = [];
   @Output() next = new EventEmitter<MatrizConHijosUI[]>();
   @Output() prev = new EventEmitter<void>();
+  @Output() estadoCambiado = new EventEmitter<MatrizConHijosUI[]>();
+  @Output() ensayosMuestreoCambiado = new EventEmitter<EnsayoMuestreo[]>();
+  @Output() ensayosResidualesCambiado = new EventEmitter<EnsayoLaboratorio[]>();
 
   readonly CATALOGO_MATRICES_ID = 17;
   readonly ENSAYO_ID_MUESTREO = 19;
@@ -77,18 +83,28 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
     if (this.isMatriz(grupo, 'agua')) {
       this.cargarEnsayosAgua(grupo);
     }
+    this.estadoCambiado.emit(this.matricesConHijos);
   }
 
   private getMatricesConHijos(): void {
     this.catalogoService.getMatricesConHijos(this.CATALOGO_MATRICES_ID).subscribe({
       next: (data) => {
+        const previoHijos = this.estadoPrevio.flatMap((m) => m.hijos);
         this.matricesConHijos = data.map((item) => ({
           collapsed: false,
           matriz: item.matriz,
-          hijos: item.hijos.map((h) => ({ ...h, activo: false, cantidad: null })),
+          hijos: item.hijos.map((h) => {
+            const previo = previoHijos.find((ph) => ph.id === h.id);
+            return { ...h, activo: previo?.activo ?? false, cantidad: previo?.cantidad ?? null };
+          }),
         }));
         this.loading = false;
         this.spinner.hide('catalogo-step3');
+
+        const aguaGrupo = this.matricesConHijos.find((m) => this.isMatriz(m, 'agua'));
+        if (aguaGrupo?.hijos.some((h) => h.activo)) {
+          this.cargarEnsayosAgua(aguaGrupo);
+        }
       },
       error: () => {
         this.loading = false;
@@ -113,11 +129,23 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
         next: (items) => {
           this.ensayosMuestreo = items
             .filter((i) => i.ensayo_id === this.ENSAYO_ID_MUESTREO)
-            .map((i) => this.mapToMuestreo(i));
+            .map((i) => {
+              const base = this.mapToMuestreo(i);
+              const previo = this.ensayosMuestreoPrevio.find((p) => p.parametro === base.parametro);
+              return { ...base, activo: previo?.activo ?? false };
+            });
           this.ensayosResiduales = items
             .filter((i) => i.ensayo_id !== this.ENSAYO_ID_MUESTREO)
-            .map((i) => this.mapToLaboratorio(i));
+            .map((i) => {
+              const base = this.mapToLaboratorio(i);
+              const previo = this.ensayosResidualesPrevio.find(
+                (p) => p.identificacion === base.identificacion,
+              );
+              return { ...base, activo: previo?.activo ?? false };
+            });
           this.loadingEnsayos = false;
+          this.ensayosMuestreoCambiado.emit(this.ensayosMuestreo);
+          this.ensayosResidualesCambiado.emit(this.ensayosResiduales);
         },
         error: () => (this.loadingEnsayos = false),
       });
@@ -160,9 +188,11 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
 
   toggleEnsayoMuestreo(idx: number): void {
     this.ensayosMuestreo[idx].activo = !this.ensayosMuestreo[idx].activo;
+    this.ensayosMuestreoCambiado.emit(this.ensayosMuestreo);
   }
   toggleEnsayoResidual(idx: number): void {
     this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo;
+    this.ensayosResidualesCambiado.emit(this.ensayosResiduales);
   }
   toggleEnsayoAire(idx: number): void {
     this.ensayosAire[idx].activo = !this.ensayosAire[idx].activo;

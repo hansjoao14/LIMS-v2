@@ -75,6 +75,12 @@
           [notasAgua]="notasAgua"
           [notasAire]="notasAire"
           [notasRuido]="notasRuido"
+          [estadoPrevio]="catalogosSeleccionados"
+          [ensayosMuestreoPrevio]="ensayosMuestreo"
+          [ensayosResidualesPrevio]="ensayosResiduales"
+          (estadoCambiado)="catalogosSeleccionados = $event"
+          (ensayosMuestreoCambiado)="ensayosMuestreo = $event"
+          (ensayosResidualesCambiado)="ensayosResiduales = $event"
           (next)="onStep3Next($event)"
           (prev)="goPrevStep()"
         >

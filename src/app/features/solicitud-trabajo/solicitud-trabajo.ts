@@ -36,7 +36,7 @@ import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/per
 
 import { Establecimiento } from '../../interfaces/solicitudes/solicitud-trabajo/establecimiento.interface';
 import { Tecnico } from '../../interfaces/solicitudes/solicitud-trabajo/tecnico.interface';
-import { EnsayoLaboratorio } from '../../interfaces/solicitudes/solicitud-trabajo/ensayo.interface';
+import { EnsayoLaboratorio, EnsayoMuestreo } from '../../interfaces/solicitudes/solicitud-trabajo/ensayo.interface';
 import {
   DatosSRI,
   DatosRegistroCivil,
@@ -107,6 +107,8 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   catalogosSeleccionados: MatrizConHijosUI[] = [];
   ensayosAire: EnsayoLaboratorio[] = [];
   ensayosRuido: EnsayoLaboratorio[] = [];
+  ensayosMuestreo: EnsayoMuestreo[] = [];
+  ensayosResiduales: EnsayoLaboratorio[] = [];
   ruidoInfo = { tipoUsoSueloOperador: '', tipoUsoSueloPCA: '', direccionPCA: '', telefonoPCA: '' };
   notasAgua: string[] = [];
   notasAire: string[] = [];
