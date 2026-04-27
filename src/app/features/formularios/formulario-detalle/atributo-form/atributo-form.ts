@@ -45,7 +45,10 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.formData = new AtributoFormularioPayload(this.formulario?.id ?? '', this.atributo ?? undefined);
+    this.formData = new AtributoFormularioPayload(
+      this.formulario?.id ?? '',
+      this.atributo ?? undefined,
+    );
     this.cargarCatalogos();
 
     if (this.formData.catalogo_id) {
