@@ -67,18 +67,24 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
 
   cargarItemsCatalogo(catalogoId: number): void {
     this.cargandoItems = true;
-    this.cataloService.getItemsByCatalogoId(catalogoId).pipe(takeUntil(this.destroy$)).subscribe({
-      next: ({ data }) => {
-        this.zone.run(() => {
-          this.itemsCatalogo = data;
-          this.cargandoItems = false;
-        });
-      },
-      error: (err) => {
-        this.zone.run(() => (this.cargandoItems = false));
-        this.toastr.showError(err?.error?.message ?? 'No se pudo cargar los items del catálogo', 'Error');
-      },
-    });
+    this.cataloService
+      .getItemsByCatalogoId(catalogoId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ data }) => {
+          this.zone.run(() => {
+            this.itemsCatalogo = data;
+            this.cargandoItems = false;
+          });
+        },
+        error: (err) => {
+          this.zone.run(() => (this.cargandoItems = false));
+          this.toastr.showError(
+            err?.error?.message ?? 'No se pudo cargar los items del catálogo',
+            'Error',
+          );
+        },
+      });
   }
 
   toggleItem(id: string): void {
@@ -91,28 +97,67 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
     this.formData.item_catalogo_id = this.selectedItemIds.join(',');
   }
 
+  onTipoRespuestaChange(): void {
+    if (this.formData.ctipo_respuesta_id) {
+      this.cargarTiposDato([this.formData.ctipo_respuesta_id]);
+    } else {
+      this.tiposDato = [];
+      this.formData.cttipo_dato_id = 0;
+    }
+  }
+
+  private cargarTiposDato(parentIds: number[]): void {
+    this.cataloService
+      .getChildrenByParentIds(parentIds)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ data }) => (this.tiposDato = data),
+        error: (err) =>
+          this.toastr.showError(
+            err?.error?.message ?? 'No se pudo cargar los tipos de dato',
+            'Error',
+          ),
+      });
+  }
+
   isItemSelected(id: string): boolean {
     return this.selectedItemIds.includes(id);
   }
 
   private cargarCatalogos(): void {
-    this.cataloService.getItemsByCatalogoId(13).pipe(takeUntil(this.destroy$)).subscribe({
-      next: ({ data }) => {
-        this.tiposDato = data;
-        this.tiposRespuesta = data;
-      },
-      error: (err) => this.toastr.showError(err?.error?.message ?? 'No se pudo cargar los tipos', 'Error'),
-    });
+    if (this.formData.ctipo_respuesta_id) {
+      this.cargarTiposDato([this.formData.ctipo_respuesta_id]);
+    }
 
-    this.cataloService.getItemsByCatalogoId(26).pipe(takeUntil(this.destroy$)).subscribe({
-      next: ({ data }) => (this.jornadas = data),
-      error: (err) => this.toastr.showError(err?.error?.message ?? 'No se pudo cargar las jornadas', 'Error'),
-    });
+    this.cataloService
+      .getItemsByCatalogoId(13)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ data }) => (this.tiposRespuesta = data),
+        error: (err) =>
+          this.toastr.showError(
+            err?.error?.message ?? 'No se pudo cargar los tipos de respuesta',
+            'Error',
+          ),
+      });
 
-    this.cataloService.getCollectionCatalogo().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (data) => (this.catalogos = data),
-      error: (err) => this.toastr.showError(err?.error?.message ?? 'No se pudo cargar los catálogos', 'Error'),
-    });
+    this.cataloService
+      .getItemsByCatalogoId(26)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ data }) => (this.jornadas = data),
+        error: (err) =>
+          this.toastr.showError(err?.error?.message ?? 'No se pudo cargar las jornadas', 'Error'),
+      });
+
+    this.cataloService
+      .getCollectionCatalogo()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => (this.catalogos = data),
+        error: (err) =>
+          this.toastr.showError(err?.error?.message ?? 'No se pudo cargar los catálogos', 'Error'),
+      });
   }
 
   guardar(): void {
@@ -126,7 +171,9 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
       next: () => {
         this.zone.run(() => {
           this.guardando = false;
-          const msg = this.atributo ? 'Atributo actualizado correctamente.' : 'Atributo creado correctamente.';
+          const msg = this.atributo
+            ? 'Atributo actualizado correctamente.'
+            : 'Atributo creado correctamente.';
           this.toastr.showSuccess(msg, 'Éxito');
           this.guardado.emit();
         });
@@ -146,10 +193,10 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
       nombre: attr.atributo_formulario_nombre,
       pregunta: attr.atributo_formulario_pregunta,
       ayuda: attr.atributo_formulario_ayuda ?? '',
-      cttipo_dato_id: attr.ctipo_dato_id,
-      ctipo_respuesta_id: attr.ctipo_respuesta_id,
+      cttipo_dato_id: attr.ctipo_dato_id ? Number(attr.ctipo_dato_id) : 0,
+      ctipo_respuesta_id: attr.ctipo_respuesta_id ? Number(attr.ctipo_respuesta_id) : 0,
       orden: attr.orden,
-      catalogo_id: attr.catalogo_id,
+      catalogo_id: attr.catalogo_id ? Number(attr.catalogo_id) : null,
       jornada_id: attr.jornada_id ?? '',
       atributo_id: attr.atributo_id ?? '',
       item_catalogo_id: attr.item_catalogo_id ?? '',
@@ -157,8 +204,8 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
       num_rango: attr.num_rango,
       num_atras: attr.num_atras,
       num_adelante: attr.num_adelante,
-      is_dependent: attr.is_dependent ?? false,
-      is_dependent_catalogo: attr.is_dependent_catalogo ?? false,
+      is_dependent: String(attr.is_dependent) === 'true',
+      is_dependent_catalogo: String(attr.is_dependent_catalogo) === 'true',
     };
   }
 
