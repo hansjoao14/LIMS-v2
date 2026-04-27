@@ -33,7 +33,6 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
 
   itemsCatalogo: ItemCatalogo[] = [];
   cargandoItems = false;
-  selectedItemIds: string[] = [];
 
   private readonly destroy$ = new Subject<void>();
 
@@ -49,15 +48,11 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
     this.cargarCatalogos();
 
     if (this.formData.catalogo_id) {
-      this.selectedItemIds = this.formData.item_catalogo_id
-        ? this.formData.item_catalogo_id.split(',').filter(Boolean)
-        : [];
       this.cargarItemsCatalogo(this.formData.catalogo_id);
     }
   }
 
   onCatalogoChange(): void {
-    this.selectedItemIds = [];
     this.formData.item_catalogo_id = '';
     this.itemsCatalogo = [];
     if (this.formData.catalogo_id) {
@@ -87,16 +82,6 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
       });
   }
 
-  toggleItem(id: string): void {
-    const idx = this.selectedItemIds.indexOf(id);
-    if (idx >= 0) {
-      this.selectedItemIds.splice(idx, 1);
-    } else {
-      this.selectedItemIds.push(id);
-    }
-    this.formData.item_catalogo_id = this.selectedItemIds.join(',');
-  }
-
   onTipoRespuestaChange(): void {
     if (this.formData.ctipo_respuesta_id) {
       this.cargarTiposDato([this.formData.ctipo_respuesta_id]);
@@ -118,10 +103,6 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
             'Error',
           ),
       });
-  }
-
-  isItemSelected(id: string): boolean {
-    return this.selectedItemIds.includes(id);
   }
 
   private cargarCatalogos(): void {

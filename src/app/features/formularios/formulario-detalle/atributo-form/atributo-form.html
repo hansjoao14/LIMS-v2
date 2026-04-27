@@ -189,12 +189,6 @@
                 class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1"
               >
                 Items del Catálogo
-                @if (selectedItemIds.length > 0) {
-                  <span
-                    class="ml-1.5 bg-[#1e3a8a] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                    >{{ selectedItemIds.length }}</span
-                  >
-                }
               </label>
               @if (!formData.catalogo_id || formData.is_dependent) {
                 <p class="text-[11px] text-slate-400 italic py-2">
@@ -209,17 +203,10 @@
                   class="border border-slate-200 rounded-md max-h-40 overflow-y-auto divide-y divide-slate-100"
                 >
                   @for (item of itemsCatalogo; track item.id) {
-                    <label
-                      class="flex items-center gap-2.5 px-3 py-2 hover:bg-blue-50 cursor-pointer transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        [checked]="isItemSelected(item.id.toString())"
-                        (change)="toggleItem(item.id.toString())"
-                        class="w-3.5 h-3.5 rounded accent-[#1e3a8a] shrink-0"
-                      />
+                    <div class="flex items-center gap-2.5 px-3 py-2 hover:bg-blue-50 transition-colors">
+                      <span class="w-1.5 h-1.5 rounded-full bg-[#1e3a8a] shrink-0"></span>
                       <span class="text-xs text-slate-700">{{ item.nombre }}</span>
-                    </label>
+                    </div>
                   }
                 </div>
               }
