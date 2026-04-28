@@ -23,7 +23,7 @@ const GET_CATALOGO = gql`
 
 const GET_COLLECTION_CATALOGO = gql`
   query CollectionCatalogo {
-    collectionCatalogo(query: { pagintation: { page: null, take: 100 } }) {
+    collectionCatalogo(query: { pagination: { page: null, take: 100 } }) {
       count
       data {
         descripcion

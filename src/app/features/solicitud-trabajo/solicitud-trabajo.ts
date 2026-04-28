@@ -36,7 +36,10 @@ import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/per
 
 import { Establecimiento } from '../../interfaces/solicitudes/solicitud-trabajo/establecimiento.interface';
 import { Tecnico } from '../../interfaces/solicitudes/solicitud-trabajo/tecnico.interface';
-import { EnsayoLaboratorio, EnsayoMuestreo } from '../../interfaces/solicitudes/solicitud-trabajo/ensayo.interface';
+import {
+  EnsayoLaboratorio,
+  EnsayoMuestreo,
+} from '../../interfaces/solicitudes/solicitud-trabajo/ensayo.interface';
 import {
   DatosSRI,
   DatosRegistroCivil,
@@ -416,7 +419,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         .map((h) => ({
           solicitud_id: this.solicitudRegistradaId,
           ensayo_id: h.id,
-          ensayo_aux_id: 0,
+          ctambiental_id: grupo.matriz.id,
         })),
     );
 

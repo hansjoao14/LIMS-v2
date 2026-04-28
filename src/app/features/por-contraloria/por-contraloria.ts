@@ -116,7 +116,7 @@ export class PorContraloria implements OnInit {
     }
 
     const nuevaSolicitud: SolicitudContraloria = {
-      id: crypto.randomUUID(),
+      id: (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)),
       ...this.form.value
     };
 
