@@ -1,137 +1,137 @@
 <div class="insitu-page">
-  <div class="header-container">
-    <div class="header-left">
-      <p class="breadcrumb">Sistema LIMS / <strong>Operaciones de campo</strong></p>
-      <h1 class="main-title">Orden de trabajo In Situ</h1>
-      <p class="main-subtitle">Aquí podrás visualizar los detalles de la orden de trabajo In Situ</p>
-    </div>
-    <div class="header-right">
-      <p><strong>F-PG-09-03</strong></p>
-      <p>Elaborado por: Tec. Jorge Diaz</p>
-      <p>Fecha de solicitud: 27/05/2025</p>
-      <p>Edición: 16</p>
-    </div>
-  </div>
-
-  <div class="top-cards">
-    <div class="card card-gray">
-      <div class="form-group">
-        <label>Solicitud de trabajo No</label>
-        <div class="input-static">GADDMQ-SA-DMRCA-UCSA-2024-0395-M</div>
+  <form [formGroup]="form">
+    <div class="header-container">
+      <div class="header-left">
+        <p class="breadcrumb">Sistema LIMS / <strong>Operaciones de campo</strong></p>
+        <h1 class="main-title">Orden de trabajo In Situ</h1>
+        <p class="main-subtitle">Aquí podrás visualizar los detalles de la orden de trabajo In Situ</p>
       </div>
-      <div class="form-group">
-        <label>Orden de trabajo No</label>
-        <div class="input-static">OT-009-25-R</div>
+      <div class="header-right">
+        <p><strong>F-PG-09-03</strong></p>
+        <p>Elaborado por: Tec. Jorge Diaz</p>
+        <p>Fecha de solicitud: 27/05/2025</p>
+        <p>Edición: 16</p>
       </div>
     </div>
-    <div class="card card-gray">
-      <div class="form-group">
-        <label>Fechas máxima de entrega</label>
-        <div class="input-static center">21/02/2025</div>
+
+    <div class="top-cards">
+      <div class="card card-gray">
+        <div class="form-group">
+          <label>Solicitud de trabajo No</label>
+          <input class="form-input" formControlName="solicitudTrabajoNo" placeholder="Ej: GADDMQ-SA-DMRCA-UCSA-2024-0395-M">
+        </div>
+        <div class="form-group">
+          <label>Orden de trabajo No</label>
+          <input class="form-input" formControlName="ordenTrabajoNo" placeholder="Ej: OT-009-25-R">
+        </div>
       </div>
-      <div class="form-group">
-        <label>Fechas de emisión</label>
-        <div class="input-static center">21/02/2025</div>
+      <div class="card card-gray">
+        <div class="form-group">
+          <label>Fechas máxima de entrega</label>
+          <input class="form-input" type="date" formControlName="fechaMaximaEntrega">
+        </div>
+        <div class="form-group">
+          <label>Fechas de emisión</label>
+          <input class="form-input" type="date" formControlName="fechaEmision">
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="section-card card-blue">
-    <h3>Cliente</h3>
-    <div class="grid-2">
-      <div class="form-group">
-        <label>Solicitado por</label>
-        <div class="input-static">Ing. Vielka Cristina Altuna Alvarez</div>
-      </div>
-      <div class="form-group">
-        <label>Dirección</label>
-        <div class="input-static">Av. Río Coca E6-85 e Isla Genovesa</div>
-      </div>
-      <div class="form-group">
-        <label>Solicitud No. (Fecha; hora)</label>
-        <div class="input-static">GADDMQ-SA-DMRCA-UCSA-2025-0052-M</div>
-      </div>
-      <div class="form-group">
-        <label>Correo electrónico</label>
-        <div class="input-static">vielka.altuna@quito.gob.ec</div>
+    <div class="section-card card-blue" formGroupName="cliente">
+      <h3>Cliente</h3>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Solicitado por</label>
+          <input class="form-input" formControlName="solicitadoPor" placeholder="Nombre del solicitante">
+        </div>
+        <div class="form-group">
+          <label>Dirección</label>
+          <input class="form-input" formControlName="direccion" placeholder="Dirección">
+        </div>
+        <div class="form-group">
+          <label>Solicitud No. (Fecha; hora)</label>
+          <input class="form-input" formControlName="solicitudNo" placeholder="Ej: GADDMQ-SA-DMRCA-UCSA-2025-0052-M">
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input class="form-input" type="email" formControlName="correoElectronico" placeholder="correo@ejemplo.com">
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="section-card card-blue-darker">
-    <h3>Operador</h3>
-    <div class="grid-2">
-      <div class="form-group">
-        <label>Razón Social</label>
-        <div class="input-static">INDUSTRIA ANDINA S.A.</div>
-      </div>
-      <div class="form-group">
-        <label>Nombre Comercial</label>
-        <div class="input-static">INDUSTRIA ANDINA S.A.</div>
-      </div>
-      <div class="form-group">
-        <label>R.U.C.</label>
-        <div class="input-static">1793167640001</div>
-      </div>
-      <div class="form-group">
-        <label>Dirección</label>
-        <div class="input-static">Capitán Rafael Ramos OE1139 y Av. 10 de Agosto</div>
+    <div class="section-card card-blue-darker" formGroupName="operador">
+      <h3>Operador</h3>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Razón Social</label>
+          <input class="form-input" formControlName="razonSocial" placeholder="Razón social">
+        </div>
+        <div class="form-group">
+          <label>Nombre Comercial</label>
+          <input class="form-input" formControlName="nombreComercial" placeholder="Nombre comercial">
+        </div>
+        <div class="form-group">
+          <label>R.U.C.</label>
+          <input class="form-input" formControlName="ruc" placeholder="Ej: 1793167640001">
+        </div>
+        <div class="form-group">
+          <label>Dirección</label>
+          <input class="form-input" formControlName="direccion" placeholder="Dirección">
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="analysis-bar">ANÁLISIS REQUERIDO IN SITU</div>
+    <div class="analysis-bar">ANÁLISIS REQUERIDO IN SITU</div>
 
-  <div class="table-section">
-    <h4>Ensayos Fisico-Químicos de Emisiones Gaseosas...</h4>
-    <table>
-      <thead>
-        <tr>
-          <th>ANÁLISIS REQUERIDO</th>
-          <th>ENSAYO</th>
-          <th>IDENTIFICACIÓN</th>
-          <th>MÉTODO INTERNO</th>
-          <th>MÉTODO REFERENCIA</th>
-          <th>UNIDAD</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><div class="toggle-container"><div class="toggle"></div> No</div></td>
-          <td>MONÓXIDO DE CARBONO</td>
-          <td>CO</td>
-          <td>PEE/IAM-Q/07</td>
-          <td>EPA CTM-030</td>
-          <td>ppm / mg/Nm³</td>
-        </tr>
-        <tr>
-          <td><div class="toggle-container"><div class="toggle"></div> No</div></td>
-          <td>DIÓXIDO DE AZUFRE</td>
-          <td>ST</td>
-          <td>PEE/IAM-Q/07</td>
-          <td>EPA CTM-030</td>
-          <td>ppm / mg/Nm³</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <div class="table-section">
+      <h4>Ensayos Fisico-Químicos de Emisiones Gaseosas...</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>ANÁLISIS REQUERIDO</th>
+            <th>ENSAYO</th>
+            <th>IDENTIFICACIÓN</th>
+            <th>MÉTODO INTERNO</th>
+            <th>MÉTODO REFERENCIA</th>
+            <th>UNIDAD</th>
+          </tr>
+        </thead>
+        <tbody formArrayName="ensayos">
+          <tr *ngFor="let ensayo of ensayosArray.controls; let i = index" [formGroupName]="i">
+            <td>
+              <div class="toggle-container">
+                <div class="toggle" [class.toggle-on]="ensayo.get('seleccionado')?.value" (click)="toggleEnsayo(i)"></div>
+                <span>{{ ensayo.get('seleccionado')?.value ? 'Sí' : 'No' }}</span>
+              </div>
+            </td>
+            <td><input class="form-input table-input" formControlName="ensayo" placeholder="Ensayo"></td>
+            <td><input class="form-input table-input" formControlName="identificacion" placeholder="ID"></td>
+            <td><input class="form-input table-input" formControlName="metodoInterno" placeholder="Método interno"></td>
+            <td><input class="form-input table-input" formControlName="metodoReferencia" placeholder="Método ref."></td>
+            <td><input class="form-input table-input" formControlName="unidad" placeholder="Unidad"></td>
+          </tr>
+        </tbody>
+      </table>
+      <button type="button" class="btn-agregar" (click)="agregarEnsayo()">+ Agregar ensayo</button>
+    </div>
 
-  <div class="section-card card-gray-light">
-    <h3>Tipos de uso de suelo</h3>
-    <div class="grid-2">
-      <div class="form-group">
-        <label>Uso de suelo del Operador</label>
-        <div class="input-static bold">RESIDENCIAL (R1)</div>
-      </div>
-      <div class="form-group">
-        <label>Caracterización horaria</label>
-        <div class="input-static bold">RUIDO DIURNO</div>
+    <div class="section-card card-gray-light" formGroupName="tiposUsoSuelo">
+      <h3>Tipos de uso de suelo</h3>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Uso de suelo del Operador</label>
+          <input class="form-input bold-input" formControlName="usoSuelo" placeholder="Ej: RESIDENCIAL (R1)">
+        </div>
+        <div class="form-group">
+          <label>Caracterización horaria</label>
+          <input class="form-input bold-input" formControlName="caracterizacionHoraria" placeholder="Ej: RUIDO DIURNO">
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="footer-actions">
-    <button class="btn btn-navy">REGRESAR</button>
-    <button class="btn btn-navy">GUARDAR</button>
-  </div>
+    <div class="footer-actions">
+      <button type="button" class="btn btn-navy">REGRESAR</button>
+      <button type="button" class="btn btn-navy" (click)="guardar()">GUARDAR</button>
+    </div>
+  </form>
 </div>

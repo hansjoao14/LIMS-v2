@@ -38,10 +38,35 @@ table { width: 100%; border-collapse: collapse; background: white; border-radius
 th { background: #f8fafc; padding: 12px; font-size: 11px; color: #475569; border-bottom: 2px solid #e2e8f0; text-align: left; }
 td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 12px; color: #1d2b64; }
 
+/* Form Inputs */
+.form-input {
+  background: white;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #1d2b64;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.2s;
+}
+.form-input:focus { border-color: #1d2b64; }
+.table-input { padding: 6px 8px; font-size: 12px; }
+.bold-input { font-weight: bold; text-align: center; }
+
 /* Toggles */
 .toggle-container { display: flex; align-items: center; gap: 10px; }
-.toggle { width: 35px; height: 18px; background: #cbd5e1; border-radius: 20px; position: relative; }
-.toggle::after { content: ''; width: 14px; height: 14px; background: white; position: absolute; border-radius: 50%; top: 2px; left: 2px; }
+.toggle { width: 35px; height: 18px; background: #cbd5e1; border-radius: 20px; position: relative; cursor: pointer; transition: background 0.3s; }
+.toggle::after { content: ''; width: 14px; height: 14px; background: white; position: absolute; border-radius: 50%; top: 2px; left: 2px; transition: left 0.3s; }
+.toggle.toggle-on { background: #1d2b64; }
+.toggle.toggle-on::after { left: 19px; }
+
+/* Add row button */
+.btn-agregar { margin-top: 10px; background: none; border: 1px dashed #1d2b64; color: #1d2b64; padding: 7px 20px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+.btn-agregar:hover { background: #f0f4ff; }
 
 /* Buttons */
 .footer-actions { display: flex; gap: 15px; margin-top: 40px; }
