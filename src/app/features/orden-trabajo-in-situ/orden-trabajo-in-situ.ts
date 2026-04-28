@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { NgFor } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray } from '@angular/forms';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-orden-trabajo-in-situ',
@@ -61,7 +62,19 @@ export class OrdenTrabajoInSitu {
     control?.setValue(!control.value);
   }
 
+  private readonly COLOR_PRIMARIO = '#1e3a8a';
+
   guardar(): void {
-    console.log('Orden de trabajo In Situ:', this.form.value);
+    this.form.reset();
+    while (this.ensayosArray.length > 2) {
+      this.ensayosArray.removeAt(this.ensayosArray.length - 1);
+    }
+    Swal.fire({
+      title: '¡Guardado con éxito!',
+      text: 'La orden de trabajo In Situ ha sido guardada correctamente.',
+      icon: 'success',
+      confirmButtonColor: this.COLOR_PRIMARIO,
+      timer: 2500,
+    });
   }
 }
