@@ -4,7 +4,7 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Resolver __dirname en módulos ES
+// 🧭 Resolver __dirname en módulos ES
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -12,14 +12,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Configuración de Keycloak
+// 🧩 Configuración de Keycloak
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL || "http://185.197.251.149:8080";
 const REALM = process.env.KEYCLOAK_REALM || "faq-sgia";
 const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "api-rest-mer-pacq";
 const CLIENT_SECRET =
   process.env.KEYCLOAK_SECRET || "dvJXEnMFV6zTX7IliExmHuQhsYzYk8lY";
 
-// Helper: solicitar token genérico
+// 📦 Helper: solicitar token genérico
 async function requestToken(params) {
   const url = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`;
   const response = await fetch(url, {
@@ -78,7 +78,7 @@ app.post("/refresh", async (req, res) => {
   }
 });
 
-// Logout
+// 🚪 Logout
 app.post("/logout", async (req, res) => {
   const { refresh_token } = req.body;
   if (!refresh_token)
@@ -106,57 +106,7 @@ app.post("/logout", async (req, res) => {
   }
 });
 
-// Proxy hacia APIs externas (evita CORS en el browser)
-const SGIA_BASE = "https://api-sgia.demo-peav-quito.com";
-const LIMS_BASE = "https://api-lims-test.demo-peav-quito.com";
-
-const PROXY_ROUTES = [
-  { prefix: "/proxy/graphql-catalogo",      target: `${LIMS_BASE}/graphql-catalogo` },
-  { prefix: "/proxy/graphql-establecimiento", target: `${LIMS_BASE}/graphql-establecimiento` },
-  { prefix: "/proxy/graphql-reportes",      target: `${LIMS_BASE}/graphql-reportes` },
-  { prefix: "/proxy/graphql",               target: `${SGIA_BASE}/api/graphql` },
-  { prefix: "/proxy/reportes",              target: `${LIMS_BASE}/api/reportes` },
-  { prefix: "/proxy/solicitud",             target: `${LIMS_BASE}/api/solicitud` },
-  { prefix: "/proxy/parametro",             target: `${LIMS_BASE}/api/parametro` },
-  { prefix: "/proxy/sgia",                  target: `${SGIA_BASE}` },
-];
-
-async function proxyRequest(req, res, targetBase, prefix) {
-  const subPath = req.path.replace(prefix, "") || "";
-  const query = req.originalUrl.includes("?")
-    ? req.originalUrl.substring(req.originalUrl.indexOf("?"))
-    : "";
-  const targetUrl = `${targetBase}${subPath}${query}`;
-
-  const headers = { "Content-Type": req.headers["content-type"] || "application/json" };
-  if (req.headers["authorization"]) headers["authorization"] = req.headers["authorization"];
-
-  const opts = { method: req.method, headers };
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    opts.body = JSON.stringify(req.body);
-  }
-
-  try {
-    const response = await fetch(targetUrl, opts);
-    const contentType = response.headers.get("content-type") || "";
-    if (contentType.includes("application/json")) {
-      res.status(response.status).json(await response.json());
-    } else {
-      res.status(response.status).send(await response.text());
-    }
-  } catch (err) {
-    console.error(`[proxy] Error → ${targetUrl}:`, err.message);
-    res.status(502).json({ error: "Proxy error", detail: err.message });
-  }
-}
-
-for (const route of PROXY_ROUTES) {
-  app.all(`${route.prefix}*`, (req, res) =>
-    proxyRequest(req, res, route.target, route.prefix),
-  );
-}
-
-// Servir Angular compilado
+// 📦 Servir Angular compilado
 const angularDistPath = path.join(__dirname, "dist/LIMS/browser");
 app.use(express.static(angularDistPath, { maxAge: "1y", etag: false }));
 
@@ -165,7 +115,7 @@ app.use((req, res) => {
   res.sendFile(path.join(angularDistPath, "index.html"));
 });
 
-// Iniciar servidor
+// 🚀 Iniciar servidor
 const PORT = process.env.PORT || 5200;
 app.listen(PORT, () => {
   console.log(` Servidor corriendo en http://localhost:${PORT}`);
