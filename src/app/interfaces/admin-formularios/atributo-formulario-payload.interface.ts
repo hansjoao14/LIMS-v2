@@ -9,9 +9,9 @@ export class AtributoFormularioPayload {
   ctipo_respuesta_id: number;
   orden: number;
   catalogo_id: number | null;
-  jornada_id: string;
-  atributo_id: string;
-  item_catalogo_id: string;
+  jornada_id: string | null;
+  atributo_id: string | null;
+  item_catalogo_id: string | null;
   num_caracter: number | null;
   num_rango: number | null;
   num_atras: number | null;
@@ -28,9 +28,9 @@ export class AtributoFormularioPayload {
     this.ctipo_respuesta_id     = source?.ctipo_respuesta_id ? Number(source.ctipo_respuesta_id) : 0;
     this.orden                  = source?.orden ?? 1;
     this.catalogo_id            = source?.catalogo_id ? Number(source.catalogo_id) : null;
-    this.jornada_id             = source?.jornada_id ?? '';
-    this.atributo_id            = source?.atributo_id ?? '';
-    this.item_catalogo_id       = source?.item_catalogo_id ?? '';
+    this.jornada_id             = source?.jornada_id ?? null;
+    this.atributo_id            = source?.atributo_id ?? null;
+    this.item_catalogo_id       = source?.item_catalogo_id ?? null;
     this.num_caracter           = source?.num_caracter ?? null;
     this.num_rango              = source?.num_rango ?? null;
     this.num_atras              = source?.num_atras ?? null;
