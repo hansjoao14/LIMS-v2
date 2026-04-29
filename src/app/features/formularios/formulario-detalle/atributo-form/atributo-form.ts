@@ -27,6 +27,20 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
   formData!: AtributoFormularioPayload;
   guardando = false;
 
+  readonly booleanOptions: { field: keyof AtributoFormularioPayload; label: string }[] = [
+    { field: 'obligatorio',          label: 'Obligatorio'             },
+    { field: 'estado',               label: 'Activo'                  },
+    { field: 'hidden',               label: 'Oculto'                  },
+    { field: 'readonly',             label: 'Solo lectura'            },
+    { field: 'multivaluado',         label: 'Multivaluado'            },
+    { field: 'is_ws_sri',            label: 'Integración SRI'         },
+    { field: 'is_ws_civil',          label: 'Integración Civil'       },
+    { field: 'is_ws_iess',           label: 'Integración IESS'        },
+    { field: 'is_dependent',         label: 'Es dependiente'          },
+    { field: 'is_dependent_catalogo',label: 'Dependiente de catálogo' },
+    { field: 'is_list_empleado',     label: 'Lista de empleados'      },
+  ];
+
   tiposDato: ItemCatalogo[] = [];
   tiposRespuesta: ItemCatalogo[] = [];
   jornadas: ItemCatalogo[] = [];
