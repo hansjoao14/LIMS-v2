@@ -1,168 +1,230 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule, FormControl } from '@angular/forms';
-import Swal from 'sweetalert2'; // Importación de SweetAlert2
+import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, ValidatorFn, Validators } from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
+import Swal from 'sweetalert2';
 
-interface SolicitudVehiculo {
-  id: string;
-  fecha: string;
-  ocupantes: number;
-  destino: string;
-  horaSalida: string;
-  horaRetorno: string;
-  vehiculo: string;
-  funcionario: string;
-  actividad: string;
-  observaciones: string;
-}
+import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { FieldConfig, FormularioLaboratorio, Pregunta } from '../solicitud-trabajo/model/solicitud-trabajo.model';
+
+type VehiculoRecord = { id: string } & Record<string, unknown>;
 
 @Component({
   selector: 'app-horarios-laborales',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './horarios-laborales.html',
-  styleUrls: ['./horarios-laborales.css']
+  styleUrls: ['./horarios-laborales.css'],
 })
-export class HorariosLaborales implements OnInit {
-  
+export class HorariosLaborales implements OnInit, OnDestroy {
   form: FormGroup;
-  solicitudes: SolicitudVehiculo[] = [];
+  formulario: FormularioLaboratorio | null = null;
+  fields: FieldConfig[] = [];
+  loading = true;
+  solicitudes: VehiculoRecord[] = [];
+
   readonly STORAGE_KEY = 'lims_gestion_vehiculos';
-  readonly COLOR_PRIMARIO = '#1d2b64'; // Color institucional para botones de SweetAlert
+  readonly COLOR_PRIMARIO = '#1d2b64';
 
-  // Datos para el select según tu diseño
-  funcionarios = [
-    { id: '1', nombre: 'TÉCNICO DE APOYO - QUIM. OSCAR CASTILLO' },
-    { id: '2', nombre: 'COORDINADOR DE FLOTA - ING. JUAN PÉREZ' },
-    { id: '3', nombre: 'RESP. LOGÍSTICA - LIC. MARÍA LOPEZ' },
-    { id: '4', nombre: 'ING. FRANCISCO SOSA (CC:1716986086; CEL:0958998622)' }
-  ];
+  private readonly destroy$ = new Subject<void>();
 
-  constructor(private fb: FormBuilder) {
-    this.form = this.fb.group({
-      fecha: ['', Validators.required],
-      ocupantes: [null, [Validators.required, Validators.min(1)]],
-      destino: ['', Validators.required],
-      horaSalida: ['', Validators.required],
-      horaRetorno: ['', Validators.required],
-      vehiculo: ['', Validators.required],
-      funcionario: ['', Validators.required],
-      actividad: ['', Validators.required],
-      observaciones: ['', [Validators.required, Validators.maxLength(250)]],
-    });
+  constructor(
+    private fb: FormBuilder,
+    private solicitudService: SolicitudService,
+    private zone: NgZone,
+  ) {
+    this.form = this.fb.group({});
   }
 
   ngOnInit(): void {
     this.cargarDatos();
+    this.cargarFormularioDinamico();
   }
 
-  // --- HELPERS PARA LA VISTA (Validación de colores) ---
-  
-  get obsLen() {
-    return this.form.get('observaciones')?.value?.length || 0;
+  private cargarFormularioDinamico(): void {
+    this.solicitudService
+      .getFormulario('1002')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (formulario) => {
+          this.zone.run(() => {
+            this.formulario = formulario;
+            this.fields = formulario.preguntas
+              .filter((p) => p.estado !== false)
+              .map((p) => this.toFieldConfig(p));
+            this.generateControls();
+            this.applyDependencyLogic();
+            this.loading = false;
+          });
+        },
+        error: () => {
+          this.zone.run(() => {
+            this.loading = false;
+            Swal.fire('Error', 'No se pudo cargar el formulario', 'error');
+          });
+        },
+      });
   }
 
-  getControl(nombreCampo: string): FormControl {
-    return this.form.get(nombreCampo) as FormControl;
+  private toFieldConfig(pregunta: Pregunta): FieldConfig {
+    return {
+      id: pregunta.id,
+      key: pregunta.nombre,
+      label: pregunta.pregunta,
+      order: pregunta.orden,
+      controlType: this.resolveControlType(pregunta),
+      section: 'operador',
+      placeholder: typeof pregunta.ayuda === 'string' ? pregunta.ayuda : '',
+      required: pregunta.obligatorio,
+      readonly: pregunta.readonly,
+      hidden: pregunta.hidden,
+      maxLength: typeof pregunta.num_caracter === 'number' ? pregunta.num_caracter : null,
+      options: pregunta.catalogos ?? [],
+      scheduleItems: pregunta.jornada_laboral_item ?? [],
+      dependsOn: pregunta.atributo_id
+        ? {
+            fieldId: String(pregunta.atributo_id),
+            triggerValue: String(pregunta.item_catalogo_id ?? ''),
+          }
+        : undefined,
+      integrations: {
+        sri: pregunta.is_ws_sri,
+        civil: pregunta.is_ws_civil,
+        iess: pregunta.is_ws_iess ?? false,
+      },
+      source: pregunta,
+    };
   }
 
-  esCampoInvalido(nombreCampo: string): boolean {
-    const control = this.getControl(nombreCampo);
-    return control.invalid && (control.touched || control.dirty);
+  private resolveControlType(pregunta: Pregunta): FieldConfig['controlType'] {
+    if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
+    if (typeof pregunta.num_caracter === 'number' && pregunta.num_caracter > 200) return 'textarea';
+    return 'text';
   }
 
-  // -------------------------------------------------------------
+  getInputType(field: FieldConfig): string {
+    const tipo = field.source.tipo_respuesta;
+    if (tipo === 'Fecha') return 'date';
+    if (tipo === 'Numerico') return 'number';
+    return 'text';
+  }
 
-  // Carga desde localStorage
-  cargarDatos() {
-    const data = localStorage.getItem(this.STORAGE_KEY);
-    if (data) {
-      this.solicitudes = JSON.parse(data);
-      // Ordenar por fecha y luego por hora
-      this.solicitudes.sort((a, b) => a.fecha.localeCompare(b.fecha) || a.horaSalida.localeCompare(b.horaSalida));
+  private generateControls(): void {
+    for (const field of this.fields) {
+      if (this.form.contains(field.key)) continue;
+      const validators: ValidatorFn[] = [];
+      if (field.required && !field.hidden) validators.push(Validators.required);
+      if (field.maxLength) validators.push(Validators.maxLength(field.maxLength));
+      this.form.addControl(
+        field.key,
+        this.fb.control({ value: '', disabled: field.hidden }, validators),
+      );
     }
   }
 
-  // Agrupamiento por día para la tabla (Lunes, Martes...)
-  get solicitudesAgrupadas() {
-    const dias = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
-    const grupos: { diaNombre: string, items: SolicitudVehiculo[] }[] = [];
-
-    this.solicitudes.forEach(sol => {
-      const fechaObj = new Date(sol.fecha + 'T00:00:00');
-      const nombreDia = dias[fechaObj.getDay()];
-      
-      let grupo = grupos.find(g => g.diaNombre === nombreDia);
-      if (!grupo) {
-        grupo = { diaNombre: nombreDia, items: [] };
-        grupos.push(grupo);
-      }
-      grupo.items.push(sol);
-    });
-
-    return grupos;
+  private applyDependencyLogic(): void {
+    this.updateDependentFields();
+    this.form.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.updateDependentFields());
   }
 
-  guardar() {
+  private updateDependentFields(): void {
+    for (const field of this.fields) {
+      if (!field.dependsOn) continue;
+      const parentField = this.fields.find((c) => c.id === field.dependsOn?.fieldId);
+      const parentValue = parentField ? this.form.get(parentField.key)?.value : null;
+      const hide = String(parentValue ?? '') !== field.dependsOn.triggerValue;
+      field.hidden = hide;
+      const control = this.form.get(field.key);
+      if (!control) continue;
+      if (hide) {
+        control.disable({ emitEvent: false });
+        control.reset('', { emitEvent: false });
+      } else {
+        control.enable({ emitEvent: false });
+      }
+    }
+  }
+
+  get visibleFields(): FieldConfig[] {
+    return this.fields.filter((f) => !f.hidden);
+  }
+
+  esCampoInvalido(key: string): boolean {
+    const c = this.form.get(key);
+    return !!c && c.invalid && (c.touched || c.dirty);
+  }
+
+  cargarDatos(): void {
+    const data = localStorage.getItem(this.STORAGE_KEY);
+    if (data) {
+      this.solicitudes = JSON.parse(data);
+    }
+  }
+
+  guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      
-      // SweetAlert de Advertencia
       Swal.fire({
         title: 'Formulario Incompleto',
-        text: 'Por favor, llene todos los campos requeridos marcados en rojo para continuar.',
+        text: 'Por favor, llene todos los campos requeridos para continuar.',
         icon: 'warning',
         confirmButtonColor: this.COLOR_PRIMARIO,
-        confirmButtonText: 'Entendido'
+        confirmButtonText: 'Entendido',
       });
       return;
     }
 
-    const nuevaSolicitud: SolicitudVehiculo = {
-      id: (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)),
-      ...this.form.value
+    const record: VehiculoRecord = {
+      id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36),
+      ...this.form.getRawValue(),
     };
 
-    this.solicitudes.push(nuevaSolicitud);
+    this.solicitudes.push(record);
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.solicitudes));
-    
     this.form.reset();
-    this.cargarDatos();
 
-    // SweetAlert de Éxito
     Swal.fire({
-      title: '¡Programación Guardada!',
-      text: 'El vehículo ha sido programado correctamente en el cronograma.',
+      title: '¡Guardado!',
+      text: 'El registro ha sido guardado correctamente.',
       icon: 'success',
       confirmButtonColor: this.COLOR_PRIMARIO,
-      timer: 2500
+      timer: 2500,
     });
   }
 
-  eliminar(id: string) {
-    // SweetAlert de Confirmación
+  eliminar(id: string): void {
     Swal.fire({
       title: '¿Está seguro de eliminar?',
-      text: "Esta programación se quitará del cronograma y no se puede revertir.",
+      text: 'Esta programación se quitará del cronograma y no se puede revertir.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: this.COLOR_PRIMARIO,
       cancelButtonColor: '#d33',
       confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
     }).then((result) => {
       if (result.isConfirmed) {
-        this.solicitudes = this.solicitudes.filter(s => s.id !== id);
+        this.solicitudes = this.solicitudes.filter((s) => s.id !== id);
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.solicitudes));
-        
         Swal.fire({
           title: 'Eliminado',
           text: 'La programación ha sido borrada.',
           icon: 'success',
           confirmButtonColor: this.COLOR_PRIMARIO,
-          timer: 1500
+          timer: 1500,
         });
       }
     });
+  }
+
+  getFieldValue(record: VehiculoRecord, key: string): unknown {
+    return record[key] ?? '—';
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
