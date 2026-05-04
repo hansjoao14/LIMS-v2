@@ -213,31 +213,17 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (valores: ReportValorSolicitud[]) => {
-          // valor_catalogo no está en el schema del reporte. Lo inferimos: si un campo
-          // dependiente tiene valor guardado y tiene atributo_id + item_catalogo_id,
-          // el selector padre estaba en ese item_catalogo_id al guardar.
-          const inferredSelectValues = new Map<string, number>();
-          for (const v of valores) {
-            const tieneValor =
-              v.valor_texto != null || v.valor_numero != null || v.valor_fecha != null;
-            if (v.atributo_id && v.item_catalogo_id != null && tieneValor) {
-              inferredSelectValues.set(v.atributo_id, Number(v.item_catalogo_id));
-            }
-          }
-
           const selectPatch: Record<string, unknown> = {};
           const textPatch: Record<string, unknown> = {};
 
           for (const v of valores) {
             const key = v.atributo_formulario_nombre;
-            // Usar get() en lugar de contains() para incluir controles deshabilitados
             if (!this.form.get(key)) continue;
 
             if (v.ctipo_dato_nombre === 'Selección Simple') {
-              const inferred = inferredSelectValues.get(v.atributo_formulario_id);
-              if (inferred != null) selectPatch[key] = inferred;
+              const catalogo = Number(v.valor_catalogo);
+              if (catalogo && catalogo !== 0) selectPatch[key] = catalogo;
             } else if (v.ctipo_dato_nombre === 'Selección Mutiple' && v.valor_multiple) {
-              // Restaurar horarios seleccionados: parsear JSON guardado y buscar índices
               try {
                 const guardados: JornadaItem[] = JSON.parse(v.valor_multiple);
                 const field = this.fields.find((f) => f.key === key);
@@ -262,7 +248,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
           // Paso 1: solo selects → dispara updateDependentFields → habilita campos dependientes
           this.form.patchValue(selectPatch);
-          // Paso 2: textos sobre controles ya habilitados (syncFieldState solo enable, no reset)
+          // Paso 2: textos sobre controles ya habilitados
           this.form.patchValue(textPatch);
         },
       });

@@ -16,6 +16,7 @@ export const REPORT_VALOR_SOLICITUD_FIELDS = `
   atributo_id
   ctipo_dato_nombre
   item_catalogo_id
+  valor_catalogo
   valor_texto
   valor_numero
   valor_fecha
