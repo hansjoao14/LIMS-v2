@@ -41,7 +41,10 @@ export interface ReportAtributoFormulario {
   tipo_formulario: string;
 }
 
+import { PaginationMeta } from '../catalogos/catalogo.interface';
+
 export interface ReportAtributoFormularioCollectionResponse {
   count: number;
   data: ReportAtributoFormulario[];
+  meta?: PaginationMeta;
 }

@@ -6,12 +6,14 @@ import { ReportFormularioService } from '../../../services/admin-formularios/rep
 import { ToastrAlertService } from '../../../services/toastr.service';
 import { ReportFormulario } from '../../../interfaces/admin-formularios/report-formulario.interface';
 import { ReportAtributoFormulario } from '../../../interfaces/admin-formularios/report-atributo-formulario.interface';
+import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import { AtributoFormComponent } from './atributo-form/atributo-form';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 
 @Component({
   selector: 'app-formulario-detalle',
   standalone: true,
-  imports: [CommonModule, AtributoFormComponent],
+  imports: [CommonModule, AtributoFormComponent, PaginationComponent],
   templateUrl: './formulario-detalle.html',
 })
 export class FormularioDetalle implements OnChanges, OnDestroy {
@@ -19,7 +21,10 @@ export class FormularioDetalle implements OnChanges, OnDestroy {
   @Output() regresar = new EventEmitter<void>();
 
   atributos: ReportAtributoFormulario[] = [];
+  meta: PaginationMeta | null = null;
   loading = false;
+  currentPage = 1;
+  readonly PAGE_SIZE = 10;
 
   mostrarFormulario = false;
   atributoEditando: ReportAtributoFormulario | null = null;
@@ -33,20 +38,22 @@ export class FormularioDetalle implements OnChanges, OnDestroy {
   ) {}
 
   ngOnChanges(): void {
-    if (this.formulario) this.cargarAtributos();
+    if (this.formulario) this.cargarPagina(1);
   }
 
-  cargarAtributos(): void {
+  cargarPagina(page: number): void {
     this.loading = true;
+    this.currentPage = page;
     this.atributos = [];
 
     this.service
-      .getAtributosByFormulario(this.formulario.id)
+      .getAtributosByFormulario(this.formulario.id, page, this.PAGE_SIZE)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
+        next: ({ data, meta }) => {
           this.zone.run(() => {
             this.atributos = data;
+            this.meta = meta;
             this.loading = false;
           });
         },
@@ -78,7 +85,7 @@ export class FormularioDetalle implements OnChanges, OnDestroy {
 
   onGuardado(): void {
     this.cerrarFormulario();
-    this.cargarAtributos();
+    this.cargarPagina(this.currentPage);
   }
 
   ngOnDestroy(): void {

@@ -87,6 +87,8 @@ export class Login implements OnInit, OnDestroy {
         //  Guardamos en localStorage al tener un login exitoso
         localStorage.setItem('user', this.user);
         localStorage.setItem('password', this.password);
+        console.log(this.user);
+
 
         this.spinnerComponent.hideSpinner();
         this.router.navigate(['/dashboard']);

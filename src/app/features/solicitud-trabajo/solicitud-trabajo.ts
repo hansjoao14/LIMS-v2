@@ -383,7 +383,11 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     const payload = { valorSolicitud };
 
     try {
-      await firstValueFrom(this.service.guardarValoresSolicitud(payload));
+      if (this.modoEdicion && this.solicitudRegistradaId) {
+        await firstValueFrom(this.service.actualizarValoresSolicitud(this.solicitudRegistradaId, payload));
+      } else {
+        await firstValueFrom(this.service.guardarValoresSolicitud(payload));
+      }
       this.zone.run(() => this.avanzarPaso());
     } catch (err: any) {
       const mensaje =
@@ -431,6 +435,8 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     const anio = new Date().getFullYear();
     const mes = new Date().getMonth() + 1;
     const raw = this.form.getRawValue();
+    console.log(raw);
+
 
     try {
       const ejercicio = await this.periodoService.getEjercicioByAnio(anio);

@@ -113,53 +113,13 @@
           </div>
 
           <!-- Paginado -->
-          @if (meta && meta.totalPages > 1) {
-            <div class="flex items-center justify-between mt-5">
-              <p class="text-xs text-slate-500">
-                Mostrando {{ solicitudes.length }} de {{ meta.total }} solicitudes — Página {{ meta.page }} de {{ meta.totalPages }}
-              </p>
-              <div class="flex items-center gap-1">
-                <button (click)="cargarPagina(currentPage - 1)"
-                        [disabled]="!meta.hasPrevPage"
-                        class="px-3 py-1.5 rounded border text-xs font-bold transition-colors"
-                        [class.border-slate-200]="!meta.hasPrevPage"
-                        [class.text-slate-300]="!meta.hasPrevPage"
-                        [class.cursor-not-allowed]="!meta.hasPrevPage"
-                        [class.border-[#1d2b64]]="meta.hasPrevPage"
-                        [class.text-[#1d2b64]]="meta.hasPrevPage"
-                        [class.hover:bg-[#1d2b64]]="meta.hasPrevPage"
-                        [class.hover:text-white]="meta.hasPrevPage">
-                  ‹ Anterior
-                </button>
-
-                @for (p of pages; track p) {
-                  <button (click)="cargarPagina(p)"
-                          class="px-3 py-1.5 rounded border text-xs font-bold transition-colors"
-                          [class.bg-[#1d2b64]]="p === currentPage"
-                          [class.text-white]="p === currentPage"
-                          [class.border-[#1d2b64]]="p === currentPage"
-                          [class.border-slate-200]="p !== currentPage"
-                          [class.text-slate-600]="p !== currentPage"
-                          [class.hover:bg-slate-100]="p !== currentPage">
-                    {{ p }}
-                  </button>
-                }
-
-                <button (click)="cargarPagina(currentPage + 1)"
-                        [disabled]="!meta.hasNextPage"
-                        class="px-3 py-1.5 rounded border text-xs font-bold transition-colors"
-                        [class.border-slate-200]="!meta.hasNextPage"
-                        [class.text-slate-300]="!meta.hasNextPage"
-                        [class.cursor-not-allowed]="!meta.hasNextPage"
-                        [class.border-[#1d2b64]]="meta.hasNextPage"
-                        [class.text-[#1d2b64]]="meta.hasNextPage"
-                        [class.hover:bg-[#1d2b64]]="meta.hasNextPage"
-                        [class.hover:text-white]="meta.hasNextPage">
-                  Siguiente ›
-                </button>
-              </div>
-            </div>
-          }
+          <app-pagination
+            [meta]="meta"
+            [currentPage]="currentPage"
+            [itemsShown]="solicitudes.length"
+            itemLabel="solicitudes"
+            (pageChange)="cargarPagina($event)">
+          </app-pagination>
         }
       </div>
     }

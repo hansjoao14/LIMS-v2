@@ -46,11 +46,11 @@ export class SolicitudService {
   }
 
   guardarValoresSolicitud(payload: { valorSolicitud: ValorSolicitudItem[] }): Observable<any> {
-    console.log("test");
-
-    console.log(payload);
-
     return this.http.post<any>(`${this.api_solicitud}/valor-solicitud/create-many`, payload);
+  }
+
+  actualizarValoresSolicitud(idSolicitud: string, payload: { valorSolicitud: ValorSolicitudItem[] }): Observable<any> {
+    return this.http.put<any>(`${this.api_solicitud}/valor-solicitud/update-many/${idSolicitud}`, payload);
   }
 
   registrarSolicitud(payload: SolicitudPayload): Observable<any> {

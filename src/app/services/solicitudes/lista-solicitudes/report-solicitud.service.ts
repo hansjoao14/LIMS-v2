@@ -31,7 +31,10 @@ const GET_COLLECTION_REPORT_SOLICITUD = gql`
 const GET_VALORES_SOLICITUD = gql`
   query CollectionReportValorSolicitud($id: String!) {
     collectionReportValorSolicitud(
-      query: { where: { id_solicitud: { equals: $id } } }
+      query: {
+        where: { id_solicitud: { equals: $id } }
+        pagination: { page: 1, take: 100 }
+      }
     ) {
       count
       data { ${REPORT_VALOR_SOLICITUD_FIELDS} }
@@ -77,7 +80,15 @@ export class ReportSolicitudService {
         variables: { id },
         fetchPolicy: 'network-only',
       })
-      .pipe(map((result) => result.data?.collectionReportValorSolicitud?.data ?? []));
+      .pipe(
+        map((result) => {
+          const all = result.data?.collectionReportValorSolicitud?.data ?? [];
+          // deduplica: el último en el array es el más reciente → gana sobre duplicados anteriores
+          const dedup = new Map<string, ReportValorSolicitud>();
+          for (const v of all) dedup.set(v.atributo_formulario_nombre, v);
+          return Array.from(dedup.values());
+        }),
+      );
   }
 
   getSolicitudes(page: number, limit: number): Observable<SolicitudesPage> {

@@ -41,6 +41,7 @@ export interface ReportValorSolicitud {
 export interface ReportValorSolicitudCollectionResponse {
   data: ReportValorSolicitud[];
   count: number;
+  meta?: PaginationMeta;
 }
 
 export interface ReportSolicitudCollectionResponse {

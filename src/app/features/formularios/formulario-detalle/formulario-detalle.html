@@ -57,7 +57,7 @@
   <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
     <div class="p-4 border-b border-slate-200 flex justify-between items-center">
       <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Atributos del Formulario</h2>
-      <span class="text-xs font-bold text-slate-500 uppercase">{{ atributos.length }} atributos</span>
+      <span class="text-xs font-bold text-slate-500 uppercase">{{ meta?.total ?? atributos.length }} atributos</span>
     </div>
 
     @if (loading) {
@@ -168,6 +168,14 @@
         </table>
       </div>
     }
+
+    <app-pagination
+      [meta]="meta"
+      [currentPage]="currentPage"
+      [itemsShown]="atributos.length"
+      itemLabel="atributos"
+      (pageChange)="cargarPagina($event)">
+    </app-pagination>
   </div>
 
 </div>

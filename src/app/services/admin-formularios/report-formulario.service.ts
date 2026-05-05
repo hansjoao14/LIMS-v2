@@ -85,9 +85,12 @@ const GET_ATRIBUTOS_DEPENDIENTES = gql`
 `;
 
 const GET_ATRIBUTOS_BY_FORMULARIO = gql`
-  query CollectionReportAtributoFormulario($formularioId: String!) {
+  query CollectionReportAtributoFormulario($formularioId: String!, $page: Int, $take: Int) {
     collectionReportAtributoFormulario(
-      query: { where: { formulario_id: { equals: $formularioId } } }
+      query: {
+        where: { formulario_id: { equals: $formularioId } }
+        pagination: { page: $page, take: $take }
+      }
     ) {
       count
       data {
@@ -122,6 +125,7 @@ const GET_ATRIBUTOS_BY_FORMULARIO = gql`
         readonly
         tipo_formulario
       }
+      meta { ${META_FIELDS} }
     }
   }
 `;
@@ -132,22 +136,28 @@ export interface FormulariosResult {
   meta: PaginationMeta;
 }
 
+export interface AtributosPageResult {
+  data: ReportAtributoFormulario[];
+  meta: PaginationMeta;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReportFormularioService {
   constructor(private apollo: Apollo) {}
 
-  getAtributosByFormulario(formularioId: string): Observable<ReportAtributoFormulario[]> {
+  getAtributosByFormulario(formularioId: string, page = 1, take = 10): Observable<AtributosPageResult> {
     return this.apollo
       .use(CLIENT_NAME)
       .query<{ collectionReportAtributoFormulario: ReportAtributoFormularioCollectionResponse }>({
         query: GET_ATRIBUTOS_BY_FORMULARIO,
-        variables: { formularioId },
+        variables: { formularioId, page, take },
         fetchPolicy: 'network-only',
       })
       .pipe(
         map((result) => {
-          const data = result.data?.collectionReportAtributoFormulario?.data ?? [];
-          return [...data].sort((a, b) => a.orden - b.orden) as ReportAtributoFormulario[];
+          const res = result.data?.collectionReportAtributoFormulario;
+          const data = [...(res?.data ?? [])].sort((a, b) => a.orden - b.orden);
+          return { data, meta: res?.meta as PaginationMeta };
         }),
       );
   }

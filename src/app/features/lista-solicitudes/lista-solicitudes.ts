@@ -8,11 +8,12 @@ import Swal from 'sweetalert2';
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
+import { PaginationComponent } from '../../shared/components/pagination/pagination';
 
 @Component({
   selector: 'app-lista-solicitudes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './lista-solicitudes.html',
   styleUrls: ['./lista-solicitudes.css'],
 })
@@ -67,11 +68,6 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
           Swal.fire('Error', 'No se pudo cargar la lista de solicitudes', 'error');
         },
       });
-  }
-
-  get pages(): number[] {
-    if (!this.meta) return [];
-    return Array.from({ length: this.meta.totalPages }, (_, i) => i + 1);
   }
 
   // ── Firma ────────────────────────────────────────────────────────────────
