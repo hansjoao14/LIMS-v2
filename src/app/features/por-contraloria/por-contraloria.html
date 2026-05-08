@@ -1,114 +1,164 @@
 <div class="p-6 bg-slate-50 min-h-screen text-slate-800 font-sans pb-20">
 
   <div class="max-w-7xl mx-auto bg-white p-8 rounded shadow-sm border border-slate-200 mb-10 animate-in fade-in">
-    <div class="flex justify-between items-start mb-8">
+    <div class="flex justify-between items-start mb-10 border-b border-slate-200 pb-6">
       <div>
-        <p class="text-sm text-slate-500">Sistema LIMS / <span class="font-bold text-[#1d2b64]">Gestión de Vehículos</span></p>
-        <h2 class="text-2xl font-bold text-[#1d2b64] mt-2">Solicitud de transporte - Contraloría</h2>
-        <p class="text-xs text-slate-400 mt-1">Complete la siguiente información para solicitar un vehículo de la DMRCA</p>
+        <p class="text-sm font-medium text-slate-500 mb-2">
+          Sistema LIMS / <span class="font-bold text-[#1d2b64]">Gestión de Vehículos</span>
+        </p>
+        <h2 class="text-2xl font-bold text-[#1d2b64]">
+          {{ formulario?.formulario_nombre ?? 'Solicitud de transporte - Contraloría' }}
+        </h2>
+        <p class="text-sm text-slate-600 mt-1">
+          Complete la siguiente información para solicitar un vehículo de la DMRCA
+        </p>
       </div>
-      <div class="text-right text-[11px] leading-relaxed text-slate-600 font-medium">
-        <p class="font-bold text-[#1d2b64] text-sm mb-1 uppercase">FOR.ADM.SVR.001.03</p>
-        <p>Elaborado por: <span class="font-bold">Tec. Jorge Diaz</span></p>
-        <p>Fecha de solicitud: <span class="font-bold">27/05/2025</span></p>
-        <p>Edición: <span class="font-bold">12</span></p>
+      <div class="text-right text-[13px] leading-relaxed text-slate-700 space-y-1">
+        <p class="font-bold text-[#1d2b64] text-sm">FOR.ADM.SVR.001.03</p>
+        <p>Elaborado por: <span class="font-medium">Tec. Jorge Diaz</span></p>
+        <p>Fecha de solicitud: <span class="font-medium">27/05/2025</span></p>
+        <p>Edición: <span class="font-medium">12</span></p>
       </div>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="guardar()">
-      <h3 class="text-lg font-bold text-[#1d2b64] border-b border-slate-100 pb-2 mb-6 tracking-tight">Orden de movilización de vehículo</h3>
+    @if (loading) {
+      <app-loading />
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        <h3 class="text-lg font-bold text-[#1d2b64] mb-6 uppercase tracking-tight">Orden de movilización de vehículo</h3>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
-        <div class="flex flex-col">
-          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('fecha')">Día y Fecha*</label>
-          <input type="date" formControlName="fecha" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('fecha')">
-        </div>
-        <div class="flex flex-col">
-          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('ocupantes')">Ocupantes*</label>
-          <input type="number" formControlName="ocupantes" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('ocupantes')">
-        </div>
-        <div class="flex flex-col">
-          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('vehiculo')">Vehículo Asignado*</label>
-          <input type="text" formControlName="vehiculo" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('vehiculo')">
-        </div>
-        <div class="flex flex-col">
-          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('horaSalida')">Hora Salida*</label>
-          <input type="time" formControlName="horaSalida" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('horaSalida')">
-        </div>
-        <div class="flex flex-col">
-          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('horaRetorno')">Hora Retorno*</label>
-          <input type="time" formControlName="horaRetorno" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('horaRetorno')">
-        </div>
-        <div class="flex flex-col">
-          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('nombreSolicitante')">Nombre Solicitante*</label>
-          <input type="text" formControlName="nombreSolicitante" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('nombreSolicitante')">
-        </div>
-        <div class="flex flex-col md:col-span-2">
-          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('funcionario')">Funcionario Responsable*</label>
-          <select formControlName="funcionario" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('funcionario')">
-            <option value="" disabled selected>Seleccione...</option>
-            @for (f of funcionarios; track f.id) { <option [value]="f.nombre">{{ f.nombre }}</option> }
-          </select>
-        </div>
-        <div class="flex flex-col">
-          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('cargoSolicitante')">Cargo Solicitante*</label>
-          <input type="text" formControlName="cargoSolicitante" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('cargoSolicitante')">
-        </div>
-        <div class="flex flex-col md:col-span-2">
-          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('motivo')">Motivo de movilización*</label>
-          <input type="text" formControlName="motivo" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('motivo')">
-        </div>
-        <div class="flex flex-col">
-          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('origen')">Lugar de origen*</label>
-          <input type="text" formControlName="origen" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('origen')">
-        </div>
-        <div class="flex flex-col md:col-span-2 relative h-full">
-          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('observaciones')">Observaciones*</label>
-          <textarea formControlName="observaciones" rows="4" class="h-full bg-[#f4f7fb] border border-slate-200 text-slate-700 p-3 rounded text-sm outline-none focus:border-[#1d2b64] resize-none" [class.border-red-500]="esCampoInvalido('observaciones')"></textarea>
-          <span class="absolute right-3 bottom-2 text-[10px] font-bold text-slate-400">{{ obsLen }}/250</span>
-        </div>
-        <div class="flex flex-col justify-start">
-          <label class="text-[11px] font-bold text-[#1d2b64] mb-2" [class.text-red-600]="esCampoInvalido('destino')">Lugares de destino*</label>
-          <input type="text" formControlName="destino" class="bg-[#f4f7fb] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors" [class.border-red-500]="esCampoInvalido('destino')">
-        </div>
-      </div>
+        <div class="flex flex-wrap justify-center gap-x-8 gap-y-6">
 
-      <div class="mt-10"><button type="submit" class="bg-[#1d2b64] text-white px-14 py-3 rounded text-xs font-bold uppercase tracking-widest hover:bg-[#2a3c85] transition-all shadow-md">GUARDAR</button></div>
-    </form>
+          @for (field of regularFields; track field.id) {
+            <div class="flex flex-col w-full md:w-[calc((100%-4rem)/3)] min-w-0">
+              <label
+                class="text-[12px] font-bold text-[#1d2b64] mb-2"
+                [class.text-red-600]="esCampoInvalido(field.key)"
+              >
+                {{ field.label }}@if (field.required) {<span class="text-red-500"> *</span>}
+              </label>
+
+              @if (field.controlType === 'employee-list') {
+                <select
+                  [formControlName]="field.key"
+                  class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
+                  [class.border-red-500]="esCampoInvalido(field.key)"
+                  [class.bg-red-50]="esCampoInvalido(field.key)"
+                >
+                  <option value="">Seleccione un funcionario...</option>
+                  @for (emp of field.employeeList; track emp.empleado_id) {
+                    <option [value]="emp.empleado_id">{{ emp.nombre_empleado }}</option>
+                  }
+                </select>
+              } @else if (field.controlType === 'select') {
+                <select
+                  [formControlName]="field.key"
+                  class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
+                  [class.border-red-500]="esCampoInvalido(field.key)"
+                  [class.bg-red-50]="esCampoInvalido(field.key)"
+                >
+                  <option value="">Seleccione...</option>
+                  @for (opt of field.options; track opt.id) {
+                    <option [value]="opt.id">{{ opt.nombre }}</option>
+                  }
+                </select>
+              } @else {
+                <input
+                  [formControlName]="field.key"
+                  [type]="getInputType(field)"
+                  [placeholder]="field.placeholder"
+                  class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
+                  [class.border-red-500]="esCampoInvalido(field.key)"
+                  [class.bg-red-50]="esCampoInvalido(field.key)"
+                />
+              }
+            </div>
+          }
+
+          @for (field of textareaFields; track field.id) {
+            <div class="flex flex-col w-full">
+              <label
+                class="text-[12px] font-bold text-[#1d2b64] mb-2"
+                [class.text-red-600]="esCampoInvalido(field.key)"
+              >
+                {{ field.label }}@if (field.required) {<span class="text-red-500"> *</span>}
+              </label>
+              <textarea
+                [formControlName]="field.key"
+                rows="3"
+                [placeholder]="field.placeholder"
+                [maxlength]="field.maxLength ?? 9999"
+                class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-3 rounded text-sm resize-none outline-none focus:border-[#1d2b64] transition-colors"
+                [class.border-red-500]="esCampoInvalido(field.key)"
+                [class.bg-red-50]="esCampoInvalido(field.key)"
+              ></textarea>
+            </div>
+          }
+
+        </div>
+
+        <div class="mt-10">
+          <button
+            type="submit"
+            class="bg-[#1d2b64] text-white px-10 py-3 rounded text-sm font-bold uppercase tracking-widest shadow-md hover:bg-[#2a3c85] transition-all"
+          >
+            GUARDAR ORDEN
+          </button>
+        </div>
+      </form>
+    }
   </div>
 
-  <div class="max-w-7xl mx-auto bg-white rounded shadow-sm border border-slate-200 overflow-hidden animate-in fade-in">
-    <div class="bg-[#1d2b64] p-4 text-white font-bold uppercase text-xs tracking-wider">Cronograma General - Contraloría</div>
-    <div class="overflow-x-auto">
-      <table class="w-full text-center border-collapse text-[11px]">
-        <thead>
-          <tr class="bg-slate-100 font-bold text-slate-600 uppercase">
-            <th class="p-3 border-b">Fecha</th>
-            <th class="p-3 border-b">Horas</th>
-            <th class="p-3 border-b">Motivo</th>
-            <th class="p-3 border-b">Ocupantes</th>
-            <th class="p-3 border-b">Funcionario</th>
-            <th class="p-3 border-b">Solicitante</th>
-            <th class="p-3 border-b">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (grupo of solicitudesAgrupadas; track grupo.diaNombre) {
-            <tr class="bg-blue-50 text-left"><td colspan="7" class="p-2 font-black text-[#1d2b64] italic tracking-widest border-y border-blue-100 uppercase">{{ grupo.diaNombre }}</td></tr>
-            @for (sol of grupo.items; track sol.id) {
-              <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors">
-                <td class="p-3">{{ sol.fecha }}</td>
-                <td class="p-3 font-bold text-[#1d2b64]">{{ sol.horaSalida }} - {{ sol.horaRetorno }}</td>
-                <td class="p-3 uppercase">{{ sol.motivo }}</td>
-                <td class="p-3"><span class="bg-white border px-2 py-1 rounded">{{ sol.ocupantes }}</span></td>
-                <td class="p-3 text-[10px] leading-tight">{{ sol.funcionario }}</td>
-                <td class="p-3"><strong>{{ sol.nombreSolicitante }}</strong><br><span class="text-[9px]">{{ sol.cargoSolicitante }}</span></td>
-                <td class="p-3"><button (click)="eliminar(sol.id)" class="text-red-500 font-bold uppercase underline">Eliminar</button></td>
+  @if (!loading) {
+    <div class="max-w-7xl mx-auto bg-white rounded shadow-sm border border-slate-200 overflow-hidden animate-in fade-in">
+      <div class="bg-[#1d2b64] p-4 flex justify-between items-center">
+        <h3 class="text-white font-bold uppercase text-sm tracking-wider">Cronograma General - Contraloría</h3>
+        <span class="text-[10px] text-blue-200 uppercase">Datos almacenados localmente</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-center border-collapse">
+          <thead>
+            <tr class="bg-slate-100 text-[11px] font-bold text-slate-600 uppercase border-b">
+              <th class="p-3 border-r w-12">No.</th>
+              @for (field of visibleFields; track field.id) {
+                <th class="p-3 border-r">{{ field.label }}</th>
+              }
+              <th class="p-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (sol of solicitudes; track sol.id; let i = $index) {
+              <tr class="text-[12px] border-b hover:bg-slate-50 transition-colors">
+                <td class="p-3 border-r font-mono text-slate-400">{{ i + 1 }}</td>
+                @for (field of visibleFields; track field.id) {
+                  <td class="p-3 border-r text-slate-600">{{ getFieldValue(sol, field.key) }}</td>
+                }
+                <td class="p-3">
+                  <button
+                    (click)="eliminar(sol.id)"
+                    class="text-red-500 hover:text-red-700 font-bold text-[10px] uppercase underline transition-colors"
+                  >
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="visibleFields.length + 2" class="p-20 text-slate-400 italic">
+                  No hay órdenes de movilización registradas.
+                </td>
               </tr>
             }
-          }
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
+  }
 </div>
+
+<style>
+  .animate-in { animation: animateIn 0.3s ease-out forwards; }
+  .fade-in { opacity: 0; }
+  @keyframes animateIn { to { opacity: 1; transform: translate(0); } }
+</style>

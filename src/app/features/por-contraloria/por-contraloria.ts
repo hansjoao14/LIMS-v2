@@ -1,165 +1,244 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule, FormControl } from '@angular/forms';
-import Swal from 'sweetalert2'; // Importamos SweetAlert2
+import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, ValidatorFn, Validators } from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
+import Swal from 'sweetalert2';
 
-interface SolicitudContraloria {
-  id: string;
-  fecha: string;
-  ocupantes: number;
-  vehiculo: string;
-  horaSalida: string;
-  horaRetorno: string;
-  nombreSolicitante: string;
-  funcionario: string;
-  cargoSolicitante: string;
-  motivo: string;
-  origen: string;
-  destino: string;
-  observaciones: string;
-}
+import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { FieldConfig, FormularioLaboratorio, Pregunta } from '../solicitud-trabajo/model/solicitud-trabajo.model';
+import { AuthService } from '../auth/service/auth-service';
+import { LoadingComponent } from '../../shared/components/loading/loading';
+
+type ContraloriaRecord = { id: string } & Record<string, unknown>;
 
 @Component({
   selector: 'app-por-contraloria',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, LoadingComponent],
   templateUrl: './por-contraloria.html',
-  styleUrls: ['./por-contraloria.css']
+  styleUrls: ['./por-contraloria.css'],
 })
-export class PorContraloria implements OnInit {
-  
+export class PorContraloria implements OnInit, OnDestroy {
   form: FormGroup;
-  solicitudes: SolicitudContraloria[] = [];
+  formulario: FormularioLaboratorio | null = null;
+  fields: FieldConfig[] = [];
+  loading = true;
+  solicitudes: ContraloriaRecord[] = [];
+
   readonly STORAGE_KEY = 'lims_vehiculos_contraloria';
-  readonly COLOR_PRIMARIO = '#1d2b64'; // Color institucional para botones de SweetAlert
+  readonly COLOR_PRIMARIO = '#1d2b64';
 
-  funcionarios = [
-    { id: '1', nombre: 'Ing. Francisco Sosa (CC:1716986086; Cel:0958998622)' },
-    { id: '2', nombre: 'Ing. Jorge Guanulema (CC:1717914079; Cel:0984092584)' },
-    { id: '3', nombre: 'Ing. José Luis Montenegro (CC:1716489202; Cel:0962585483)' }
-  ];
+  private readonly destroy$ = new Subject<void>();
 
-  constructor(private fb: FormBuilder) {
-    this.form = this.fb.group({
-      fecha: ['', Validators.required],
-      ocupantes: [null, [Validators.required, Validators.min(1)]],
-      vehiculo: ['', Validators.required],
-      horaSalida: ['', Validators.required],
-      horaRetorno: ['', Validators.required],
-      nombreSolicitante: ['', Validators.required],
-      funcionario: ['', Validators.required],
-      cargoSolicitante: ['', Validators.required],
-      motivo: ['', Validators.required],
-      origen: ['', Validators.required],
-      destino: ['', Validators.required],
-      observaciones: ['', [Validators.required, Validators.maxLength(250)]],
-    });
+  constructor(
+    private fb: FormBuilder,
+    private solicitudService: SolicitudService,
+    private authService: AuthService,
+    private zone: NgZone,
+  ) {
+    this.form = this.fb.group({});
   }
 
   ngOnInit(): void {
     this.cargarDatos();
+    this.cargarFormularioDinamico();
   }
 
-  get obsLen() {
-    return this.form.get('observaciones')?.value?.length || 0;
+  private cargarFormularioDinamico(): void {
+    const { id } = this.authService.currentUser();
+    this.solicitudService
+      .getFormulario('1003', id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (formulario) => {
+          this.zone.run(() => {
+            this.formulario = formulario;
+            this.fields = formulario.preguntas
+              .filter((p) => p.estado !== false)
+              .map((p) => this.toFieldConfig(p));
+            this.generateControls();
+            this.applyDependencyLogic();
+            this.loading = false;
+          });
+        },
+        error: () => {
+          this.zone.run(() => {
+            this.loading = false;
+            Swal.fire('Error', 'No se pudo cargar el formulario', 'error');
+          });
+        },
+      });
   }
 
-  getControl(nombreCampo: string): FormControl {
-    return this.form.get(nombreCampo) as FormControl;
+  private toFieldConfig(pregunta: Pregunta): FieldConfig {
+    return {
+      id: pregunta.id,
+      key: pregunta.nombre,
+      label: pregunta.pregunta,
+      order: pregunta.orden,
+      controlType: this.resolveControlType(pregunta),
+      section: 'operador',
+      placeholder: typeof pregunta.ayuda === 'string' ? pregunta.ayuda : '',
+      required: pregunta.obligatorio,
+      readonly: pregunta.readonly,
+      hidden: pregunta.hidden,
+      maxLength: typeof pregunta.num_caracter === 'number' ? pregunta.num_caracter : null,
+      options: pregunta.catalogos ?? [],
+      employeeList: pregunta.listado_empleado ?? [],
+      scheduleItems: pregunta.jornada_laboral_item ?? [],
+      dependsOn: pregunta.atributo_id
+        ? {
+            fieldId: String(pregunta.atributo_id),
+            triggerValue: String(pregunta.item_catalogo_id ?? ''),
+          }
+        : undefined,
+      integrations: {
+        sri: pregunta.is_ws_sri,
+        civil: pregunta.is_ws_civil,
+        iess: pregunta.is_ws_iess ?? false,
+      },
+      source: pregunta,
+    };
   }
 
-  esCampoInvalido(nombreCampo: string): boolean {
-    const control = this.getControl(nombreCampo);
-    return control.invalid && (control.touched || control.dirty);
+  private resolveControlType(pregunta: Pregunta): FieldConfig['controlType'] {
+    if (pregunta.is_list_empleado) return 'employee-list';
+    if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
+    if (pregunta.is_text_area) return 'textarea';
+    return 'text';
   }
 
-  cargarDatos() {
-    const data = localStorage.getItem(this.STORAGE_KEY);
-    if (data) {
-      this.solicitudes = JSON.parse(data);
-      this.solicitudes.sort((a, b) => a.fecha.localeCompare(b.fecha) || a.horaSalida.localeCompare(b.horaSalida));
+  getInputType(field: FieldConfig): string {
+    const tipo = field.source.tipo_respuesta;
+    if (tipo === 'Fecha') return 'date';
+    if (tipo === 'Numerico') return 'number';
+    return 'text';
+  }
+
+  private generateControls(): void {
+    for (const field of this.fields) {
+      if (this.form.contains(field.key)) continue;
+      const validators: ValidatorFn[] = [];
+      if (field.required && !field.hidden) validators.push(Validators.required);
+      if (field.maxLength) validators.push(Validators.maxLength(field.maxLength));
+      this.form.addControl(
+        field.key,
+        this.fb.control({ value: '', disabled: field.hidden }, validators),
+      );
     }
   }
 
-  get solicitudesAgrupadas() {
-    const dias = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
-    const grupos: { diaNombre: string, items: SolicitudContraloria[] }[] = [];
-
-    this.solicitudes.forEach(sol => {
-      const fechaObj = new Date(sol.fecha + 'T00:00:00');
-      const nombreDia = dias[fechaObj.getDay()];
-      
-      let grupo = grupos.find(g => g.diaNombre === nombreDia);
-      if (!grupo) {
-        grupo = { diaNombre: nombreDia, items: [] };
-        grupos.push(grupo);
-      }
-      grupo.items.push(sol);
-    });
-
-    return grupos;
+  private applyDependencyLogic(): void {
+    this.updateDependentFields();
+    this.form.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.updateDependentFields());
   }
 
-  guardar() {
+  private updateDependentFields(): void {
+    for (const field of this.fields) {
+      if (!field.dependsOn) continue;
+      const parentField = this.fields.find((c) => c.id === field.dependsOn?.fieldId);
+      const parentValue = parentField ? this.form.get(parentField.key)?.value : null;
+      const hide = String(parentValue ?? '') !== field.dependsOn.triggerValue;
+      field.hidden = hide;
+      const control = this.form.get(field.key);
+      if (!control) continue;
+      if (hide) {
+        control.disable({ emitEvent: false });
+        control.reset('', { emitEvent: false });
+      } else {
+        control.enable({ emitEvent: false });
+      }
+    }
+  }
+
+  get visibleFields(): FieldConfig[] {
+    return this.fields.filter((f) => !f.hidden);
+  }
+
+  get regularFields(): FieldConfig[] {
+    return this.visibleFields.filter((f) => f.controlType !== 'textarea');
+  }
+
+  get textareaFields(): FieldConfig[] {
+    return this.visibleFields.filter((f) => f.controlType === 'textarea');
+  }
+
+  esCampoInvalido(key: string): boolean {
+    const c = this.form.get(key);
+    return !!c && c.invalid && (c.touched || c.dirty);
+  }
+
+  cargarDatos(): void {
+    const data = localStorage.getItem(this.STORAGE_KEY);
+    if (data) {
+      this.solicitudes = JSON.parse(data);
+    }
+  }
+
+  guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      
-      // SweetAlert de Advertencia
       Swal.fire({
         title: 'Formulario Incompleto',
-        text: 'Por favor, llene todos los campos requeridos marcados en rojo para continuar.',
+        text: 'Por favor, llene todos los campos requeridos para continuar.',
         icon: 'warning',
         confirmButtonColor: this.COLOR_PRIMARIO,
-        confirmButtonText: 'Entendido'
+        confirmButtonText: 'Entendido',
       });
       return;
     }
 
-    const nuevaSolicitud: SolicitudContraloria = {
-      id: (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)),
-      ...this.form.value
+    const record: ContraloriaRecord = {
+      id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36),
+      ...this.form.getRawValue(),
     };
 
-    this.solicitudes.push(nuevaSolicitud);
+    this.solicitudes.push(record);
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.solicitudes));
-    
     this.form.reset();
-    this.cargarDatos();
 
-    // SweetAlert de Éxito
     Swal.fire({
       title: '¡Guardado!',
-      text: 'La orden de movilización se registró correctamente en el sistema.',
+      text: 'El registro ha sido guardado correctamente.',
       icon: 'success',
       confirmButtonColor: this.COLOR_PRIMARIO,
-      timer: 2500
+      timer: 2500,
     });
   }
 
-  eliminar(id: string) {
-    // SweetAlert de Confirmación (Doble check)
+  eliminar(id: string): void {
     Swal.fire({
       title: '¿Está seguro de eliminar?',
-      text: "Esta acción no se puede revertir y el registro desaparecerá del cronograma.",
+      text: 'Esta orden se quitará del cronograma y no se puede revertir.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: this.COLOR_PRIMARIO,
       cancelButtonColor: '#d33',
       confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
     }).then((result) => {
       if (result.isConfirmed) {
-        this.solicitudes = this.solicitudes.filter(s => s.id !== id);
+        this.solicitudes = this.solicitudes.filter((s) => s.id !== id);
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.solicitudes));
-        
         Swal.fire({
           title: 'Eliminado',
-          text: 'El registro ha sido borrado.',
+          text: 'La orden ha sido borrada.',
           icon: 'success',
           confirmButtonColor: this.COLOR_PRIMARIO,
-          timer: 1500
+          timer: 1500,
         });
       }
     });
+  }
+
+  getFieldValue(record: ContraloriaRecord, key: string): unknown {
+    return record[key] ?? '—';
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
