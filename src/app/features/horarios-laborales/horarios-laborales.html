@@ -24,8 +24,10 @@
         <h3 class="text-lg font-bold text-[#1d2b64] mb-6 uppercase tracking-tight">Programación semanal de vehículos</h3>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
-          @for (field of visibleFields; track field.id) {
-            <div class="flex flex-col" [class.md:col-span-3]="field.controlType === 'textarea'">
+
+          <!-- Campos normales: siempre simétricos -->
+          @for (field of regularFields; track field.id) {
+            <div class="flex flex-col">
               <label
                 class="text-[12px] font-bold text-[#1d2b64] mb-2"
                 [class.text-red-600]="esCampoInvalido(field.key)"
@@ -45,21 +47,7 @@
                     <option [value]="opt.id">{{ opt.nombre }}</option>
                   }
                 </select>
-              }
-
-              @if (field.controlType === 'textarea') {
-                <textarea
-                  [formControlName]="field.key"
-                  rows="3"
-                  [placeholder]="field.placeholder"
-                  [maxlength]="field.maxLength ?? 9999"
-                  class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-3 rounded text-sm resize-none outline-none focus:border-[#1d2b64] transition-colors"
-                  [class.border-red-500]="esCampoInvalido(field.key)"
-                  [class.bg-red-50]="esCampoInvalido(field.key)"
-                ></textarea>
-              }
-
-              @if (field.controlType === 'text') {
+              } @else {
                 <input
                   [formControlName]="field.key"
                   [type]="getInputType(field)"
@@ -71,6 +59,28 @@
               }
             </div>
           }
+
+          <!-- Áreas de texto: siempre al final, ancho completo -->
+          @for (field of textareaFields; track field.id) {
+            <div class="flex flex-col md:col-span-3">
+              <label
+                class="text-[12px] font-bold text-[#1d2b64] mb-2"
+                [class.text-red-600]="esCampoInvalido(field.key)"
+              >
+                {{ field.label }}@if (field.required) {<span class="text-red-500"> *</span>}
+              </label>
+              <textarea
+                [formControlName]="field.key"
+                rows="3"
+                [placeholder]="field.placeholder"
+                [maxlength]="field.maxLength ?? 9999"
+                class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-3 rounded text-sm resize-none outline-none focus:border-[#1d2b64] transition-colors"
+                [class.border-red-500]="esCampoInvalido(field.key)"
+                [class.bg-red-50]="esCampoInvalido(field.key)"
+              ></textarea>
+            </div>
+          }
+
         </div>
 
         <div class="mt-10">

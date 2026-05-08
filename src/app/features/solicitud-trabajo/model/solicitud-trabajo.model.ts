@@ -30,6 +30,7 @@ export interface Pregunta {
   atributo_id: string | null; // ID de la pregunta de la que depende
   item_catalogo_id: string | null; // Valor que dispara la visibilidad
   is_dependent: boolean | null;
+  is_text_area?: boolean;
   is_ws_sri: boolean;
   is_ws_civil: boolean;
   is_ws_iess?: boolean;

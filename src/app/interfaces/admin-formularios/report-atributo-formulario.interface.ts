@@ -24,6 +24,7 @@ export interface ReportAtributoFormulario {
   hidden: string;
   is_dependent: boolean | null;
   is_dependent_catalogo: boolean | null;
+  is_text_area: boolean;
   is_ws_civil: boolean;
   is_ws_iess: boolean;
   is_ws_sri: boolean;

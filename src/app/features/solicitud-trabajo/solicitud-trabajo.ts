@@ -816,11 +816,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     if (pregunta.nombre === 'val_lati' || pregunta.nombre === 'val_long') return 'coordinates';
     if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
     if (pregunta.tipo_respuesta === 'Selección Mutiple') return 'schedule';
-    if (
-      pregunta.nombre === 'val_obs' ||
-      (typeof pregunta.num_caracter === 'number' && pregunta.num_caracter > 200)
-    )
-      return 'textarea';
+    if (pregunta.is_text_area) return 'textarea';
     return 'text';
   }
 

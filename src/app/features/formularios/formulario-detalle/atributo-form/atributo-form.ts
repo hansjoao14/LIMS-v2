@@ -39,6 +39,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
     { field: 'is_dependent',         label: 'Es dependiente'          },
     { field: 'is_dependent_catalogo',label: 'Dependiente de catálogo' },
     { field: 'is_list_empleado',     label: 'Lista de empleados'      },
+    { field: 'is_text_area',         label: 'Es área de texto'        },
   ];
 
   tiposDato: ItemCatalogo[] = [];

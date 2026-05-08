@@ -27,6 +27,7 @@ export class AtributoFormularioPayload {
   is_dependent: boolean;
   is_dependent_catalogo: boolean;
   is_list_empleado: boolean;
+  is_text_area: boolean;
 
   constructor(formularioId: string, source?: ReportAtributoFormulario) {
     this.formulario_id          = source?.formulario_id ?? formularioId;
@@ -55,5 +56,6 @@ export class AtributoFormularioPayload {
     this.is_dependent           = String(source?.is_dependent) === 'true';
     this.is_dependent_catalogo  = String(source?.is_dependent_catalogo) === 'true';
     this.is_list_empleado       = false;
+    this.is_text_area           = source?.is_text_area ?? false;
   }
 }

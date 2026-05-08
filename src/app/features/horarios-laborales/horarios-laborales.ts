@@ -101,7 +101,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
 
   private resolveControlType(pregunta: Pregunta): FieldConfig['controlType'] {
     if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
-    if (typeof pregunta.num_caracter === 'number' && pregunta.num_caracter > 200) return 'textarea';
+    if (pregunta.is_text_area) return 'textarea';
     return 'text';
   }
 
@@ -152,6 +152,14 @@ export class HorariosLaborales implements OnInit, OnDestroy {
 
   get visibleFields(): FieldConfig[] {
     return this.fields.filter((f) => !f.hidden);
+  }
+
+  get regularFields(): FieldConfig[] {
+    return this.visibleFields.filter((f) => f.controlType !== 'textarea');
+  }
+
+  get textareaFields(): FieldConfig[] {
+    return this.visibleFields.filter((f) => f.controlType === 'textarea');
   }
 
   esCampoInvalido(key: string): boolean {
