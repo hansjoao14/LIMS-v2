@@ -796,6 +796,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       hidden: pregunta.hidden,
       maxLength: typeof pregunta.num_caracter === 'number' ? pregunta.num_caracter : null,
       options: pregunta.catalogos ?? [],
+      employeeList: pregunta.listado_empleado ?? [],
       scheduleItems: pregunta.jornada_laboral_item ?? [],
       dependsOn: pregunta.atributo_id
         ? {

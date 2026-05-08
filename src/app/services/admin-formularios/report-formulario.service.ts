@@ -181,11 +181,11 @@ export class ReportFormularioService {
   getFormularios(): Observable<FormulariosResult> {
     return this.apollo
       .use(CLIENT_NAME)
-      .watchQuery<{ collectionReportFormulario: ReportFormularioCollectionResponse }>({
+      .query<{ collectionReportFormulario: ReportFormularioCollectionResponse }>({
         query: GET_COLLECTION_REPORT_FORMULARIO,
         fetchPolicy: 'network-only',
       })
-      .valueChanges.pipe(
+      .pipe(
         map((result) => {
           const res = result.data?.collectionReportFormulario;
           return {

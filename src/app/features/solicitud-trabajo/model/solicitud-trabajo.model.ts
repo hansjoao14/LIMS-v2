@@ -12,6 +12,11 @@ export interface CatalogoItem {
   id: number;
 }
 
+export interface EmpleadoItem {
+  nombre_empleado: string;
+  empleado_id: string;
+}
+
 export interface Pregunta {
   id: string;
   nombre: string;
@@ -31,6 +36,8 @@ export interface Pregunta {
   item_catalogo_id: string | null; // Valor que dispara la visibilidad
   is_dependent: boolean | null;
   is_text_area?: boolean;
+  is_list_empleado?: boolean;
+  listado_empleado?: EmpleadoItem[];
   is_ws_sri: boolean;
   is_ws_civil: boolean;
   is_ws_iess?: boolean;
@@ -58,7 +65,7 @@ export type FieldSectionId =
   | 'contacto'
   | 'observaciones';
 
-export type FieldControlType = 'text' | 'textarea' | 'select' | 'coordinates' | 'schedule';
+export type FieldControlType = 'text' | 'textarea' | 'select' | 'employee-list' | 'coordinates' | 'schedule';
 
 export interface FieldConfig {
   id: string;
@@ -73,6 +80,7 @@ export interface FieldConfig {
   hidden: boolean;
   maxLength: number | null;
   options: CatalogoItem[];
+  employeeList: EmpleadoItem[];
   scheduleItems: JornadaItem[];
   dependsOn?: {
     fieldId: string;

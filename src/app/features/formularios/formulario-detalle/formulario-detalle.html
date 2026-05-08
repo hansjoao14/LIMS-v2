@@ -61,10 +61,7 @@
     </div>
 
     @if (loading) {
-      <div class="flex items-center justify-center p-16">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1e3a8a] mr-3"></div>
-        <span class="text-sm font-bold text-[#1e3a8a]">Cargando atributos...</span>
-      </div>
+      <app-loading />
     } @else {
       <div class="overflow-x-auto">
         <table class="w-full text-sm border-collapse table-fixed">

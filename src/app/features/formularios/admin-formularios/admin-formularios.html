@@ -20,10 +20,7 @@
         </div>
 
         @if (loading) {
-          <div class="flex items-center justify-center py-20">
-            <span class="animate-spin h-8 w-8 border-4 border-[#1e3a8a] border-t-transparent rounded-full"></span>
-            <span class="ml-3 text-slate-500 text-sm">Cargando formularios...</span>
-          </div>
+          <app-loading />
         } @else {
 
           <!-- Buscador -->

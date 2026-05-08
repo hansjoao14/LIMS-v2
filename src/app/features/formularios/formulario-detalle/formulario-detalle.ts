@@ -9,11 +9,12 @@ import { ReportAtributoFormulario } from '../../../interfaces/admin-formularios/
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import { AtributoFormComponent } from './atributo-form/atributo-form';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
+import { LoadingComponent } from '../../../shared/components/loading/loading';
 
 @Component({
   selector: 'app-formulario-detalle',
   standalone: true,
-  imports: [CommonModule, AtributoFormComponent, PaginationComponent],
+  imports: [CommonModule, AtributoFormComponent, PaginationComponent, LoadingComponent],
   templateUrl: './formulario-detalle.html',
 })
 export class FormularioDetalle implements OnChanges, OnDestroy {

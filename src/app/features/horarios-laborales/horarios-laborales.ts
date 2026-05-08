@@ -7,13 +7,14 @@ import Swal from 'sweetalert2';
 import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
 import { FieldConfig, FormularioLaboratorio, Pregunta } from '../solicitud-trabajo/model/solicitud-trabajo.model';
 import { AuthService } from '../auth/service/auth-service';
+import { LoadingComponent } from '../../shared/components/loading/loading';
 
 type VehiculoRecord = { id: string } & Record<string, unknown>;
 
 @Component({
   selector: 'app-horarios-laborales',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, LoadingComponent],
   templateUrl: './horarios-laborales.html',
   styleUrls: ['./horarios-laborales.css'],
 })
@@ -83,6 +84,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
       hidden: pregunta.hidden,
       maxLength: typeof pregunta.num_caracter === 'number' ? pregunta.num_caracter : null,
       options: pregunta.catalogos ?? [],
+      employeeList: pregunta.listado_empleado ?? [],
       scheduleItems: pregunta.jornada_laboral_item ?? [],
       dependsOn: pregunta.atributo_id
         ? {
@@ -100,6 +102,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   }
 
   private resolveControlType(pregunta: Pregunta): FieldConfig['controlType'] {
+    if (pregunta.is_list_empleado) return 'employee-list';
     if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
     if (pregunta.is_text_area) return 'textarea';
     return 'text';
