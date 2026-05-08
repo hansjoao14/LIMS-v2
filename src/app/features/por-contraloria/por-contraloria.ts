@@ -1,12 +1,13 @@
 import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, ValidatorFn, Validators } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import Swal from 'sweetalert2';
 
-import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { SolicitudService, ValorSolicitudItem, SolicitudPayload } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
 import { FieldConfig, FormularioLaboratorio, Pregunta } from '../solicitud-trabajo/model/solicitud-trabajo.model';
 import { AuthService } from '../auth/service/auth-service';
+import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/periodo.service';
 import { LoadingComponent } from '../../shared/components/loading/loading';
 
 type ContraloriaRecord = { id: string } & Record<string, unknown>;
@@ -34,6 +35,7 @@ export class PorContraloria implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private solicitudService: SolicitudService,
     private authService: AuthService,
+    private periodoService: PeriodoService,
     private zone: NgZone,
   ) {
     this.form = this.fb.group({});
@@ -177,7 +179,7 @@ export class PorContraloria implements OnInit, OnDestroy {
     }
   }
 
-  guardar(): void {
+  async guardar(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       Swal.fire({
@@ -190,22 +192,75 @@ export class PorContraloria implements OnInit, OnDestroy {
       return;
     }
 
-    const record: ContraloriaRecord = {
-      id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36),
-      ...this.form.getRawValue(),
-    };
+    const raw = this.form.getRawValue();
+    const now = new Date();
 
-    this.solicitudes.push(record);
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.solicitudes));
-    this.form.reset();
+    try {
+      const ejercicio = await this.periodoService.getEjercicioByAnio(now.getFullYear());
+      if (!ejercicio) throw new Error(`No hay ejercicio activo para el año ${now.getFullYear()}`);
 
-    Swal.fire({
-      title: '¡Guardado!',
-      text: 'El registro ha sido guardado correctamente.',
-      icon: 'success',
-      confirmButtonColor: this.COLOR_PRIMARIO,
-      timer: 2500,
-    });
+      const periodo = await this.periodoService.getPeriodoByEjercicioAndMes(ejercicio.id, now.getMonth() + 1);
+      if (!periodo) throw new Error(`No hay periodo activo para el mes ${now.getMonth() + 1}`);
+
+      const { id: userId } = this.authService.currentUser();
+
+      const solicitudPayload: SolicitudPayload = {
+        formulario_id: this.formulario?.formulario_id ?? null,
+        usuario_id: userId,
+        entidad_id: userId,
+        secuencial_id: null,
+        ctestado_id: 2,
+        periodo_id: periodo.id,
+        descripcion: '',
+        ejercicio_id: ejercicio.id,
+      };
+
+      const res = await firstValueFrom(this.solicitudService.registrarSolicitud(solicitudPayload));
+      const solicitudId: string = res?.data?.id ?? res?.id ?? null;
+
+      const valorSolicitud: ValorSolicitudItem[] = this.fields
+        .filter((f) => !f.hidden)
+        .map((f) => {
+          const value = raw[f.key];
+          const esSelect = f.controlType === 'select';
+          const esEmployee = f.controlType === 'employee-list';
+          return {
+            solicitud_id: solicitudId,
+            atributo_formulario_id: String(f.id),
+            valor_texto: !esSelect && !esEmployee ? (value ?? null) : null,
+            valor_numero: null,
+            valor_fecha: null,
+            valor_booleano: null,
+            valor_multiple: null,
+            valor_catalogo: esSelect ? Number(value) || 0 : 0,
+            valor_uuid: esEmployee ? (value ?? '') : userId,
+            estado: true,
+          };
+        });
+
+      await firstValueFrom(this.solicitudService.guardarValoresSolicitud({ valorSolicitud }));
+
+      this.zone.run(() => {
+        this.form.reset();
+        Swal.fire({
+          title: '¡Guardado!',
+          text: 'El registro ha sido guardado correctamente.',
+          icon: 'success',
+          confirmButtonColor: this.COLOR_PRIMARIO,
+          timer: 2500,
+        });
+      });
+    } catch (err: any) {
+      this.zone.run(() => {
+        const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo guardar el registro';
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: mensaje,
+          confirmButtonColor: this.COLOR_PRIMARIO,
+        });
+      });
+    }
   }
 
   eliminar(id: string): void {

@@ -2,7 +2,7 @@ export interface ValorSolicitudItem {
   solicitud_id: string | null;
   atributo_formulario_id: string;
   valor_texto: string | null;
-  valor_numero: string | null;
+  valor_numero: number | null;
   valor_fecha: string | null;
   valor_booleano: boolean | null;
   valor_multiple: string | null;
