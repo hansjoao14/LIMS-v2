@@ -21,15 +21,14 @@ export class Login implements OnInit, OnDestroy {
   passwordVisible: boolean = false;
 
   // 🔁 Carousel
-  carouselImages: string[] = [
-    '/image 653.png',
-    '/image 653.png',
-    '/image 653.png',
-  ];
+  carouselImages: string[] = ['/image 653.png', '/image 653.png', '/image 653.png'];
   currentIndex: number = 0;
   intervalId: any;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     this.startCarousel();
@@ -87,8 +86,6 @@ export class Login implements OnInit, OnDestroy {
         //  Guardamos en localStorage al tener un login exitoso
         localStorage.setItem('user', this.user);
         localStorage.setItem('password', this.password);
-        console.log(this.user);
-
 
         this.spinnerComponent.hideSpinner();
         this.router.navigate(['/dashboard']);

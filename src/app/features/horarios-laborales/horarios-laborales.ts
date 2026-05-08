@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
 import { FieldConfig, FormularioLaboratorio, Pregunta } from '../solicitud-trabajo/model/solicitud-trabajo.model';
+import { AuthService } from '../auth/service/auth-service';
 
 type VehiculoRecord = { id: string } & Record<string, unknown>;
 
@@ -31,6 +32,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private solicitudService: SolicitudService,
+    private authService: AuthService,
     private zone: NgZone,
   ) {
     this.form = this.fb.group({});
@@ -42,8 +44,9 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   }
 
   private cargarFormularioDinamico(): void {
+    const { id } = this.authService.currentUser();
     this.solicitudService
-      .getFormulario('1002')
+      .getFormulario('1002', id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (formulario) => {

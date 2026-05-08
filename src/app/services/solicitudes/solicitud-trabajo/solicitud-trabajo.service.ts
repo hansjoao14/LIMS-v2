@@ -24,15 +24,15 @@ export class SolicitudService {
 
   constructor(private http: HttpClient) {}
 
-  getFormulario(idTipoFormulario: string | number): Observable<FormularioLaboratorio> {
-    const url = `${this.api_reportes}/report-parametro/formulario-dinamico/${idTipoFormulario}`;
+  getFormulario(idTipoFormulario: string | number, idEmpleado: string | number): Observable<FormularioLaboratorio> {
+    const url = `${this.api_reportes}/report-parametro/formulario-dinamico/${idTipoFormulario}/${idEmpleado}`;
 
     return this.http.get<any>(url).pipe(
       map((res) => {
-        const formRaw = res.data && res.data.length > 0 ? res.data[0] : null;
+        const formRaw = res.data ?? null;
 
         if (!formRaw) {
-          throw new Error('El arreglo data de la API vino vacío');
+          throw new Error('La API no devolvió data');
         }
 
         return {

@@ -53,6 +53,7 @@ import {
   ReportValorSolicitud,
 } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
+import { AuthService } from '../auth/service/auth-service';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
@@ -143,6 +144,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     private reportSolicitudService: ReportSolicitudService,
     private zone: NgZone,
     private route: ActivatedRoute,
+    private authService: AuthService,
   ) {
     this.form = this.fb.group({
       entidad_id: ['', Validators.required],
@@ -184,10 +186,13 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   private cargarFormularioDinamico(): void {
     const idTipoFormulario = this.route.snapshot.paramMap.get('idTipoFrmulario') || '380';
+    const { id } = this.authService.currentUser();
+
     this.service
-      .getFormulario(idTipoFormulario)
+      .getFormulario(idTipoFormulario, id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
+
         next: (formulario) => {
           this.formulario = formulario;
           this.fields = formulario.preguntas
@@ -231,9 +236,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
                   for (const guardado of guardados) {
                     const idx = field.scheduleItems.findIndex(
                       (item) =>
-                        item.dia_laboral === guardado.dia_laboral &&
-                        item.hora_inicio === guardado.hora_inicio &&
-                        item.hora_fin === guardado.hora_fin,
+                        item.fecha_plan === guardado.fecha_plan &&
+                        item.inicio_bloque === guardado.inicio_bloque &&
+                        item.fin_bloque === guardado.fin_bloque,
                     );
                     if (idx !== -1) this.selectedScheduleIndexes.add(idx);
                   }

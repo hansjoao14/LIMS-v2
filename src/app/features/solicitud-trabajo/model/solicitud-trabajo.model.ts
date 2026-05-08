@@ -1,7 +1,10 @@
 export interface JornadaItem {
-  dia_laboral: string;
-  hora_inicio: string;
-  hora_fin: string;
+  jornada_id: string;
+  fecha_plan: string;
+  inicio_bloque: string;
+  fin_bloque: string;
+  estado_ocupacion: string;
+  es_planificable: boolean;
 }
 
 export interface CatalogoItem {

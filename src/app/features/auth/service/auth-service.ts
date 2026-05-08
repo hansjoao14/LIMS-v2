@@ -21,7 +21,13 @@ export class AuthService {
   // 1. Estado Reactivo (Signals)
   userProfile = signal<UserData | null>(null);
 
-  // 2. Computed values para roles
+  // 2. Computed values
+  currentUser = computed(() => ({
+    id: '32BADAE5-44E8-4417-9247-E900ED8250B5',
+    nombre: this.userProfile()?.name ?? '',
+    email: this.userProfile()?.email ?? '',
+  }));
+
   isAdmin = computed(() => this.userProfile()?.roles.includes('admin') ?? false);
   isManager = computed(() => this.userProfile()?.roles.includes('manager') ?? false);
 
@@ -69,6 +75,7 @@ export class AuthService {
       const response: any = await lastValueFrom(
         this.http.post(`${this.API_URL}/login`, body)
       );
+
       this.saveTokens(response);
       this.startAutoRefresh();
       return response;
