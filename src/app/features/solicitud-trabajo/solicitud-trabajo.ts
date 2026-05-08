@@ -363,6 +363,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
           valor_booleano: null,
           valor_multiple: null,
           valor_catalogo: esSelect ? Number(value) || 0 : 0,
+          valor_uuid: raw.tecnico_id ?? '',
         };
       });
 
@@ -381,6 +382,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
           valor_booleano: null,
           valor_multiple: itemsSeleccionados.length > 0 ? JSON.stringify(itemsSeleccionados) : null,
           valor_catalogo: 0,
+          valor_uuid: raw.tecnico_id ?? '',
         };
       });
 
