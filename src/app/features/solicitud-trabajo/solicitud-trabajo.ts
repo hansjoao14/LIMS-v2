@@ -192,7 +192,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       .getFormulario(idTipoFormulario, id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-
         next: (formulario) => {
           this.formulario = formulario;
           this.fields = formulario.preguntas
@@ -391,7 +390,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
     try {
       if (this.modoEdicion && this.solicitudRegistradaId) {
-        await firstValueFrom(this.service.actualizarValoresSolicitud(this.solicitudRegistradaId, payload));
+        await firstValueFrom(
+          this.service.actualizarValoresSolicitud(this.solicitudRegistradaId, payload),
+        );
       } else {
         await firstValueFrom(this.service.guardarValoresSolicitud(payload));
       }
@@ -442,8 +443,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     const anio = new Date().getFullYear();
     const mes = new Date().getMonth() + 1;
     const raw = this.form.getRawValue();
-    console.log(raw);
-
 
     try {
       const ejercicio = await this.periodoService.getEjercicioByAnio(anio);
@@ -452,15 +451,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       const periodo = await this.periodoService.getPeriodoByEjercicioAndMes(ejercicio.id, mes);
       if (!periodo) throw new Error(`No hay periodo activo para el mes ${mes}`);
 
+      const { id: userId } = this.authService.currentUser();
+
       const payload: SolicitudPayload = {
         formulario_id: this.formulario?.formulario_id ?? null,
-        usuario_id: raw.tecnico_id,
+        usuario_id: userId,
         entidad_id: raw.entidad_id,
         secuencial_id: null,
         ctestado_id: 2,
         periodo_id: periodo.id,
         descripcion: '',
         ejercicio_id: ejercicio.id,
+        tecnico_id: raw.tecnico_id,
       };
       const res = await firstValueFrom(this.service.registrarSolicitud(payload));
       this.zone.run(() => {

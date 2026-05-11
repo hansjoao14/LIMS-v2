@@ -1,11 +1,28 @@
 import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, ValidatorFn, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  FormsModule,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import Swal from 'sweetalert2';
+import { ToastrAlertService } from '../../services/toastr.service';
+import colors from '../../ui/constants/colors';
 
-import { SolicitudService, ValorSolicitudItem, SolicitudPayload } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
-import { FieldConfig, FormularioLaboratorio, Pregunta } from '../solicitud-trabajo/model/solicitud-trabajo.model';
+import {
+  SolicitudService,
+  ValorSolicitudItem,
+  SolicitudPayload,
+} from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import {
+  FieldConfig,
+  FormularioLaboratorio,
+  Pregunta,
+} from '../solicitud-trabajo/model/solicitud-trabajo.model';
 import { AuthService } from '../auth/service/auth-service';
 import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/periodo.service';
 import { LoadingComponent } from '../../shared/components/loading/loading';
@@ -28,7 +45,6 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   solicitudes: VehiculoRecord[] = [];
 
   readonly STORAGE_KEY = 'lims_gestion_vehiculos';
-  readonly COLOR_PRIMARIO = '#1d2b64';
 
   readonly DISPLAY_ORDER: Record<string, number> = {
     val_fecha_programacion: 1,
@@ -72,19 +88,26 @@ export class HorariosLaborales implements OnInit, OnDestroy {
 
   getInputMin(field: FieldConfig): string | null {
     switch (field.key) {
-      case 'val_fecha_programacion': return this.getMinDate();
-      case 'val_hora_salida': return '08:00';
-      case 'val_hora_retorno': return this.form.get('val_hora_salida')?.value || '08:00';
-      default: return null;
+      case 'val_fecha_programacion':
+        return this.getMinDate();
+      case 'val_hora_salida':
+        return '08:00';
+      case 'val_hora_retorno':
+        return this.form.get('val_hora_salida')?.value || '08:00';
+      default:
+        return null;
     }
   }
 
   getInputMax(field: FieldConfig): string | null {
     switch (field.key) {
-      case 'val_fecha_programacion': return this.getMaxDate();
+      case 'val_fecha_programacion':
+        return this.getMaxDate();
       case 'val_hora_salida':
-      case 'val_hora_retorno': return '16:30';
-      default: return null;
+      case 'val_hora_retorno':
+        return '16:30';
+      default:
+        return null;
     }
   }
 
@@ -93,8 +116,10 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     if (!ctrl || !ctrl.invalid || (!ctrl.touched && !ctrl.dirty)) return null;
     if (ctrl.errors?.['required']) return 'Este campo es requerido.';
     if (ctrl.errors?.['weekend']) return 'Solo se permiten días de lunes a viernes.';
-    if (ctrl.errors?.['fueraDeRango']) return 'Solo puede seleccionar días de la semana actual (hasta el viernes).';
-    if (ctrl.errors?.['retornoAntesSalida']) return 'La hora de retorno no puede ser anterior a la de salida.';
+    if (ctrl.errors?.['fueraDeRango'])
+      return 'Solo puede seleccionar días de la semana actual (hasta el viernes).';
+    if (ctrl.errors?.['retornoAntesSalida'])
+      return 'La hora de retorno no puede ser anterior a la de salida.';
     if (ctrl.errors?.['max']) return `Máximo hasta las 16:30.`;
     if (ctrl.errors?.['min']) return `Mínimo desde las 08:00.`;
     return null;
@@ -113,8 +138,9 @@ export class HorariosLaborales implements OnInit, OnDestroy {
       retornoCtrl.updateValueAndValidity({ emitEvent: false });
     }
 
-    this.form.get('val_hora_salida')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
+    this.form
+      .get('val_hora_salida')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe(() => retornoCtrl?.updateValueAndValidity({ emitEvent: false }));
   }
 
@@ -147,6 +173,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     private authService: AuthService,
     private periodoService: PeriodoService,
     private zone: NgZone,
+    private toastrAlert: ToastrAlertService,
   ) {
     this.form = this.fb.group({});
   }
@@ -168,7 +195,9 @@ export class HorariosLaborales implements OnInit, OnDestroy {
             this.fields = formulario.preguntas
               .filter((p) => p.estado !== false)
               .map((p) => this.toFieldConfig(p))
-              .sort((a, b) => (this.DISPLAY_ORDER[a.key] ?? 99) - (this.DISPLAY_ORDER[b.key] ?? 99));
+              .sort(
+                (a, b) => (this.DISPLAY_ORDER[a.key] ?? 99) - (this.DISPLAY_ORDER[b.key] ?? 99),
+              );
             this.generateControls();
             this.applyBusinessRules();
             this.applyDependencyLogic();
@@ -178,7 +207,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
         error: () => {
           this.zone.run(() => {
             this.loading = false;
-            Swal.fire('Error', 'No se pudo cargar el formulario', 'error');
+            this.toastrAlert.showError('No se pudo cargar el formulario', 'Error');
           });
         },
       });
@@ -296,13 +325,10 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   async guardar(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      Swal.fire({
-        title: 'Formulario Incompleto',
-        text: 'Por favor, llene todos los campos requeridos para continuar.',
-        icon: 'warning',
-        confirmButtonColor: this.COLOR_PRIMARIO,
-        confirmButtonText: 'Entendido',
-      });
+      this.toastrAlert.showWarning(
+        'Por favor, llene todos los campos requeridos para continuar.',
+        'Formulario Incompleto',
+      );
       return;
     }
 
@@ -314,20 +340,25 @@ export class HorariosLaborales implements OnInit, OnDestroy {
       const ejercicio = await this.periodoService.getEjercicioByAnio(now.getFullYear());
       if (!ejercicio) throw new Error(`No hay ejercicio activo para el año ${now.getFullYear()}`);
 
-      const periodo = await this.periodoService.getPeriodoByEjercicioAndMes(ejercicio.id, now.getMonth() + 1);
+      const periodo = await this.periodoService.getPeriodoByEjercicioAndMes(
+        ejercicio.id,
+        now.getMonth() + 1,
+      );
       if (!periodo) throw new Error(`No hay periodo activo para el mes ${now.getMonth() + 1}`);
 
       const { id: userId } = this.authService.currentUser();
 
+      //TODO: Cambiar el entidad_id
       const solicitudPayload: SolicitudPayload = {
         formulario_id: this.formulario?.formulario_id ?? null,
         usuario_id: userId,
-        entidad_id: userId,
+        entidad_id: 'F9687983-F6CF-4706-9004-A1B793E3A987',
         secuencial_id: null,
-        ctestado_id:3,
+        ctestado_id: 3,
         periodo_id: periodo.id,
         descripcion: '',
         ejercicio_id: ejercicio.id,
+        tecnico_id: raw.tecnico_id,
       };
 
       const res = await firstValueFrom(this.solicitudService.registrarSolicitud(solicitudPayload));
@@ -337,17 +368,20 @@ export class HorariosLaborales implements OnInit, OnDestroy {
         .filter((f) => !f.hidden)
         .map((f) => {
           const value = raw[f.key];
-          const esSelect = f.controlType === 'select';
           const esEmployee = f.controlType === 'employee-list';
           return {
             solicitud_id: solicitudId,
             atributo_formulario_id: String(f.id),
-            valor_texto: !esSelect && !esEmployee ? (value ?? null) : null,
+            valor_texto: !esEmployee
+              ? value != null && value !== ''
+                ? String(value)
+                : null
+              : null,
             valor_numero: null,
             valor_fecha: null,
             valor_booleano: null,
             valor_multiple: null,
-            valor_catalogo: esSelect ? Number(value) || 0 : 0,
+            valor_catalogo: 0,
             valor_uuid: esEmployee ? (value ?? '') : userId,
             estado: true,
           };
@@ -358,24 +392,13 @@ export class HorariosLaborales implements OnInit, OnDestroy {
       this.zone.run(() => {
         this.saving = false;
         this.form.reset();
-        Swal.fire({
-          title: '¡Guardado!',
-          text: 'El registro ha sido guardado correctamente.',
-          icon: 'success',
-          confirmButtonColor: this.COLOR_PRIMARIO,
-          timer: 2500,
-        });
+        this.toastrAlert.showSuccess('El registro ha sido guardado correctamente.', '¡Guardado!');
       });
     } catch (err: any) {
       this.zone.run(() => {
         this.saving = false;
         const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo guardar el registro';
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: mensaje,
-          confirmButtonColor: this.COLOR_PRIMARIO,
-        });
+        this.toastrAlert.showError(mensaje, 'Error');
       });
     }
   }
@@ -386,7 +409,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
       text: 'Esta programación se quitará del cronograma y no se puede revertir.',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: this.COLOR_PRIMARIO,
+      confirmButtonColor: colors.primary,
       cancelButtonColor: '#d33',
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
@@ -394,13 +417,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
       if (result.isConfirmed) {
         this.solicitudes = this.solicitudes.filter((s) => s.id !== id);
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.solicitudes));
-        Swal.fire({
-          title: 'Eliminado',
-          text: 'La programación ha sido borrada.',
-          icon: 'success',
-          confirmButtonColor: this.COLOR_PRIMARIO,
-          timer: 1500,
-        });
+        this.toastrAlert.showSuccess('La programación ha sido borrada.', 'Eliminado');
       }
     });
   }

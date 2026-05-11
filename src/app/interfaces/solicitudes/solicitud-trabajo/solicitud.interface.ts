@@ -32,4 +32,5 @@ export interface SolicitudPayload {
   periodo_id: number | null;
   descripcion: string;
   ejercicio_id: number;
+  tecnico_id: string | null;
 }
