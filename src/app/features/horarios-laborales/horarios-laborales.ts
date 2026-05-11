@@ -324,7 +324,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
         usuario_id: userId,
         entidad_id: userId,
         secuencial_id: null,
-        ctestado_id: 2,
+        ctestado_id:3,
         periodo_id: periodo.id,
         descripcion: '',
         ejercicio_id: ejercicio.id,

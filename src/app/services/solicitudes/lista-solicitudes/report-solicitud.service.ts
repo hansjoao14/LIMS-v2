@@ -13,6 +13,7 @@ import { META_FIELDS, REPORT_SOLICITUD_FIELDS, REPORT_VALOR_SOLICITUD_FIELDS } f
 
 const CLIENT_NAME = 'reportes';
 
+//agregar el id del formulario, el tema de los roles acceso
 const GET_COLLECTION_REPORT_SOLICITUD = gql`
   query CollectionReportSolicitud($page: Int, $take: Int) {
     collectionReportSolicitud(
