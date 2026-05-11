@@ -185,6 +185,13 @@ export class PorContraloria implements OnInit, OnDestroy {
     return !!c && c.invalid && (c.touched || c.dirty);
   }
 
+  getFieldError(key: string): string | null {
+    const ctrl = this.form.get(key);
+    if (!ctrl || !ctrl.invalid || (!ctrl.touched && !ctrl.dirty)) return null;
+    if (ctrl.errors?.['required']) return 'Este campo es requerido.';
+    return null;
+  }
+
   cargarDatos(): void {
     const data = localStorage.getItem(this.STORAGE_KEY);
     if (data) {

@@ -49,7 +49,6 @@
                 [formControlName]="field.key"
                 class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
                 [class.border-red-500]="esCampoInvalido(field.key)"
-                [class.bg-red-50]="esCampoInvalido(field.key)"
               >
                 <option value="">Seleccione un funcionario...</option>
                 @for (emp of field.employeeList; track emp.empleado_id) {
@@ -61,7 +60,6 @@
                 [formControlName]="field.key"
                 class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
                 [class.border-red-500]="esCampoInvalido(field.key)"
-                [class.bg-red-50]="esCampoInvalido(field.key)"
               >
                 <option value="">Seleccione...</option>
                 @for (opt of field.options; track opt.id) {
@@ -76,7 +74,6 @@
                 [maxlength]="field.maxLength ?? 9999"
                 class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-3 rounded text-sm resize-none outline-none focus:border-[#1d2b64] transition-colors"
                 [class.border-red-500]="esCampoInvalido(field.key)"
-                [class.bg-red-50]="esCampoInvalido(field.key)"
               ></textarea>
             } @else {
               <input
@@ -87,7 +84,6 @@
                 [attr.max]="getInputMax(field)"
                 class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
                 [class.border-red-500]="esCampoInvalido(field.key)"
-                [class.bg-red-50]="esCampoInvalido(field.key)"
               />
             }
 

@@ -43,7 +43,6 @@
                   [formControlName]="field.key"
                   class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
                   [class.border-red-500]="esCampoInvalido(field.key)"
-                  [class.bg-red-50]="esCampoInvalido(field.key)"
                 >
                   <option value="">Seleccione un funcionario...</option>
                   @for (emp of field.employeeList; track emp.empleado_id) {
@@ -55,7 +54,6 @@
                   [formControlName]="field.key"
                   class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
                   [class.border-red-500]="esCampoInvalido(field.key)"
-                  [class.bg-red-50]="esCampoInvalido(field.key)"
                 >
                   <option value="">Seleccione...</option>
                   @for (opt of field.options; track opt.id) {
@@ -69,8 +67,11 @@
                   [placeholder]="field.placeholder"
                   class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
                   [class.border-red-500]="esCampoInvalido(field.key)"
-                  [class.bg-red-50]="esCampoInvalido(field.key)"
                 />
+              }
+
+              @if (getFieldError(field.key)) {
+                <span class="text-red-500 text-[11px] mt-1">{{ getFieldError(field.key) }}</span>
               }
             </div>
           }
@@ -90,8 +91,11 @@
                 [maxlength]="field.maxLength ?? 9999"
                 class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-3 rounded text-sm resize-none outline-none focus:border-[#1d2b64] transition-colors"
                 [class.border-red-500]="esCampoInvalido(field.key)"
-                [class.bg-red-50]="esCampoInvalido(field.key)"
               ></textarea>
+
+              @if (getFieldError(field.key)) {
+                <span class="text-red-500 text-[11px] mt-1">{{ getFieldError(field.key) }}</span>
+              }
             </div>
           }
 
