@@ -53,6 +53,92 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     return '';
   }
 
+  // --- Restricciones de fecha y hora ---
+
+  private getMinDate(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  private getMaxDate(): string {
+    const date = new Date();
+    let businessDays = 0;
+    while (businessDays < 10) {
+      date.setDate(date.getDate() + 1);
+      const day = date.getDay();
+      if (day !== 0 && day !== 6) businessDays++;
+    }
+    return date.toISOString().split('T')[0];
+  }
+
+  getInputMin(field: FieldConfig): string | null {
+    switch (field.key) {
+      case 'val_fecha_programacion': return this.getMinDate();
+      case 'val_hora_salida': return '08:00';
+      case 'val_hora_retorno': return this.form.get('val_hora_salida')?.value || '08:00';
+      default: return null;
+    }
+  }
+
+  getInputMax(field: FieldConfig): string | null {
+    switch (field.key) {
+      case 'val_fecha_programacion': return this.getMaxDate();
+      case 'val_hora_salida':
+      case 'val_hora_retorno': return '16:30';
+      default: return null;
+    }
+  }
+
+  getFieldError(key: string): string | null {
+    const ctrl = this.form.get(key);
+    if (!ctrl || !ctrl.invalid || (!ctrl.touched && !ctrl.dirty)) return null;
+    if (ctrl.errors?.['required']) return 'Este campo es requerido.';
+    if (ctrl.errors?.['weekend']) return 'Solo se permiten días de lunes a viernes.';
+    if (ctrl.errors?.['fueraDeRango']) return 'Solo puede seleccionar días de la semana actual (hasta el viernes).';
+    if (ctrl.errors?.['retornoAntesSalida']) return 'La hora de retorno no puede ser anterior a la de salida.';
+    if (ctrl.errors?.['max']) return `Máximo hasta las 16:30.`;
+    if (ctrl.errors?.['min']) return `Mínimo desde las 08:00.`;
+    return null;
+  }
+
+  private applyBusinessRules(): void {
+    const fechaCtrl = this.form.get('val_fecha_programacion');
+    if (fechaCtrl) {
+      fechaCtrl.addValidators(this.weekdayValidator());
+      fechaCtrl.updateValueAndValidity({ emitEvent: false });
+    }
+
+    const retornoCtrl = this.form.get('val_hora_retorno');
+    if (retornoCtrl) {
+      retornoCtrl.addValidators(this.retornoAfterSalidaValidator());
+      retornoCtrl.updateValueAndValidity({ emitEvent: false });
+    }
+
+    this.form.get('val_hora_salida')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => retornoCtrl?.updateValueAndValidity({ emitEvent: false }));
+  }
+
+  private weekdayValidator(): ValidatorFn {
+    return (control) => {
+      if (!control.value) return null;
+      const date = new Date(control.value + 'T12:00:00');
+      const day = date.getDay();
+      if (day === 0 || day === 6) return { weekend: true };
+      const min = new Date(this.getMinDate() + 'T12:00:00');
+      const max = new Date(this.getMaxDate() + 'T12:00:00');
+      if (date < min || date > max) return { fueraDeRango: true };
+      return null;
+    };
+  }
+
+  private retornoAfterSalidaValidator(): ValidatorFn {
+    return (control) => {
+      const salida = this.form?.get('val_hora_salida')?.value;
+      if (!salida || !control.value) return null;
+      return control.value < salida ? { retornoAntesSalida: true } : null;
+    };
+  }
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -84,6 +170,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
               .map((p) => this.toFieldConfig(p))
               .sort((a, b) => (this.DISPLAY_ORDER[a.key] ?? 99) - (this.DISPLAY_ORDER[b.key] ?? 99));
             this.generateControls();
+            this.applyBusinessRules();
             this.applyDependencyLogic();
             this.loading = false;
           });

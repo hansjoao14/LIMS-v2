@@ -83,10 +83,16 @@
                 [formControlName]="field.key"
                 [type]="getInputType(field)"
                 [placeholder]="field.placeholder"
+                [attr.min]="getInputMin(field)"
+                [attr.max]="getInputMax(field)"
                 class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
                 [class.border-red-500]="esCampoInvalido(field.key)"
                 [class.bg-red-50]="esCampoInvalido(field.key)"
               />
+            }
+
+            @if (getFieldError(field.key)) {
+              <span class="text-red-500 text-[11px] mt-1">{{ getFieldError(field.key) }}</span>
             }
           </div>
         }
