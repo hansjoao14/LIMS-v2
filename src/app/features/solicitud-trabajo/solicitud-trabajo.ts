@@ -128,7 +128,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   // ── Constantes ───────────────────────────────────────────────────────────
   readonly fechaActual = new Date();
-  readonly numeroSolicitudGenerado = 'ST-' + new Date().getFullYear() + '-001';
   private readonly COLOR_PRIMARIO = '#1e3a8a';
   private readonly destroy$ = new Subject<void>();
 
@@ -150,10 +149,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       entidad_id: ['', Validators.required],
       tecnico_id: ['', Validators.required],
       cargo_usuario: [{ value: '', disabled: true }],
-      numero_solicitud: [
-        { value: this.numeroSolicitudGenerado, disabled: true },
-        Validators.required,
-      ],
+      numero_solicitud: [{ value: '', disabled: true }],
       val_pasaporte: this.fb.control(''),
     });
   }

@@ -43,6 +43,7 @@
     <form [formGroup]="form">
       @if (currentStep === 1) {
         <app-step1-solicitud
+          [titulo]="formularioTitulo"
           [entidadesMock]="establecimientos"
           [tecnicosFiltrados]="tecnicosFiltrados"
           [cargando]="isCreandoSolicitud"

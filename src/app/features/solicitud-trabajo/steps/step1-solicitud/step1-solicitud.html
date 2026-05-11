@@ -1,8 +1,8 @@
 <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 animate-in fade-in slide-in-from-bottom-4">
 
   <div class="mb-6 border-b border-slate-300 pb-4">
-    <h3 class="text-lg font-bold text-[#1e3a8a] mb-1">Solicitud de trabajo</h3>
-    <p class="text-sm text-slate-800">Número de solicitud: <strong class="font-bold">{{ form.get('numero_solicitud')?.value }}</strong></p>
+    <h3 class="text-lg font-bold text-[#1e3a8a] mb-1">{{ titulo }}</h3>
+    <p class="text-sm text-slate-800">Número de solicitud: <strong class="font-bold">{{ form.get('numero_solicitud')?.value || 'Pendiente' }}</strong></p>
   </div>
 
   <div class="grid grid-cols-12 gap-6 pb-6 border-b border-slate-300 mb-6">

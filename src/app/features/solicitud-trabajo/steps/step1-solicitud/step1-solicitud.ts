@@ -11,6 +11,7 @@ import { Establecimiento } from '../../../../interfaces/solicitudes/solicitud-tr
   templateUrl: './step1-solicitud.html',
 })
 export class Step1SolicitudComponent {
+  @Input() titulo: string = 'Solicitud de trabajo';
   @Input() entidadesMock: Establecimiento[] = [];
   @Input() tecnicosFiltrados: { id: string; nombre: string }[] = [];
   @Input() cargando = false;
