@@ -24,6 +24,7 @@ export class PorContraloria implements OnInit, OnDestroy {
   formulario: FormularioLaboratorio | null = null;
   fields: FieldConfig[] = [];
   loading = true;
+  saving = false;
   solicitudes: ContraloriaRecord[] = [];
 
   readonly STORAGE_KEY = 'lims_vehiculos_contraloria';
@@ -204,6 +205,7 @@ export class PorContraloria implements OnInit, OnDestroy {
       return;
     }
 
+    this.saving = true;
     const raw = this.form.getRawValue();
     const now = new Date();
 
@@ -253,6 +255,7 @@ export class PorContraloria implements OnInit, OnDestroy {
       await firstValueFrom(this.solicitudService.guardarValoresSolicitud({ valorSolicitud }));
 
       this.zone.run(() => {
+        this.saving = false;
         this.form.reset();
         Swal.fire({
           title: '¡Guardado!',
@@ -264,6 +267,7 @@ export class PorContraloria implements OnInit, OnDestroy {
       });
     } catch (err: any) {
       this.zone.run(() => {
+        this.saving = false;
         const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo guardar el registro';
         Swal.fire({
           icon: 'error',

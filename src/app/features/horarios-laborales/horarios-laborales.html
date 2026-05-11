@@ -95,9 +95,17 @@
       <div class="mt-10">
         <button
           type="submit"
-          class="bg-[#1d2b64] text-white px-10 py-3 rounded text-sm font-bold uppercase tracking-widest shadow-md hover:bg-[#2a3c85] transition-all"
+          [disabled]="saving"
+          class="bg-[#1d2b64] text-white px-10 py-3 rounded text-sm font-bold uppercase tracking-widest shadow-md hover:bg-[#2a3c85] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          GUARDAR PROGRAMACIÓN
+          @if (saving) {
+            <span class="flex items-center gap-2">
+              <span class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+              Guardando...
+            </span>
+          } @else {
+            GUARDAR PROGRAMACIÓN
+          }
         </button>
       </div>
     </form>

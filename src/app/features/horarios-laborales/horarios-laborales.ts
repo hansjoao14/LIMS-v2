@@ -24,6 +24,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   formulario: FormularioLaboratorio | null = null;
   fields: FieldConfig[] = [];
   loading = true;
+  saving = false;
   solicitudes: VehiculoRecord[] = [];
 
   readonly STORAGE_KEY = 'lims_gestion_vehiculos';
@@ -218,6 +219,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
       return;
     }
 
+    this.saving = true;
     const raw = this.form.getRawValue();
     const now = new Date();
 
@@ -267,6 +269,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
       await firstValueFrom(this.solicitudService.guardarValoresSolicitud({ valorSolicitud }));
 
       this.zone.run(() => {
+        this.saving = false;
         this.form.reset();
         Swal.fire({
           title: '¡Guardado!',
@@ -278,6 +281,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
       });
     } catch (err: any) {
       this.zone.run(() => {
+        this.saving = false;
         const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo guardar el registro';
         Swal.fire({
           icon: 'error',
