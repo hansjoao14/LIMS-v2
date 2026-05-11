@@ -29,6 +29,29 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   readonly STORAGE_KEY = 'lims_gestion_vehiculos';
   readonly COLOR_PRIMARIO = '#1d2b64';
 
+  readonly DISPLAY_ORDER: Record<string, number> = {
+    val_fecha_programacion: 1,
+    val_num_ocupantes: 2,
+    val_destino_direccion: 3,
+    val_hora_salida: 4,
+    val_hora_retorno: 5,
+    val_vehiculo_id: 6,
+    val_funcionario_id: 7,
+    val_descripcion_actividad: 8,
+    val_observaciones: 9,
+  };
+
+  readonly FIELD_SPAN: Record<string, number> = {
+    val_funcionario_id: 2,
+    val_observaciones: 2,
+  };
+
+  getFieldSpanClass(key: string): string {
+    const span = this.FIELD_SPAN[key] ?? 1;
+    if (span === 2) return 'sm:col-span-2 md:col-span-2';
+    return '';
+  }
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -57,7 +80,8 @@ export class HorariosLaborales implements OnInit, OnDestroy {
             this.formulario = formulario;
             this.fields = formulario.preguntas
               .filter((p) => p.estado !== false)
-              .map((p) => this.toFieldConfig(p));
+              .map((p) => this.toFieldConfig(p))
+              .sort((a, b) => (this.DISPLAY_ORDER[a.key] ?? 99) - (this.DISPLAY_ORDER[b.key] ?? 99));
             this.generateControls();
             this.applyDependencyLogic();
             this.loading = false;
@@ -106,11 +130,13 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   private resolveControlType(pregunta: Pregunta): FieldConfig['controlType'] {
     if (pregunta.is_list_empleado) return 'employee-list';
     if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
-    if (pregunta.is_text_area) return 'textarea';
+    if (pregunta.nombre === 'val_observaciones') return 'textarea';
+    if (pregunta.is_text_area && pregunta.nombre !== 'val_descripcion_actividad') return 'textarea';
     return 'text';
   }
 
   getInputType(field: FieldConfig): string {
+    if (field.key === 'val_hora_salida' || field.key === 'val_hora_retorno') return 'time';
     const tipo = field.source.tipo_respuesta;
     if (tipo === 'Fecha') return 'date';
     if (tipo === 'Numerico') return 'number';

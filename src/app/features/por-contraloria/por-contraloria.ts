@@ -111,10 +111,22 @@ export class PorContraloria implements OnInit, OnDestroy {
   }
 
   getInputType(field: FieldConfig): string {
+    if (field.key === 'val_hora_salida' || field.key === 'val_hora_retorno') return 'time';
     const tipo = field.source.tipo_respuesta;
     if (tipo === 'Fecha') return 'date';
     if (tipo === 'Numerico') return 'number';
     return 'text';
+  }
+
+  readonly FIELD_SPAN: Record<string, number> = {
+    val_funcionario_id: 2,
+    val_motivo_movilizacion: 2,
+  };
+
+  getFieldSpanClass(key: string): string {
+    const span = this.FIELD_SPAN[key] ?? 1;
+    if (span === 2) return 'sm:col-span-2 md:col-span-2';
+    return '';
   }
 
   private generateControls(): void {
