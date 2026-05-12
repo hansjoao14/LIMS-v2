@@ -9,15 +9,15 @@ import {
   Validators,
 } from '@angular/forms';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
-import Swal from 'sweetalert2';
 import { ToastrAlertService } from '../../services/toastr.service';
-import colors from '../../ui/constants/colors';
 
 import {
   SolicitudService,
   ValorSolicitudItem,
   SolicitudPayload,
 } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
+import { ReportValorSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import {
   FieldConfig,
   FormularioLaboratorio,
@@ -26,13 +26,15 @@ import {
 import { AuthService } from '../auth/service/auth-service';
 import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/periodo.service';
 import { LoadingComponent } from '../../shared/components/loading/loading';
+import { PaginationComponent } from '../../shared/components/pagination/pagination';
+import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 
 type VehiculoRecord = { id: string } & Record<string, unknown>;
 
 @Component({
   selector: 'app-horarios-laborales',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, LoadingComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, LoadingComponent, PaginationComponent],
   templateUrl: './horarios-laborales.html',
   styleUrls: ['./horarios-laborales.css'],
 })
@@ -42,7 +44,12 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   fields: FieldConfig[] = [];
   loading = true;
   saving = false;
+  private todasSolicitudes: VehiculoRecord[] = [];
   solicitudes: VehiculoRecord[] = [];
+  metaTabla: PaginationMeta | null = null;
+  currentPage = 1;
+  loadingTabla = false;
+  readonly PAGE_SIZE = 10;
 
   readonly STORAGE_KEY = 'lims_gestion_vehiculos';
 
@@ -132,9 +139,16 @@ export class HorariosLaborales implements OnInit, OnDestroy {
       fechaCtrl.updateValueAndValidity({ emitEvent: false });
     }
 
+    const salidaCtrl = this.form.get('val_hora_salida');
+    if (salidaCtrl) {
+      salidaCtrl.addValidators(this.timeRangeValidator('08:00', '16:30'));
+      salidaCtrl.updateValueAndValidity({ emitEvent: false });
+    }
+
     const retornoCtrl = this.form.get('val_hora_retorno');
     if (retornoCtrl) {
       retornoCtrl.addValidators(this.retornoAfterSalidaValidator());
+      retornoCtrl.addValidators(this.timeRangeValidator('08:00', '16:30'));
       retornoCtrl.updateValueAndValidity({ emitEvent: false });
     }
 
@@ -165,11 +179,21 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     };
   }
 
+  private timeRangeValidator(min: string, max: string): ValidatorFn {
+    return (control) => {
+      if (!control.value) return null;
+      if (control.value < min) return { min: true };
+      if (control.value > max) return { max: true };
+      return null;
+    };
+  }
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private solicitudService: SolicitudService,
+    private reportSolicitudService: ReportSolicitudService,
     private authService: AuthService,
     private periodoService: PeriodoService,
     private zone: NgZone,
@@ -316,10 +340,66 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   }
 
   cargarDatos(): void {
-    const data = localStorage.getItem(this.STORAGE_KEY);
-    if (data) {
-      this.solicitudes = JSON.parse(data);
+    this.loadingTabla = true;
+    this.reportSolicitudService
+      .getValoresByTipoFormulario(1002)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.zone.run(() => {
+            this.todasSolicitudes = this.agruparPorSolicitud(data);
+            this.irAPagina(1);
+            this.loadingTabla = false;
+          });
+        },
+        error: () => {
+          this.zone.run(() => {
+            this.loadingTabla = false;
+            this.toastrAlert.showError('No se pudo cargar el cronograma.', 'Error');
+          });
+        },
+      });
+  }
+
+  irAPagina(page: number): void {
+    this.currentPage = page;
+    const start = (page - 1) * this.PAGE_SIZE;
+    this.solicitudes = this.todasSolicitudes.slice(start, start + this.PAGE_SIZE);
+    const total = this.todasSolicitudes.length;
+    const totalPages = Math.ceil(total / this.PAGE_SIZE);
+    this.metaTabla = {
+      page,
+      total,
+      totalPages,
+      limit: this.PAGE_SIZE,
+      skip: start,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      nextPage: page < totalPages ? page + 1 : null,
+      prevPage: page > 1 ? page - 1 : null,
+    };
+  }
+
+  private agruparPorSolicitud(items: ReportValorSolicitud[]): VehiculoRecord[] {
+    const grouped = new Map<string, VehiculoRecord>();
+    for (const item of items) {
+      if (!grouped.has(item.id_solicitud)) {
+        grouped.set(item.id_solicitud, {
+          id: item.id_solicitud,
+          nombres_completos: item.nombres_completos,
+          fecha_creacion: item.fecha_creacion,
+        });
+      }
+      const record = grouped.get(item.id_solicitud)!;
+      const valor =
+        item.valor_texto ??
+        item.valor_fecha ??
+        (item.valor_numero != null ? String(item.valor_numero) : null) ??
+        (item.valor_booleano != null ? String(item.valor_booleano) : null) ??
+        '—';
+      record[item.atributo_formulario_nombre] = valor;
     }
+    return Array.from(grouped.values());
   }
 
   async guardar(): Promise<void> {
@@ -393,6 +473,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
         this.saving = false;
         this.form.reset();
         this.toastrAlert.showSuccess('El registro ha sido guardado correctamente.', '¡Guardado!');
+        this.cargarDatos(); // recarga todo y vuelve a página 1
       });
     } catch (err: any) {
       this.zone.run(() => {
@@ -403,27 +484,20 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     }
   }
 
-  eliminar(id: string): void {
-    Swal.fire({
-      title: '¿Está seguro de eliminar?',
-      text: 'Esta programación se quitará del cronograma y no se puede revertir.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: colors.primary,
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.solicitudes = this.solicitudes.filter((s) => s.id !== id);
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.solicitudes));
-        this.toastrAlert.showSuccess('La programación ha sido borrada.', 'Eliminado');
-      }
-    });
+  eliminar(_id: string): void {
+    this.toastrAlert.showWarning('La eliminación debe realizarse desde el panel de administración.', 'Aviso');
   }
 
   getFieldValue(record: VehiculoRecord, key: string): unknown {
     return record[key] ?? '—';
+  }
+
+  getFechaCreacion(record: VehiculoRecord): string {
+    const raw = record['fecha_creacion'];
+    if (!raw) return '—';
+    const d = new Date(raw as string);
+    if (isNaN(d.getTime())) return String(raw);
+    return d.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
   ngOnDestroy(): void {

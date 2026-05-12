@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Apollo, gql } from 'apollo-angular';
-import { Observable } from 'rxjs';
+import { Observable, expand, reduce, EMPTY } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   ReportSolicitud,
@@ -39,6 +39,22 @@ const GET_VALORES_SOLICITUD = gql`
     ) {
       count
       data { ${REPORT_VALOR_SOLICITUD_FIELDS} }
+    }
+  }
+`;
+
+const GET_VALORES_BY_TIPO_FORMULARIO = gql`
+  query CollectionReportValorSolicitud($tipoFormularioId: Int!, $page: Int, $take: Int) {
+    collectionReportValorSolicitud(
+      query: {
+        orderBy: { tipo_formulario_id: ASC }
+        where: { tipo_formulario_id: { equals: $tipoFormularioId } }
+        pagination: { page: $page, take: $take }
+      }
+    ) {
+      count
+      data { ${REPORT_VALOR_SOLICITUD_FIELDS} }
+      meta { ${META_FIELDS} }
     }
   }
 `;
@@ -90,6 +106,32 @@ export class ReportSolicitudService {
           return Array.from(dedup.values());
         }),
       );
+  }
+
+  getValoresByTipoFormulario(tipoFormularioId: number): Observable<ReportValorSolicitud[]> {
+    const PAGE_SIZE = 200;
+    const fetchPage = (page: number) =>
+      this.apollo
+        .use(CLIENT_NAME)
+        .query<{ collectionReportValorSolicitud: ReportValorSolicitudCollectionResponse }>({
+          query: GET_VALORES_BY_TIPO_FORMULARIO,
+          variables: { tipoFormularioId, page, take: PAGE_SIZE },
+          fetchPolicy: 'network-only',
+        })
+        .pipe(
+          map((result) => {
+            const res = result.data?.collectionReportValorSolicitud;
+            return {
+              data: (res?.data ?? []) as ReportValorSolicitud[],
+              meta: res?.meta as PaginationMeta,
+            };
+          }),
+        );
+
+    return fetchPage(1).pipe(
+      expand(({ meta }) => (meta?.hasNextPage ? fetchPage(meta.nextPage!) : EMPTY)),
+      reduce((acc, { data }) => acc.concat(data), [] as ReportValorSolicitud[]),
+    );
   }
 
   getSolicitudes(page: number, limit: number): Observable<SolicitudesPage> {

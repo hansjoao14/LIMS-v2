@@ -122,46 +122,82 @@
       <h3 class="text-white font-bold uppercase text-sm tracking-wider">
         Cronograma General de Vehículos
       </h3>
-      <span class="text-[10px] text-blue-200 uppercase">Datos almacenados localmente</span>
+      @if (loadingTabla) {
+        <span class="flex items-center gap-2 text-blue-200 text-[11px]">
+          <span class="animate-spin h-3.5 w-3.5 border-2 border-blue-200 border-t-transparent rounded-full"></span>
+          Actualizando...
+        </span>
+      }
     </div>
 
     <div class="overflow-x-auto">
-      <table class="w-full text-center border-collapse">
+      <table class="w-full text-sm border-collapse">
         <thead>
-          <tr class="bg-slate-100 text-[11px] font-bold text-slate-600 uppercase border-b">
-            <th class="p-3 border-r w-12">No.</th>
-            @for (field of visibleFields; track field.id) {
-              <th class="p-3 border-r">{{ field.label }}</th>
-            }
-            <th class="p-3">Acciones</th>
+          <tr class="bg-slate-100 text-[10px] font-bold text-slate-500 uppercase border-b tracking-wider">
+            <th class="px-3 py-2.5 border-r text-center w-10">No.</th>
+            <th class="px-3 py-2.5 border-r text-center">Día y Fecha</th>
+            <th class="px-3 py-2.5 border-r text-left">Sector / Dirección del Destino</th>
+            <th class="px-3 py-2.5 border-r text-left">Actividad</th>
+            <th class="px-3 py-2.5 border-r text-center">Salida</th>
+            <th class="px-3 py-2.5 border-r text-center">Retorno</th>
+            <th class="px-3 py-2.5 border-r text-left">Funcionario</th>
+            <th class="px-3 py-2.5 border-r text-center">Ocupantes</th>
+            <th class="px-3 py-2.5 text-left">Observaciones</th>
           </tr>
         </thead>
         <tbody>
           @for (sol of solicitudes; track sol.id; let i = $index) {
-            <tr class="text-[12px] border-b hover:bg-slate-50 transition-colors">
-              <td class="p-3 border-r font-mono text-slate-400">{{ i + 1 }}</td>
-              @for (field of visibleFields; track field.id) {
-                <td class="p-3 border-r text-slate-600">{{ getFieldValue(sol, field.key) }}</td>
-              }
-              <td class="p-3">
-                <button
-                  (click)="eliminar(sol.id)"
-                  class="text-red-500 hover:text-red-700 font-bold text-[10px] uppercase underline transition-colors"
-                >
-                  Eliminar
-                </button>
+            <tr class="border-b hover:bg-slate-50 transition-colors text-[12px]">
+              <td class="px-3 py-2.5 border-r text-center font-mono text-slate-400">
+                {{ (currentPage - 1) * PAGE_SIZE + i + 1 }}
+              </td>
+              <td class="px-3 py-2.5 border-r text-center text-slate-600 whitespace-nowrap">
+                {{ getFieldValue(sol, 'val_fecha_programacion') }}
+              </td>
+              <td class="px-3 py-2.5 border-r text-slate-600">
+                {{ getFieldValue(sol, 'val_destino_direccion') }}
+              </td>
+              <td class="px-3 py-2.5 border-r text-slate-600">
+                {{ getFieldValue(sol, 'val_descripcion_actividad') }}
+              </td>
+              <td class="px-3 py-2.5 border-r text-center text-slate-600 whitespace-nowrap">
+                {{ getFieldValue(sol, 'val_hora_salida') }}
+              </td>
+              <td class="px-3 py-2.5 border-r text-center text-slate-600 whitespace-nowrap">
+                {{ getFieldValue(sol, 'val_hora_retorno') }}
+              </td>
+              <td class="px-3 py-2.5 border-r text-slate-600">
+                {{ getFieldValue(sol, 'val_funcionario_id') }}
+              </td>
+              <td class="px-3 py-2.5 border-r text-center text-slate-600">
+                {{ getFieldValue(sol, 'val_num_ocupantes') }}
+              </td>
+              <td class="px-3 py-2.5 text-slate-600">
+                {{ getFieldValue(sol, 'val_observaciones') }}
               </td>
             </tr>
           } @empty {
             <tr>
-              <td [attr.colspan]="visibleFields.length + 2" class="p-20 text-slate-400 italic">
-                No hay vehículos programados para esta semana.
+              <td colspan="9" class="p-20 text-slate-400 italic text-center">
+                @if (loadingTabla) {
+                  Cargando cronograma...
+                } @else {
+                  No hay vehículos programados.
+                }
               </td>
             </tr>
           }
         </tbody>
       </table>
     </div>
+
+    <app-pagination
+      [meta]="metaTabla"
+      [currentPage]="currentPage"
+      [itemsShown]="solicitudes.length"
+      itemLabel="registros"
+      (pageChange)="irAPagina($event)">
+    </app-pagination>
   </div>
   }
 </div>
