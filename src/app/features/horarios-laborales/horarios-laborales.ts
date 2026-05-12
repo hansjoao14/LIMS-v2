@@ -488,6 +488,47 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     this.toastrAlert.showWarning('La eliminación debe realizarse desde el panel de administración.', 'Aviso');
   }
 
+  private parseFecha(fecha: string): Date | null {
+    if (!fecha || fecha === '—') return null;
+    const iso = new Date(fecha.includes('T') ? fecha : fecha + 'T12:00:00');
+    if (!isNaN(iso.getTime())) return iso;
+    const parts = fecha.split('/');
+    if (parts.length === 3) {
+      const [d, m, y] = parts;
+      return new Date(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T12:00:00`);
+    }
+    return null;
+  }
+
+  get solicitudesAgrupadas(): Array<{ groupKey: string; diaLabel: string; items: VehiculoRecord[] }> {
+    const DIAS  = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+    const MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+                   'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+
+    let flatIdx = 0;
+    const groups = new Map<string, { diaLabel: string; sortKey: number; items: VehiculoRecord[] }>();
+
+    for (const sol of this.solicitudes) {
+      const fechaStr = String(sol['val_fecha_programacion'] ?? '—');
+      const d = this.parseFecha(fechaStr);
+
+      const groupKey  = d ? fechaStr : '—';
+      const sortKey   = d ? d.getTime() : 0;
+      const diaLabel  = d
+        ? `${d.getDay() === 0 || d.getDay() === 6 ? 'FIN DE SEMANA' : DIAS[d.getDay()]}  ·  ${d.getDate()} DE ${MESES[d.getMonth()]} ${d.getFullYear()}`
+        : 'SIN FECHA';
+
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, { diaLabel, sortKey, items: [] });
+      }
+      groups.get(groupKey)!.items.push({ ...sol, _flatIdx: flatIdx++ });
+    }
+
+    return Array.from(groups.entries())
+      .sort(([, a], [, b]) => a.sortKey - b.sortKey)
+      .map(([groupKey, { diaLabel, items }]) => ({ groupKey, diaLabel, items }));
+  }
+
   getFieldValue(record: VehiculoRecord, key: string): unknown {
     return record[key] ?? '—';
   }

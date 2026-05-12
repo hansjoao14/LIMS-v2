@@ -146,37 +146,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (sol of solicitudes; track sol.id; let i = $index) {
-            <tr class="border-b hover:bg-slate-50 transition-colors text-[12px]">
-              <td class="px-3 py-2.5 border-r text-center font-mono text-slate-400">
-                {{ (currentPage - 1) * PAGE_SIZE + i + 1 }}
-              </td>
-              <td class="px-3 py-2.5 border-r text-center text-slate-600 whitespace-nowrap">
-                {{ getFieldValue(sol, 'val_fecha_programacion') }}
-              </td>
-              <td class="px-3 py-2.5 border-r text-slate-600">
-                {{ getFieldValue(sol, 'val_destino_direccion') }}
-              </td>
-              <td class="px-3 py-2.5 border-r text-slate-600">
-                {{ getFieldValue(sol, 'val_descripcion_actividad') }}
-              </td>
-              <td class="px-3 py-2.5 border-r text-center text-slate-600 whitespace-nowrap">
-                {{ getFieldValue(sol, 'val_hora_salida') }}
-              </td>
-              <td class="px-3 py-2.5 border-r text-center text-slate-600 whitespace-nowrap">
-                {{ getFieldValue(sol, 'val_hora_retorno') }}
-              </td>
-              <td class="px-3 py-2.5 border-r text-slate-600">
-                {{ getFieldValue(sol, 'val_funcionario_id') }}
-              </td>
-              <td class="px-3 py-2.5 border-r text-center text-slate-600">
-                {{ getFieldValue(sol, 'val_num_ocupantes') }}
-              </td>
-              <td class="px-3 py-2.5 text-slate-600">
-                {{ getFieldValue(sol, 'val_observaciones') }}
-              </td>
-            </tr>
-          } @empty {
+          @if (solicitudesAgrupadas.length === 0) {
             <tr>
               <td colspan="9" class="p-20 text-slate-400 italic text-center">
                 @if (loadingTabla) {
@@ -186,6 +156,45 @@
                 }
               </td>
             </tr>
+          } @else {
+            @for (grupo of solicitudesAgrupadas; track grupo.groupKey) {
+              <tr>
+                <td colspan="9" class="py-3 px-4 text-center font-bold italic text-[#1d2b64] bg-[#eef0f8] border-y border-slate-300 text-sm tracking-widest uppercase">
+                  {{ grupo.diaLabel }}
+                </td>
+              </tr>
+              @for (sol of grupo.items; track sol.id) {
+                <tr class="border-b hover:bg-slate-50 transition-colors text-[12px]">
+                  <td class="px-3 py-2.5 border-r text-center font-mono text-slate-400">
+                    {{ (currentPage - 1) * PAGE_SIZE + $any(sol['_flatIdx']) + 1 }}
+                  </td>
+                  <td class="px-3 py-2.5 border-r text-center text-slate-600 whitespace-nowrap">
+                    {{ getFieldValue(sol, 'val_fecha_programacion') }}
+                  </td>
+                  <td class="px-3 py-2.5 border-r text-slate-600">
+                    {{ getFieldValue(sol, 'val_destino_direccion') }}
+                  </td>
+                  <td class="px-3 py-2.5 border-r text-slate-600">
+                    {{ getFieldValue(sol, 'val_descripcion_actividad') }}
+                  </td>
+                  <td class="px-3 py-2.5 border-r text-center text-slate-600 whitespace-nowrap">
+                    {{ getFieldValue(sol, 'val_hora_salida') }}
+                  </td>
+                  <td class="px-3 py-2.5 border-r text-center text-slate-600 whitespace-nowrap">
+                    {{ getFieldValue(sol, 'val_hora_retorno') }}
+                  </td>
+                  <td class="px-3 py-2.5 border-r text-slate-600">
+                    {{ getFieldValue(sol, 'val_funcionario_id') }}
+                  </td>
+                  <td class="px-3 py-2.5 border-r text-center text-slate-600">
+                    {{ getFieldValue(sol, 'val_num_ocupantes') }}
+                  </td>
+                  <td class="px-3 py-2.5 text-slate-600">
+                    {{ getFieldValue(sol, 'val_observaciones') }}
+                  </td>
+                </tr>
+              }
+            }
           }
         </tbody>
       </table>
