@@ -43,8 +43,11 @@ export class EnsayoService {
   getNotasAgua(): Observable<string[]> {
     return of([
       'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
-      'Las muestras serán descartadas del laboratorio en 28 días calendario.',
-      'Los resultados serán entregados en 15 días calendario a partir del ingreso de las muestras.',
+      'Las muestras serán descartadas del laboratorio en 28 días calendario después de recibidas.',
+      'Los resultados serán entregados en 15 días calendario a partir del ingreso de las muestras al Laboratorio IAM-Q.',
+      'Los resultados obtenidos podrán utilizarse para elaboración de informes técnicos cuando requiera la Secretaría de Ambiente.',
+      'Los resultados de la red de monitoreo del recurso hídrico serán entregados hasta los primeros 15 días del siguiente mes del monitoreo.',
+      'Si el plazo establecido para la entrega de los resultados coincide con fin de semana o feriado, los mismos se entregarán al siguiente día hábil.'
     ]);
   }
 
@@ -52,6 +55,8 @@ export class EnsayoService {
     return of([
       'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
       'Los resultados serán entregados en 10 días calendario después de realizado el monitoreo.',
+      'Los resultados obtenidos podrán utilizarse para la elaboración de Informes Técnicos cuando requiera la Secretaría de Ambiente.',
+      'Si el plazo establecido para la entrega de los resultados coincide con fin de semana o feriado, los mismos se entregarán al siguiente día hábil.'
     ]);
   }
 
@@ -59,6 +64,8 @@ export class EnsayoService {
     return of([
       'Los ensayos marcados con (*) no están incluidos en el Alcance de Acreditación del SAE.',
       'Los resultados serán entregados en 10 días calendario después de realizado el monitoreo.',
+      'Los resultados obtenidos podrán utilizarse para la elaboración de Informes Técnicos cuando requiera la Secretaría de Ambiente.',
+      'Si el plazo establecido para la entrega de los resultados coincide con fin de semana o feriado, los mismos se entregarán al siguiente día hábil.'
     ]);
   }
 }

@@ -4,7 +4,9 @@
       <div class="header-left">
         <p class="breadcrumb">Sistema LIMS / <strong>Operaciones de campo</strong></p>
         <h1 class="main-title">Orden de trabajo In Situ</h1>
-        <p class="main-subtitle">Aquí podrás visualizar los detalles de la orden de trabajo In Situ</p>
+        <p class="main-subtitle">
+          Aquí podrás visualizar los detalles de la orden de trabajo In Situ
+        </p>
       </div>
       <div class="header-right">
         <p><strong>F-PG-09-03</strong></p>
@@ -18,21 +20,29 @@
       <div class="card card-gray">
         <div class="form-group">
           <label>Solicitud de trabajo No</label>
-          <input class="form-input" formControlName="solicitudTrabajoNo" placeholder="Ej: GADDMQ-SA-DMRCA-UCSA-2024-0395-M">
+          <input
+            class="form-input"
+            formControlName="solicitudTrabajoNo"
+            placeholder="Ej: GADDMQ-SA-DMRCA-UCSA-2024-0395-M"
+          />
         </div>
         <div class="form-group">
           <label>Orden de trabajo No</label>
-          <input class="form-input" formControlName="ordenTrabajoNo" placeholder="Ej: OT-009-25-R">
+          <input
+            class="form-input"
+            formControlName="ordenTrabajoNo"
+            placeholder="Ej: OT-009-25-R"
+          />
         </div>
       </div>
       <div class="card card-gray">
         <div class="form-group">
-          <label>Fechas máxima de entrega</label>
-          <input class="form-input" type="date" formControlName="fechaMaximaEntrega">
+          <label>Fechas de emisión</label>
+          <input class="form-input" type="date" formControlName="fechaEmision" />
         </div>
         <div class="form-group">
-          <label>Fechas de emisión</label>
-          <input class="form-input" type="date" formControlName="fechaEmision">
+          <label>Fechas máxima de entrega</label>
+          <input class="form-input" type="date" formControlName="fechaMaximaEntrega" />
         </div>
       </div>
     </div>
@@ -42,19 +52,32 @@
       <div class="grid-2">
         <div class="form-group">
           <label>Solicitado por</label>
-          <input class="form-input" formControlName="solicitadoPor" placeholder="Nombre del solicitante">
+          <input
+            class="form-input"
+            formControlName="solicitadoPor"
+            placeholder="Nombre del solicitante"
+          />
         </div>
         <div class="form-group">
           <label>Dirección</label>
-          <input class="form-input" formControlName="direccion" placeholder="Dirección">
+          <input class="form-input" formControlName="direccion" placeholder="Dirección" />
         </div>
         <div class="form-group">
           <label>Solicitud No. (Fecha; hora)</label>
-          <input class="form-input" formControlName="solicitudNo" placeholder="Ej: GADDMQ-SA-DMRCA-UCSA-2025-0052-M">
+          <input
+            class="form-input"
+            formControlName="solicitudNo"
+            placeholder="Ej: GADDMQ-SA-DMRCA-UCSA-2025-0052-M"
+          />
         </div>
         <div class="form-group">
           <label>Correo electrónico</label>
-          <input class="form-input" type="email" formControlName="correoElectronico" placeholder="correo@ejemplo.com">
+          <input
+            class="form-input"
+            type="email"
+            formControlName="correoElectronico"
+            placeholder="correo@ejemplo.com"
+          />
         </div>
       </div>
     </div>
@@ -64,19 +87,23 @@
       <div class="grid-2">
         <div class="form-group">
           <label>Razón Social</label>
-          <input class="form-input" formControlName="razonSocial" placeholder="Razón social">
+          <input class="form-input" formControlName="razonSocial" placeholder="Razón social" />
         </div>
         <div class="form-group">
           <label>Nombre Comercial</label>
-          <input class="form-input" formControlName="nombreComercial" placeholder="Nombre comercial">
+          <input
+            class="form-input"
+            formControlName="nombreComercial"
+            placeholder="Nombre comercial"
+          />
         </div>
         <div class="form-group">
           <label>R.U.C.</label>
-          <input class="form-input" formControlName="ruc" placeholder="Ej: 1793167640001">
+          <input class="form-input" formControlName="ruc" placeholder="Ej: 1793167640001" />
         </div>
         <div class="form-group">
           <label>Dirección</label>
-          <input class="form-input" formControlName="direccion" placeholder="Dirección">
+          <input class="form-input" formControlName="direccion" placeholder="Dirección" />
         </div>
       </div>
     </div>
@@ -100,15 +127,41 @@
           <tr *ngFor="let ensayo of ensayosArray.controls; let i = index" [formGroupName]="i">
             <td>
               <div class="toggle-container">
-                <div class="toggle" [class.toggle-on]="ensayo.get('seleccionado')?.value" (click)="toggleEnsayo(i)"></div>
+                <div
+                  class="toggle"
+                  [class.toggle-on]="ensayo.get('seleccionado')?.value"
+                  (click)="toggleEnsayo(i)"
+                ></div>
                 <span>{{ ensayo.get('seleccionado')?.value ? 'Sí' : 'No' }}</span>
               </div>
             </td>
-            <td><input class="form-input table-input" formControlName="ensayo" placeholder="Ensayo"></td>
-            <td><input class="form-input table-input" formControlName="identificacion" placeholder="ID"></td>
-            <td><input class="form-input table-input" formControlName="metodoInterno" placeholder="Método interno"></td>
-            <td><input class="form-input table-input" formControlName="metodoReferencia" placeholder="Método ref."></td>
-            <td><input class="form-input table-input" formControlName="unidad" placeholder="Unidad"></td>
+            <td>
+              <input class="form-input table-input" formControlName="ensayo" placeholder="Ensayo" />
+            </td>
+            <td>
+              <input
+                class="form-input table-input"
+                formControlName="identificacion"
+                placeholder="ID"
+              />
+            </td>
+            <td>
+              <input
+                class="form-input table-input"
+                formControlName="metodoInterno"
+                placeholder="Método interno"
+              />
+            </td>
+            <td>
+              <input
+                class="form-input table-input"
+                formControlName="metodoReferencia"
+                placeholder="Método ref."
+              />
+            </td>
+            <td>
+              <input class="form-input table-input" formControlName="unidad" placeholder="Unidad" />
+            </td>
           </tr>
         </tbody>
       </table>
@@ -120,11 +173,19 @@
       <div class="grid-2">
         <div class="form-group">
           <label>Uso de suelo del Operador</label>
-          <input class="form-input bold-input" formControlName="usoSuelo" placeholder="Ej: RESIDENCIAL (R1)">
+          <input
+            class="form-input bold-input"
+            formControlName="usoSuelo"
+            placeholder="Ej: RESIDENCIAL (R1)"
+          />
         </div>
         <div class="form-group">
           <label>Caracterización horaria</label>
-          <input class="form-input bold-input" formControlName="caracterizacionHoraria" placeholder="Ej: RUIDO DIURNO">
+          <input
+            class="form-input bold-input"
+            formControlName="caracterizacionHoraria"
+            placeholder="Ej: RUIDO DIURNO"
+          />
         </div>
       </div>
     </div>

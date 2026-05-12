@@ -1,5 +1,4 @@
 <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 space-y-8 animate-in fade-in">
-
   <div class="flex justify-between items-center border-b pb-2 mb-4">
     <h3 class="text-lg font-bold text-[#1e3a8a]">2. Información del Operador y Ubicación</h3>
   </div>
@@ -12,36 +11,67 @@
       <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
         @for (f of getSectionFields('identificacion'); track f.id) {
           <div class="relative">
-            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido(f.key)">
-              {{f.label}} @if (f.required) { <span class="text-red-500">*</span> }
+            <label
+              class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+              [class.text-red-600]="esCampoInvalido(f.key)"
+            >
+              {{ f.label }}
+              @if (f.required) {
+                <span class="text-red-500">*</span>
+              }
             </label>
 
             @if (f.controlType === 'select') {
-              <select [formControlName]="f.key" class="w-full border border-slate-300 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido(f.key)">
+              <select
+                [formControlName]="f.key"
+                class="w-full border border-slate-300 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] bg-white"
+                [class.border-red-500]="esCampoInvalido(f.key)"
+              >
                 <option value="">Seleccione...</option>
                 @for (opt of f.options; track opt.id) {
-                  <option [value]="opt.id">{{opt.nombre}}</option>
+                  <option [value]="opt.id">{{ opt.nombre }}</option>
                 }
               </select>
             }
 
             @if (f.controlType === 'text') {
               <div class="flex gap-0">
-                <input [formControlName]="f.key"
-                       (keydown.enter)="$event.preventDefault(); buscarIntegracion.emit(f)"
-                       class="w-full border border-slate-300 p-2.5 text-sm outline-none focus:border-[#1e3a8a] bg-white"
-                       [class.border-red-500]="esCampoInvalido(f.key)"
-                       [class.rounded]="!f.integrations.sri && !f.integrations.civil"
-                       [class.rounded-l]="f.integrations.sri || f.integrations.civil"
-                       [placeholder]="f.label" [type]="f.key.includes('ruc') || f.key.includes('ced') ? 'number' : 'text'">
+                <input
+                  [formControlName]="f.key"
+                  (keydown.enter)="$event.preventDefault(); buscarIntegracion.emit(f)"
+                  class="w-full border border-slate-300 p-2.5 text-sm outline-none focus:border-[#1e3a8a] bg-white"
+                  [class.border-red-500]="esCampoInvalido(f.key)"
+                  [class.rounded]="!f.integrations.sri && !f.integrations.civil"
+                  [class.rounded-l]="f.integrations.sri || f.integrations.civil"
+                  [placeholder]="f.label"
+                  [type]="f.key.includes('ruc') || f.key.includes('ced') ? 'number' : 'text'"
+                />
 
                 @if (f.integrations.sri || f.integrations.civil) {
-                  <button type="button" (click)="buscarIntegracion.emit(f)"
-                          class="bg-[#25377f] text-white px-4 rounded-r hover:bg-[#1e2d6b] transition-colors flex items-center justify-center border border-[#25377f]">
+                  <button
+                    type="button"
+                    (click)="buscarIntegracion.emit(f)"
+                    class="bg-[#25377f] text-white px-4 rounded-r hover:bg-[#1e2d6b] transition-colors flex items-center justify-center border border-[#25377f]"
+                  >
                     @if (!buscandoIntegracion[f.key]) {
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
                     }
-                    @if (buscandoIntegracion[f.key]) { <span class="animate-spin block">⏳</span> }
+                    @if (buscandoIntegracion[f.key]) {
+                      <span class="animate-spin block">⏳</span>
+                    }
                   </button>
                 }
               </div>
@@ -51,8 +81,17 @@
 
         @if (isPasaporteSelected) {
           <div class="animate-in fade-in">
-            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido('val_pasaporte')">Número de pasaporte <span class="text-red-500">*</span></label>
-            <input type="text" formControlName="val_pasaporte" class="w-full border border-slate-300 rounded p-2.5 text-sm outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido('val_pasaporte')">
+            <label
+              class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+              [class.text-red-600]="esCampoInvalido('val_pasaporte')"
+              >Número de pasaporte <span class="text-red-500">*</span></label
+            >
+            <input
+              type="text"
+              formControlName="val_pasaporte"
+              class="w-full border border-slate-300 rounded p-2.5 text-sm outline-none focus:border-[#1e3a8a] bg-white"
+              [class.border-red-500]="esCampoInvalido('val_pasaporte')"
+            />
           </div>
         }
       </div>
@@ -67,24 +106,62 @@
       <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
         @for (f of getSectionFields('operador'); track f.id) {
           <div [class.col-span-2]="f.controlType === 'textarea'" class="relative">
-            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido(f.key)">
-              {{f.label}} @if (f.required) { <span class="text-red-500">*</span> }
+            <label
+              class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+              [class.text-red-600]="esCampoInvalido(f.key)"
+            >
+              {{ f.label }}
+              @if (f.required) {
+                <span class="text-red-500">*</span>
+              }
             </label>
 
             @if (f.controlType === 'textarea') {
-              <textarea [formControlName]="f.key" [rows]="getFieldRows(f)" class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido(f.key)"></textarea>
+              <textarea
+                [formControlName]="f.key"
+                [rows]="getFieldRows(f)"
+                class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white"
+                [class.border-red-500]="esCampoInvalido(f.key)"
+              ></textarea>
             }
 
             @if (f.controlType === 'text') {
               <div class="flex gap-0">
-                <input [formControlName]="f.key" (keydown.enter)="$event.preventDefault(); buscarIntegracion.emit(f)" class="w-full border border-slate-300 p-2.5 text-sm outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido(f.key)" [class.rounded]="!f.integrations.sri && !f.integrations.civil" [class.rounded-l]="f.integrations.sri || f.integrations.civil" [placeholder]="f.label">
+                <input
+                  [formControlName]="f.key"
+                  (keydown.enter)="$event.preventDefault(); buscarIntegracion.emit(f)"
+                  class="w-full border border-slate-300 p-2.5 text-sm outline-none focus:border-[#1e3a8a] bg-white"
+                  [class.border-red-500]="esCampoInvalido(f.key)"
+                  [class.rounded]="!f.integrations.sri && !f.integrations.civil"
+                  [class.rounded-l]="f.integrations.sri || f.integrations.civil"
+                  [placeholder]="f.label"
+                />
 
                 @if (f.integrations.sri || f.integrations.civil) {
-                  <button type="button" (click)="buscarIntegracion.emit(f)" class="bg-[#25377f] text-white px-4 rounded-r hover:bg-[#1e2d6b] transition-colors border border-[#25377f]">
+                  <button
+                    type="button"
+                    (click)="buscarIntegracion.emit(f)"
+                    class="bg-[#25377f] text-white px-4 rounded-r hover:bg-[#1e2d6b] transition-colors border border-[#25377f]"
+                  >
                     @if (!buscandoIntegracion[f.key]) {
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
                     }
-                    @if (buscandoIntegracion[f.key]) { <span class="animate-spin block">⏳</span> }
+                    @if (buscandoIntegracion[f.key]) {
+                      <span class="animate-spin block">⏳</span>
+                    }
                   </button>
                 }
               </div>
@@ -103,11 +180,25 @@
       <div class="p-5 bg-white flex flex-wrap items-center gap-4">
         @for (f of getSectionFields('ubicacion'); track f.id) {
           <div class="flex items-center gap-2">
-            <span class="text-[10px] font-bold text-[#1e3a8a] uppercase" [class.text-red-600]="esCampoInvalido(f.key)">{{ f.label }}:</span>
-            <input type="text" [formControlName]="f.key" readonly class="w-32 bg-slate-50 border border-slate-300 rounded p-2 text-sm text-center font-mono text-[#1e3a8a] outline-none" [class.border-red-500]="esCampoInvalido(f.key)"/>
+            <span
+              class="text-[10px] font-bold text-[#1e3a8a] uppercase"
+              [class.text-red-600]="esCampoInvalido(f.key)"
+              >{{ f.label }}:</span
+            >
+            <input
+              type="text"
+              [formControlName]="f.key"
+              readonly
+              class="w-32 bg-slate-50 border border-slate-300 rounded p-2 text-sm text-center font-mono text-[#1e3a8a] outline-none"
+              [class.border-red-500]="esCampoInvalido(f.key)"
+            />
           </div>
         }
-        <button type="button" (click)="openMap.emit()" class="bg-[#25377f] text-white px-5 py-2 rounded text-[10px] font-bold uppercase shadow-sm hover:bg-[#1e2d6b] transition-colors border border-[#25377f]">
+        <button
+          type="button"
+          (click)="openMap.emit()"
+          class="bg-[#25377f] text-white px-5 py-2 rounded text-[10px] font-bold uppercase shadow-sm hover:bg-[#1e2d6b] transition-colors border border-[#25377f]"
+        >
           Abrir Mapa
         </button>
       </div>
@@ -123,18 +214,38 @@
         @for (f of getSectionFields('horario'); track f.id) {
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase">{{ f.label }}</label>
-              <span class="text-[10px] bg-blue-100 text-[#1e3a8a] px-3 py-1 rounded-full font-bold">{{ selectedScheduleIndexes.size }} Seleccionados</span>
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase">{{
+                f.label
+              }}</label>
+              <span class="text-[10px] bg-blue-100 text-[#1e3a8a] px-3 py-1 rounded-full font-bold"
+                >{{ selectedScheduleIndexes.size }} Seleccionados</span
+              >
             </div>
             <div class="border border-slate-300 rounded overflow-hidden">
               <div class="max-h-60 overflow-y-auto bg-white custom-scroll">
                 <table class="w-full text-sm">
                   <tbody>
                     @for (item of f.scheduleItems; track $index; let i = $index) {
-                      <tr class="border-b border-slate-200 last:border-0 cursor-pointer transition-colors" [class.bg-blue-50]="isScheduleSelected(i)" [class.hover:bg-slate-50]="!isScheduleSelected(i)" (click)="toggleSchedule.emit(i)">
-                        <td class="p-3 w-10 text-center"><input type="checkbox" [checked]="isScheduleSelected(i)" class="accent-[#25377f] cursor-pointer w-4 h-4" (click)="$event.stopPropagation(); toggleSchedule.emit(i)"/></td>
-                        <td class="p-3 text-slate-700">{{ item.fecha_plan | date:'dd/MM/yyyy' }}</td>
-                        <td class="p-3 text-right text-[#1e3a8a] font-mono font-bold">{{ item.inicio_bloque.slice(0,5) }} - {{ item.fin_bloque.slice(0,5) }}</td>
+                      <tr
+                        class="border-b border-slate-200 last:border-0 cursor-pointer transition-colors"
+                        [class.bg-blue-50]="isScheduleSelected(i)"
+                        [class.hover:bg-slate-50]="!isScheduleSelected(i)"
+                        (click)="toggleSchedule.emit(i)"
+                      >
+                        <td class="p-3 w-10 text-center">
+                          <input
+                            type="checkbox"
+                            [checked]="isScheduleSelected(i)"
+                            class="accent-[#25377f] cursor-pointer w-4 h-4"
+                            (click)="$event.stopPropagation(); toggleSchedule.emit(i)"
+                          />
+                        </td>
+                        <td class="p-3 text-slate-700">
+                          {{ item.fecha_plan | date: 'dd/MM/yyyy' }}
+                        </td>
+                        <td class="p-3 text-right text-[#1e3a8a] font-mono font-bold">
+                          {{ item.inicio_bloque.slice(0, 5) }} - {{ item.fin_bloque.slice(0, 5) }}
+                        </td>
                       </tr>
                     }
                   </tbody>
@@ -155,12 +266,22 @@
       <div class="grid grid-cols-12 gap-5">
         @for (f of getMotivoBaseFields(); track f.id) {
           <div class="col-span-12 md:col-span-6 relative">
-            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido(f.key)">
-              {{ f.label }} @if (f.required) { <span class="text-red-500">*</span> }
+            <label
+              class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+              [class.text-red-600]="esCampoInvalido(f.key)"
+            >
+              {{ f.label }}
+              @if (f.required) {
+                <span class="text-red-500">*</span>
+              }
             </label>
 
             @if (f.controlType === 'select') {
-              <select [formControlName]="f.key" class="w-full border border-slate-300 rounded p-2.5 text-sm bg-white outline-none focus:border-[#1e3a8a] transition-colors" [class.border-red-500]="esCampoInvalido(f.key)">
+              <select
+                [formControlName]="f.key"
+                class="w-full border border-slate-300 rounded p-2.5 text-sm bg-white outline-none focus:border-[#1e3a8a] transition-colors"
+                [class.border-red-500]="esCampoInvalido(f.key)"
+              >
                 <option value="">Seleccione una opción</option>
                 @for (opt of f.options; track opt.id) {
                   <option [value]="opt.id">{{ opt.nombre }}</option>
@@ -170,26 +291,6 @@
           </div>
         }
       </div>
-
-      @if (motivoFlujo) {
-        <div class="border border-blue-200 bg-[#f4f7fb] rounded p-5 animate-in fade-in">
-          <h5 class="text-sm font-bold text-[#1e3a8a] mb-4 uppercase border-b border-blue-200 pb-2">Detalle de {{ motivoFlujo }}</h5>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            @for (f of getMotivoSpecificFields(motivoFlujo); track f.id) {
-              <div [class.col-span-2]="f.controlType === 'textarea'">
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido(f.key)">{{ f.label }} @if (f.required) { <span class="text-red-500">*</span> } </label>
-
-                @if (f.controlType === 'textarea') {
-                  <textarea [formControlName]="f.key" [rows]="getFieldRows(f)" class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido(f.key)"></textarea>
-                }
-                @if (f.controlType === 'text') {
-                  <input [type]="getFieldInputType(f)" [formControlName]="f.key" class="w-full border border-slate-300 rounded p-2.5 text-sm outline-none focus:border-[#1e3a8a] bg-white" [placeholder]="f.placeholder" [class.border-red-500]="esCampoInvalido(f.key)">
-                }
-              </div>
-            }
-          </div>
-        </div>
-      }
     </div>
   </section>
 
@@ -201,13 +302,30 @@
       <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
         @for (f of getSectionFields('contacto'); track f.id) {
           <div [class.col-span-2]="f.controlType === 'textarea'">
-            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido(f.key)">{{f.label}} @if (f.required) { <span class="text-red-500">*</span> } </label>
+            <label
+              class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+              [class.text-red-600]="esCampoInvalido(f.key)"
+              >{{ f.label }}
+              @if (f.required) {
+                <span class="text-red-500">*</span>
+              }
+            </label>
 
             @if (f.controlType === 'textarea') {
-              <textarea [formControlName]="f.key" [rows]="getFieldRows(f)" class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido(f.key)"></textarea>
+              <textarea
+                [formControlName]="f.key"
+                [rows]="getFieldRows(f)"
+                class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white"
+                [class.border-red-500]="esCampoInvalido(f.key)"
+              ></textarea>
             }
             @if (f.controlType === 'text') {
-              <input [formControlName]="f.key" class="w-full border border-slate-300 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] bg-white" [placeholder]="f.placeholder" [class.border-red-500]="esCampoInvalido(f.key)">
+              <input
+                [formControlName]="f.key"
+                class="w-full border border-slate-300 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] bg-white"
+                [placeholder]="f.placeholder"
+                [class.border-red-500]="esCampoInvalido(f.key)"
+              />
             }
           </div>
         }
@@ -223,8 +341,20 @@
       <div class="p-5">
         @for (f of getSectionFields('observaciones'); track f.id) {
           <div>
-            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido(f.key)">{{f.label}} @if (f.required) { <span class="text-red-500">*</span> } </label>
-            <textarea [formControlName]="f.key" [rows]="getFieldRows(f)" class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white" [class.border-red-500]="esCampoInvalido(f.key)"></textarea>
+            <label
+              class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+              [class.text-red-600]="esCampoInvalido(f.key)"
+              >{{ f.label }}
+              @if (f.required) {
+                <span class="text-red-500">*</span>
+              }
+            </label>
+            <textarea
+              [formControlName]="f.key"
+              [rows]="getFieldRows(f)"
+              class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white"
+              [class.border-red-500]="esCampoInvalido(f.key)"
+            ></textarea>
           </div>
         }
       </div>
@@ -232,7 +362,19 @@
   }
 
   <div class="flex justify-between pt-4 border-t border-slate-300">
-    <button type="button" (click)="prev.emit()" class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">REGRESAR</button>
-    <button type="button" (click)="next.emit()" class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all">SIGUIENTE</button>
+    <button
+      type="button"
+      (click)="prev.emit()"
+      class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all"
+    >
+      REGRESAR
+    </button>
+    <button
+      type="button"
+      (click)="next.emit()"
+      class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all"
+    >
+      SIGUIENTE
+    </button>
   </div>
 </div>
