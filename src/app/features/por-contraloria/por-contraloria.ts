@@ -9,15 +9,15 @@ import {
   Validators,
 } from '@angular/forms';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
-import Swal from 'sweetalert2';
 import { ToastrAlertService } from '../../services/toastr.service';
-import colors from '../../ui/constants/colors';
 
 import {
   SolicitudService,
   ValorSolicitudItem,
   SolicitudPayload,
 } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
+import { ReportValorSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import {
   FieldConfig,
   FormularioLaboratorio,
@@ -26,13 +26,15 @@ import {
 import { AuthService } from '../auth/service/auth-service';
 import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/periodo.service';
 import { LoadingComponent } from '../../shared/components/loading/loading';
+import { PaginationComponent } from '../../shared/components/pagination/pagination';
+import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 
 type ContraloriaRecord = { id: string } & Record<string, unknown>;
 
 @Component({
   selector: 'app-por-contraloria',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, LoadingComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, LoadingComponent, PaginationComponent],
   templateUrl: './por-contraloria.html',
   styleUrls: ['./por-contraloria.css'],
 })
@@ -42,15 +44,19 @@ export class PorContraloria implements OnInit, OnDestroy {
   fields: FieldConfig[] = [];
   loading = true;
   saving = false;
+  loadingTabla = false;
+  private todasSolicitudes: ContraloriaRecord[] = [];
   solicitudes: ContraloriaRecord[] = [];
-
-  readonly STORAGE_KEY = 'lims_vehiculos_contraloria';
+  metaTabla: PaginationMeta | null = null;
+  currentPage = 1;
+  readonly PAGE_SIZE = 10;
 
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private solicitudService: SolicitudService,
+    private reportSolicitudService: ReportSolicitudService,
     private authService: AuthService,
     private periodoService: PeriodoService,
     private zone: NgZone,
@@ -210,10 +216,107 @@ export class PorContraloria implements OnInit, OnDestroy {
   }
 
   cargarDatos(): void {
-    const data = localStorage.getItem(this.STORAGE_KEY);
-    if (data) {
-      this.solicitudes = JSON.parse(data);
+    this.loadingTabla = true;
+    this.reportSolicitudService
+      .getValoresByTipoFormulario(1003)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.zone.run(() => {
+            this.todasSolicitudes = this.agruparPorSolicitud(data);
+            this.irAPagina(1);
+            this.loadingTabla = false;
+          });
+        },
+        error: () => {
+          this.zone.run(() => {
+            this.loadingTabla = false;
+            this.toastrAlert.showError('No se pudo cargar el cronograma.', 'Error');
+          });
+        },
+      });
+  }
+
+  irAPagina(page: number): void {
+    this.currentPage = page;
+    const start = (page - 1) * this.PAGE_SIZE;
+    this.solicitudes = this.todasSolicitudes.slice(start, start + this.PAGE_SIZE);
+    const total = this.todasSolicitudes.length;
+    const totalPages = Math.ceil(total / this.PAGE_SIZE);
+    this.metaTabla = {
+      page,
+      total,
+      totalPages,
+      limit: this.PAGE_SIZE,
+      skip: start,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      nextPage: page < totalPages ? page + 1 : null,
+      prevPage: page > 1 ? page - 1 : null,
+    };
+  }
+
+  private agruparPorSolicitud(items: ReportValorSolicitud[]): ContraloriaRecord[] {
+    const grouped = new Map<string, ContraloriaRecord>();
+    for (const item of items) {
+      if (!grouped.has(item.id_solicitud)) {
+        grouped.set(item.id_solicitud, {
+          id: item.id_solicitud,
+          nombres_completos: item.nombres_completos,
+          fecha_creacion: item.fecha_creacion,
+        });
+      }
+      const record = grouped.get(item.id_solicitud)!;
+      const valor =
+        item.valor_texto ??
+        item.valor_fecha ??
+        (item.valor_numero != null ? String(item.valor_numero) : null) ??
+        (item.valor_booleano != null ? String(item.valor_booleano) : null) ??
+        '—';
+      record[item.atributo_formulario_nombre] = valor;
     }
+    return Array.from(grouped.values());
+  }
+
+  private parseFecha(fecha: string): Date | null {
+    if (!fecha || fecha === '—') return null;
+    const iso = new Date(fecha.includes('T') ? fecha : fecha + 'T12:00:00');
+    if (!isNaN(iso.getTime())) return iso;
+    const parts = fecha.split('/');
+    if (parts.length === 3) {
+      const [d, m, y] = parts;
+      return new Date(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T12:00:00`);
+    }
+    return null;
+  }
+
+  get solicitudesAgrupadas(): Array<{ groupKey: string; diaLabel: string; items: ContraloriaRecord[] }> {
+    const DIAS  = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+    const MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+                   'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+
+    let flatIdx = 0;
+    const groups = new Map<string, { diaLabel: string; sortKey: number; items: ContraloriaRecord[] }>();
+
+    for (const sol of this.solicitudes) {
+      const fechaStr = String(sol['val_fecha_movilizacion'] ?? '—');
+      const d = this.parseFecha(fechaStr);
+
+      const groupKey = d ? fechaStr : '—';
+      const sortKey  = d ? d.getTime() : 0;
+      const diaLabel = d
+        ? `${d.getDay() === 0 || d.getDay() === 6 ? 'FIN DE SEMANA' : DIAS[d.getDay()]}  ·  ${d.getDate()} DE ${MESES[d.getMonth()]} ${d.getFullYear()}`
+        : 'SIN FECHA';
+
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, { diaLabel, sortKey, items: [] });
+      }
+      groups.get(groupKey)!.items.push({ ...sol, _flatIdx: flatIdx++ });
+    }
+
+    return Array.from(groups.entries())
+      .sort(([, a], [, b]) => a.sortKey - b.sortKey)
+      .map(([groupKey, { diaLabel, items }]) => ({ groupKey, diaLabel, items }));
   }
 
   async guardar(): Promise<void> {
@@ -287,6 +390,7 @@ export class PorContraloria implements OnInit, OnDestroy {
         this.saving = false;
         this.form.reset();
         this.toastrAlert.showSuccess('El registro ha sido guardado correctamente.', '¡Guardado!');
+        this.cargarDatos();
       });
     } catch (err: any) {
       this.zone.run(() => {
@@ -297,23 +401,8 @@ export class PorContraloria implements OnInit, OnDestroy {
     }
   }
 
-  eliminar(id: string): void {
-    Swal.fire({
-      title: '¿Está seguro de eliminar?',
-      text: 'Esta orden se quitará del cronograma y no se puede revertir.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: colors.primary,
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.solicitudes = this.solicitudes.filter((s) => s.id !== id);
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.solicitudes));
-        this.toastrAlert.showSuccess('La orden ha sido borrada.', 'Eliminado');
-      }
-    });
+  eliminar(_id: string): void {
+    this.toastrAlert.showWarning('La eliminación debe realizarse desde el panel de administración.', 'Aviso');
   }
 
   getFieldValue(record: ContraloriaRecord, key: string): unknown {

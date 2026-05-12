@@ -125,46 +125,100 @@
     <div class="max-w-7xl mx-auto bg-white rounded shadow-sm border border-slate-200 overflow-hidden animate-in fade-in">
       <div class="bg-[#1d2b64] p-4 flex justify-between items-center">
         <h3 class="text-white font-bold uppercase text-sm tracking-wider">Cronograma General - Contraloría</h3>
-        <span class="text-[10px] text-blue-200 uppercase">Datos almacenados localmente</span>
+        @if (loadingTabla) {
+          <span class="flex items-center gap-2 text-blue-200 text-[11px]">
+            <span class="animate-spin h-3.5 w-3.5 border-2 border-blue-200 border-t-transparent rounded-full"></span>
+            Actualizando...
+          </span>
+        }
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-center border-collapse">
+        <table class="w-full text-sm border-collapse">
           <thead>
-            <tr class="bg-slate-100 text-[11px] font-bold text-slate-600 uppercase border-b">
-              <th class="p-3 border-r w-12">No.</th>
-              @for (field of visibleFields; track field.id) {
-                <th class="p-3 border-r">{{ field.label }}</th>
-              }
-              <th class="p-3">Acciones</th>
+            <tr class="bg-slate-100 text-[10px] font-bold text-slate-500 uppercase border-b tracking-wider">
+              <th class="px-3 py-2.5 border-r text-center w-10">No.</th>
+              <th class="px-3 py-2.5 border-r text-center">Día y Fecha</th>
+              <th class="px-3 py-2.5 border-r text-left">Lugar de Destino</th>
+              <th class="px-3 py-2.5 border-r text-center">Hora Salida</th>
+              <th class="px-3 py-2.5 border-r text-center">Hora Retorno</th>
+              <th class="px-3 py-2.5 border-r text-left">Nombre Solicitante</th>
+              <th class="px-3 py-2.5 border-r text-left">Cargo</th>
+              <th class="px-3 py-2.5 border-r text-left">Funcionario Responsable</th>
+              <th class="px-3 py-2.5 border-r text-center">Ocupantes</th>
+              <th class="px-3 py-2.5 border-r text-left">Motivo</th>
+              <th class="px-3 py-2.5 text-left">Observaciones</th>
             </tr>
           </thead>
           <tbody>
-            @for (sol of solicitudes; track sol.id; let i = $index) {
-              <tr class="text-[12px] border-b hover:bg-slate-50 transition-colors">
-                <td class="p-3 border-r font-mono text-slate-400">{{ i + 1 }}</td>
-                @for (field of visibleFields; track field.id) {
-                  <td class="p-3 border-r text-slate-600">{{ getFieldValue(sol, field.key) }}</td>
-                }
-                <td class="p-3">
-                  <button
-                    (click)="eliminar(sol.id)"
-                    class="text-red-500 hover:text-red-700 font-bold text-[10px] uppercase underline transition-colors"
-                  >
-                    Eliminar
-                  </button>
-                </td>
-              </tr>
-            } @empty {
+            @if (solicitudesAgrupadas.length === 0) {
               <tr>
-                <td [attr.colspan]="visibleFields.length + 2" class="p-20 text-slate-400 italic">
-                  No hay órdenes de movilización registradas.
+                <td colspan="11" class="p-20 text-slate-400 italic text-center">
+                  @if (loadingTabla) {
+                    Cargando cronograma...
+                  } @else {
+                    No hay órdenes de movilización registradas.
+                  }
                 </td>
               </tr>
+            } @else {
+              @for (grupo of solicitudesAgrupadas; track grupo.groupKey) {
+                <tr>
+                  <td colspan="11"
+                      class="py-3 px-4 text-center font-bold italic text-[#1d2b64] bg-[#eef0f8] border-y border-slate-300 text-sm tracking-widest uppercase">
+                    {{ grupo.diaLabel }}
+                  </td>
+                </tr>
+                @for (sol of grupo.items; track sol.id) {
+                  <tr class="border-b hover:bg-slate-50 transition-colors text-[12px]">
+                    <td class="px-3 py-2.5 border-r text-center font-mono text-slate-400">
+                      {{ (currentPage - 1) * PAGE_SIZE + $any(sol['_flatIdx']) + 1 }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r text-center text-slate-600 whitespace-nowrap">
+                      {{ getFieldValue(sol, 'val_fecha_movilizacion') }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r text-slate-600">
+                      {{ getFieldValue(sol, 'val_lugar_destino') }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r text-center text-slate-600 whitespace-nowrap">
+                      {{ getFieldValue(sol, 'val_hora_salida') }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r text-center text-slate-600 whitespace-nowrap">
+                      {{ getFieldValue(sol, 'val_hora_retorno') }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r text-slate-600">
+                      {{ getFieldValue(sol, 'val_nombre_solicitante') }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r text-slate-600">
+                      {{ getFieldValue(sol, 'val_cargo_solicitante') }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r text-slate-600">
+                      {{ getFieldValue(sol, 'val_funcionario_id') }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r text-center text-slate-600">
+                      {{ getFieldValue(sol, 'val_num_ocupantes') }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r text-slate-600">
+                      {{ getFieldValue(sol, 'val_motivo_movilizacion') }}
+                    </td>
+                    <td class="px-3 py-2.5 text-slate-600">
+                      {{ getFieldValue(sol, 'val_observaciones') }}
+                    </td>
+                  </tr>
+                }
+              }
             }
           </tbody>
         </table>
       </div>
+
+      <app-pagination
+        [meta]="metaTabla"
+        [currentPage]="currentPage"
+        [itemsShown]="solicitudes.length"
+        itemLabel="registros"
+        (pageChange)="irAPagina($event)">
+      </app-pagination>
     </div>
   }
 </div>
