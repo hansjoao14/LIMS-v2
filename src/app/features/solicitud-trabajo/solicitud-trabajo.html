@@ -31,7 +31,9 @@
       <div class="flex items-center gap-2">
         @for (s of [1, 2, 3, 4]; track $index) {
           <div
-            class="flex-1 h-2.5 rounded-full transition-all duration-500 cursor-pointer"
+            class="flex-1 h-2.5 rounded-full transition-all duration-500"
+            [class.cursor-pointer]="!secuencialAsignado"
+            [class.cursor-default]="secuencialAsignado"
             (click)="goToStep(s)"
             [class.bg-[#2541b2]]="currentStep >= s"
             [class.bg-slate-200]="currentStep < s"
@@ -92,7 +94,8 @@
         <app-step4-confirmacion
           [secuencialAsignado]="secuencialAsignado"
           (prev)="goPrevStep()"
-          (iniciarAcuerdos)="iniciarAcuerdos()">
+          (iniciarAcuerdos)="iniciarAcuerdos()"
+          (nuevaSolicitud)="nuevaSolicitud()">
         </app-step4-confirmacion>
       }
     </form>

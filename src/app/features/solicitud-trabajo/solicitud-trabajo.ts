@@ -483,6 +483,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   // ── Navegación ───────────────────────────────────────────────────────────
 
   goToStep(step: number): void {
+    if (this.secuencialAsignado) return;
     if (step < 1 || step > 4) return;
     if (step > 1 && !this.isStepOneReady) {
       this.alertCamposObligatorios();
@@ -534,10 +535,25 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   goPrevStep(): void {
+    if (this.secuencialAsignado) return;
     if (this.currentStep > 1) {
       this.currentStep--;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  }
+
+  nuevaSolicitud(): void {
+    this.currentStep = 1;
+    this.solicitudRegistradaId = null;
+    this.secuencialAsignado = null;
+    this.catalogosSeleccionados = [];
+    this.ensayosMuestreo = [];
+    this.ensayosResiduales = [];
+    this.selectedScheduleIndexes = new Set();
+    this.buscandoIntegracion = {};
+    this.modoEdicion = false;
+    this.form.reset();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   onStep3Next(data: MatrizConHijosUI[]): void {

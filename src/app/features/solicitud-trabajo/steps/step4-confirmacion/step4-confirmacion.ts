@@ -13,6 +13,7 @@ export class Step4ConfirmacionComponent {
   @Input() secuencialAsignado: string | null = null;
   @Output() prev = new EventEmitter<void>();
   @Output() iniciarAcuerdos = new EventEmitter<void>();
+  @Output() nuevaSolicitud = new EventEmitter<void>();
 
   private controlContainer = inject(ControlContainer);
 
