@@ -20,11 +20,59 @@
       <div class="card card-gray">
         <div class="form-group">
           <label>Solicitud de trabajo No</label>
-          <input
-            class="form-input"
-            formControlName="solicitudTrabajoNo"
-            placeholder="Ej: GADDMQ-SA-DMRCA-UCSA-2024-0395-M"
-          />
+
+          @if (solicitudSeleccionada) {
+            <div class="solicitud-seleccionada">
+              <div class="solicitud-seleccionada-info">
+                <span class="solicitud-num">{{ solicitudSeleccionada.num_secuencial ?? solicitudSeleccionada.id_solicitud }}</span>
+              </div>
+              <button type="button" class="btn-limpiar" (click)="limpiarSolicitud()" title="Cambiar solicitud">✕</button>
+            </div>
+          } @else {
+            <button type="button" class="btn-buscar-solicitud" (click)="abrirPanel()">
+              <span class="btn-buscar-icon">🔍</span>
+              Buscar solicitud finalizada...
+            </button>
+          }
+
+          @if (panelAbierto) {
+            <div class="panel-busqueda">
+              <div class="panel-busqueda-header">
+                <input
+                  type="text"
+                  class="panel-search-input"
+                  placeholder="Buscar por No. secuencial, solicitante o formulario..."
+                  [ngModel]="busqueda"
+                  (ngModelChange)="onBusquedaChange($event)"
+                  autofocus
+                />
+                <button type="button" class="panel-cerrar" (click)="cerrarPanel()">✕</button>
+              </div>
+
+              @if (loadingBusqueda) {
+                <div class="panel-loading">Buscando...</div>
+              } @else if (solicitudesFinalizadas.length === 0) {
+                <div class="panel-vacio">No se encontraron solicitudes finalizadas.</div>
+              } @else {
+                <ul class="panel-lista">
+                  @for (sol of solicitudesFinalizadas; track sol.id_solicitud) {
+                    <li class="panel-item" (click)="seleccionarSolicitud(sol)">
+                      <span class="panel-item-num">{{ sol.num_secuencial ?? '—' }}</span>
+                    </li>
+                  }
+                </ul>
+                @if (meta && meta.totalPages > 1) {
+                  <div class="panel-paginacion">
+                    <span class="panel-pag-info">Página {{ meta.page }} de {{ meta.totalPages }} · {{ meta.total }} resultados</span>
+                    <div class="panel-pag-btns">
+                      <button type="button" [disabled]="!meta.hasPrevPage" (click)="cargarPagina(currentPage - 1)" class="panel-pag-btn">‹</button>
+                      <button type="button" [disabled]="!meta.hasNextPage" (click)="cargarPagina(currentPage + 1)" class="panel-pag-btn">›</button>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+          }
         </div>
         <div class="form-group">
           <label>Orden de trabajo No</label>
@@ -124,7 +172,8 @@
           </tr>
         </thead>
         <tbody formArrayName="ensayos">
-          <tr *ngFor="let ensayo of ensayosArray.controls; let i = index" [formGroupName]="i">
+          @for (ensayo of ensayosArray.controls; track i; let i = $index) {
+          <tr [formGroupName]="i">
             <td>
               <div class="toggle-container">
                 <div
@@ -163,6 +212,7 @@
               <input class="form-input table-input" formControlName="unidad" placeholder="Unidad" />
             </td>
           </tr>
+          }
         </tbody>
       </table>
       <button type="button" class="btn-agregar" (click)="agregarEnsayo()">+ Agregar ensayo</button>

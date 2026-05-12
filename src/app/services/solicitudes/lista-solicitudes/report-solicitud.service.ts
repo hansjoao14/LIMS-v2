@@ -19,6 +19,7 @@ const GET_COLLECTION_REPORT_SOLICITUD = gql`
     collectionReportSolicitud(
       query: {
         orderBy: { fecha_creacion: DESC }
+        where: { ctestado_id: { equals: 3 } }
         pagination: { page: $page, take: $take }
       }
     ) {
@@ -54,6 +55,22 @@ const GET_VALORES_BY_TIPO_FORMULARIO = gql`
     ) {
       count
       data { ${REPORT_VALOR_SOLICITUD_FIELDS} }
+      meta { ${META_FIELDS} }
+    }
+  }
+`;
+
+const GET_SOLICITUDES_FINALIZADAS = gql`
+  query CollectionReportSolicitudesFinalizadas($page: Int, $take: Int) {
+    collectionReportSolicitud(
+      query: {
+        orderBy: { fecha_creacion: DESC }
+        where: { ctestado_id: { equals: 3 } }
+        pagination: { page: $page, take: $take }
+      }
+    ) {
+      data { ${REPORT_SOLICITUD_FIELDS} }
+      count
       meta { ${META_FIELDS} }
     }
   }
@@ -132,6 +149,25 @@ export class ReportSolicitudService {
       expand(({ meta }) => (meta?.hasNextPage ? fetchPage(meta.nextPage!) : EMPTY)),
       reduce((acc, { data }) => acc.concat(data), [] as ReportValorSolicitud[]),
     );
+  }
+
+  getSolicitudesFinalizadas(page: number, limit: number): Observable<SolicitudesPage> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionReportSolicitud: ReportSolicitudCollectionResponse }>({
+        query: GET_SOLICITUDES_FINALIZADAS,
+        variables: { page, take: limit },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(
+        map((result) => {
+          const res = result.data?.collectionReportSolicitud;
+          return {
+            data: (res?.data ?? []) as ReportSolicitud[],
+            meta: res?.meta as PaginationMeta,
+          };
+        }),
+      );
   }
 
   getSolicitudes(page: number, limit: number): Observable<SolicitudesPage> {
