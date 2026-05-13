@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 
@@ -15,6 +16,20 @@ export interface EnsayoRow {
   identificacion: string;
   metodoInterno: string;
   metodoReferencia: string;
+}
+
+export interface EnsayoLaboratorioRow {
+  activo: boolean;
+  ensayo: string;
+  identificacion: string;
+  metodoInterno: string;
+  metodoReferencia: string;
+  unidad: string;
+}
+
+export interface GrupoLaboratorio {
+  preservante: string;
+  ensayos: EnsayoLaboratorioRow[];
 }
 
 @Component({
@@ -41,12 +56,35 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   detalleDireccion = '';
   detalleEnsayos: EnsayoRow[] = [];
 
+  ensayosLaboratorio: GrupoLaboratorio[] = [
+    {
+      preservante: 'H2SO4',
+      ensayos: [
+        { activo: true, ensayo: 'DEMANDA QUÍMICA DE OXÍGENO', identificacion: 'DQO', metodoInterno: 'PEE/IAM-Q/03', metodoReferencia: 'APHA 5220D', unidad: 'mg/L' },
+        { activo: true, ensayo: 'ACEITES Y GRASAS', identificacion: 'AyG', metodoInterno: 'PEE/IAM-Q/05', metodoReferencia: 'EPA 1664', unidad: 'mg/L' },
+      ],
+    },
+    {
+      preservante: 'TEMPERATURA',
+      ensayos: [
+        { activo: true, ensayo: 'DEMANDA BIOQUÍMICA DE OXÍGENO', identificacion: 'DBO5', metodoInterno: 'PEE/IAM-Q/27', metodoReferencia: 'APHA 5210B', unidad: 'mg/L' },
+        { activo: true, ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES', identificacion: 'SST', metodoInterno: 'PEE/IAM-Q/02', metodoReferencia: 'APHA 2540D', unidad: 'mg/L' },
+        { activo: true, ensayo: 'TURBIDEZ', identificacion: '-', metodoInterno: 'PEE/IAM-Q/31', metodoReferencia: 'SM 2130 B', unidad: 'NTU' },
+      ],
+    },
+  ];
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private reportSolicitudService: ReportSolicitudService,
     private solicitudDetalleService: SolicitudDetalleService,
+    private router: Router,
   ) {}
+
+  siguiente(): void {
+    this.router.navigate(['/plan-muestreo/paso2']);
+  }
 
   ngOnInit(): void {}
 

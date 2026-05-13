@@ -1,0 +1,213 @@
+<div class="page-container">
+  <header class="main-header">
+    <div class="header-left">
+      <p class="breadcrumb">Sistema LIMS / <strong>Operaciones de campo</strong></p>
+      <h1 class="title">Plan de muestreo</h1>
+      <p class="subtitle">Aquí podrás visualizar los detalles del plan de muestreo</p>
+    </div>
+    <div class="header-right">
+      <p><strong>F-PEE-42-01</strong></p>
+      <p>Elaborado por: Tec. Jorge Diaz</p>
+      <p>Fecha de solicitud: 27/05/2025</p>
+      <p>Edición: 11</p>
+    </div>
+  </header>
+
+  <!-- TIPO DE MUESTREO -->
+  <section class="card">
+    <h3>TIPO DE MUESTREO</h3>
+    <select [(ngModel)]="tipoMuestreo">
+      <option value="">Selecciona el tipo de muestreo</option>
+      <option value="simple">Simple</option>
+      <option value="compuesto">Compuesto</option>
+      <option value="integrado">Integrado</option>
+    </select>
+  </section>
+
+  <!-- CONTROLES DE CALIDAD -->
+  <section class="card">
+    <h3>CONTROLES DE CALIDAD</h3>
+    <table class="lims-table">
+      <thead>
+        <tr>
+          <th>TIPO DE CONTROLES</th>
+          <th>ANÁLISIS</th>
+          <th>MUESTRAS FALTANTES</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (control of controlesCalidad; track $index) {
+          @for (fila of control.filas; track $index; let fi = $index) {
+            <tr>
+              @if (fi === 0) {
+                <td [attr.rowspan]="control.filas.length" style="font-weight:bold; vertical-align:middle; border-right: 1px solid #edf2f7;">
+                  {{ control.tipo }}
+                </td>
+              }
+              <td>{{ fila.analisis }}</td>
+              <td class="text-center font-bold">{{ fila.muestrasFaltantes }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <!-- PRESERVACIÓN DE LAS MUESTRAS -->
+  <section class="card">
+    <h3>PRESERVACIÓN DE LAS MUESTRAS</h3>
+    <table class="lims-table">
+      <thead>
+        <tr>
+          <th>PRESERVACION</th>
+          <th>VOLUMEN ( L )</th>
+          <th>TIPO DE RECIPIENTE</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of preservaciones; track $index) {
+          <tr>
+            <td>{{ p.preservacion }}</td>
+            <td>
+              <input
+                type="number"
+                [(ngModel)]="p.volumen"
+                placeholder="Escribe aquí tu número e.g. 5"
+                class="w-full border border-slate-200 rounded p-2 text-sm outline-none focus:border-[#1d2b64]"
+              />
+            </td>
+            <td>{{ p.tipoRecipiente }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <!-- EQUIPOS -->
+  <section class="card">
+    <h3>EQUIPOS</h3>
+
+    <p class="text-xs font-bold text-[#1d2b64] uppercase mb-3">MEDICIÓN IN SITU</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      @for (eq of equiposMedicion; track $index) {
+        <div class="border border-slate-200 rounded p-4 flex items-center gap-4">
+          <div class="w-10 h-10 bg-[#f1f4f9] rounded flex items-center justify-center text-[#1d2b64] font-bold text-lg flex-shrink-0">⚙</div>
+          <div class="flex-1">
+            <p class="text-xs font-bold text-[#1d2b64] uppercase mb-1">{{ eq.nombre }}</p>
+            <select [(ngModel)]="eq.seleccion" class="w-full">
+              <option value="">Selecciona el tipo de equipo e.g. IMD-21-15</option>
+            </select>
+          </div>
+        </div>
+      }
+    </div>
+
+    <p class="text-xs font-bold text-[#1d2b64] uppercase mb-3">PRESERVACIÓN</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+      @for (eq of equiposPreservacion; track $index) {
+        <div class="border border-slate-200 rounded p-4 flex items-center gap-4">
+          <div class="w-10 h-10 bg-[#f1f4f9] rounded flex items-center justify-center text-[#1d2b64] font-bold text-lg flex-shrink-0">❄</div>
+          <div class="flex-1">
+            <p class="text-xs font-bold text-[#1d2b64] uppercase mb-1">{{ eq.nombre }}</p>
+            <select [(ngModel)]="eq.seleccion" class="w-full">
+              <option value="">Selecciona el tipo de equipo e.g. IMD-21-18</option>
+            </select>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- MATERIALES PARA MUESTREO -->
+  <section class="card">
+    <h3>MATERIALES PARA MUESTREO</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      @for (mat of materiales; track $index) {
+        <div class="border border-slate-200 rounded p-4 flex items-center gap-4">
+          <div class="w-10 h-10 bg-[#f1f4f9] rounded flex items-center justify-center flex-shrink-0">🧪</div>
+          <span class="flex-1 text-xs font-bold text-[#1d2b64] uppercase">{{ mat.nombre }}</span>
+          <button
+            type="button"
+            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0"
+            [class.bg-[#1d2b64]]="mat.activo"
+            [class.bg-gray-300]="!mat.activo"
+            (click)="mat.activo = !mat.activo"
+          >
+            <span
+              class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+              [class.translate-x-6]="mat.activo"
+              [class.translate-x-1]="!mat.activo"
+            ></span>
+          </button>
+          <span class="text-xs font-bold w-6" [class.text-[#1d2b64]]="mat.activo" [class.text-slate-400]="!mat.activo">
+            {{ mat.activo ? 'Sí' : 'No' }}
+          </span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- CONDICIONES MOMENTO DE MUESTREO -->
+  <section class="card">
+    <h3>CONDICIONES MOMENTO DE MUESTREO:</h3>
+    <div class="space-y-4">
+
+      <div class="border border-slate-200 rounded p-4 flex items-center gap-4">
+        <div class="w-10 h-10 bg-[#f1f4f9] rounded flex items-center justify-center text-xl flex-shrink-0">👥</div>
+        <span class="flex-1 text-sm font-semibold text-[#1d2b64]">No Personas en campo</span>
+        <div class="flex items-center gap-3">
+          <button type="button" (click)="personasEnCampo = personasEnCampo > 0 ? personasEnCampo - 1 : 0"
+            class="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-lg font-bold hover:bg-slate-100">−</button>
+          <span class="text-lg font-bold text-[#1d2b64] w-6 text-center">{{ personasEnCampo }}</span>
+          <button type="button" (click)="personasEnCampo = personasEnCampo + 1"
+            class="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-lg font-bold hover:bg-slate-100">+</button>
+          <span class="text-xs text-slate-500 ml-1">Personas</span>
+        </div>
+      </div>
+
+      <div class="border border-slate-200 rounded p-4">
+        <div class="flex items-center gap-4 mb-3">
+          <div class="w-10 h-10 bg-[#f1f4f9] rounded flex items-center justify-center text-xl flex-shrink-0">🚗</div>
+          <span class="flex-1 text-sm font-semibold text-[#1d2b64]">Movilización</span>
+        </div>
+        <textarea
+          [(ngModel)]="movilizacion"
+          rows="2"
+          class="w-full border border-slate-200 rounded p-2 text-sm outline-none focus:border-[#1d2b64] resize-none"
+        ></textarea>
+      </div>
+
+      <div class="border border-slate-200 rounded p-4 flex items-center gap-4">
+        <div class="w-10 h-10 bg-[#f1f4f9] rounded flex items-center justify-center text-xl flex-shrink-0">🕐</div>
+        <span class="flex-1 text-sm font-semibold text-[#1d2b64]">Tiempo de permanencia</span>
+        <div class="flex items-center gap-3">
+          <button type="button" (click)="tiempoPermanencia = tiempoPermanencia > 0 ? tiempoPermanencia - 1 : 0"
+            class="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-lg font-bold hover:bg-slate-100">−</button>
+          <span class="text-lg font-bold text-[#1d2b64] w-6 text-center">{{ tiempoPermanencia }}</span>
+          <button type="button" (click)="tiempoPermanencia = tiempoPermanencia + 1"
+            class="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-lg font-bold hover:bg-slate-100">+</button>
+          <span class="text-xs text-slate-500 ml-1">Horas</span>
+        </div>
+      </div>
+
+      <div class="border border-slate-200 rounded p-4 flex items-center gap-4">
+        <div class="w-10 h-10 bg-[#f1f4f9] rounded flex items-center justify-center text-xl flex-shrink-0">⏱</div>
+        <span class="flex-1 text-sm font-semibold text-[#1d2b64]">Duración del muestreo</span>
+        <div class="flex items-center gap-3">
+          <button type="button" (click)="duracionMuestreo = duracionMuestreo > 0 ? duracionMuestreo - 1 : 0"
+            class="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-lg font-bold hover:bg-slate-100">−</button>
+          <span class="text-lg font-bold text-[#1d2b64] w-6 text-center">{{ duracionMuestreo }}</span>
+          <button type="button" (click)="duracionMuestreo = duracionMuestreo + 1"
+            class="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-lg font-bold hover:bg-slate-100">+</button>
+          <span class="text-xs text-slate-500 ml-1">Horas</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="form-actions">
+    <button class="btn-regresar" (click)="regresar()">REGRESAR</button>
+    <button class="btn-siguiente" (click)="siguiente()">SIGUIENTE</button>
+  </footer>
+</div>

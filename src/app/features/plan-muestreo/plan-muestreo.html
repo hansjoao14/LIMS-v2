@@ -222,8 +222,56 @@
     </table>
   </section>
 
+  <section class="analysis-section">
+    <h3>ANALISIS REQUERIDO EN LABORATORIO</h3>
+
+    @for (grupo of ensayosLaboratorio; track $index) {
+      <h4 class="text-base font-bold text-[#1e3a8a] mt-6 mb-2 uppercase">{{ grupo.preservante }}</h4>
+      <table class="lims-table">
+        <thead>
+          <tr>
+            <th>ANÁLISIS REQUERIDO</th>
+            <th>ENSAYO</th>
+            <th>IDENTIFICACIÓN</th>
+            <th>MÉTODO INTERNO</th>
+            <th>MÉTODO REFERENCIA</th>
+            <th>UNIDAD</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of grupo.ensayos; track $index) {
+            <tr>
+              <td>
+                <button
+                  type="button"
+                  class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors mr-2"
+                  [class.bg-[#1e3a8a]]="e.activo"
+                  [class.bg-gray-300]="!e.activo"
+                  (click)="e.activo = !e.activo"
+                >
+                  <span
+                    class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                    [class.translate-x-6]="e.activo"
+                    [class.translate-x-1]="!e.activo"
+                  ></span>
+                </button>
+                <span class="text-sm font-semibold" [class.text-[#1e3a8a]]="e.activo" [class.text-slate-400]="!e.activo">
+                  {{ e.activo ? 'Si' : 'No' }}
+                </span>
+              </td>
+              <td>{{ e.ensayo }}</td>
+              <td>{{ e.identificacion }}</td>
+              <td>{{ e.metodoInterno }}</td>
+              <td>{{ e.metodoReferencia }}</td>
+              <td>{{ e.unidad }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+
   <footer class="form-actions">
-    <button class="btn-regresar">REGRESAR</button>
-    <button class="btn-siguiente">SIGUIENTE</button>
+    <button class="btn-siguiente" (click)="siguiente()">SIGUIENTE</button>
   </footer>
 </div>
