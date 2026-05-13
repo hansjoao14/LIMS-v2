@@ -66,6 +66,12 @@ export class SolicitudService {
     return result;
   }
 
+  getPdfSolicitud(solicitudId: string): Observable<Blob> {
+    return this.http.get(`${this.api_reportes}/report-solicitud/pdf/${solicitudId}`, {
+      responseType: 'blob',
+    });
+  }
+
   createSolicitud(payload: any): Observable<any> {
     return this.http.post<any>(`${this.api_reportes}/solicitud-trabajo`, payload);
   }

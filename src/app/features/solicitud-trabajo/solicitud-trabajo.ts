@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, NgZone, OnDestroy, OnInit, AfterViewChecked } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
   FormBuilder,
   FormGroup,
@@ -87,6 +88,12 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   showTerminosModal = false;
   showConfidencialidadModal = false;
 
+  // ── PDF preview ──────────────────────────────────────────────────────────
+  pdfPreviewUrl: SafeResourceUrl | null = null;
+  isPdfCargando = false;
+  showPdfFinal = false;
+  private pdfBlobUrl: string | null = null;
+
   // ── Modo edición ─────────────────────────────────────────────────────────
   modoEdicion = false;
 
@@ -144,6 +151,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     private zone: NgZone,
     private route: ActivatedRoute,
     private authService: AuthService,
+    private sanitizer: DomSanitizer,
   ) {
     this.form = this.fb.group({
       entidad_id: ['', Validators.required],
@@ -174,6 +182,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   ngOnDestroy(): void {
     this.closeMap();
+    this.revocarBlobUrl();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -637,6 +646,21 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     this.showConfidencialidadModal = true;
   }
 
+  descargarPdf(): void {
+    if (!this.pdfBlobUrl) return;
+    const a = document.createElement('a');
+    a.href = this.pdfBlobUrl;
+    a.download = `ReportSolicitud-${this.solicitudRegistradaId ?? 'documento'}.pdf`;
+    a.click();
+  }
+
+  private revocarBlobUrl(): void {
+    if (this.pdfBlobUrl) {
+      URL.revokeObjectURL(this.pdfBlobUrl);
+      this.pdfBlobUrl = null;
+    }
+  }
+
   async aceptarConfidencialidad(): Promise<void> {
     this.isGuardando = true;
     try {
@@ -651,6 +675,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         this.secuencialAsignado = finRes?.data?.[0]?.secuencialAsignado ?? null;
         this.showConfidencialidadModal = false;
         this.isGuardando = false;
+        this.abrirPdfFinal();
       });
     } catch (err: any) {
       this.zone.run(() => {
@@ -664,6 +689,32 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         });
       });
     }
+  }
+
+  abrirPdfFinal(): void {
+    this.showPdfFinal = true;
+    this.isPdfCargando = true;
+    this.pdfPreviewUrl = null;
+    this.revocarBlobUrl();
+
+    if (!this.solicitudRegistradaId) {
+      this.isPdfCargando = false;
+      return;
+    }
+
+    this.service
+      .getPdfSolicitud(this.solicitudRegistradaId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) => {
+          this.pdfBlobUrl = URL.createObjectURL(blob);
+          this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
+          this.isPdfCargando = false;
+        },
+        error: () => {
+          this.isPdfCargando = false;
+        },
+      });
   }
 
   // ── Mapa ─────────────────────────────────────────────────────────────────
