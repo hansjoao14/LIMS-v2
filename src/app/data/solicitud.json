@@ -1,0 +1,127 @@
+{
+  "id_solicitud": "11D820F7-8219-4C9D-B377-0ACA08C695F8",
+  "formularios": [
+    {
+      "id_formulario": "A53B9431-646A-4991-B813-E500771FBD13",
+      "nombre_formulario": "INVESTIGACIÓN, ANÁLISIS Y MONITOREO",
+      "sigla_formulario": "IAM - Q",
+      "version_formulario": 1,
+      "nombre_completo": "Juan Ledesma",
+      "nombre_cargo": "Técnico/a de Muestreo en Campo",
+      "fecha_emision_solicitud": "2026-04-28T14:29:25.6801199Z",
+      "num_secuencial_solicitud": "ST-2025-000000032",
+      "atributos": [
+        {
+          "orden": 1,
+          "id_atributo_formulario": "94CF9C34-B109-4CE5-BF9F-631729CFA838",
+          "nombre_atributo_formulario": "val_ct_tipo",
+          "pregunta_atributo_formulario": "Tipo de identificación",
+          "valor_catalogo": 381,
+          "nombre_valor_catalogo": "RUC"
+        },
+        {
+          "orden": 2,
+          "id_atributo_formulario": "02F148B7-F8B3-44FE-B059-7C404BAEFBE0",
+          "nombre_atributo_formulario": "val_ruc_op",
+          "pregunta_atributo_formulario": "RUC del Operador:",
+          "valor_texto": "1713810560001",
+          "valor_catalogo": 0
+        },
+        {
+          "orden": 3,
+          "id_atributo_formulario": "35DE7A6C-D04E-4410-9E88-7EBF9664779B",
+          "nombre_atributo_formulario": "val_razon_op",
+          "pregunta_atributo_formulario": "Razón social del Operador:",
+          "valor_texto": "INDUSTRIA ANDINA S.A.",
+          "valor_catalogo": 0
+        },
+        {
+          "orden": 4,
+          "id_atributo_formulario": "9B0E215D-1DB6-43E1-BD85-94131FE61479",
+          "nombre_atributo_formulario": "val_come_op",
+          "pregunta_atributo_formulario": "Nombre Comercial del Operador:",
+          "valor_texto": "QUIMANDINA",
+          "valor_catalogo": 0
+        },
+        {
+          "orden": 5,
+          "id_atributo_formulario": "43EDDF21-DD3D-4522-84C2-22E440DA3101",
+          "nombre_atributo_formulario": "val_dir_op",
+          "pregunta_atributo_formulario": "Dirección del Operador:",
+          "valor_texto": "Av. Mariscal Sucre N75-270",
+          "valor_catalogo": 0
+        },
+        {
+          "orden": 10,
+          "id_atributo_formulario": "F87BB013-8539-45C8-84C8-F80C4A3D3D18",
+          "nombre_atributo_formulario": "val_lati",
+          "pregunta_atributo_formulario": "Latitud",
+          "valor_texto": "-0.187162",
+          "valor_catalogo": 0
+        },
+        {
+          "orden": 11,
+          "id_atributo_formulario": "DD8557A5-755C-455A-8A6C-085E9DE84F8B",
+          "nombre_atributo_formulario": "val_long",
+          "pregunta_atributo_formulario": "Longitud",
+          "valor_texto": "-78.460115",
+          "valor_catalogo": 0
+        },
+        {
+          "orden": 12,
+          "id_atributo_formulario": "749FFBC7-48B0-480D-B59C-64F11C4F999A",
+          "nombre_atributo_formulario": "val_jor_la",
+          "pregunta_atributo_formulario": "Horario o jornadas laborales del operador",
+          "valor_catalogo": 0,
+          "valor_multiple": "[{\"dia_laboral\":\"Lunes\",\"hora_inicio\":\"14:00:00\",\"hora_fin\":\"15:00:00\"},{\"dia_laboral\":\"Lunes\",\"hora_inicio\":\"16:00:00\",\"hora_fin\":\"17:00:00\"},{\"dia_laboral\":\"Martes\",\"hora_inicio\":\"08:00:00\",\"hora_fin\":\"09:00:00\"},{\"dia_laboral\":\"Martes\",\"hora_inicio\":\"09:00:00\",\"hora_fin\":\"10:00:00\"}]",
+          "valor_multiple_format": "2026-05-10 (08:00 - 09:00), 2026-05-10 (09:00 - 10:00), 2026-05-10 (08:00 - 09:00), 2026-05-10 (09:00 - 10:00),2026-05-10 (08:00 - 09:00), 2026-05-10 (09:00 - 10:00)"
+        },
+        {
+          "orden": 13,
+          "id_atributo_formulario": "BE30C01E-1F25-4062-8473-3809FAC40281",
+          "nombre_atributo_formulario": "val_ct-motivo",
+          "pregunta_atributo_formulario": "Motivo Solicitud",
+          "valor_catalogo": 382,
+          "nombre_valor_catalogo": "Seguimiento"
+        },
+        {
+          "orden": 18,
+          "id_atributo_formulario": "795F02DC-A118-4970-A4CC-BEB7FC4F8C00",
+          "nombre_atributo_formulario": "val_obs",
+          "pregunta_atributo_formulario": "Observaciones",
+          "valor_texto": "Observación de prueba, Observación de prueba, Observación de prueba, Observación de prueba, Observación de prueba, Observación de prueba, Observación de prueba, Observación de prueba, Observación de prueba, Observación de prueba",
+          "valor_catalogo": 0
+        }
+      ],
+      "ensayos": [
+        {
+          "id": "E6C2FD68-F751-4430-A59A-0081A6C57A38",
+          "ensayo_id": 4,
+          "metodo": "PEE/IAM-Q/14, APHA 2540 C",
+          "identificacion": "STD",
+          "analisis": "SÓLIDOS DISUELTOS TOTALES *",
+          "ctambiental_id": 92,
+          "nombre": "Aguas Superficiales"
+        },
+        {
+          "id": "ED6EC835-A6C1-46C8-91C5-3B2A5E3EAEC0",
+          "ensayo_id": 1,
+          "metodo": "PEE/IAM-Q/03, APHA 5220 C",
+          "identificacion": "DQO",
+          "analisis": "DEMANDA QUÍMICA DE OXÍGENO",
+          "ctambiental_id": 92,
+          "nombre": "Aguas Superficiales"
+        },
+        {
+          "id": "A003FE4E-A341-43C4-B024-4D223FF98BE5",
+          "ensayo_id": 5,
+          "metodo": "APHA 2540 F",
+          "identificacion": "SS",
+          "analisis": "SÓLIDOS SEDIMENTABLES*",
+          "ctambiental_id": 92,
+          "nombre": "Aguas Superficiales"
+        }
+      ]
+    }
+  ]
+}

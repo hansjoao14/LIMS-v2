@@ -26,9 +26,58 @@
       <h3>INFORMACIÓN DE SOLICITUD</h3>
       <div class="detail-item">
         <span class="icon">💼</span>
-        <div>
+        <div class="solicitud-field">
           <label>SOLICITUD DE TRABAJO No</label>
-          <p>Valeria Diaz; 7/1/2025; 10:30</p>
+
+          @if (solicitudSeleccionada) {
+            <div class="solicitud-seleccionada">
+              <span class="solicitud-num">{{ solicitudSeleccionada.num_secuencial ?? solicitudSeleccionada.id_solicitud }}</span>
+              <button type="button" class="btn-limpiar" (click)="limpiarSolicitud()" title="Cambiar">✕</button>
+            </div>
+          } @else {
+            <button type="button" class="btn-buscar-solicitud" (click)="abrirPanel()">
+              🔍 Buscar solicitud finalizada...
+            </button>
+          }
+
+          @if (panelAbierto) {
+            <div class="panel-busqueda">
+              <div class="panel-busqueda-header">
+                <input
+                  type="text"
+                  class="panel-search-input"
+                  placeholder="Buscar por código..."
+                  [ngModel]="busqueda"
+                  (ngModelChange)="onBusquedaChange($event)"
+                  autofocus
+                />
+                <button type="button" class="panel-cerrar" (click)="cerrarPanel()">✕</button>
+              </div>
+
+              @if (loadingBusqueda) {
+                <div class="panel-estado">Buscando...</div>
+              } @else if (solicitudesFinalizadas.length === 0) {
+                <div class="panel-estado">No se encontraron solicitudes finalizadas.</div>
+              } @else {
+                <ul class="panel-lista">
+                  @for (sol of solicitudesFinalizadas; track sol.id_solicitud) {
+                    <li class="panel-item" (click)="seleccionarSolicitud(sol)">
+                      {{ sol.num_secuencial ?? '—' }}
+                    </li>
+                  }
+                </ul>
+                @if (meta && meta.totalPages > 1) {
+                  <div class="panel-paginacion">
+                    <span class="panel-pag-info">Página {{ meta.page }} de {{ meta.totalPages }} · {{ meta.total }} resultados</span>
+                    <div class="panel-pag-btns">
+                      <button type="button" [disabled]="!meta.hasPrevPage" (click)="cargarPagina(currentPage - 1)" class="panel-pag-btn">‹</button>
+                      <button type="button" [disabled]="!meta.hasNextPage" (click)="cargarPagina(currentPage + 1)" class="panel-pag-btn">›</button>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+          }
         </div>
       </div>
       <div class="detail-item">

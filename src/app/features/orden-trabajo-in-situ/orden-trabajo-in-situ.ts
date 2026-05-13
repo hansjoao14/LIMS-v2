@@ -9,6 +9,7 @@ import { ReportSolicitudService } from '../../services/solicitudes/lista-solicit
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { PaginationComponent } from '../../shared/components/pagination/pagination';
+import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 
 @Component({
   selector: 'app-orden-trabajo-in-situ',
@@ -35,6 +36,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private reportSolicitudService: ReportSolicitudService,
+    private solicitudDetalleService: SolicitudDetalleService,
   ) {
     this.form = this.fb.group({
       solicitudTrabajoNo: [''],
@@ -53,7 +55,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
         ruc: [''],
         direccion: [''],
       }),
-      ensayos: this.fb.array([this.crearEnsayo(), this.crearEnsayo()]),
+      ensayos: this.fb.array([]),
       tiposUsoSuelo: this.fb.group({
         usoSuelo: [''],
         caracterizacionHoraria: [''],
@@ -116,13 +118,56 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
 
   seleccionarSolicitud(sol: ReportSolicitud): void {
     this.solicitudSeleccionada = sol;
+    this.panelAbierto = false;
+
+    this.solicitudDetalleService
+      .getSolicitudDetalle(sol.id_solicitud)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(detalle => {
+        console.log('[OrdenTrabajoInSitu] Detalle solicitud:', detalle);
+        this.poblarFormulario(detalle);
+      });
+  }
+
+  private poblarFormulario(detalle: import('../../services/solicitudes/solicitud-detalle/solicitud-detalle.service').SolicitudDetalle): void {
+    const f = detalle.formularios?.[0];
+    if (!f) return;
+
+    const attr = (nombre: string) =>
+      f.atributos?.find(a => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
+
     this.form.patchValue({
-      solicitudTrabajoNo: sol.num_secuencial ?? sol.id_solicitud,
+      solicitudTrabajoNo: f.num_secuencial_solicitud,
+      fechaEmision: f.fecha_emision_solicitud
+        ? new Date(f.fecha_emision_solicitud).toISOString().split('T')[0]
+        : '',
       cliente: {
-        solicitadoPor: sol.nombres_completos ?? '',
+        solicitadoPor: f.nombre_completo,
+      },
+      operador: {
+        razonSocial:     attr('val_razon_op'),
+        nombreComercial: attr('val_come_op'),
+        ruc:             attr('val_ruc_op'),
+        direccion:       attr('val_dir_op'),
       },
     });
-    this.panelAbierto = false;
+
+    this.ensayosArray.clear();
+    for (const e of f.ensayos ?? []) {
+      const parts = (e.metodo ?? '').split(', ');
+      this.ensayosArray.push(this.fb.group({
+        seleccionado:     [true],
+        ensayo:           [e.analisis ?? ''],
+        identificacion:   [e.identificacion ?? ''],
+        metodoInterno:    [parts[0] ?? ''],
+        metodoReferencia: [parts[1] ?? ''],
+        unidad:           [''],
+      }));
+    }
+    if (this.ensayosArray.length === 0) {
+      this.ensayosArray.push(this.crearEnsayo());
+      this.ensayosArray.push(this.crearEnsayo());
+    }
   }
 
   limpiarSolicitud(): void {

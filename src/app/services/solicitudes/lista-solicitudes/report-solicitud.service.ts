@@ -19,7 +19,7 @@ const GET_COLLECTION_REPORT_SOLICITUD = gql`
     collectionReportSolicitud(
       query: {
         orderBy: { fecha_creacion: DESC }
-        where: { ctestado_id: { equals: 3 } }
+        where: { ctestado_id: { in: [2, 3] } }
         pagination: { page: $page, take: $take }
       }
     ) {

@@ -43,6 +43,7 @@
                   class="panel-search-input"
                   placeholder="Buscar por No. secuencial, solicitante o formulario..."
                   [ngModel]="busqueda"
+                  [ngModelOptions]="{standalone: true}"
                   (ngModelChange)="onBusquedaChange($event)"
                   autofocus
                 />
@@ -215,30 +216,9 @@
           }
         </tbody>
       </table>
-      <button type="button" class="btn-agregar" (click)="agregarEnsayo()">+ Agregar ensayo</button>
     </div>
 
-    <div class="section-card card-gray-light" formGroupName="tiposUsoSuelo">
-      <h3>Tipos de uso de suelo</h3>
-      <div class="grid-2">
-        <div class="form-group">
-          <label>Uso de suelo del Operador</label>
-          <input
-            class="form-input bold-input"
-            formControlName="usoSuelo"
-            placeholder="Ej: RESIDENCIAL (R1)"
-          />
-        </div>
-        <div class="form-group">
-          <label>Caracterización horaria</label>
-          <input
-            class="form-input bold-input"
-            formControlName="caracterizacionHoraria"
-            placeholder="Ej: RUIDO DIURNO"
-          />
-        </div>
-      </div>
-    </div>
+
 
     <div class="footer-actions">
       <button type="button" class="btn btn-navy" (click)="guardar()">GUARDAR</button>
