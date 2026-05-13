@@ -1,6 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NgFor } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -8,12 +7,11 @@ import Swal from 'sweetalert2';
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
-import { PaginationComponent } from '../../shared/components/pagination/pagination';
 import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 
 @Component({
   selector: 'app-orden-trabajo-in-situ',
-  imports: [CommonModule, ReactiveFormsModule, NgFor, FormsModule, PaginationComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './orden-trabajo-in-situ.html',
   styleUrl: './orden-trabajo-in-situ.css',
 })

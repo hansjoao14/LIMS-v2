@@ -8,7 +8,6 @@ import Swal from 'sweetalert2';
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
-import { PaginationComponent } from '../../shared/components/pagination/pagination';
 import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 
 export interface EnsayoRow {
@@ -34,7 +33,7 @@ export interface GrupoLaboratorio {
 
 @Component({
   selector: 'app-plan-muestreo',
-  imports: [CommonModule, FormsModule, PaginationComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './plan-muestreo.html',
   styleUrl: './plan-muestreo.css',
 })
