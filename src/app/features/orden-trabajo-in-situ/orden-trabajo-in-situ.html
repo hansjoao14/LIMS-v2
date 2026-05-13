@@ -172,47 +172,26 @@
             <th>UNIDAD</th>
           </tr>
         </thead>
-        <tbody formArrayName="ensayos">
+        <tbody>
+          @if (ensayosArray.length === 0) {
+            <tr>
+              <td colspan="6" class="table-empty">—</td>
+            </tr>
+          }
           @for (ensayo of ensayosArray.controls; track i; let i = $index) {
-          <tr [formGroupName]="i">
-            <td>
-              <div class="toggle-container">
-                <div
-                  class="toggle"
-                  [class.toggle-on]="ensayo.get('seleccionado')?.value"
-                  (click)="toggleEnsayo(i)"
-                ></div>
-                <span>{{ ensayo.get('seleccionado')?.value ? 'Sí' : 'No' }}</span>
-              </div>
-            </td>
-            <td>
-              <input class="form-input table-input" formControlName="ensayo" placeholder="Ensayo" />
-            </td>
-            <td>
-              <input
-                class="form-input table-input"
-                formControlName="identificacion"
-                placeholder="ID"
-              />
-            </td>
-            <td>
-              <input
-                class="form-input table-input"
-                formControlName="metodoInterno"
-                placeholder="Método interno"
-              />
-            </td>
-            <td>
-              <input
-                class="form-input table-input"
-                formControlName="metodoReferencia"
-                placeholder="Método ref."
-              />
-            </td>
-            <td>
-              <input class="form-input table-input" formControlName="unidad" placeholder="Unidad" />
-            </td>
-          </tr>
+            <tr>
+              <td>
+                <div class="toggle-container">
+                  <div class="toggle" [class.toggle-on]="ensayo.get('seleccionado')?.value"></div>
+                  <span>{{ ensayo.get('seleccionado')?.value ? 'Sí' : 'No' }}</span>
+                </div>
+              </td>
+              <td>{{ ensayo.get('ensayo')?.value || '—' }}</td>
+              <td>{{ ensayo.get('identificacion')?.value || '—' }}</td>
+              <td>{{ ensayo.get('metodoInterno')?.value || '—' }}</td>
+              <td>{{ ensayo.get('metodoReferencia')?.value || '—' }}</td>
+              <td>{{ ensayo.get('unidad')?.value || '—' }}</td>
+            </tr>
           }
         </tbody>
       </table>

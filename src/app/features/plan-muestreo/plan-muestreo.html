@@ -84,14 +84,14 @@
         <span class="icon">📅</span>
         <div>
           <label>FECHA DE EMISIÓN</label>
-          <p>7/1/2025</p>
+          <p>{{ detalleFechaEmision || '—' }}</p>
         </div>
       </div>
       <div class="detail-item">
         <span class="icon">🏢</span>
         <div>
           <label>CLIENTE</label>
-          <p>IAMQ</p>
+          <p>{{ detalleCliente || '—' }}</p>
         </div>
       </div>
       <div class="detail-item">
@@ -107,14 +107,20 @@
         <span class="icon">🌐</span>
         <div>
           <label>COORDENADAS</label>
-          <p><strong>X:</strong> 787674 <strong>Y:</strong> 9979470</p>
+          <p>
+            @if (detalleLatitud || detalleLongitud) {
+              <strong>Lat:</strong> {{ detalleLatitud }} &nbsp; <strong>Lon:</strong> {{ detalleLongitud }}
+            } @else {
+              —
+            }
+          </p>
         </div>
       </div>
       <div class="detail-item">
         <span class="icon">📍</span>
         <div>
           <label>DIRECCIÓN</label>
-          <p>Vía Láctea, Central Hidroeléctrica Cumbaya</p>
+          <p>{{ detalleDireccion || '—' }}</p>
         </div>
       </div>
     </section>
@@ -197,26 +203,21 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>
-            <div class="toggle active"><span></span> SI</div>
-          </td>
-          <td>POTENCIAL HIDROGENO</td>
-          <td>pH</td>
-          <td>PEE/IAM-Q/01</td>
-          <td>APHA 4220 C</td>
-          <td>-</td>
-        </tr>
-        <tr>
-          <td>
-            <div class="toggle active"><span></span> SI</div>
-          </td>
-          <td>TEMPERATURA</td>
-          <td>T</td>
-          <td>PEE/IAM-Q/04</td>
-          <td>APHA 2540 D</td>
-          <td>°C</td>
-        </tr>
+        @if (detalleEnsayos.length === 0) {
+          <tr>
+            <td colspan="6" class="text-center text-gray-400 py-4">—</td>
+          </tr>
+        }
+        @for (e of detalleEnsayos; track $index) {
+          <tr>
+            <td><div class="toggle active"><span></span> SI</div></td>
+            <td>{{ e.analisis }}</td>
+            <td>{{ e.identificacion }}</td>
+            <td>{{ e.metodoInterno }}</td>
+            <td>{{ e.metodoReferencia }}</td>
+            <td>—</td>
+          </tr>
+        }
       </tbody>
     </table>
   </section>

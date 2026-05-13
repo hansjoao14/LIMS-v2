@@ -174,7 +174,8 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
   limpiarSolicitud(): void {
     this.solicitudSeleccionada = null;
     this.busqueda = '';
-    this.form.patchValue({ solicitudTrabajoNo: '', cliente: { solicitadoPor: '' } });
+    this.form.reset();
+    this.ensayosArray.clear();
   }
 
   // ── Ensayos ──────────────────────────────────────────────────────────────
