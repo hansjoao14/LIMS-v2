@@ -142,7 +142,8 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
         ? new Date(f.fecha_emision_solicitud).toISOString().split('T')[0]
         : '',
       cliente: {
-        solicitadoPor: f.nombre_completo,
+        solicitadoPor:    f.nombre_completo,
+        correoElectronico: attr('val_correo'),
       },
       operador: {
         razonSocial:     attr('val_razon_op'),

@@ -52,6 +52,14 @@
           "valor_catalogo": 0
         },
         {
+          "orden": 6,
+          "id_atributo_formulario": "A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
+          "nombre_atributo_formulario": "val_correo",
+          "pregunta_atributo_formulario": "Correo electrónico del solicitante:",
+          "valor_texto": "contacto@industriaandina.com",
+          "valor_catalogo": 0
+        },
+        {
           "orden": 10,
           "id_atributo_formulario": "F87BB013-8539-45C8-84C8-F80C4A3D3D18",
           "nombre_atributo_formulario": "val_lati",
