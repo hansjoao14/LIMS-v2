@@ -407,15 +407,19 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   // Finalizar solicitud: guardar ensayos y luego marcar solicitud como finalizada
   private async guardarEnsayosYAvanzar(catalogos: MatrizConHijosUI[]): Promise<void> {
-    const solicitudEnsayo: SolicitudEnsayoItem[] = catalogos.flatMap((grupo) =>
-      grupo.hijos
-        .filter((h) => h.activo)
-        .map((h) => ({
-          solicitud_id: this.solicitudRegistradaId,
-          ensayo_id: h.id,
-          ctambiental_id: grupo.matriz.id,
-        })),
-    );
+    const todos = [
+      ...this.ensayosResiduales,
+      ...this.ensayosMuestreo,
+      ...this.ensayosAire,
+      ...this.ensayosRuido,
+    ].filter((e) => e.activo && e.ensayo_id && e.ctambiental_id);
+
+    const solicitudEnsayo: SolicitudEnsayoItem[] = todos.map((e) => ({
+      solicitud_id: this.solicitudRegistradaId,
+      ensayo_id: e.ensayo_id!,
+      ctambiental_id: e.ctambiental_id!,
+    }));
+
 
     const payload = { solicitudEnsayo };
 

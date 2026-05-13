@@ -126,7 +126,6 @@ export class AdminFormularios implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          console.log('Formulario creado:', res);
           this.zone.run(() => {
             this.guardando = false;
             this.cerrarFormulario();

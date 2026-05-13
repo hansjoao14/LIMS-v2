@@ -106,7 +106,6 @@ export class PlanMuestreo implements OnInit, OnDestroy {
       .getSolicitudDetalle(sol.id_solicitud)
       .pipe(takeUntil(this.destroy$))
       .subscribe(detalle => {
-        console.log('[PlanMuestreo] Detalle solicitud:', detalle);
         this.poblarDetalle(detalle);
       });
   }

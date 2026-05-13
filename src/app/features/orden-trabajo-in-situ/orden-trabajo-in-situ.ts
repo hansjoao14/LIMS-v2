@@ -124,7 +124,6 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
       .getSolicitudDetalle(sol.id_solicitud)
       .pipe(takeUntil(this.destroy$))
       .subscribe(detalle => {
-        console.log('[OrdenTrabajoInSitu] Detalle solicitud:', detalle);
         this.poblarFormulario(detalle);
       });
   }

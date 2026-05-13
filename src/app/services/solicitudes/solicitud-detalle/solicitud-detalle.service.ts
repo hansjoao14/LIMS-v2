@@ -46,7 +46,6 @@ export interface EnsayoDetalle {
 export class SolicitudDetalleService {
 
   getSolicitudDetalle(id: string): Observable<SolicitudDetalle> {
-    console.log('[SolicitudDetalleService] getSolicitudDetalle — id recibido:', id);
 
     // TODO: reemplazar por REST real:
     // return this.http.get<SolicitudDetalle>(`/api/solicitudes/${id}/detalle`);

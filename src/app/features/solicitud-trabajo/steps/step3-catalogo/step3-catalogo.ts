@@ -46,6 +46,8 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
   @Output() estadoCambiado = new EventEmitter<MatrizConHijosUI[]>();
   @Output() ensayosMuestreoCambiado = new EventEmitter<EnsayoMuestreo[]>();
   @Output() ensayosResidualesCambiado = new EventEmitter<EnsayoLaboratorio[]>();
+  @Output() ensayosAireCambiado = new EventEmitter<EnsayoLaboratorio[]>();
+  @Output() ensayosRuidoCambiado = new EventEmitter<EnsayoLaboratorio[]>();
 
   readonly CATALOGO_MATRICES_ID = 17;
   readonly ENSAYO_ID_MUESTREO = 19;
@@ -56,6 +58,8 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
 
   ensayosMuestreo: EnsayoMuestreo[] = [];
   ensayosResiduales: EnsayoLaboratorio[] = [];
+  ensayosAireServer: EnsayoLaboratorio[] = [];
+  ensayosRuidoServer: EnsayoLaboratorio[] = [];
 
   private destroy$ = new Subject<void>();
 
@@ -80,9 +84,9 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
     hijo.activo = !hijo.activo;
     if (!hijo.activo) hijo.cantidad = null;
 
-    if (this.isMatriz(grupo, 'agua')) {
-      this.cargarEnsayosAgua(grupo);
-    }
+    if (this.isMatriz(grupo, 'agua')) this.cargarEnsayosAgua(grupo);
+    if (this.isMatriz(grupo, 'aire')) this.cargarEnsayosAire(grupo);
+    if (this.isMatriz(grupo, 'ruido')) this.cargarEnsayosRuido(grupo);
     this.estadoCambiado.emit(this.matricesConHijos);
   }
 
@@ -151,10 +155,48 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
       });
   }
 
+  private cargarEnsayosAire(grupo: MatrizConHijosUI): void {
+    const hijoActivo = grupo.hijos.find((h) => h.activo);
+    if (!hijoActivo) {
+      this.ensayosAireServer = [];
+      this.ensayosAireCambiado.emit([]);
+      return;
+    }
+    this.ensayoItemService
+      .getEnsayosByCtAmbiental(hijoActivo.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (items) => {
+          this.ensayosAireServer = items.map((i) => ({ ...this.mapToLaboratorio(i), activo: false }));
+          this.ensayosAireCambiado.emit(this.ensayosAireServer);
+        },
+      });
+  }
+
+  private cargarEnsayosRuido(grupo: MatrizConHijosUI): void {
+    const hijoActivo = grupo.hijos.find((h) => h.activo);
+    if (!hijoActivo) {
+      this.ensayosRuidoServer = [];
+      this.ensayosRuidoCambiado.emit([]);
+      return;
+    }
+    this.ensayoItemService
+      .getEnsayosByCtAmbiental(hijoActivo.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (items) => {
+          this.ensayosRuidoServer = items.map((i) => ({ ...this.mapToLaboratorio(i), activo: false }));
+          this.ensayosRuidoCambiado.emit(this.ensayosRuidoServer);
+        },
+      });
+  }
+
   private mapToMuestreo(item: EnsayoItem): EnsayoMuestreo {
     const partes = item.ensayo.metodo.split(',');
     return {
       activo: false,
+      ensayo_id: item.ensayo_id,
+      ctambiental_id: item.ctambiental_id,
       producto: item.ensayo.analisis,
       parametro: item.ensayo.identificacion,
       metodoInterno: partes[0]?.trim() ?? '',
@@ -166,6 +208,8 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
     const partes = item.ensayo.metodo.split(',');
     return {
       activo: false,
+      ensayo_id: item.ensayo_id,
+      ctambiental_id: item.ctambiental_id,
       ensayo: item.ensayo.analisis,
       identificacion: item.ensayo.identificacion,
       metodoInterno: partes[0]?.trim() ?? '',
@@ -195,10 +239,12 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
     this.ensayosResidualesCambiado.emit(this.ensayosResiduales);
   }
   toggleEnsayoAire(idx: number): void {
-    this.ensayosAire[idx].activo = !this.ensayosAire[idx].activo;
+    this.ensayosAireServer[idx].activo = !this.ensayosAireServer[idx].activo;
+    this.ensayosAireCambiado.emit(this.ensayosAireServer);
   }
   toggleEnsayoRuido(idx: number): void {
-    this.ensayosRuido[idx].activo = !this.ensayosRuido[idx].activo;
+    this.ensayosRuidoServer[idx].activo = !this.ensayosRuidoServer[idx].activo;
+    this.ensayosRuidoCambiado.emit(this.ensayosRuidoServer);
   }
 
   ngOnDestroy(): void {

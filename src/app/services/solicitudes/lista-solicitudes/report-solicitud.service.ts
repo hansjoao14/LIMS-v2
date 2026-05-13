@@ -118,6 +118,7 @@ export class ReportSolicitudService {
         map((result) => {
           const all = result.data?.collectionReportValorSolicitud?.data ?? [];
           // deduplica: el último en el array es el más reciente → gana sobre duplicados anteriores
+
           const dedup = new Map<string, ReportValorSolicitud>();
           for (const v of all) dedup.set(v.atributo_formulario_nombre, v);
           return Array.from(dedup.values());

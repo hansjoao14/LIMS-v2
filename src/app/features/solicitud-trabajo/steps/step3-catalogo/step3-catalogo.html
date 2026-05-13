@@ -149,7 +149,7 @@
                     <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Referencia</div>
                     <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center">Unidad</div>
                   </div>
-                  @for (fila of ensayosAire; track $index; let ai = $index) {
+                  @for (fila of ensayosAireServer; track $index; let ai = $index) {
                     <div class="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr] border-b border-gray-100 items-center min-w-[700px] hover:bg-slate-50 transition-colors">
                       <div class="px-3 py-3 flex justify-center border-r">
                         <button type="button" (click)="toggleEnsayoAire(ai)" class="relative inline-flex h-5 w-10 items-center rounded-full transition-colors" [class.bg-[#1e3a8a]]="fila.activo" [class.bg-gray-300]="!fila.activo">
@@ -189,7 +189,7 @@
                     <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r">Referencia</div>
                     <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center">Unidad</div>
                   </div>
-                  @for (fila of ensayosRuido; track $index; let rui = $index) {
+                  @for (fila of ensayosRuidoServer; track $index; let rui = $index) {
                     <div class="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr] border-b border-gray-100 items-center min-w-[700px] hover:bg-slate-50 transition-colors">
                       <div class="px-3 py-3 flex justify-center border-r">
                         <button type="button" (click)="toggleEnsayoRuido(rui)" class="relative inline-flex h-5 w-10 items-center rounded-full transition-colors" [class.bg-[#1e3a8a]]="fila.activo" [class.bg-gray-300]="!fila.activo">
