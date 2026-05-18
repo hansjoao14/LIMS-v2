@@ -658,7 +658,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         this.service.finalizarSolicitud({
           idSolicitud: this.solicitudRegistradaId ?? '',
           identifcadorSecuecnial: 'SOLI_SECU_2025',
-          ctestado: 3,
+          ctestado: 388,
         }),
       );
       this.zone.run(() => {

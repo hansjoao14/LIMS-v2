@@ -16,7 +16,6 @@ import {
 
 export interface ItemCatalogoUI extends ItemCatalogo {
   activo: boolean;
-  cantidad: number | null;
 }
 
 export interface MatrizConHijosUI {
@@ -82,7 +81,6 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
     const grupo = this.matricesConHijos[matrizIdx];
     const hijo = grupo.hijos[hijoIdx];
     hijo.activo = !hijo.activo;
-    if (!hijo.activo) hijo.cantidad = null;
 
     if (this.isMatriz(grupo, 'agua')) this.cargarEnsayosAgua(grupo);
     if (this.isMatriz(grupo, 'aire')) this.cargarEnsayosAire(grupo);
@@ -99,7 +97,7 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
           matriz: item.matriz,
           hijos: item.hijos.map((h) => {
             const previo = previoHijos.find((ph) => ph.id === h.id);
-            return { ...h, activo: previo?.activo ?? false, cantidad: previo?.cantidad ?? null };
+            return { ...h, activo: previo?.activo ?? false };
           }),
         }));
         this.loading = false;
@@ -220,14 +218,6 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
 
   isMatriz(grupo: MatrizConHijosUI, nombre: string): boolean {
     return grupo.matriz.nombre.toLowerCase() === nombre.toLowerCase();
-  }
-
-  getAplicableLabel(matrizNombre: string): string {
-    const nombre = matrizNombre.toLowerCase();
-    if (nombre === 'agua') return 'NÚMERO DE MUESTRAS';
-    if (nombre === 'aire') return 'NÚMERO DE FUENTES';
-    if (nombre === 'ruido') return 'NÚMERO DE PUNTOS CRÍTICOS DE AFECTACIÓN';
-    return 'CANTIDAD';
   }
 
   toggleEnsayoMuestreo(idx: number): void {
