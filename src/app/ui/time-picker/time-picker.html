@@ -1,0 +1,11 @@
+<div class="flex flex-col gap-1">
+  @if (label) {
+    <label class="text-[10px] font-bold text-[#1e3a8a] uppercase">{{ label }}</label>
+  }
+  <input
+    type="time"
+    [value]="value"
+    (change)="onChange($event)"
+    class="border border-slate-300 rounded p-2 text-sm outline-none focus:border-[#1e3a8a] bg-white"
+  />
+</div>

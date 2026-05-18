@@ -41,12 +41,9 @@
                     <div class="px-4 py-4 text-[11px] font-semibold text-slate-700 uppercase border-r border-gray-200">{{ hijo.nombre }}</div>
                     <div class="grid grid-cols-2 items-center">
                       <div class="px-4 py-4 border-r border-gray-200">
-                        @if (hijo.activo) {
-                          <label class="block text-[10px] font-bold text-[#1e3a8a] uppercase mb-1">{{ getAplicableLabel(grupo.matriz.nombre) }}</label>
-                          <input type="number" min="1" [(ngModel)]="hijo.cantidad" placeholder="Ej: 2" class="w-full border border-gray-300 rounded p-1.5 text-sm outline-none focus:border-[#1e3a8a]" />
-                        } @else {
-                          <span class="text-[11px] text-slate-400 uppercase">{{ getAplicableLabel(grupo.matriz.nombre) }}</span>
-                        }
+                        <span class="text-[11px] uppercase" [class.text-[#1e3a8a]]="hijo.activo" [class.font-bold]="hijo.activo" [class.text-slate-400]="!hijo.activo">
+                          {{ getAplicableLabel(grupo.matriz.nombre) }}
+                        </span>
                       </div>
                       <div class="px-4 py-4 flex items-center gap-3 justify-center">
                         <button type="button" (click)="toggleHijo(gi, hi)" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none" [class.bg-[#1e3a8a]]="hijo.activo" [class.bg-gray-300]="!hijo.activo">

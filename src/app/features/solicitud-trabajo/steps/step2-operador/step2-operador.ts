@@ -2,27 +2,40 @@ import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlContainer, FormControl, FormGroup, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 import { FieldConfig, FieldSectionId } from '../../model/solicitud-trabajo.model';
+import { TimePickerComponent } from '../../../../ui/time-picker/time-picker';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
+
+export interface ManualScheduleEntry {
+  fecha_plan: string;
+  inicio_bloque: string;
+  fin_bloque: string;
+}
 
 @Component({
   selector: 'app-step2-operador',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TimePickerComponent],
   viewProviders: [{ provide: ControlContainer, useExisting: FormGroupDirective }],
   templateUrl: './step2-operador.html',
 })
 export class Step2OperadorComponent {
   @Input() fields: FieldConfig[] = [];
   @Input() buscandoIntegracion: { [key: string]: boolean } = {};
-  @Input() selectedScheduleIndexes!: Set<number>;
+  @Input() manualSchedules: ManualScheduleEntry[] = [];
   @Input() motivoFlujo: MotivoFlujo = '';
   @Input() isPasaporteSelected = false;
   @Output() next = new EventEmitter<void>();
   @Output() prev = new EventEmitter<void>();
   @Output() openMap = new EventEmitter<void>();
   @Output() buscarIntegracion = new EventEmitter<FieldConfig>();
-  @Output() toggleSchedule = new EventEmitter<number>();
+  @Output() addManualSchedule = new EventEmitter<ManualScheduleEntry>();
+  @Output() removeManualSchedule = new EventEmitter<number>();
+
+  draftDate = '';
+  draftStart = '08:00';
+  draftEnd = '09:00';
+  draftError = '';
 
   private controlContainer = inject(ControlContainer);
 
@@ -62,8 +75,23 @@ export class Step2OperadorComponent {
     return 'text';
   }
 
-  isScheduleSelected(index: number): boolean {
-    return this.selectedScheduleIndexes.has(index);
+  agregarHorario(): void {
+    this.draftError = '';
+    if (!this.draftDate) { this.draftError = 'Seleccione una fecha.'; return; }
+    if (this.draftEnd <= this.draftStart) { this.draftError = 'La hora de fin debe ser posterior a la de inicio.'; return; }
+    this.addManualSchedule.emit({ fecha_plan: this.draftDate, inicio_bloque: this.draftStart, fin_bloque: this.draftEnd });
+    this.draftDate = '';
+    this.draftStart = '08:00';
+    this.draftEnd = '09:00';
+  }
+
+  formatTime(time: string): string {
+    const [hStr, mStr] = time.split(':');
+    let h = parseInt(hStr, 10);
+    const period = h < 12 ? 'AM' : 'PM';
+    if (h === 0) h = 12;
+    else if (h > 12) h -= 12;
+    return `${h}:${mStr ?? '00'} ${period}`;
   }
 
   private isMotivoField(field: FieldConfig): boolean {

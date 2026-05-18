@@ -210,73 +210,76 @@
       <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
         <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Horarios Laborales</h4>
       </div>
-      <div class="p-5">
-        @for (f of getSectionFields('horario'); track f.id) {
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase">{{
-                f.label
-              }}</label>
-              <span class="text-[10px] bg-blue-100 text-[#1e3a8a] px-3 py-1 rounded-full font-bold"
-                >{{ selectedScheduleIndexes.size }} Seleccionados</span
-              >
+      <div class="p-5 space-y-4">
+        <p class="text-[11px] font-bold text-[#1e3a8a] uppercase">
+          {{ getSectionFields('horario')[0]?.label }}
+        </p>
+
+        <!-- Fila de ingreso -->
+        <div class="flex flex-wrap gap-3 items-end">
+          <div class="flex flex-col gap-1">
+            <label class="text-[10px] font-bold text-[#1e3a8a] uppercase">Fecha</label>
+            <input
+              type="date"
+              [value]="draftDate"
+              (input)="draftDate = $any($event.target).value"
+              class="border border-slate-300 rounded p-2 text-sm outline-none focus:border-[#1e3a8a] bg-white"
+            />
+          </div>
+          <app-time-picker label="Hora inicio" [value]="draftStart" (valueChange)="draftStart = $event" />
+          <app-time-picker label="Hora fin" [value]="draftEnd" (valueChange)="draftEnd = $event" />
+          <button
+            type="button"
+            (click)="agregarHorario()"
+            class="bg-[#25377f] text-white px-5 py-2 rounded text-[11px] font-bold uppercase shadow-sm hover:bg-[#1e2d6b] transition-colors"
+          >
+            + Agregar
+          </button>
+        </div>
+
+        @if (draftError) {
+          <p class="text-red-500 text-xs font-medium">{{ draftError }}</p>
+        }
+
+        <!-- Lista acumulada -->
+        @if (manualSchedules.length > 0) {
+          <div class="border border-slate-300 rounded overflow-hidden">
+            <div class="flex items-center justify-between bg-blue-50 px-4 py-2 border-b border-slate-200">
+              <span class="text-[11px] font-bold text-[#1e3a8a] uppercase">Horarios Registrados</span>
+              <span class="text-[10px] bg-blue-100 text-[#1e3a8a] px-3 py-1 rounded-full font-bold">
+                {{ manualSchedules.length }} {{ manualSchedules.length === 1 ? 'Registro' : 'Registros' }}
+              </span>
             </div>
-            <div class="border border-slate-300 rounded overflow-hidden">
-              <div class="max-h-60 overflow-y-auto bg-white custom-scroll">
-                <table class="w-full text-sm">
-                  <tbody>
-                    @for (item of f.scheduleItems; track $index; let i = $index) {
-                      @if (item.es_planificable) {
-                        <tr
-                          class="border-b border-slate-200 last:border-0 cursor-pointer transition-colors"
-                          [class.bg-blue-50]="isScheduleSelected(i)"
-                          [class.hover:bg-slate-50]="!isScheduleSelected(i)"
-                          (click)="toggleSchedule.emit(i)"
+            <div class="max-h-60 overflow-y-auto bg-white custom-scroll">
+              <table class="w-full text-sm">
+                <tbody>
+                  @for (item of manualSchedules; track $index; let i = $index) {
+                    <tr class="border-b border-slate-200 last:border-0 hover:bg-slate-50 transition-colors">
+                      <td class="p-3 text-slate-700">
+                        {{ item.fecha_plan | date: 'dd/MM/yyyy' }}
+                      </td>
+                      <td class="p-3 text-[#1e3a8a] font-mono font-bold">
+                        {{ formatTime(item.inicio_bloque) }} – {{ formatTime(item.fin_bloque) }}
+                      </td>
+                      <td class="p-3 text-right">
+                        <button
+                          type="button"
+                          (click)="removeManualSchedule.emit(i)"
+                          class="text-red-500 hover:text-red-700 text-[11px] font-bold px-2 py-1 rounded hover:bg-red-50 transition-colors uppercase"
                         >
-                          <td class="p-3 w-10 text-center">
-                            <input
-                              type="checkbox"
-                              [checked]="isScheduleSelected(i)"
-                              class="accent-[#25377f] cursor-pointer w-4 h-4"
-                              (click)="$event.stopPropagation(); toggleSchedule.emit(i)"
-                            />
-                          </td>
-                          <td class="p-3 text-slate-700">
-                            {{ item.fecha_plan | date: 'dd/MM/yyyy' }}
-                          </td>
-                          <td class="p-3 text-[#1e3a8a] font-mono font-bold">
-                            {{ item.inicio_bloque.slice(0, 5) }} - {{ item.fin_bloque.slice(0, 5) }}
-                          </td>
-                          <td class="p-3 text-right">
-                            <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold uppercase">Disponible</span>
-                          </td>
-                        </tr>
-                      } @else {
-                        <tr class="border-b border-slate-200 last:border-0 bg-red-50 opacity-70 cursor-not-allowed">
-                          <td class="p-3 w-10 text-center">
-                            <input
-                              type="checkbox"
-                              disabled
-                              class="w-4 h-4 cursor-not-allowed opacity-40"
-                            />
-                          </td>
-                          <td class="p-3 text-slate-500 line-through">
-                            {{ item.fecha_plan | date: 'dd/MM/yyyy' }}
-                          </td>
-                          <td class="p-3 text-slate-400 font-mono line-through">
-                            {{ item.inicio_bloque.slice(0, 5) }} - {{ item.fin_bloque.slice(0, 5) }}
-                          </td>
-                          <td class="p-3 text-right">
-                            <span class="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase">Ocupado</span>
-                          </td>
-                        </tr>
-                      }
-                    }
-                  </tbody>
-                </table>
-              </div>
+                          ✕ Quitar
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
             </div>
           </div>
+        } @else {
+          <p class="text-slate-400 text-xs text-center py-3 border border-dashed border-slate-300 rounded">
+            No hay horarios registrados aún.
+          </p>
         }
       </div>
     </section>

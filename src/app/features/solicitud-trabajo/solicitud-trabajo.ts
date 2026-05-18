@@ -112,7 +112,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   // ── Step 2: campos del formulario dinámico ───────────────────────────────
   buscandoIntegracion: { [key: string]: boolean } = {};
-  selectedScheduleIndexes = new Set<number>();
+  manualSchedules: { fecha_plan: string; inicio_bloque: string; fin_bloque: string }[] = [];
 
   // ── Step 3: catálogos y ensayos ──────────────────────────────────────────
   catalogosSeleccionados: MatrizConHijosUI[] = [];
@@ -234,19 +234,12 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
               if (catalogo && catalogo !== 0) selectPatch[key] = catalogo;
             } else if (v.ctipo_dato_nombre === 'Selección Mutiple' && v.valor_multiple) {
               try {
-                const guardados: JornadaItem[] = JSON.parse(v.valor_multiple);
-                const field = this.fields.find((f) => f.key === key);
-                if (field) {
-                  for (const guardado of guardados) {
-                    const idx = field.scheduleItems.findIndex(
-                      (item) =>
-                        item.fecha_plan === guardado.fecha_plan &&
-                        item.inicio_bloque === guardado.inicio_bloque &&
-                        item.fin_bloque === guardado.fin_bloque,
-                    );
-                    if (idx !== -1) this.selectedScheduleIndexes.add(idx);
-                  }
-                }
+                const guardados: { fecha_plan: string; inicio_bloque: string; fin_bloque: string }[] = JSON.parse(v.valor_multiple);
+                this.manualSchedules = guardados.map((g) => ({
+                  fecha_plan: g.fecha_plan ?? '',
+                  inicio_bloque: g.inicio_bloque ?? '',
+                  fin_bloque: g.fin_bloque ?? '',
+                }));
               } catch {
                 // valor_multiple malformado, se ignora
               }
@@ -373,22 +366,17 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
     const camposSchedule: ValorSolicitudItem[] = this.fields
       .filter((f) => f.controlType === 'schedule')
-      .map((f) => {
-        const itemsSeleccionados = (f.scheduleItems ?? []).filter((_, i) =>
-          this.selectedScheduleIndexes.has(i),
-        );
-        return {
-          solicitud_id: this.solicitudRegistradaId,
-          atributo_formulario_id: String(f.id),
-          valor_texto: null,
-          valor_numero: null,
-          valor_fecha: null,
-          valor_booleano: null,
-          valor_multiple: itemsSeleccionados.length > 0 ? JSON.stringify(itemsSeleccionados) : null,
-          valor_catalogo: 0,
-          valor_uuid: raw.tecnico_id ?? '',
-        };
-      });
+      .map((f) => ({
+        solicitud_id: this.solicitudRegistradaId,
+        atributo_formulario_id: String(f.id),
+        valor_texto: null,
+        valor_numero: null,
+        valor_fecha: null,
+        valor_booleano: null,
+        valor_multiple: this.manualSchedules.length > 0 ? JSON.stringify(this.manualSchedules) : null,
+        valor_catalogo: 0,
+        valor_uuid: raw.tecnico_id ?? '',
+      }));
 
     const valorSolicitud = [...camposNormales, ...camposSchedule];
     const payload = { valorSolicitud };
@@ -562,7 +550,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     this.catalogosSeleccionados = [];
     this.ensayosMuestreo = [];
     this.ensayosResiduales = [];
-    this.selectedScheduleIndexes = new Set();
+    this.manualSchedules = [];
     this.buscandoIntegracion = {};
     this.modoEdicion = false;
     this.form.reset();
@@ -629,10 +617,12 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  toggleScheduleItem(index: number): void {
-    this.selectedScheduleIndexes.has(index)
-      ? this.selectedScheduleIndexes.delete(index)
-      : this.selectedScheduleIndexes.add(index);
+  addManualScheduleItem(entry: { fecha_plan: string; inicio_bloque: string; fin_bloque: string }): void {
+    this.manualSchedules = [...this.manualSchedules, entry];
+  }
+
+  removeManualScheduleItem(index: number): void {
+    this.manualSchedules = this.manualSchedules.filter((_, i) => i !== index);
   }
 
   // ── Step 4: acuerdos y guardado ──────────────────────────────────────────

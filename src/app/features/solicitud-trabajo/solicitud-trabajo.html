@@ -58,14 +58,15 @@
         <app-step2-operador
           [fields]="fields"
           [buscandoIntegracion]="buscandoIntegracion"
-          [selectedScheduleIndexes]="selectedScheduleIndexes"
+          [manualSchedules]="manualSchedules"
           [motivoFlujo]="motivoFlujo"
           [isPasaporteSelected]="isPasaporteSelected"
           (next)="goNextStep()"
           (prev)="goPrevStep()"
           (openMap)="openMap()"
           (buscarIntegracion)="buscarDatosIntegracion($event)"
-          (toggleSchedule)="toggleScheduleItem($event)"
+          (addManualSchedule)="addManualScheduleItem($event)"
+          (removeManualSchedule)="removeManualScheduleItem($event)"
         >
         </app-step2-operador>
       }
