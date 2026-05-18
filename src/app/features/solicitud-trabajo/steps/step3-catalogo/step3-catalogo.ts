@@ -40,6 +40,8 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
   @Input() estadoPrevio: MatrizConHijosUI[] = [];
   @Input() ensayosMuestreoPrevio: EnsayoMuestreo[] = [];
   @Input() ensayosResidualesPrevio: EnsayoLaboratorio[] = [];
+  @Input() ensayosAirePrevio: EnsayoLaboratorio[] = [];
+  @Input() ensayosRuidoPrevio: EnsayoLaboratorio[] = [];
   @Output() next = new EventEmitter<MatrizConHijosUI[]>();
   @Output() prev = new EventEmitter<void>();
   @Output() estadoCambiado = new EventEmitter<MatrizConHijosUI[]>();
@@ -107,6 +109,16 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
         if (aguaGrupo?.hijos.some((h) => h.activo)) {
           this.cargarEnsayosAgua(aguaGrupo);
         }
+
+        const aireGrupo = this.matricesConHijos.find((m) => this.isMatriz(m, 'aire'));
+        if (aireGrupo?.hijos.some((h) => h.activo)) {
+          this.cargarEnsayosAire(aireGrupo);
+        }
+
+        const ruidoGrupo = this.matricesConHijos.find((m) => this.isMatriz(m, 'ruido'));
+        if (ruidoGrupo?.hijos.some((h) => h.activo)) {
+          this.cargarEnsayosRuido(ruidoGrupo);
+        }
       },
       error: () => {
         this.loading = false;
@@ -165,7 +177,11 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (items) => {
-          this.ensayosAireServer = items.map((i) => ({ ...this.mapToLaboratorio(i), activo: false }));
+          this.ensayosAireServer = items.map((i) => {
+            const base = this.mapToLaboratorio(i);
+            const previo = this.ensayosAirePrevio.find((p) => p.identificacion === base.identificacion);
+            return { ...base, activo: previo?.activo ?? false };
+          });
           this.ensayosAireCambiado.emit(this.ensayosAireServer);
         },
       });
@@ -183,7 +199,11 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (items) => {
-          this.ensayosRuidoServer = items.map((i) => ({ ...this.mapToLaboratorio(i), activo: false }));
+          this.ensayosRuidoServer = items.map((i) => {
+            const base = this.mapToLaboratorio(i);
+            const previo = this.ensayosRuidoPrevio.find((p) => p.identificacion === base.identificacion);
+            return { ...base, activo: previo?.activo ?? false };
+          });
           this.ensayosRuidoCambiado.emit(this.ensayosRuidoServer);
         },
       });

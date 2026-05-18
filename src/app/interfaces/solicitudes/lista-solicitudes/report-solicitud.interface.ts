@@ -53,3 +53,25 @@ export interface ReportSolicitudCollectionResponse {
   count: number;
   meta: PaginationMeta;
 }
+
+export interface ReportSolicitudEnsayo {
+  actualizado_en: string | null;
+  actualizado_por: string | null;
+  analisis: string;
+  creado_en: string;
+  creado_por: string;
+  ctambiental_id: string;
+  ctipo_ambiental_nombre: string;
+  ensayo_id: string;
+  estado: string;
+  id: string;
+  identificacion: string;
+  metodo: string;
+  solicitud_id: string;
+}
+
+export interface ReportSolicitudEnsayoCollectionResponse {
+  count: number;
+  data: ReportSolicitudEnsayo[];
+  meta?: import('../../catalogos/catalogo.interface').PaginationMeta;
+}

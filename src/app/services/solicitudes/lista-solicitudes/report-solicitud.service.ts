@@ -5,6 +5,8 @@ import { map } from 'rxjs/operators';
 import {
   ReportSolicitud,
   ReportSolicitudCollectionResponse,
+  ReportSolicitudEnsayo,
+  ReportSolicitudEnsayoCollectionResponse,
   ReportValorSolicitud,
   ReportValorSolicitudCollectionResponse,
 } from '../../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
@@ -86,6 +88,31 @@ const GET_SOLICITUD_BY_ID = gql`
   }
 `;
 
+const GET_ENSAYOS_SOLICITUD = gql`
+  query CollectionReportSolicitudEnsayo($solicitudId: String!, $page: Int, $take: Int) {
+    collectionReportSolicitudEnsayo(
+      query: {
+        where: { solicitud_id: { equals: $solicitudId } estado: { equals: true } }
+        pagination: { page: $page, take: $take }
+      }
+    ) {
+      count
+      data {
+        analisis
+        ctambiental_id
+        ctipo_ambiental_nombre
+        ensayo_id
+        estado
+        id
+        identificacion
+        metodo
+        solicitud_id
+      }
+      meta { ${META_FIELDS} }
+    }
+  }
+`;
+
 export interface SolicitudesPage {
   data: ReportSolicitud[];
   meta: PaginationMeta;
@@ -94,6 +121,32 @@ export interface SolicitudesPage {
 @Injectable({ providedIn: 'root' })
 export class ReportSolicitudService {
   constructor(private apollo: Apollo) {}
+
+  getEnsayosSolicitud(solicitudId: string): Observable<ReportSolicitudEnsayo[]> {
+    const PAGE_SIZE = 100;
+    const fetchPage = (page: number) =>
+      this.apollo
+        .use(CLIENT_NAME)
+        .query<{ collectionReportSolicitudEnsayo: ReportSolicitudEnsayoCollectionResponse }>({
+          query: GET_ENSAYOS_SOLICITUD,
+          variables: { solicitudId, page, take: PAGE_SIZE },
+          fetchPolicy: 'network-only',
+        })
+        .pipe(
+          map((result) => {
+            const res = result.data?.collectionReportSolicitudEnsayo;
+            return {
+              data: (res?.data ?? []) as ReportSolicitudEnsayo[],
+              meta: res?.meta as PaginationMeta,
+            };
+          }),
+        );
+
+    return fetchPage(1).pipe(
+      expand(({ meta }) => (meta?.hasNextPage ? fetchPage(meta.nextPage!) : EMPTY)),
+      reduce((acc, { data }) => acc.concat(data), [] as ReportSolicitudEnsayo[]),
+    );
+  }
 
   getSolicitudById(id: string): Observable<ReportSolicitud | null> {
     return this.apollo

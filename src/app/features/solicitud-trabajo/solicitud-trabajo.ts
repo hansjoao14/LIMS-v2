@@ -120,6 +120,8 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   ensayosRuido: EnsayoLaboratorio[] = [];
   ensayosMuestreo: EnsayoMuestreo[] = [];
   ensayosResiduales: EnsayoLaboratorio[] = [];
+  ensayosAirePrevio: EnsayoLaboratorio[] = [];
+  ensayosRuidoPrevio: EnsayoLaboratorio[] = [];
   ruidoInfo = { tipoUsoSueloOperador: '', tipoUsoSueloPCA: '', direccionPCA: '', telefonoPCA: '' };
   notasAgua: string[] = [];
   notasAire: string[] = [];
@@ -172,6 +174,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       this.modoEdicion = true;
       this.solicitudRegistradaId = solicitud.id_solicitud;
       this.cargarStep1DesdeSolicitud(solicitud);
+      this.preCargarEnsayosSolicitud(solicitud.id_solicitud);
     }
     this.cargarFormularioDinamico();
   }
@@ -339,6 +342,71 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       });
   }
 
+  private preCargarEnsayosSolicitud(solicitudId: string): void {
+    const ENSAYO_ID_MUESTREO = 19;
+    this.reportSolicitudService
+      .getEnsayosSolicitud(solicitudId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (ensayos) => {
+          const uniqueIds = [...new Set(ensayos.map((e) => Number(e.ctambiental_id)))];
+          this.catalogosSeleccionados = [
+            {
+              collapsed: false,
+              matriz: { id: 0, nombre: '', catalogo_id: 0, estado: true, grupo: null, item_catalogo_id: null, orden: null, sigla: null, valor: null },
+              hijos: uniqueIds.map((id) => ({
+                id,
+                activo: true,
+                nombre: '',
+                catalogo_id: 0,
+                estado: true,
+                grupo: null,
+                item_catalogo_id: null,
+                orden: null,
+                sigla: null,
+                valor: null,
+              })),
+            },
+          ];
+
+          this.ensayosMuestreo = ensayos
+            .filter((e) => Number(e.ensayo_id) === ENSAYO_ID_MUESTREO)
+            .map((e) => {
+              const partes = e.metodo.split(',');
+              return {
+                activo: true,
+                ensayo_id: Number(e.ensayo_id),
+                ctambiental_id: Number(e.ctambiental_id),
+                producto: e.analisis,
+                parametro: e.identificacion,
+                metodoInterno: partes[0]?.trim() ?? '',
+                metodoReferencia: partes.slice(1).join(',').trim(),
+              } as EnsayoMuestreo;
+            });
+
+          const nonMuestreo: EnsayoLaboratorio[] = ensayos
+            .filter((e) => Number(e.ensayo_id) !== ENSAYO_ID_MUESTREO)
+            .map((e) => {
+              const partes = e.metodo.split(',');
+              return {
+                activo: true,
+                ensayo_id: Number(e.ensayo_id),
+                ctambiental_id: Number(e.ctambiental_id),
+                ensayo: e.analisis,
+                identificacion: e.identificacion,
+                metodoInterno: partes[0]?.trim() ?? '',
+                metodoReferencia: partes.slice(1).join(',').trim(),
+                unidad: '',
+              } as EnsayoLaboratorio;
+            });
+
+          this.ensayosResiduales = nonMuestreo;
+          this.ensayosAirePrevio = nonMuestreo;
+          this.ensayosRuidoPrevio = nonMuestreo;
+        },
+      });
+  }
+
   get isStepOneReady(): boolean {
     return !!this.form.get('entidad_id')?.value && !!this.form.get('tecnico_id')?.value;
   }
@@ -415,13 +483,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       solicitud_id: this.solicitudRegistradaId,
       ensayo_id: e.ensayo_id!,
       ctambiental_id: e.ctambiental_id!,
+      estado: true,
     }));
-
 
     const payload = { solicitudEnsayo };
 
     try {
-      await firstValueFrom(this.service.guardarEnsayosSolicitud(payload));
+      if (this.modoEdicion && this.solicitudRegistradaId) {
+        debugger;
+        await firstValueFrom(this.service.actualizarEnsayosSolicitud(this.solicitudRegistradaId, payload));
+      } else {
+        await firstValueFrom(this.service.guardarEnsayosSolicitud(payload));
+      }
       this.zone.run(() => this.avanzarPaso());
     } catch (err: any) {
       const mensaje =

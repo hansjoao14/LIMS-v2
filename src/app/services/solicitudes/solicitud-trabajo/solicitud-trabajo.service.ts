@@ -61,6 +61,10 @@ export class SolicitudService {
     return this.http.post<any>(`${this.api_solicitud}/solicitud-ensayo/create-many`, payload);
   }
 
+  actualizarEnsayosSolicitud(idSolicitud: string, payload: { solicitudEnsayo: SolicitudEnsayoItem[] }): Observable<any> {
+    return this.http.put<any>(`${this.api_solicitud}/solicitud-ensayo/update-many/${idSolicitud}`, payload);
+  }
+
   finalizarSolicitud(payload: FinalizarSolicitudPayload): Observable<any> {
     const result = this.http.post<any>(`${this.api_solicitud}/solicitud/finalizar`, payload);
     return result;
