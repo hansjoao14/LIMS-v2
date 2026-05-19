@@ -25,7 +25,7 @@ export class AuthService {
   currentUser = computed(() => ({
     id: '32BADAE5-44E8-4417-9247-E900ED8250B5',
     nombre: this.userProfile()?.name ?? '',
-    email: this.userProfile()?.email ?? '',
+    email: this.userProfile()?.email ?? 'juan.perez@company.com',
   }));
 
   isAdmin = computed(() => this.userProfile()?.roles.includes('admin') ?? false);

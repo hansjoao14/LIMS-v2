@@ -17,6 +17,7 @@ const GET_USUARIOS_BY_ESTABLECIMIENTO = gql`
     ) {
       count
       data {
+        correo
         ctcargo_id
         ctipo_cargo_nombre
         establecimiento_id
@@ -54,6 +55,7 @@ export class EstablecimientoUsuarioService {
               entidadId: u.establecimiento_id,
               nombre: u.nombres_completos,
               cargo: u.ctipo_cargo_nombre,
+              correo: u.correo,
             }));
         })
       );

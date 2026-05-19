@@ -13,7 +13,7 @@ import { Establecimiento } from '../../../../interfaces/solicitudes/solicitud-tr
 export class Step1SolicitudComponent {
   @Input() titulo: string = 'Solicitud de trabajo';
   @Input() entidadesMock: Establecimiento[] = [];
-  @Input() tecnicosFiltrados: { id: string; nombre: string }[] = [];
+  @Input() tecnicosFiltrados: { id: string; nombre: string; correo?: string }[] = [];
   @Input() cargando = false;
   @Output() next = new EventEmitter<void>();
 
@@ -21,6 +21,12 @@ export class Step1SolicitudComponent {
 
   get form(): FormGroup {
     return this.controlContainer.control as FormGroup;
+  }
+
+  get correotecnicoSeleccionado(): string {
+    const id = this.form.get('tecnico_id')?.value;
+    const tecnico = this.tecnicosFiltrados.find((t) => t.id === id);
+    return tecnico?.correo || 'juan.perez@company.com';
   }
 
   esCampoInvalido(key: string): boolean {

@@ -3,4 +3,5 @@ export interface Tecnico {
   entidadId: string;
   nombre: string;
   cargo: string;
+  correo?: string;
 }

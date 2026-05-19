@@ -23,6 +23,9 @@
           <option [value]="t.id">{{ t.nombre }}</option>
         }
       </select>
+      @if (form.get('tecnico_id')?.value) {
+        <p class="text-xs text-slate-500 mt-1">{{ correotecnicoSeleccionado }}</p>
+      }
     </div>
     <div class="col-span-12 md:col-span-4">
       <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">CARGO</label>
