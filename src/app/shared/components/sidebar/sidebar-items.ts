@@ -27,17 +27,17 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     requiredRoles: RoleAccess.ALL_USERS, // [admin, direccion, analista, tecnico, responsable]
   },
   {
+    path: '/solicitud-trabajo',
+    label: 'Solicitud de Trabajo',
+    icon: CarpetaIcon,
+    requiredRoles: RoleAccess.MANAGEMENT,
+  },
+  {
     label: 'Listado de Solicitudes',
     icon: ListaSolicitudesIcon,
     expanded: false,
     requiredRoles: RoleAccess.MANAGEMENT,
     children: [
-      {
-        path: '/solicitud-trabajo',
-        label: 'Solicitud de Trabajo',
-        icon: CarpetaIcon,
-        requiredRoles: RoleAccess.MANAGEMENT,
-      },
       {
         path: '/lista-solicitudes',
         label: 'Bandeja de Solicitudes',

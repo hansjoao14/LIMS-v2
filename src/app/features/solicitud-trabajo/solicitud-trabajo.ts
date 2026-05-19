@@ -496,7 +496,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
     try {
       if (this.modoEdicion && this.solicitudRegistradaId) {
-        debugger;
         await firstValueFrom(this.service.actualizarEnsayosSolicitud(this.solicitudRegistradaId, payload));
       } else {
         await firstValueFrom(this.service.guardarEnsayosSolicitud(payload));
@@ -571,6 +570,20 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     if (step < 1 || step > 4) return;
     if (step > 1 && !this.isStepOneReady) {
       this.alertCamposObligatorios();
+      return;
+    }
+    if (step >= 3 && this.currentStep === 2 && this.form.invalid) {
+      this.form.markAllAsTouched();
+      const invalidos = Object.entries(this.form.controls)
+        .filter(([, ctrl]) => ctrl.invalid)
+        .map(([name]) => this.fields.find((f) => f.key === name && !f.hidden)?.label || name)
+        .filter(Boolean);
+      Swal.fire({
+        icon: 'warning',
+        title: 'Complete los campos obligatorios',
+        text: invalidos.length ? 'Faltan: ' + invalidos.join(', ') : 'Revise los campos marcados en rojo.',
+        confirmButtonColor: this.COLOR_PRIMARIO,
+      });
       return;
     }
     if (step === 4 && !this.solicitudRegistradaId) {

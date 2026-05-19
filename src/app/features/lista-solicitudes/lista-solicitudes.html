@@ -12,35 +12,50 @@
           <p class="text-sm text-slate-600 mt-1">Listado de solicitudes de trabajo registradas en el sistema.</p>
         </div>
 
-        @if (loading) {
-          <div class="flex items-center justify-center py-20">
-            <span class="animate-spin h-8 w-8 border-4 border-[#1d2b64] border-t-transparent rounded-full"></span>
-            <span class="ml-3 text-slate-500 text-sm">Cargando solicitudes...</span>
-          </div>
-        } @else {
-          <div class="border border-slate-200 rounded">
-            <table class="w-full text-sm border-collapse table-fixed">
-              <colgroup>
-                <col class="w-[150px]">
-                <col class="w-[140px]">
-                <col>
-                <col class="w-[90px]">
-                <col class="w-[100px]">
-                <col class="w-[100px]">
-                <col class="w-[100px]">
-              </colgroup>
-              <thead>
-                <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Secuencial</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Establecimiento</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Solicitante</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">Periodo</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">F. Creación</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
-                  <th class="px-2 py-2.5 text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
+        <div class="border border-slate-200 rounded">
+          <table class="w-full text-sm border-collapse table-fixed">
+            <colgroup>
+              <col class="w-[150px]">
+              <col class="w-[140px]">
+              <col>
+              <col class="w-[90px]">
+              <col class="w-[100px]">
+              <col class="w-[100px]">
+              <col class="w-[100px]">
+              <col class="w-[100px]">
+            </colgroup>
+            <thead>
+              <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
+                <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Secuencial</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-left">Establecimiento</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-left">Solicitante</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Periodo</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-center">F. Creación</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Prioridad</th>
+                <th class="px-2 py-2.5 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (loading) {
+                @for (_ of [1,2,3,4,5,6,7,8]; track $index) {
+                  <tr class="border-b border-slate-200 animate-pulse">
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-4/5"></div></td>
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-2/3"></div></td>
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-1/2 mx-auto"></div></td>
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4 mx-auto"></div></td>
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-5 bg-slate-200 rounded w-4/5 mx-auto"></div></td>
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-5 bg-slate-200 rounded w-4/5 mx-auto"></div></td>
+                    <td class="px-2 py-3">
+                      <div class="flex items-center justify-center gap-1.5">
+                        <div class="h-8 w-8 bg-slate-200 rounded"></div>
+                        <div class="h-8 w-8 bg-slate-200 rounded"></div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              } @else {
                 @for (doc of solicitudes; track doc.id_solicitud) {
                   <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors">
                     <td class="px-3 py-2.5 border-r border-slate-100 font-bold text-[#1d2b64] break-words" [title]="doc.num_secuencial ?? '—'">
@@ -81,6 +96,11 @@
                         </span>
                       }
                     </td>
+                    <td class="px-3 py-2.5 border-r border-slate-100 text-center">
+                      <span class="block w-full text-center py-0.5 border border-orange-400 text-orange-700 font-bold text-[10px] rounded bg-orange-50">
+                        Alta
+                      </span>
+                    </td>
                     <td class="px-2 py-2.5 text-center">
                       <div class="flex items-center justify-center gap-1.5">
                         @if (doc.ctestado_id === 2) {
@@ -117,24 +137,23 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="7" class="p-10 text-slate-400 italic text-center">
+                    <td colspan="8" class="p-10 text-slate-400 italic text-center">
                       No hay solicitudes registradas.
                     </td>
                   </tr>
                 }
-              </tbody>
-            </table>
-          </div>
+              }
+            </tbody>
+          </table>
+        </div>
 
-          <!-- Paginado -->
-          <app-pagination
-            [meta]="meta"
-            [currentPage]="currentPage"
-            [itemsShown]="solicitudes.length"
-            itemLabel="solicitudes"
-            (pageChange)="cargarPagina($event)">
-          </app-pagination>
-        }
+        <app-pagination
+          [meta]="meta"
+          [currentPage]="currentPage"
+          [itemsShown]="solicitudes.length"
+          itemLabel="solicitudes"
+          (pageChange)="cargarPagina($event)">
+        </app-pagination>
       </div>
     }
 

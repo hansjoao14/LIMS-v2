@@ -262,12 +262,12 @@ export class ReportSolicitudService {
   getSolicitudes(page: number, limit: number): Observable<SolicitudesPage> {
     return this.apollo
       .use(CLIENT_NAME)
-      .watchQuery<{ collectionReportSolicitud: ReportSolicitudCollectionResponse }>({
+      .query<{ collectionReportSolicitud: ReportSolicitudCollectionResponse }>({
         query: GET_COLLECTION_REPORT_SOLICITUD,
         variables: { page, take: limit },
         fetchPolicy: 'network-only',
       })
-      .valueChanges.pipe(
+      .pipe(
         map((result) => {
           const res = result.data?.collectionReportSolicitud;
           return {
