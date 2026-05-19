@@ -36,7 +36,7 @@ const GET_VALORES_SOLICITUD = gql`
   query CollectionReportValorSolicitud($id: String!) {
     collectionReportValorSolicitud(
       query: {
-        where: { id_solicitud: { equals: $id } }
+        where: { id_solicitud: { equals: $id } estado: { equals: true } }
         pagination: { page: 1, take: 100 }
       }
     ) {
