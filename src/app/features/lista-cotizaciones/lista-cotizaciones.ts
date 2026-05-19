@@ -112,20 +112,27 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
 
     if (!result.isConfirmed || !result.value) return;
 
-    const prioridadId = result.value;
+    const prioridadId = Number(result.value);
     this.procesandoId = doc.id_solicitud;
 
     this.solicitudService
-      .finalizarSolicitud({
-        idSolicitud: doc.id_solicitud,
-        identifcadorSecuecnial: doc.num_secuencial ?? 'SOLI_SECU_2025',
-        ctestado: ESTADO_AUTORIZADO,
+      .actualizarSolicitud(doc.id_solicitud, {
+        ctestado_id: ESTADO_AUTORIZADO,
+        ctprioridad_id: prioridadId,
+        formulario_id: doc.formulario_id,
+        usuario_id: doc.usuario_id,
+        entidad_id: doc.establecimiento_id,
+        secuencial_id: doc.secuencial_id,
+        periodo_id: doc.periodo_id,
+        descripcion: doc.descripcion_solicitud,
+        estado: doc.estado_logico_solicitud,
+        num_secuencial: doc.num_secuencial,
       })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.procesandoId = null;
-          console.log('Autorizar solicitud:', doc, '| Prioridad id:', prioridadId);
+          console.log('Autorizar solicitud:', { id: doc.id_solicitud, ctestado_id: ESTADO_AUTORIZADO, prioridad_id: prioridadId });
           Swal.fire({
             title: '¡Autorizado!',
             text: `La solicitud ${doc.num_secuencial ?? doc.id_solicitud} fue autorizada correctamente.`,
@@ -158,16 +165,22 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
     this.procesandoId = doc.id_solicitud;
 
     this.solicitudService
-      .finalizarSolicitud({
-        idSolicitud: doc.id_solicitud,
-        identifcadorSecuecnial: doc.num_secuencial ?? 'SOLI_SECU_2025',
-        ctestado: ESTADO_RECHAZADO,
+      .actualizarSolicitud(doc.id_solicitud, {
+        ctestado_id: ESTADO_RECHAZADO,
+        formulario_id: doc.formulario_id,
+        usuario_id: doc.usuario_id,
+        entidad_id: doc.establecimiento_id,
+        secuencial_id: doc.secuencial_id,
+        periodo_id: doc.periodo_id,
+        descripcion: doc.descripcion_solicitud,
+        estado: doc.estado_logico_solicitud,
+        num_secuencial: doc.num_secuencial,
       })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.procesandoId = null;
-          console.log('Rechazar solicitud:', doc);
+          console.log('Rechazar solicitud:', { id: doc.id_solicitud, ctestado_id: ESTADO_RECHAZADO });
           Swal.fire({
             title: '¡Rechazada!',
             text: `La solicitud ${doc.num_secuencial ?? doc.id_solicitud} fue rechazada.`,

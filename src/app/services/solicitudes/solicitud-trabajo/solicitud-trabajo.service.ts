@@ -70,6 +70,23 @@ export class SolicitudService {
     return result;
   }
 
+  actualizarSolicitud(id: string, payload: {
+    formulario_id?: string | number | null;
+    usuario_id?: string;
+    entidad_id?: string;
+    secuencial_id?: string | null;
+    ctestado_id: number;
+    ctprioridad_id?: number | null;
+    periodo_id?: number | null;
+    descripcion?: string;
+    estado?: boolean;
+    ejercicio_id?: number;
+    num_secuencial?: string | null;
+    tecnico_id?: string | null;
+  }): Observable<any> {
+    return this.http.put<any>(`${this.api_solicitud}/solicitud/${id}`, payload);
+  }
+
   getPdfSolicitud(solicitudId: string): Observable<Blob> {
     return this.http.get(`${this.api_reportes}/report-solicitud/pdf/${solicitudId}`, {
       responseType: 'blob',
