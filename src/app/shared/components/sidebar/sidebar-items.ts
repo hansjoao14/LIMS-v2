@@ -39,6 +39,12 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     requiredRoles: RoleAccess.MANAGEMENT, // Basado en roles de revisión y auditoría
   },
   {
+    path: '/lista-cotizaciones',
+    label: 'Lista de Cotizaciones',
+    icon: ListaSolicitudesIcon,
+    requiredRoles: RoleAccess.MANAGEMENT,
+  },
+  {
     label: 'Gestión de Vehiculos',
     icon: CarIcon,
     expanded: false,

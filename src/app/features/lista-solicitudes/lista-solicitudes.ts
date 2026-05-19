@@ -93,6 +93,23 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
       });
   }
 
+  eliminarSolicitud(doc: ReportSolicitud): void {
+    Swal.fire({
+      title: '¿Está seguro de eliminar?',
+      text: `Se eliminará la solicitud${doc.num_secuencial ? ' ' + doc.num_secuencial : ''}. Esta acción no se puede deshacer.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        console.log('Eliminar solicitud:', doc);
+      }
+    });
+  }
+
   abrirPanelFirma(doc: ReportSolicitud): void {
     this.selectedDoc = doc;
     this.archivoFirma = null;

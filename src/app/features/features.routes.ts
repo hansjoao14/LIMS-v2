@@ -49,6 +49,16 @@ export const featuresRoutes: Routes = [
     },
   },
   {
+    path: 'lista-cotizaciones',
+    loadComponent: () =>
+      import('./lista-cotizaciones/lista-cotizaciones').then((m) => m.ListaCotizaciones),
+    canActivate: [canActivateWithRealmRoles],
+    data: {
+      title: 'Lista de Cotizaciones',
+      requiredRoles: RoleAccess.MANAGEMENT,
+    },
+  },
+  {
     path: 'horarios-laborales',
     loadComponent: () =>
       import('./horarios-laborales/horarios-laborales').then((m) => m.HorariosLaborales),

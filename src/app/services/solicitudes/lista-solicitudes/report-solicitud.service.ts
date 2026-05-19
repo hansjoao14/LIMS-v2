@@ -78,6 +78,22 @@ const GET_SOLICITUDES_FINALIZADAS = gql`
   }
 `;
 
+const GET_SOLICITUDES_ESTADO_388 = gql`
+  query CollectionReportSolicitudesEstado388($page: Int, $take: Int) {
+    collectionReportSolicitud(
+      query: {
+        orderBy: { fecha_creacion: DESC }
+        where: { ctestado_id: { equals: 388 } }
+        pagination: { page: $page, take: $take }
+      }
+    ) {
+      data { ${REPORT_SOLICITUD_FIELDS} }
+      count
+      meta { ${META_FIELDS} }
+    }
+  }
+`;
+
 const GET_SOLICITUD_BY_ID = gql`
   query CollectionReportSolicitudById($id: String!) {
     collectionReportSolicitud(
@@ -210,6 +226,25 @@ export class ReportSolicitudService {
       .use(CLIENT_NAME)
       .query<{ collectionReportSolicitud: ReportSolicitudCollectionResponse }>({
         query: GET_SOLICITUDES_FINALIZADAS,
+        variables: { page, take: limit },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(
+        map((result) => {
+          const res = result.data?.collectionReportSolicitud;
+          return {
+            data: (res?.data ?? []) as ReportSolicitud[],
+            meta: res?.meta as PaginationMeta,
+          };
+        }),
+      );
+  }
+
+  getSolicitudesEstado388(page: number, limit: number): Observable<SolicitudesPage> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionReportSolicitud: ReportSolicitudCollectionResponse }>({
+        query: GET_SOLICITUDES_ESTADO_388,
         variables: { page, take: limit },
         fetchPolicy: 'network-only',
       })
