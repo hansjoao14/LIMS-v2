@@ -130,10 +130,10 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
       })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
+        next: async () => {
           this.procesandoId = null;
-          console.log('Autorizar solicitud:', { id: doc.id_solicitud, ctestado_id: ESTADO_AUTORIZADO, prioridad_id: prioridadId });
-          Swal.fire({
+          this.solicitudes = this.solicitudes.filter(s => s.id_solicitud !== doc.id_solicitud);
+          await Swal.fire({
             title: '¡Autorizado!',
             text: `La solicitud ${doc.num_secuencial ?? doc.id_solicitud} fue autorizada correctamente.`,
             icon: 'success',
@@ -178,10 +178,10 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
       })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
+        next: async () => {
           this.procesandoId = null;
-          console.log('Rechazar solicitud:', { id: doc.id_solicitud, ctestado_id: ESTADO_RECHAZADO });
-          Swal.fire({
+          this.solicitudes = this.solicitudes.filter(s => s.id_solicitud !== doc.id_solicitud);
+          await Swal.fire({
             title: '¡Rechazada!',
             text: `La solicitud ${doc.num_secuencial ?? doc.id_solicitud} fue rechazada.`,
             icon: 'success',

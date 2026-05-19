@@ -27,22 +27,30 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     requiredRoles: RoleAccess.ALL_USERS, // [admin, direccion, analista, tecnico, responsable]
   },
   {
-    path: '/solicitud-trabajo',
-    label: 'Solicitud de Trabajo',
-    icon: CarpetaIcon,
-    requiredRoles: RoleAccess.MANAGEMENT, // [admin, direccion, analista]
-  },
-  {
-    path: '/lista-solicitudes',
-    label: 'Bandeja de solicitudes',
+    label: 'Listado de Solicitudes',
     icon: ListaSolicitudesIcon,
-    requiredRoles: RoleAccess.MANAGEMENT, // Basado en roles de revisión y auditoría
-  },
-  {
-    path: '/lista-cotizaciones',
-    label: 'Lista de Cotizaciones',
-    icon: ListaSolicitudesIcon,
+    expanded: false,
     requiredRoles: RoleAccess.MANAGEMENT,
+    children: [
+      {
+        path: '/solicitud-trabajo',
+        label: 'Solicitud de Trabajo',
+        icon: CarpetaIcon,
+        requiredRoles: RoleAccess.MANAGEMENT,
+      },
+      {
+        path: '/lista-solicitudes',
+        label: 'Bandeja de Solicitudes',
+        icon: ListaSolicitudesIcon,
+        requiredRoles: RoleAccess.MANAGEMENT,
+      },
+      {
+        path: '/lista-cotizaciones',
+        label: 'Lista de Cotizaciones',
+        icon: ListaSolicitudesIcon,
+        requiredRoles: RoleAccess.MANAGEMENT,
+      },
+    ],
   },
   {
     label: 'Gestión de Vehiculos',
