@@ -186,10 +186,10 @@ export class ReportSolicitudService {
       .pipe(
         map((result) => {
           const all = result.data?.collectionReportValorSolicitud?.data ?? [];
-          // deduplica: el último en el array es el más reciente → gana sobre duplicados anteriores
-
+          // ordena por fecha_creacion ASC para que el más reciente gane en el dedup
+          const sorted = [...all].sort((a, b) => a.fecha_creacion.localeCompare(b.fecha_creacion));
           const dedup = new Map<string, ReportValorSolicitud>();
-          for (const v of all) dedup.set(v.atributo_formulario_nombre, v);
+          for (const v of sorted) dedup.set(v.atributo_formulario_nombre, v);
           return Array.from(dedup.values());
         }),
       );

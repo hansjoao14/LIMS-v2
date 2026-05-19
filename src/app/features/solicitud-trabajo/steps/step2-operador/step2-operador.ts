@@ -25,6 +25,7 @@ export class Step2OperadorComponent {
   @Input() manualSchedules: ManualScheduleEntry[] = [];
   @Input() motivoFlujo: MotivoFlujo = '';
   @Input() isPasaporteSelected = false;
+  @Input() cargando = false;
   @Output() next = new EventEmitter<void>();
   @Output() prev = new EventEmitter<void>();
   @Output() openMap = new EventEmitter<void>();
@@ -83,6 +84,12 @@ export class Step2OperadorComponent {
     this.draftDate = '';
     this.draftStart = '08:00';
     this.draftEnd = '09:00';
+  }
+
+  formatFecha(fecha: string): string {
+    if (!fecha) return '—';
+    const [y, m, d] = fecha.split('-');
+    return `${d}/${m}/${y}`;
   }
 
   formatTime(time: string): string {

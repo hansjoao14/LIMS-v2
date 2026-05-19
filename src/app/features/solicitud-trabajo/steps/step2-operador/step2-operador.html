@@ -256,7 +256,7 @@
                   @for (item of manualSchedules; track $index; let i = $index) {
                     <tr class="border-b border-slate-200 last:border-0 hover:bg-slate-50 transition-colors">
                       <td class="p-3 text-slate-700">
-                        {{ item.fecha_plan | date: 'dd/MM/yyyy' }}
+                        {{ formatFecha(item.fecha_plan) }}
                       </td>
                       <td class="p-3 text-[#1e3a8a] font-mono font-bold">
                         {{ formatTime(item.inicio_bloque) }} – {{ formatTime(item.fin_bloque) }}
@@ -399,9 +399,15 @@
     <button
       type="button"
       (click)="next.emit()"
-      class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all"
+      [disabled]="cargando"
+      class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
     >
-      SIGUIENTE
+      @if (cargando) {
+        <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+        Guardando...
+      } @else {
+        SIGUIENTE
+      }
     </button>
   </div>
 </div>

@@ -232,6 +232,13 @@
 
   <div class="flex justify-between pt-4 border-t border-slate-300">
     <button type="button" (click)="prev.emit()" class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">REGRESAR</button>
-    <button type="button" (click)="next.emit(matricesConHijos)" class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all">SIGUIENTE</button>
+    <button type="button" (click)="next.emit(matricesConHijos)" [disabled]="cargando" class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
+      @if (cargando) {
+        <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+        Guardando...
+      } @else {
+        SIGUIENTE
+      }
+    </button>
   </div>
 </div>

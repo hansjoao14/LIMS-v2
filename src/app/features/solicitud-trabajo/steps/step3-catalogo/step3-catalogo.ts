@@ -42,6 +42,7 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
   @Input() ensayosResidualesPrevio: EnsayoLaboratorio[] = [];
   @Input() ensayosAirePrevio: EnsayoLaboratorio[] = [];
   @Input() ensayosRuidoPrevio: EnsayoLaboratorio[] = [];
+  @Input() cargando = false;
   @Output() next = new EventEmitter<MatrizConHijosUI[]>();
   @Output() prev = new EventEmitter<void>();
   @Output() estadoCambiado = new EventEmitter<MatrizConHijosUI[]>();

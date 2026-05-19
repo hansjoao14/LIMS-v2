@@ -412,6 +412,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private async guardarValoresYAvanzar(): Promise<void> {
+    this.isGuardando = true;
     const raw = this.form.getRawValue();
 
     const camposNormales: ValorSolicitudItem[] = this.fields
@@ -457,8 +458,12 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       } else {
         await firstValueFrom(this.service.guardarValoresSolicitud(payload));
       }
-      this.zone.run(() => this.avanzarPaso());
+      this.zone.run(() => {
+        this.isGuardando = false;
+        this.avanzarPaso();
+      });
     } catch (err: any) {
+      this.isGuardando = false;
       const mensaje =
         err?.error?.message ?? err?.message ?? 'No se pudo guardar los valores de la solicitud';
       Swal.fire({
@@ -472,6 +477,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   // Finalizar solicitud: guardar ensayos y luego marcar solicitud como finalizada
   private async guardarEnsayosYAvanzar(catalogos: MatrizConHijosUI[]): Promise<void> {
+    this.isGuardando = true;
     const todos = [
       ...this.ensayosResiduales,
       ...this.ensayosMuestreo,
@@ -495,8 +501,12 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       } else {
         await firstValueFrom(this.service.guardarEnsayosSolicitud(payload));
       }
-      this.zone.run(() => this.avanzarPaso());
+      this.zone.run(() => {
+        this.isGuardando = false;
+        this.avanzarPaso();
+      });
     } catch (err: any) {
+      this.isGuardando = false;
       const mensaje =
         err?.error?.message ?? err?.message ?? 'No se pudo guardar los ensayos de la solicitud';
       Swal.fire({
