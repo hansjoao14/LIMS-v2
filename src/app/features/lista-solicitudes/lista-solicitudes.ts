@@ -9,6 +9,7 @@ import { ReportSolicitudService } from '../../services/solicitudes/lista-solicit
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { PaginationComponent } from '../../shared/components/pagination/pagination';
+import { AuthService } from '../auth/service/auth-service';
 
 @Component({
   selector: 'app-lista-solicitudes',
@@ -40,6 +41,7 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   constructor(
     private reportSolicitudService: ReportSolicitudService,
     private router: Router,
+    public authService: AuthService,
   ) {}
 
   ngOnInit(): void {

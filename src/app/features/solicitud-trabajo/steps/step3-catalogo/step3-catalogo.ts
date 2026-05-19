@@ -33,7 +33,6 @@ export interface MatrizConHijosUI {
 export class Step3CatalogoComponent implements OnInit, OnDestroy {
   @Input() ensayosAire: EnsayoLaboratorio[] = [];
   @Input() ensayosRuido: EnsayoLaboratorio[] = [];
-  @Input() ruidoInfo: any = {};
   @Input() notasAgua: string[] = [];
   @Input() notasAire: string[] = [];
   @Input() notasRuido: string[] = [];

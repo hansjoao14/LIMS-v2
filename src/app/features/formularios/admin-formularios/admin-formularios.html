@@ -19,11 +19,8 @@
           </button>
         </div>
 
-        @if (loading) {
-          <app-loading />
-        } @else {
-
-          <!-- Buscador -->
+        <!-- Buscador -->
+        @if (!loading) {
           <div class="flex justify-between items-center mb-4">
             <div class="relative w-80">
               <input type="text" [(ngModel)]="busqueda" (ngModelChange)="filtrar()"
@@ -37,31 +34,48 @@
               {{ formulariosFiltrados.length }} de {{ formularios.length }} formularios
             </span>
           </div>
+        }
 
-          <!-- Tabla -->
-          <div class="border border-slate-200 rounded">
-            <table class="w-full text-sm border-collapse table-fixed">
-              <colgroup>
-                <col>
-                <col class="w-[190px]">
-                <col class="w-[100px]">
-                <col class="w-[80px]">
-                <col class="w-[80px]">
-                <col class="w-[110px]">
-                <col class="w-[110px]">
-              </colgroup>
-              <thead>
-                <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Nombre</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Tipo de Formulario</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">Sigla</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">Versión</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">Fecha Creación</th>
-                  <th class="px-2 py-2.5 text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
+        <!-- Tabla -->
+        <div class="border border-slate-200 rounded">
+          <table class="w-full text-sm border-collapse table-fixed">
+            <colgroup>
+              <col>
+              <col class="w-[190px]">
+              <col class="w-[100px]">
+              <col class="w-[80px]">
+              <col class="w-[80px]">
+              <col class="w-[110px]">
+              <col class="w-[110px]">
+            </colgroup>
+            <thead>
+              <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
+                <th class="px-3 py-2.5 border-r border-slate-100 text-left">Nombre</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-left">Tipo de Formulario</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Sigla</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Versión</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Fecha Creación</th>
+                <th class="px-2 py-2.5 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (loading) {
+                @for (_ of [1,2,3,4,5,6,7,8]; track $index) {
+                  <tr class="border-b border-slate-200 animate-pulse">
+                    <td class="px-3 py-3 border-r border-slate-100">
+                      <div class="h-3 bg-slate-200 rounded w-3/4 mb-1.5"></div>
+                      <div class="h-2.5 bg-slate-100 rounded w-1/2"></div>
+                    </td>
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-5 bg-slate-200 rounded w-4/5"></div></td>
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-1/2 mx-auto"></div></td>
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-5 bg-slate-200 rounded w-3/5 mx-auto"></div></td>
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-5 bg-slate-200 rounded w-4/5 mx-auto"></div></td>
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4 mx-auto"></div></td>
+                    <td class="px-2 py-3"><div class="h-7 bg-slate-200 rounded w-20 mx-auto"></div></td>
+                  </tr>
+                }
+              } @else {
                 @for (form of formulariosFiltrados; track form.id) {
                   <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer" (click)="abrirDetalle(form)">
                     <td class="px-3 py-2.5 border-r border-slate-100">
@@ -103,10 +117,10 @@
                     </td>
                   </tr>
                 }
-              </tbody>
-            </table>
-          </div>
-        }
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
     } @else {
       <!-- ── DETALLE ─────────────────────────────────────────────────────────── -->

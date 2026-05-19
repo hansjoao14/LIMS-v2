@@ -122,7 +122,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   ensayosResiduales: EnsayoLaboratorio[] = [];
   ensayosAirePrevio: EnsayoLaboratorio[] = [];
   ensayosRuidoPrevio: EnsayoLaboratorio[] = [];
-  ruidoInfo = { tipoUsoSueloOperador: '', tipoUsoSueloPCA: '', direccionPCA: '', telefonoPCA: '' };
   notasAgua: string[] = [];
   notasAire: string[] = [];
   notasRuido: string[] = [];
