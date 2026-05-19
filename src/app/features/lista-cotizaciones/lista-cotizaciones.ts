@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, finalize } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
@@ -128,10 +128,12 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
         estado: doc.estado_logico_solicitud,
         num_secuencial: doc.num_secuencial,
       })
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => { this.procesandoId = null; }),
+      )
       .subscribe({
         next: async () => {
-          this.procesandoId = null;
           this.solicitudes = this.solicitudes.filter(s => s.id_solicitud !== doc.id_solicitud);
           await Swal.fire({
             title: '¡Autorizado!',
@@ -142,7 +144,6 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
           this.cargarPagina(this.currentPage);
         },
         error: () => {
-          this.procesandoId = null;
           Swal.fire('Error', 'No se pudo autorizar la solicitud', 'error');
         },
       });
@@ -176,10 +177,12 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
         estado: doc.estado_logico_solicitud,
         num_secuencial: doc.num_secuencial,
       })
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => { this.procesandoId = null; }),
+      )
       .subscribe({
         next: async () => {
-          this.procesandoId = null;
           this.solicitudes = this.solicitudes.filter(s => s.id_solicitud !== doc.id_solicitud);
           await Swal.fire({
             title: '¡Rechazada!',
@@ -190,7 +193,6 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
           this.cargarPagina(this.currentPage);
         },
         error: () => {
-          this.procesandoId = null;
           Swal.fire('Error', 'No se pudo rechazar la solicitud', 'error');
         },
       });
