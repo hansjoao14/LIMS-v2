@@ -81,7 +81,8 @@ export class PorContraloria implements OnInit, OnDestroy {
             this.formulario = formulario;
             this.fields = formulario.preguntas
               .filter((p) => p.estado !== false)
-              .map((p) => this.toFieldConfig(p));
+              .map((p) => this.toFieldConfig(p))
+              .sort((a, b) => a.order - b.order);
             this.generateControls();
             this.applyDependencyLogic();
             this.loading = false;

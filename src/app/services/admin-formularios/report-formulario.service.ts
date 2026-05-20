@@ -79,6 +79,7 @@ const GET_ATRIBUTOS_DEPENDIENTES = gql`
         obligatorio
         readonly
         tipo_formulario
+        is_list_empleado
       }
     }
   }
@@ -124,6 +125,7 @@ const GET_ATRIBUTOS_BY_FORMULARIO = gql`
         orden
         readonly
         tipo_formulario
+        is_list_empleado
       }
       meta { ${META_FIELDS} }
     }

@@ -55,7 +55,7 @@ export class AtributoFormularioPayload {
     this.num_adelante           = source?.num_adelante ?? null;
     this.is_dependent           = String(source?.is_dependent) === 'true';
     this.is_dependent_catalogo  = String(source?.is_dependent_catalogo) === 'true';
-    this.is_list_empleado       = false;
+    this.is_list_empleado       = source?.is_list_empleado ?? false;
     this.is_text_area           = source?.is_text_area ?? false;
   }
 }

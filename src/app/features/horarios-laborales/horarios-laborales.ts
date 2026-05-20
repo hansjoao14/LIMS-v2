@@ -53,18 +53,6 @@ export class HorariosLaborales implements OnInit, OnDestroy {
 
   readonly STORAGE_KEY = 'lims_gestion_vehiculos';
 
-  readonly DISPLAY_ORDER: Record<string, number> = {
-    val_fecha_programacion: 1,
-    val_num_ocupantes: 2,
-    val_destino_direccion: 3,
-    val_hora_salida: 4,
-    val_hora_retorno: 5,
-    val_vehiculo_id: 6,
-    val_funcionario_id: 7,
-    val_descripcion_actividad: 8,
-    val_observaciones: 9,
-  };
-
   readonly FIELD_SPAN: Record<string, number> = {
     val_funcionario_id: 2,
     val_observaciones: 2,
@@ -219,9 +207,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
             this.fields = formulario.preguntas
               .filter((p) => p.estado !== false)
               .map((p) => this.toFieldConfig(p))
-              .sort(
-                (a, b) => (this.DISPLAY_ORDER[a.key] ?? 99) - (this.DISPLAY_ORDER[b.key] ?? 99),
-              );
+              .sort((a, b) => a.order - b.order);
             this.generateControls();
             this.applyBusinessRules();
             this.applyDependencyLogic();

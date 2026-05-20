@@ -5,7 +5,7 @@ export enum AppRole {
   ADMIN = 'admin',
   DIRECCION = 'direccion_unidad',
   ANALISTA_RESPONSABLE = 'analista_responsable',
-  TECNICO = 'tecnico_laboratorio',
+  TECNICO = 'tecnico_direccion',
   RESPONSABLE_CAMPO = 'responsable_campo',
 }
 
