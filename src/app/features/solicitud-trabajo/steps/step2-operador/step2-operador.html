@@ -44,7 +44,7 @@
                   [class.rounded]="!f.integrations.sri && !f.integrations.civil"
                   [class.rounded-l]="f.integrations.sri || f.integrations.civil"
                   [placeholder]="f.label"
-                  [type]="f.key.includes('ruc') || f.key.includes('ced') ? 'number' : 'text'"
+                  [type]="getFieldInputType(f)"
                 />
 
                 @if (f.integrations.sri || f.integrations.civil) {
@@ -75,6 +75,9 @@
                   </button>
                 }
               </div>
+              @if (getFormatoError(f.key)) {
+                <p class="text-red-500 text-xs mt-1">{{ getFormatoError(f.key) }}</p>
+              }
             }
           </div>
         }
@@ -349,10 +352,14 @@
             @if (f.controlType === 'text') {
               <input
                 [formControlName]="f.key"
+                [type]="getFieldInputType(f)"
                 class="w-full border border-slate-300 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] bg-white"
                 [placeholder]="f.placeholder"
                 [class.border-red-500]="esCampoInvalido(f.key)"
               />
+              @if (getFormatoError(f.key)) {
+                <p class="text-red-500 text-xs mt-1">{{ getFormatoError(f.key) }}</p>
+              }
             }
           </div>
         }

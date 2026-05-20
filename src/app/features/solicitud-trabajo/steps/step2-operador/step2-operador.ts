@@ -70,6 +70,14 @@ export class Step2OperadorComponent {
     return field.key === 'val_obs' ? 4 : 3;
   }
 
+  getFormatoError(key: string): string | null {
+    const control = this.form.get(key);
+    if (!control || !(control.touched || control.dirty)) return null;
+    if (control.errors?.['cedulaInvalida']) return control.errors['cedulaInvalida'];
+    if (control.errors?.['rucInvalido']) return control.errors['rucInvalido'];
+    return null;
+  }
+
   getFieldInputType(field: FieldConfig): string {
     const key = field.key.toLowerCase();
     if (key.includes('ruc') || key.includes('ced') || key.includes('num')) return 'tel';

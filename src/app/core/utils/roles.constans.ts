@@ -2,7 +2,7 @@
 
 // 1. Definimos los roles exactos identificados en la matriz de permisos (roles.numbers)
 export enum AppRole {
-  ADMIN = 'admin',
+  ADMIN = 'admin_lims',
   DIRECCION = 'direccion_unidad',
   ANALISTA_RESPONSABLE = 'analista_responsable',
   TECNICO = 'tecnico_direccion',

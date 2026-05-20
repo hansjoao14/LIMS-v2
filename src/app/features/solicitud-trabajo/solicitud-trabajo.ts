@@ -10,6 +10,7 @@ import {
   Validators,
   FormControl,
 } from '@angular/forms';
+import { cedulaEcuatoriana, rucEcuatoriano } from '../../core/utils/ecuador-id.validators';
 import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import * as L from 'leaflet';
@@ -892,6 +893,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     const validators: ValidatorFn[] = [];
     if (field.required) validators.push(Validators.required);
     if (field.maxLength) validators.push(Validators.maxLength(field.maxLength));
+    const key = field.key.toLowerCase();
+    if (key.includes('ruc')) validators.push(rucEcuatoriano());
+    else if (key.includes('ced')) validators.push(cedulaEcuatoriana());
     return validators;
   }
 
