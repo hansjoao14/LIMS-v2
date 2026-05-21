@@ -11,11 +11,12 @@ import { ReportFormulario } from '../../../interfaces/admin-formularios/report-f
 import { FormularioPayload } from '../../../interfaces/admin-formularios/formulario-payload.interface';
 import { ItemCatalogo, PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import { FormularioDetalle } from '../formulario-detalle/formulario-detalle';
+import { PageHeader } from '../../../shared/components/page-header/page-header';
 
 @Component({
   selector: 'app-admin-formularios',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormularioDetalle],
+  imports: [CommonModule, FormsModule, FormularioDetalle, PageHeader],
   templateUrl: './admin-formularios.html',
   styleUrl: './admin-formularios.css',
 })

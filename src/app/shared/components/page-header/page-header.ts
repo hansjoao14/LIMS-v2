@@ -1,15 +1,15 @@
-import { Component, input, inject, computed } from '@angular/core';
+import { Component, input, inject, computed, ContentChild, ElementRef, AfterContentInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { AuthService } from '../../../features/auth/service/auth-service';
 
 @Component({
   selector: 'app-page-header',
   standalone: true,
-  imports: [DatePipe],
+  imports: [],
   templateUrl: './page-header.html',
   providers: [DatePipe],
 })
-export class PageHeader {
+export class PageHeader implements AfterContentInit {
   private datePipe = inject(DatePipe);
   private authService = inject(AuthService);
 
@@ -21,6 +21,14 @@ export class PageHeader {
   elaboradoPor = input<string | null>(null);
   fechaSolicitud = input<Date | string | null>(null);
 
+  hasProjectedContent = false;
+
+  @ContentChild('pageAction') pageAction!: ElementRef;
+
+  ngAfterContentInit() {
+    this.hasProjectedContent = !!this.pageAction;
+  }
+
   readonly resolvedElaboradoPor = computed(() =>
     this.elaboradoPor() ?? this.authService.userProfile()?.name ?? null
   );
@@ -30,13 +38,4 @@ export class PageHeader {
     if (f instanceof Date) return this.datePipe.transform(f, 'dd/MM/yyyy');
     return f;
   });
-
-  get hasRightSection(): boolean {
-    return !!(
-      this.codigoFormulario() ||
-      this.resolvedElaboradoPor() ||
-      this.resolvedFecha() ||
-      this.edicion()
-    );
-  }
 }
