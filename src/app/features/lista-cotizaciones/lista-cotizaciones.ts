@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject, takeUntil, finalize } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -9,6 +9,8 @@ import { PaginationMeta, ItemCatalogo } from '../../interfaces/catalogos/catalog
 import { PaginationComponent } from '../../shared/components/pagination/pagination';
 import { CatalogoService } from '../../services/catalogo.service';
 import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { AuthService } from '../auth/service/auth-service';
+import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
 
 const ESTADO_AUTORIZADO = 387;
 const ESTADO_RECHAZADO = 51;
@@ -32,10 +34,27 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
 
   private readonly destroy$ = new Subject<void>();
 
+  // ── Permisos ─────────────────────────────────────────────────────────────
+  private userAppRole = computed<AppRole | null>(() => {
+    const roles = this.authService.userProfile()?.roles ?? [];
+    return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
+  });
+
+  canAutorizar = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.LISTA_COTIZACIONES, role, 'autorizar') : false;
+  });
+
+  canRechazar = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.LISTA_COTIZACIONES, role, 'rechazar') : false;
+  });
+
   constructor(
     private reportSolicitudService: ReportSolicitudService,
     private catalogoService: CatalogoService,
     private solicitudService: SolicitudService,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {

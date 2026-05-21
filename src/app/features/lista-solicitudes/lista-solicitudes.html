@@ -103,7 +103,7 @@
                     </td>
                     <td class="px-2 py-2.5 text-center">
                       <div class="flex items-center justify-center gap-1.5">
-                        @if (doc.ctestado_id === 2) {
+                        @if (doc.ctestado_id === 2 && canEdit()) {
                           <button (click)="editarSolicitud(doc)"
                                   [disabled]="cargandoEdicionId === doc.id_solicitud"
                                   title="Editar solicitud"
@@ -116,7 +116,7 @@
                               </svg>
                             }
                           </button>
-                        } @else {
+                        } @else if (doc.ctestado_id !== 2) {
                           <button (click)="abrirPanelFirma(doc)"
                                   title="Firmar documento"
                                   class="h-8 w-8 flex items-center justify-center rounded bg-[#0f172a] text-white hover:bg-[#1e293b] transition-colors shrink-0">
@@ -125,7 +125,7 @@
                             </svg>
                           </button>
                         }
-                        @if (authService.isAdmin()) {
+                        @if (canDelete()) {
                           <button (click)="eliminarSolicitud(doc)"
                                   title="Eliminar solicitud"
                                   class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 transition-colors shrink-0">

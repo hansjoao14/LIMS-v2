@@ -1,4 +1,4 @@
-import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -9,6 +9,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
+import Swal from 'sweetalert2';
+import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
 import { ToastrAlertService } from '../../services/toastr.service';
 
 import {
@@ -44,12 +46,42 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   fields: FieldConfig[] = [];
   loading = true;
   saving = false;
+  editingRecord: VehiculoRecord | null = null;
   private todasSolicitudes: VehiculoRecord[] = [];
   solicitudes: VehiculoRecord[] = [];
   metaTabla: PaginationMeta | null = null;
   currentPage = 1;
   loadingTabla = false;
   readonly PAGE_SIZE = 10;
+
+  private userAppRole = computed<AppRole | null>(() => {
+    const roles = this.authService.userProfile()?.roles ?? [];
+    return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
+  });
+
+  canEdit = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.HORARIOS_LABORALES, role, 'editar') : false;
+  });
+
+  canDelete = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.HORARIOS_LABORALES, role, 'eliminar') : false;
+  });
+
+  canAutorizar = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.HORARIOS_LABORALES, role, 'autorizar') : false;
+  });
+
+  canRechazar = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.HORARIOS_LABORALES, role, 'rechazar') : false;
+  });
+
+  get hasAnyAction(): boolean {
+    return this.canEdit() || this.canDelete() || this.canAutorizar() || this.canRechazar();
+  }
 
   readonly STORAGE_KEY = 'lims_gestion_vehiculos';
 
@@ -400,6 +432,12 @@ export class HorariosLaborales implements OnInit, OnDestroy {
 
     this.saving = true;
     const raw = this.form.getRawValue();
+
+    if (this.editingRecord) {
+      await this.actualizarRegistro(raw);
+      return;
+    }
+
     const now = new Date();
 
     try {
@@ -459,7 +497,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
         this.saving = false;
         this.form.reset();
         this.toastrAlert.showSuccess('El registro ha sido guardado correctamente.', '¡Guardado!');
-        this.cargarDatos(); // recarga todo y vuelve a página 1
+        this.cargarDatos();
       });
     } catch (err: any) {
       this.zone.run(() => {
@@ -470,8 +508,132 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     }
   }
 
-  eliminar(_id: string): void {
-    this.toastrAlert.showWarning('La eliminación debe realizarse desde el panel de administración.', 'Aviso');
+  private async actualizarRegistro(raw: Record<string, unknown>): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.reportSolicitudService.actualizarVehiculo(this.editingRecord!.id, raw),
+      );
+      this.zone.run(() => {
+        this.saving = false;
+        this.editingRecord = null;
+        this.form.reset();
+        this.toastrAlert.showSuccess('Registro actualizado correctamente.', '¡Actualizado!');
+        this.cargarDatos();
+      });
+    } catch (err: any) {
+      this.zone.run(() => {
+        this.saving = false;
+        const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo actualizar el registro';
+        this.toastrAlert.showError(mensaje, 'Error');
+      });
+    }
+  }
+
+  cargarParaEditar(record: VehiculoRecord): void {
+    this.editingRecord = record;
+    const patch: Record<string, unknown> = {};
+    for (const field of this.fields) {
+      const val = record[field.key];
+      if (val !== undefined && val !== '—') patch[field.key] = val;
+    }
+    this.form.patchValue(patch);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelarEdicion(): void {
+    this.editingRecord = null;
+    this.form.reset();
+  }
+
+  async eliminarRegistro(record: VehiculoRecord): Promise<void> {
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar registro?',
+      text: 'Esta acción no se puede deshacer.',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await firstValueFrom(this.reportSolicitudService.eliminarVehiculo(record.id));
+      this.zone.run(() => {
+        this.toastrAlert.showSuccess('Registro eliminado correctamente.', '¡Eliminado!');
+        this.cargarDatos();
+      });
+    } catch {
+      this.zone.run(() =>
+        this.toastrAlert.showError('No se pudo eliminar el registro.', 'Error'),
+      );
+    }
+  }
+
+  async autorizarRegistro(record: VehiculoRecord): Promise<void> {
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: '¿Autorizar programación?',
+      text: 'Se aprobará la solicitud de vehículo seleccionada.',
+      showCancelButton: true,
+      confirmButtonColor: '#16a34a',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, autorizar',
+      cancelButtonText: 'Cancelar',
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await firstValueFrom(this.reportSolicitudService.autorizarVehiculo(record.id));
+      this.zone.run(() => {
+        this.toastrAlert.showSuccess('Programación autorizada correctamente.', '¡Autorizado!');
+        this.cargarDatos();
+      });
+    } catch {
+      this.zone.run(() =>
+        this.toastrAlert.showError('No se pudo autorizar el registro.', 'Error'),
+      );
+    }
+  }
+
+  async rechazarRegistro(record: VehiculoRecord): Promise<void> {
+    const { isConfirmed, value: motivo } = await Swal.fire({
+      icon: 'warning',
+      title: 'Rechazar programación',
+      input: 'textarea',
+      inputLabel: 'Motivo del rechazo',
+      inputPlaceholder: 'Ingrese el motivo del rechazo...',
+      inputAttributes: { rows: '3', maxlength: '300' },
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+      preConfirm: (val: string) => {
+        if (!val?.trim()) {
+          Swal.showValidationMessage('El motivo del rechazo es obligatorio.');
+          return false;
+        }
+        return val.trim();
+      },
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      await firstValueFrom(this.reportSolicitudService.rechazarVehiculo(record.id, motivo));
+      this.zone.run(() => {
+        this.toastrAlert.showWarning('Programación rechazada.', 'Rechazado');
+        this.cargarDatos();
+      });
+    } catch {
+      this.zone.run(() =>
+        this.toastrAlert.showError('No se pudo rechazar el registro.', 'Error'),
+      );
+    }
   }
 
   private parseFecha(fecha: string): Date | null {

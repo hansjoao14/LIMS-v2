@@ -44,11 +44,11 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
     [AppRole.ADMIN]:             ['ver', 'eliminar'],
   },
 
-  // Bandeja de Solicitudes (derived from SOLICITUD_TRABAJO visibility)
+  // Bandeja de Solicitudes — hereda acciones de SOLICITUD_TRABAJO
   [MenuKey.LISTA_SOLICITUDES]: {
-    [AppRole.TECNICO_DIRECCION]: ['ver'],
+    [AppRole.TECNICO_DIRECCION]: ['ver', 'editar'],
     [AppRole.ANALISTA_CALIDAD]:  ['ver'],
-    [AppRole.RESPONSABLE_LAB]:   ['ver'],
+    [AppRole.RESPONSABLE_LAB]:   ['ver', 'autorizar', 'rechazar'],
     [AppRole.ADMIN]:             ['ver', 'eliminar'],
   },
 

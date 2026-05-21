@@ -1,15 +1,17 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
+import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { PaginationComponent } from '../../shared/components/pagination/pagination';
 import { AuthService } from '../auth/service/auth-service';
+import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
 
 @Component({
   selector: 'app-lista-solicitudes',
@@ -38,8 +40,25 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   readonly fechaActual = new Date();
   private readonly destroy$ = new Subject<void>();
 
+  // ── Permisos ─────────────────────────────────────────────────────────────
+  private userAppRole = computed<AppRole | null>(() => {
+    const roles = this.authService.userProfile()?.roles ?? [];
+    return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
+  });
+
+  canEdit = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.LISTA_SOLICITUDES, role, 'editar') : false;
+  });
+
+  canDelete = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.LISTA_SOLICITUDES, role, 'eliminar') : false;
+  });
+
   constructor(
     private reportSolicitudService: ReportSolicitudService,
+    private solicitudService: SolicitudService,
     private router: Router,
     public authService: AuthService,
   ) {}
@@ -95,9 +114,9 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
       });
   }
 
-  eliminarSolicitud(doc: ReportSolicitud): void {
-    Swal.fire({
-      title: '¿Está seguro de eliminar?',
+  async eliminarSolicitud(doc: ReportSolicitud): Promise<void> {
+    const confirm = await Swal.fire({
+      title: '¿Eliminar solicitud?',
       text: `Se eliminará la solicitud${doc.num_secuencial ? ' ' + doc.num_secuencial : ''}. Esta acción no se puede deshacer.`,
       icon: 'warning',
       showCancelButton: true,
@@ -105,11 +124,17 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
       cancelButtonColor: '#64748b',
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        console.log('Eliminar solicitud:', doc);
-      }
     });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await firstValueFrom(this.solicitudService.eliminarSolicitudById(doc.id_solicitud));
+      Swal.fire({ title: '¡Eliminado!', text: 'La solicitud fue eliminada.', icon: 'success', confirmButtonColor: this.COLOR_PRIMARIO, timer: 2000 });
+      this.cargarPagina(this.currentPage);
+    } catch {
+      Swal.fire('Error', 'No se pudo eliminar la solicitud.', 'error');
+    }
   }
 
   abrirPanelFirma(doc: ReportSolicitud): void {

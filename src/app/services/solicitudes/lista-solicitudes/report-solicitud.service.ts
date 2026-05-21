@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Apollo, gql } from 'apollo-angular';
-import { Observable, expand, reduce, EMPTY } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, expand, reduce, EMPTY, of } from 'rxjs';
+import { map, delay } from 'rxjs/operators';
 import {
   ReportSolicitud,
   ReportSolicitudCollectionResponse,
@@ -276,5 +276,29 @@ export class ReportSolicitudService {
           };
         }),
       );
+  }
+
+  // TODO: reemplazar con mutación GraphQL real cuando el endpoint esté disponible
+  eliminarVehiculo(id: string): Observable<void> {
+    console.log('[HorariosLaborales] eliminarVehiculo → id:', id);
+    return of(undefined).pipe(delay(400));
+  }
+
+  // TODO: reemplazar con mutación GraphQL real cuando el endpoint esté disponible
+  actualizarVehiculo(id: string, valores: Record<string, unknown>): Observable<void> {
+    console.log('[HorariosLaborales] actualizarVehiculo → id:', id, 'valores:', valores);
+    return of(undefined).pipe(delay(400));
+  }
+
+  // TODO: reemplazar con mutación GraphQL real cuando el endpoint esté disponible
+  autorizarVehiculo(id: string): Observable<void> {
+    console.log('[HorariosLaborales] autorizarVehiculo → id:', id);
+    return of(undefined).pipe(delay(400));
+  }
+
+  // TODO: reemplazar con mutación GraphQL real cuando el endpoint esté disponible
+  rechazarVehiculo(id: string, motivo: string): Observable<void> {
+    console.log('[HorariosLaborales] rechazarVehiculo → id:', id, 'motivo:', motivo);
+    return of(undefined).pipe(delay(400));
   }
 }
