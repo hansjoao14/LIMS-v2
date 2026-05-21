@@ -16,7 +16,7 @@ export interface MenuItem {
   icon?: Type<any>;
   children?: MenuItem[];
   expanded?: boolean;
-  requiredRoles?: any[]; // Cambiado a any[] para soportar la estructura [{role: string}] del Guard
+  requiredRoles?: { role: string }[];
 }
 
 export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
@@ -24,31 +24,31 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     path: '/dashboard',
     label: 'Dashboard',
     icon: HouseComponent,
-    requiredRoles: RoleAccess.ALL_USERS, // [admin, direccion, analista, tecnico, responsable]
+    requiredRoles: RoleAccess.ALL_USERS,
   },
   {
     path: '/solicitud-trabajo',
     label: 'Solicitud de Trabajo',
     icon: CarpetaIcon,
-    requiredRoles: RoleAccess.MANAGEMENT,
+    requiredRoles: RoleAccess.SOLICITUD_TRABAJO,
   },
   {
     label: 'Listado de Solicitudes',
     icon: ListaSolicitudesIcon,
     expanded: false,
-    requiredRoles: RoleAccess.MANAGEMENT,
+    requiredRoles: RoleAccess.LISTA_SOLICITUDES,
     children: [
       {
         path: '/lista-solicitudes',
         label: 'Bandeja de Solicitudes',
         icon: ListaSolicitudesIcon,
-        requiredRoles: RoleAccess.MANAGEMENT,
+        requiredRoles: RoleAccess.LISTA_SOLICITUDES,
       },
       {
         path: '/lista-cotizaciones',
-        label: 'Lista de Cotizaciones',
+        label: 'Por Autorizar',
         icon: ListaSolicitudesIcon,
-        requiredRoles: RoleAccess.MANAGEMENT,
+        requiredRoles: RoleAccess.LISTA_COTIZACIONES,
       },
     ],
   },
@@ -56,19 +56,19 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     label: 'Gestión de Vehiculos',
     icon: CarIcon,
     expanded: false,
-    requiredRoles: RoleAccess.ADMIN_ONLY, // Acceso restringido a administración
+    requiredRoles: RoleAccess.HORARIOS_LABORALES,
     children: [
       {
         path: '/horarios-laborales',
         label: 'Horarios laborales',
         icon: HorariosLaboralesIcon,
-        requiredRoles: RoleAccess.ADMIN_ONLY,
+        requiredRoles: RoleAccess.HORARIOS_LABORALES,
       },
       {
         path: '/por-contraloria',
         label: 'Por contraloria',
         icon: PorContraloriaIcon,
-        requiredRoles: RoleAccess.MANAGEMENT, // Permite revisión por Analistas/Dirección
+        requiredRoles: RoleAccess.POR_CONTRALORIA,
       },
     ],
   },
@@ -76,27 +76,25 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     label: 'Operaciones de Campo',
     icon: OperacionesCampoIcon,
     expanded: false,
-    requiredRoles: RoleAccess.OPERATIONAL, // [admin, tecnico, responsable_campo]
+    requiredRoles: RoleAccess.ORDEN_IN_SITU,
     children: [
       {
         path: '/orden-trabajo-in-situ',
         label: 'Orden de trabajo In Situ',
         icon: OrdenTrabajoInSituIcon,
-        requiredRoles: RoleAccess.OPERATIONAL,
+        requiredRoles: RoleAccess.ORDEN_IN_SITU,
       },
       {
         path: '/plan-muestreo',
         label: 'Plan de Muestreo',
         icon: PlanMuestreoIcon,
-        requiredRoles: RoleAccess.OPERATIONAL,
+        requiredRoles: RoleAccess.PLAN_MUESTREO,
       },
     ],
   },
-
   {
     path: '/admin-formularios',
     label: 'Administración de Formularios',
     icon: CarpetaIcon,
-    // requiredRoles: RoleAccess.MANAGEMENT // [admin, direccion, analista]
   },
 ];
