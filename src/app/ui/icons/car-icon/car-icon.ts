@@ -10,6 +10,6 @@ export class CarIcon {
 
 
   @Input() size = 1;
-  @Input() color ='#E32C2D';
+  @Input() color ='#ffffff';
 
 }

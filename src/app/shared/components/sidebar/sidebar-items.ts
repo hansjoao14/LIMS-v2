@@ -8,6 +8,7 @@ import { PorContraloriaIcon } from '../../../ui/icons/por-contraloria-icon/por-c
 import { OperacionesCampoIcon } from '../../../ui/icons/operaciones-campo-icon/operaciones-campo-icon';
 import { OrdenTrabajoInSituIcon } from '../../../ui/icons/orden-trabajo-in-situ-icon/orden-trabajo-in-situ-icon';
 import { PlanMuestreoIcon } from '../../../ui/icons/plan-muestreo-icon/plan-muestreo-icon';
+import { AccesoAutorizado } from '../../../ui/icons/acceso-autorizado/acceso-autorizado';
 import { RoleAccess } from '../../../core/utils/roles.constans';
 
 export interface MenuItem {
@@ -47,7 +48,7 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
       {
         path: '/lista-cotizaciones',
         label: 'Por Autorizar',
-        icon: ListaSolicitudesIcon,
+        icon: AccesoAutorizado,
         requiredRoles: RoleAccess.LISTA_COTIZACIONES,
       },
     ],
