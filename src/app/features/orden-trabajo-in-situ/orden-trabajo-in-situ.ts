@@ -8,10 +8,11 @@ import { ReportSolicitudService } from '../../services/solicitudes/lista-solicit
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
+import { PageHeader } from '../../shared/components/page-header/page-header';
 
 @Component({
   selector: 'app-orden-trabajo-in-situ',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, PageHeader],
   templateUrl: './orden-trabajo-in-situ.html',
   styleUrl: './orden-trabajo-in-situ.css',
 })

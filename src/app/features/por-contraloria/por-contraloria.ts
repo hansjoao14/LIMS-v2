@@ -30,6 +30,7 @@ import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/per
 import { LoadingComponent } from '../../shared/components/loading/loading';
 import { PaginationComponent } from '../../shared/components/pagination/pagination';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
+import { PageHeader } from '../../shared/components/page-header/page-header';
 
 const ESTADO_AUTORIZADO = 387;
 const ESTADO_RECHAZADO  = 51;
@@ -39,7 +40,7 @@ type ContraloriaRecord = { id: string } & Record<string, unknown>;
 @Component({
   selector: 'app-por-contraloria',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, LoadingComponent, PaginationComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, LoadingComponent, PaginationComponent, PageHeader],
   templateUrl: './por-contraloria.html',
   styleUrls: ['./por-contraloria.css'],
 })

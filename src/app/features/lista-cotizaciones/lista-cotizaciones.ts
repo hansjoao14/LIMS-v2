@@ -11,6 +11,7 @@ import { CatalogoService } from '../../services/catalogo.service';
 import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
 import { AuthService } from '../auth/service/auth-service';
 import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
+import { PageHeader } from '../../shared/components/page-header/page-header';
 
 const ESTADO_AUTORIZADO = 387;
 const ESTADO_RECHAZADO = 51;
@@ -19,7 +20,7 @@ const CATALOGO_PRIORIDAD_ID = 30;
 @Component({
   selector: 'app-lista-cotizaciones',
   standalone: true,
-  imports: [CommonModule, PaginationComponent],
+  imports: [CommonModule, PaginationComponent, PageHeader],
   templateUrl: './lista-cotizaciones.html',
 })
 export class ListaCotizaciones implements OnInit, OnDestroy {

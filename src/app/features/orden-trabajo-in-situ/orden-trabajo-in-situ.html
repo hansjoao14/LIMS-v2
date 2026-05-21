@@ -1,20 +1,12 @@
 <div class="insitu-page">
   <form [formGroup]="form">
-    <div class="header-container">
-      <div class="header-left">
-        <p class="breadcrumb">Sistema LIMS / <strong>Operaciones de campo</strong></p>
-        <h1 class="main-title">Orden de trabajo In Situ</h1>
-        <p class="main-subtitle">
-          Aquí podrás visualizar los detalles de la orden de trabajo In Situ
-        </p>
-      </div>
-      <div class="header-right">
-        <p><strong>F-PG-09-03</strong></p>
-        <p>Elaborado por: Tec. Jorge Diaz</p>
-        <p>Fecha de solicitud: 27/05/2025</p>
-        <p>Edición: 16</p>
-      </div>
-    </div>
+    <app-page-header
+      breadcrumbSection="Operaciones de campo"
+      title="Orden de trabajo In Situ"
+      subtitle="Aquí podrás visualizar los detalles de la orden de trabajo In Situ"
+      codigoFormulario="F-PG-09-03"
+      edicion="16"
+    />
 
     <div class="top-cards">
       <div class="card card-gray">

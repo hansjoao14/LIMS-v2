@@ -7,24 +7,14 @@
         class="bg-white p-8 rounded shadow-sm border border-slate-200 animate-in fade-in"
         [class.border-amber-400]="editingRecord"
       >
-        <div class="flex justify-between items-start mb-10 border-b border-slate-200 pb-6">
-          <div>
-            <p class="text-sm font-medium text-slate-500 mb-2">
-              Sistema LIMS / <span class="font-bold text-[#1d2b64]">Gestión de Vehículos</span>
-            </p>
-            <h2 class="text-2xl font-bold text-[#1d2b64]">
-              {{ formulario?.formulario_nombre ?? 'Solicitud de transporte' }}
-            </h2>
-            <p class="text-sm text-slate-600 mt-1">
-              Complete la siguiente información para solicitar un vehículo de la DMRCA
-            </p>
-          </div>
-          <div class="text-right text-[13px] leading-relaxed text-slate-700 space-y-1">
-            <p class="font-bold text-[#1d2b64] text-sm">FOR.ADM.SVR.001.02</p>
-            <p>Elaborado por: <span class="font-medium">Tec. Jorge Diaz</span></p>
-            <p>Fecha de solicitud: <span class="font-medium">27/05/2025</span></p>
-            <p>Edición: <span class="font-medium">12</span></p>
-          </div>
+        <div class="border-b border-slate-200 pb-2 mb-4">
+          <app-page-header
+            breadcrumbSection="Gestión de Vehículos"
+            [title]="formulario?.formulario_nombre ?? 'Solicitud de transporte'"
+            subtitle="Complete la siguiente información para solicitar un vehículo de la DMRCA"
+            codigoFormulario="FOR.ADM.SVR.001.02"
+            edicion="12"
+          />
         </div>
 
         @if (loading) {

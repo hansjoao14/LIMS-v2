@@ -56,6 +56,7 @@ import {
 } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { AuthService } from '../auth/service/auth-service';
+import { PageHeader } from '../../shared/components/page-header/page-header';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
@@ -70,6 +71,7 @@ type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
     Step2OperadorComponent,
     Step3CatalogoComponent,
     Step4ConfirmacionComponent,
+    PageHeader,
   ],
   templateUrl: './solicitud-trabajo.html',
   styleUrls: ['./solicitud-trabajo.css'],

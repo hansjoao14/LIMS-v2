@@ -4,13 +4,13 @@
 
     @if (!viewingSignature) {
       <div class="animate-in fade-in">
-        <div class="mb-8">
-          <p class="text-sm font-medium text-slate-500 mb-1">
-            Sistema LIMS / <span class="font-bold text-[#1d2b64]">Lista de Solicitudes</span>
-          </p>
-          <h2 class="text-2xl font-bold text-[#1d2b64]">Lista de Solicitudes</h2>
-          <p class="text-sm text-slate-600 mt-1">Listado de solicitudes de trabajo registradas en el sistema.</p>
-        </div>
+        <app-page-header
+          breadcrumbSection="Lista de Solicitudes"
+          title="Lista de Solicitudes"
+          subtitle="Listado de solicitudes de trabajo registradas en el sistema."
+          codigoFormulario="F-PG-09-01"
+          edicion="24"
+        />
 
         <div class="border border-slate-200 rounded">
           <table class="w-full text-sm border-collapse table-fixed">

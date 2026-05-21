@@ -1,0 +1,24 @@
+<div class="flex justify-between items-start mb-8">
+
+  <!-- LEFT: breadcrumb + title (igual que antes) -->
+  <div>
+    <p class="text-sm font-medium text-slate-500 mb-1">
+      Sistema LIMS / <span class="font-bold text-[#1d2b64]">{{ breadcrumbSection() }}</span>
+    </p>
+    @if (title()) {
+      <h2 class="text-2xl font-bold text-[#1d2b64]">{{ title() }}</h2>
+    }
+    @if (subtitle()) {
+      <p class="text-sm text-slate-600 mt-1">{{ subtitle() }}</p>
+    }
+  </div>
+
+  <!-- RIGHT: siempre visible -->
+  <div class="text-right space-y-0.5">
+    <p class="font-bold text-[#1d2b64] text-sm">{{ codigoFormulario() ?? '—' }}</p>
+    <p class="text-[13px] text-slate-700">Elaborado por: <span class="font-medium">{{ resolvedElaboradoPor() ?? '—' }}</span></p>
+    <p class="text-[13px] text-slate-700">Fecha Emisión: <span class="font-medium">{{ resolvedFecha() ?? '—' }}</span></p>
+    <p class="text-[13px] text-slate-700">Edición: <span class="font-medium">{{ edicion() ?? '—' }}</span></p>
+  </div>
+
+</div>

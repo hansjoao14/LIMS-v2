@@ -12,11 +12,12 @@ import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { PaginationComponent } from '../../shared/components/pagination/pagination';
 import { AuthService } from '../auth/service/auth-service';
 import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
+import { PageHeader } from '../../shared/components/page-header/page-header';
 
 @Component({
   selector: 'app-lista-solicitudes',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginationComponent],
+  imports: [CommonModule, FormsModule, PaginationComponent, PageHeader],
   templateUrl: './lista-solicitudes.html',
   styleUrls: ['./lista-solicitudes.css'],
 })
