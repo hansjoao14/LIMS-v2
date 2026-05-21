@@ -51,7 +51,7 @@ const GET_VALORES_BY_TIPO_FORMULARIO = gql`
     collectionReportValorSolicitud(
       query: {
         orderBy: { tipo_formulario_id: ASC }
-        where: { tipo_formulario_id: { equals: $tipoFormularioId } }
+        where: { tipo_formulario_id: { equals: $tipoFormularioId } estado: { equals: true } }
         pagination: { page: $page, take: $take }
       }
     ) {

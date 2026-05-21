@@ -306,7 +306,9 @@ export class PorContraloria implements OnInit, OnDestroy {
         });
       }
       const record = grouped.get(item.id_solicitud)!;
+      const esSeleccion = item.ctipo_dato_nombre === 'Selección Simple';
       const valor =
+        (esSeleccion && item.valor_catalogo != null ? Number(item.valor_catalogo) || null : null) ??
         item.valor_texto ??
         item.valor_fecha ??
         (item.valor_numero != null ? String(item.valor_numero) : null) ??
@@ -410,21 +412,18 @@ export class PorContraloria implements OnInit, OnDestroy {
         .filter((f) => !f.hidden)
         .map((f) => {
           const value = raw[f.key];
+          const esSelect   = f.controlType === 'select';
           const esEmployee = f.controlType === 'employee-list';
           return {
             solicitud_id: solicitudId,
             atributo_formulario_id: String(f.id),
-            valor_texto: !esEmployee
-              ? value != null && value !== ''
-                ? String(value)
-                : null
-              : null,
+            valor_texto: !esSelect && !esEmployee ? (value != null && value !== '' ? String(value) : null) : null,
             valor_numero: null,
             valor_fecha: null,
             valor_booleano: null,
             valor_multiple: null,
-            valor_catalogo: 0,
-            valor_uuid: esEmployee ? (value ?? '') : userId,
+            valor_catalogo: esSelect ? Number(value) || 0 : 0,
+            valor_uuid: esEmployee ? ((value as string) ?? '') : userId,
             estado: true,
           };
         });
@@ -553,16 +552,17 @@ export class PorContraloria implements OnInit, OnDestroy {
       .filter((f) => !f.hidden)
       .map((f) => {
         const value = raw[f.key];
+        const esSelect   = f.controlType === 'select';
         const esEmployee = f.controlType === 'employee-list';
         return {
           solicitud_id: this.editingRecord!.id,
           atributo_formulario_id: String(f.id),
-          valor_texto: !esEmployee ? (value != null && value !== '' ? String(value) : null) : null,
+          valor_texto: !esSelect && !esEmployee ? (value != null && value !== '' ? String(value) : null) : null,
           valor_numero: null,
           valor_fecha: null,
           valor_booleano: null,
           valor_multiple: null,
-          valor_catalogo: 0,
+          valor_catalogo: esSelect ? Number(value) || 0 : 0,
           valor_uuid: esEmployee ? ((value as string) ?? '') : userId,
           estado: true,
         };
