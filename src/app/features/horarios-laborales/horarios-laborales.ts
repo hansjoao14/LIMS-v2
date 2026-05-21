@@ -514,9 +514,29 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   }
 
   private async actualizarRegistro(raw: Record<string, unknown>): Promise<void> {
+    const { id: userId } = this.authService.currentUser();
+    const valorSolicitud: ValorSolicitudItem[] = this.fields
+      .filter((f) => !f.hidden)
+      .map((f) => {
+        const value = raw[f.key];
+        const esEmployee = f.controlType === 'employee-list';
+        return {
+          solicitud_id: this.editingRecord!.id,
+          atributo_formulario_id: String(f.id),
+          valor_texto: !esEmployee ? (value != null && value !== '' ? String(value) : null) : null,
+          valor_numero: null,
+          valor_fecha: null,
+          valor_booleano: null,
+          valor_multiple: null,
+          valor_catalogo: 0,
+          valor_uuid: esEmployee ? ((value as string) ?? '') : userId,
+          estado: true,
+        };
+      });
+
     try {
       await firstValueFrom(
-        this.reportSolicitudService.actualizarVehiculo(this.editingRecord!.id, raw),
+        this.solicitudService.actualizarValoresSolicitud(this.editingRecord!.id, { valorSolicitud }),
       );
       this.zone.run(() => {
         this.saving = false;
