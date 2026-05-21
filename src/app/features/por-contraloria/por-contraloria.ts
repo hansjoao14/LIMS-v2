@@ -417,7 +417,9 @@ export class PorContraloria implements OnInit, OnDestroy {
           return {
             solicitud_id: solicitudId,
             atributo_formulario_id: String(f.id),
-            valor_texto: !esSelect && !esEmployee ? (value != null && value !== '' ? String(value) : null) : null,
+            valor_texto: esEmployee
+              ? ((value as string) ?? '')
+              : (!esSelect && value != null && value !== '' ? String(value) : null),
             valor_numero: null,
             valor_fecha: null,
             valor_booleano: null,
@@ -557,7 +559,9 @@ export class PorContraloria implements OnInit, OnDestroy {
         return {
           solicitud_id: this.editingRecord!.id,
           atributo_formulario_id: String(f.id),
-          valor_texto: !esSelect && !esEmployee ? (value != null && value !== '' ? String(value) : null) : null,
+          valor_texto: esEmployee
+            ? ((value as string) ?? '')
+            : (!esSelect && value != null && value !== '' ? String(value) : null),
           valor_numero: null,
           valor_fecha: null,
           valor_booleano: null,
@@ -590,6 +594,15 @@ export class PorContraloria implements OnInit, OnDestroy {
 
   getFieldValue(record: ContraloriaRecord, key: string): unknown {
     return record[key] ?? '—';
+  }
+
+  getEmployeeName(fieldKey: string, value: unknown): string {
+    if (!value || value === '—') return '—';
+    const field = this.fields.find(f => f.key === fieldKey);
+    if (!field?.employeeList?.length) return String(value);
+    const uuid = String(value).toLowerCase();
+    const emp = field.employeeList.find(e => e.empleado_id.toLowerCase() === uuid);
+    return emp?.nombre_empleado ?? String(value);
   }
 
   ngOnDestroy(): void {

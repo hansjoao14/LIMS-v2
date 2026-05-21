@@ -288,8 +288,8 @@
                           {{ getFieldValue(sol, 'val_cargo_solicitante') }}
                         </td>
                         <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
-                            [title]="$any(getFieldValue(sol, 'val_funcionario_id'))">
-                          {{ getFieldValue(sol, 'val_funcionario_id') }}
+                            [title]="getEmployeeName('val_funcionario_id', getFieldValue(sol, 'val_funcionario_id'))">
+                          {{ getEmployeeName('val_funcionario_id', getFieldValue(sol, 'val_funcionario_id')) }}
                         </td>
                         <td class="px-3 py-2.5 border-r border-slate-100 text-center text-slate-600">
                           {{ getFieldValue(sol, 'val_num_ocupantes') }}
