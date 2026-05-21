@@ -1,7 +1,7 @@
 // ─── Roles (values must match Keycloak realm role names) ────────────────────
 export enum AppRole {
   ADMIN              = 'admin_lims',               // AD  – Administrador
-  TECNICO_DIRECCION  = 'tecnico_direccion_unidad',  // T   – Técnico de Dirección/Unidad
+  TECNICO_DIRECCION  = 'tecnico_direccion',  // T   – Técnico de Dirección/Unidad
   ANALISTA_CALIDAD   = 'analista_calidad',          // ACAL – Analista de calidad
   RESPONSABLE_LAB    = 'responsable_laboratorio',   // RLAB – Responsable de laboratorio
   ANALISTA_CAMPO     = 'analista_campo',            // AC  – Analista de campo
