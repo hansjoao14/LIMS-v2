@@ -1,5 +1,6 @@
 <div class="p-6 bg-slate-50 min-h-screen text-slate-800 font-sans pb-20">
 
+  @if (canCreate() || editingRecord) {
   <div
     class="max-w-7xl mx-auto bg-white p-8 rounded shadow-sm border border-slate-200 mb-10 animate-in fade-in"
     [class.border-amber-400]="editingRecord"
@@ -146,6 +147,7 @@
     </form>
     }
   </div>
+  }
 
   @if (!loading) {
   <div

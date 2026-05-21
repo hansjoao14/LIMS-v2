@@ -1,126 +1,163 @@
 <div class="p-6 bg-slate-50 min-h-screen text-slate-800 font-sans pb-20">
 
-  <div class="max-w-7xl mx-auto bg-white p-8 rounded shadow-sm border border-slate-200 mb-10 animate-in fade-in">
-    <div class="flex justify-between items-start mb-10 border-b border-slate-200 pb-6">
-      <div>
-        <p class="text-sm font-medium text-slate-500 mb-2">
-          Sistema LIMS / <span class="font-bold text-[#1d2b64]">Gestión de Vehículos</span>
-        </p>
-        <h2 class="text-2xl font-bold text-[#1d2b64]">
-          {{ formulario?.formulario_nombre ?? 'Solicitud de transporte - Contraloría' }}
-        </h2>
-        <p class="text-sm text-slate-600 mt-1">
-          Complete la siguiente información para solicitar un vehículo de la DMRCA
-        </p>
-      </div>
-      <div class="text-right text-[13px] leading-relaxed text-slate-700 space-y-1">
-        <p class="font-bold text-[#1d2b64] text-sm">FOR.ADM.SVR.001.03</p>
-        <p>Elaborado por: <span class="font-medium">Tec. Jorge Diaz</span></p>
-        <p>Fecha de solicitud: <span class="font-medium">27/05/2025</span></p>
-        <p>Edición: <span class="font-medium">12</span></p>
-      </div>
-    </div>
-
-    @if (loading) {
-      <app-loading />
-    } @else {
-      <form [formGroup]="form" (ngSubmit)="guardar()">
-        <h3 class="text-lg font-bold text-[#1d2b64] mb-6 uppercase tracking-tight">Orden de movilización de vehículo</h3>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-6">
-
-          @for (field of regularFields; track field.id) {
-            <div class="flex flex-col" [ngClass]="getFieldSpanClass(field.key)">
-              <label
-                class="text-[12px] font-bold text-[#1d2b64] mb-2"
-                [class.text-red-600]="esCampoInvalido(field.key)"
-              >
-                {{ field.label }}@if (field.required) {<span class="text-red-500"> *</span>}
-              </label>
-
-              @if (field.controlType === 'employee-list') {
-                <select
-                  [formControlName]="field.key"
-                  class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
-                  [class.border-red-500]="esCampoInvalido(field.key)"
-                >
-                  <option value="">Seleccione un funcionario...</option>
-                  @for (emp of field.employeeList; track emp.empleado_id) {
-                    <option [value]="emp.empleado_id">{{ emp.nombre_empleado }}</option>
-                  }
-                </select>
-              } @else if (field.controlType === 'select') {
-                <select
-                  [formControlName]="field.key"
-                  class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
-                  [class.border-red-500]="esCampoInvalido(field.key)"
-                >
-                  <option value="">Seleccione...</option>
-                  @for (opt of field.options; track opt.id) {
-                    <option [value]="opt.id">{{ opt.nombre }}</option>
-                  }
-                </select>
-              } @else {
-                <input
-                  [formControlName]="field.key"
-                  [type]="getInputType(field)"
-                  [placeholder]="field.placeholder"
-                  class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
-                  [class.border-red-500]="esCampoInvalido(field.key)"
-                />
-              }
-
-              @if (getFieldError(field.key)) {
-                <span class="text-red-500 text-[11px] mt-1">{{ getFieldError(field.key) }}</span>
-              }
-            </div>
-          }
-
-          @for (field of textareaFields; track field.id) {
-            <div class="flex flex-col col-span-1 sm:col-span-2 md:col-span-3">
-              <label
-                class="text-[12px] font-bold text-[#1d2b64] mb-2"
-                [class.text-red-600]="esCampoInvalido(field.key)"
-              >
-                {{ field.label }}@if (field.required) {<span class="text-red-500"> *</span>}
-              </label>
-              <textarea
-                [formControlName]="field.key"
-                rows="3"
-                [placeholder]="field.placeholder"
-                [maxlength]="field.maxLength ?? 9999"
-                class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-3 rounded text-sm resize-none outline-none focus:border-[#1d2b64] transition-colors"
-                [class.border-red-500]="esCampoInvalido(field.key)"
-              ></textarea>
-
-              @if (getFieldError(field.key)) {
-                <span class="text-red-500 text-[11px] mt-1">{{ getFieldError(field.key) }}</span>
-              }
-            </div>
-          }
-
+  <!-- ── Formulario (solo visble para canCreate o cuando se está editando) ── -->
+  @if (canCreate() || editingRecord) {
+    <div
+      class="max-w-7xl mx-auto bg-white p-8 rounded shadow-sm border border-slate-200 mb-10 animate-in fade-in"
+      [class.border-amber-400]="editingRecord"
+    >
+      <div class="flex justify-between items-start mb-10 border-b border-slate-200 pb-6">
+        <div>
+          <p class="text-sm font-medium text-slate-500 mb-2">
+            Sistema LIMS / <span class="font-bold text-[#1d2b64]">Gestión de Vehículos</span>
+          </p>
+          <h2 class="text-2xl font-bold text-[#1d2b64]">
+            {{ formulario?.formulario_nombre ?? 'Solicitud de transporte - Contraloría' }}
+          </h2>
+          <p class="text-sm text-slate-600 mt-1">
+            Complete la siguiente información para solicitar un vehículo de la DMRCA
+          </p>
         </div>
+        <div class="text-right text-[13px] leading-relaxed text-slate-700 space-y-1">
+          <p class="font-bold text-[#1d2b64] text-sm">FOR.ADM.SVR.001.03</p>
+          <p>Elaborado por: <span class="font-medium">Tec. Jorge Diaz</span></p>
+          <p>Fecha de solicitud: <span class="font-medium">27/05/2025</span></p>
+          <p>Edición: <span class="font-medium">12</span></p>
+        </div>
+      </div>
 
-        <div class="mt-10">
-          <button
-            type="submit"
-            [disabled]="saving"
-            class="bg-[#1d2b64] text-white px-10 py-3 rounded text-sm font-bold uppercase tracking-widest shadow-md hover:bg-[#2a3c85] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            @if (saving) {
-              <span class="flex items-center gap-2">
-                <span class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                Guardando...
-              </span>
-            } @else {
-              GUARDAR ORDEN
+      @if (loading) {
+        <app-loading />
+      } @else {
+
+        @if (editingRecord) {
+          <div class="flex items-center gap-3 mb-6 p-3 bg-amber-50 border border-amber-300 rounded text-amber-800 text-sm">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6-6m2 2l-6 6-2 .5.5-2z"/>
+            </svg>
+            <span>Editando registro <strong>{{ editingRecord.id }}</strong></span>
+            <button
+              type="button"
+              (click)="cancelarEdicion()"
+              class="ml-auto text-xs font-semibold text-amber-700 hover:text-amber-900 underline underline-offset-2"
+            >
+              Cancelar edición
+            </button>
+          </div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="guardar()">
+          <h3 class="text-lg font-bold text-[#1d2b64] mb-6 uppercase tracking-tight">Orden de movilización de vehículo</h3>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-6">
+
+            @for (field of regularFields; track field.id) {
+              <div class="flex flex-col" [ngClass]="getFieldSpanClass(field.key)">
+                <label
+                  class="text-[12px] font-bold text-[#1d2b64] mb-2"
+                  [class.text-red-600]="esCampoInvalido(field.key)"
+                >
+                  {{ field.label }}@if (field.required) {<span class="text-red-500"> *</span>}
+                </label>
+
+                @if (field.controlType === 'employee-list') {
+                  <select
+                    [formControlName]="field.key"
+                    class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
+                    [class.border-red-500]="esCampoInvalido(field.key)"
+                  >
+                    <option value="">Seleccione un funcionario...</option>
+                    @for (emp of field.employeeList; track emp.empleado_id) {
+                      <option [value]="emp.empleado_id">{{ emp.nombre_empleado }}</option>
+                    }
+                  </select>
+                } @else if (field.controlType === 'select') {
+                  <select
+                    [formControlName]="field.key"
+                    class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
+                    [class.border-red-500]="esCampoInvalido(field.key)"
+                  >
+                    <option value="">Seleccione...</option>
+                    @for (opt of field.options; track opt.id) {
+                      <option [value]="opt.id">{{ opt.nombre }}</option>
+                    }
+                  </select>
+                } @else {
+                  <input
+                    [formControlName]="field.key"
+                    [type]="getInputType(field)"
+                    [placeholder]="field.placeholder"
+                    class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
+                    [class.border-red-500]="esCampoInvalido(field.key)"
+                  />
+                }
+
+                @if (getFieldError(field.key)) {
+                  <span class="text-red-500 text-[11px] mt-1">{{ getFieldError(field.key) }}</span>
+                }
+              </div>
             }
-          </button>
-        </div>
-      </form>
-    }
-  </div>
 
+            @for (field of textareaFields; track field.id) {
+              <div class="flex flex-col col-span-1 sm:col-span-2 md:col-span-3">
+                <label
+                  class="text-[12px] font-bold text-[#1d2b64] mb-2"
+                  [class.text-red-600]="esCampoInvalido(field.key)"
+                >
+                  {{ field.label }}@if (field.required) {<span class="text-red-500"> *</span>}
+                </label>
+                <textarea
+                  [formControlName]="field.key"
+                  rows="3"
+                  [placeholder]="field.placeholder"
+                  [maxlength]="field.maxLength ?? 9999"
+                  class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-3 rounded text-sm resize-none outline-none focus:border-[#1d2b64] transition-colors"
+                  [class.border-red-500]="esCampoInvalido(field.key)"
+                ></textarea>
+                @if (getFieldError(field.key)) {
+                  <span class="text-red-500 text-[11px] mt-1">{{ getFieldError(field.key) }}</span>
+                }
+              </div>
+            }
+
+          </div>
+
+          <div class="mt-10 flex items-center gap-4">
+            <button
+              type="submit"
+              [disabled]="saving"
+              class="px-10 py-3 rounded text-sm font-bold uppercase tracking-widest shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed text-white"
+              [class.bg-amber-500]="editingRecord"
+              [class.hover:bg-amber-600]="editingRecord"
+              [class.bg-[#1d2b64]]="!editingRecord"
+              [class.hover:bg-[#2a3c85]]="!editingRecord"
+            >
+              @if (saving) {
+                <span class="flex items-center gap-2">
+                  <span class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                  {{ editingRecord ? 'Actualizando...' : 'Guardando...' }}
+                </span>
+              } @else {
+                {{ editingRecord ? 'ACTUALIZAR ORDEN' : 'GUARDAR ORDEN' }}
+              }
+            </button>
+
+            @if (editingRecord) {
+              <button
+                type="button"
+                (click)="cancelarEdicion()"
+                class="px-6 py-3 rounded text-sm font-semibold text-slate-600 border border-slate-300 hover:bg-slate-100 transition-colors"
+              >
+                Cancelar
+              </button>
+            }
+          </div>
+        </form>
+      }
+    </div>
+  }
+
+  <!-- ── Tabla ── -->
   @if (!loading) {
     <div class="max-w-7xl mx-auto bg-white rounded shadow-sm border border-slate-200 overflow-hidden animate-in fade-in">
       <div class="bg-[#1d2b64] p-4 flex justify-between items-center">
@@ -147,30 +184,32 @@
               <th class="px-3 py-2.5 border-r text-left">Funcionario Responsable</th>
               <th class="px-3 py-2.5 border-r text-center">Ocupantes</th>
               <th class="px-3 py-2.5 border-r text-left">Motivo</th>
-              <th class="px-3 py-2.5 text-left">Observaciones</th>
+              <th class="px-3 py-2.5 text-left" [class.border-r]="hasAnyAction">Observaciones</th>
+              @if (hasAnyAction) {
+                <th class="px-3 py-2.5 text-center">Acciones</th>
+              }
             </tr>
           </thead>
           <tbody>
             @if (solicitudesAgrupadas.length === 0) {
               <tr>
-                <td colspan="11" class="p-20 text-slate-400 italic text-center">
-                  @if (loadingTabla) {
-                    Cargando cronograma...
-                  } @else {
-                    No hay órdenes de movilización registradas.
-                  }
+                <td [attr.colspan]="hasAnyAction ? 12 : 11" class="p-20 text-slate-400 italic text-center">
+                  @if (loadingTabla) { Cargando cronograma... } @else { No hay órdenes de movilización registradas. }
                 </td>
               </tr>
             } @else {
               @for (grupo of solicitudesAgrupadas; track grupo.groupKey) {
                 <tr>
-                  <td colspan="11"
+                  <td [attr.colspan]="hasAnyAction ? 12 : 11"
                       class="py-3 px-4 text-center font-bold italic text-[#1d2b64] bg-[#eef0f8] border-y border-slate-300 text-sm tracking-widest uppercase">
                     {{ grupo.diaLabel }}
                   </td>
                 </tr>
                 @for (sol of grupo.items; track sol.id) {
-                  <tr class="border-b hover:bg-slate-50 transition-colors text-[12px]">
+                  <tr
+                    class="border-b hover:bg-slate-50 transition-colors text-[12px]"
+                    [class.bg-amber-50]="editingRecord?.id === sol.id"
+                  >
                     <td class="px-3 py-2.5 border-r text-center font-mono text-slate-400">
                       {{ (currentPage - 1) * PAGE_SIZE + $any(sol['_flatIdx']) + 1 }}
                     </td>
@@ -201,9 +240,76 @@
                     <td class="px-3 py-2.5 border-r text-slate-600">
                       {{ getFieldValue(sol, 'val_motivo_movilizacion') }}
                     </td>
-                    <td class="px-3 py-2.5 text-slate-600">
+                    <td class="px-3 py-2.5 text-slate-600" [class.border-r]="hasAnyAction">
                       {{ getFieldValue(sol, 'val_observaciones') }}
                     </td>
+                    @if (hasAnyAction) {
+                      <td class="px-3 py-2.5 text-center">
+                        <div class="flex items-center justify-center gap-1.5 flex-wrap">
+
+                          @if (canEdit()) {
+                            <button
+                              type="button"
+                              (click)="cargarParaEditar(sol)"
+                              [disabled]="saving"
+                              title="Editar registro"
+                              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6-6m2 2l-6 6-2 .5.5-2z"/>
+                              </svg>
+                              Editar
+                            </button>
+                          }
+
+                          @if (canAutorizar()) {
+                            <button
+                              type="button"
+                              (click)="autorizarRegistro(sol)"
+                              [disabled]="saving"
+                              title="Autorizar orden"
+                              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-semibold bg-green-100 text-green-700 hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                              </svg>
+                              Autorizar
+                            </button>
+                          }
+
+                          @if (canRechazar()) {
+                            <button
+                              type="button"
+                              (click)="rechazarRegistro(sol)"
+                              [disabled]="saving"
+                              title="Rechazar orden"
+                              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-semibold bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                              </svg>
+                              Rechazar
+                            </button>
+                          }
+
+                          @if (canDelete()) {
+                            <button
+                              type="button"
+                              (click)="eliminarRegistro(sol)"
+                              [disabled]="saving"
+                              title="Eliminar registro"
+                              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-semibold bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 01-1-1V5a1 1 0 011-1h6a1 1 0 011 1v1a1 1 0 01-1 1H9z"/>
+                              </svg>
+                              Eliminar
+                            </button>
+                          }
+
+                        </div>
+                      </td>
+                    }
                   </tr>
                 }
               }

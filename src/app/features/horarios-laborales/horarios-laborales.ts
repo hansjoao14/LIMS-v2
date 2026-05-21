@@ -59,6 +59,11 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
   });
 
+  canCreate = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.HORARIOS_LABORALES, role, 'crear') : false;
+  });
+
   canEdit = computed(() => {
     const role = this.userAppRole();
     return role ? hasPermission(MenuKey.HORARIOS_LABORALES, role, 'editar') : false;

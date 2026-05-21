@@ -1,4 +1,4 @@
-import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -9,7 +9,9 @@ import {
   Validators,
 } from '@angular/forms';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
+import Swal from 'sweetalert2';
 import { ToastrAlertService } from '../../services/toastr.service';
+import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
 
 import {
   SolicitudService,
@@ -45,6 +47,7 @@ export class PorContraloria implements OnInit, OnDestroy {
   loading = true;
   saving = false;
   loadingTabla = false;
+  editingRecord: ContraloriaRecord | null = null;
   private todasSolicitudes: ContraloriaRecord[] = [];
   solicitudes: ContraloriaRecord[] = [];
   metaTabla: PaginationMeta | null = null;
@@ -52,6 +55,41 @@ export class PorContraloria implements OnInit, OnDestroy {
   readonly PAGE_SIZE = 10;
 
   private readonly destroy$ = new Subject<void>();
+
+  // ── Permisos ─────────────────────────────────────────────────────────────
+  private userAppRole = computed<AppRole | null>(() => {
+    const roles = this.authService.userProfile()?.roles ?? [];
+    return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
+  });
+
+  canCreate = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.POR_CONTRALORIA, role, 'crear') : false;
+  });
+
+  canEdit = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.POR_CONTRALORIA, role, 'editar') : false;
+  });
+
+  canDelete = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.POR_CONTRALORIA, role, 'eliminar') : false;
+  });
+
+  canAutorizar = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.POR_CONTRALORIA, role, 'autorizar') : false;
+  });
+
+  canRechazar = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.POR_CONTRALORIA, role, 'rechazar') : false;
+  });
+
+  get hasAnyAction(): boolean {
+    return this.canEdit() || this.canDelete() || this.canAutorizar() || this.canRechazar();
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -332,6 +370,12 @@ export class PorContraloria implements OnInit, OnDestroy {
 
     this.saving = true;
     const raw = this.form.getRawValue();
+
+    if (this.editingRecord) {
+      await this.actualizarRegistro(raw);
+      return;
+    }
+
     const now = new Date();
 
     try {
@@ -402,8 +446,126 @@ export class PorContraloria implements OnInit, OnDestroy {
     }
   }
 
-  eliminar(_id: string): void {
-    this.toastrAlert.showWarning('La eliminación debe realizarse desde el panel de administración.', 'Aviso');
+  cargarParaEditar(record: ContraloriaRecord): void {
+    this.editingRecord = record;
+    const patch: Record<string, unknown> = {};
+    for (const field of this.fields) {
+      const val = record[field.key];
+      if (val !== undefined && val !== '—') patch[field.key] = val;
+    }
+    this.form.patchValue(patch);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelarEdicion(): void {
+    this.editingRecord = null;
+    this.form.reset();
+  }
+
+  async eliminarRegistro(record: ContraloriaRecord): Promise<void> {
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar registro?',
+      text: 'Esta acción no se puede deshacer.',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await firstValueFrom(this.reportSolicitudService.eliminarContraloria(record.id));
+      this.zone.run(() => {
+        this.toastrAlert.showSuccess('Registro eliminado correctamente.', '¡Eliminado!');
+        this.cargarDatos();
+      });
+    } catch {
+      this.zone.run(() => this.toastrAlert.showError('No se pudo eliminar el registro.', 'Error'));
+    }
+  }
+
+  async autorizarRegistro(record: ContraloriaRecord): Promise<void> {
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: '¿Autorizar orden de movilización?',
+      text: 'Se aprobará la orden seleccionada.',
+      showCancelButton: true,
+      confirmButtonColor: '#16a34a',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, autorizar',
+      cancelButtonText: 'Cancelar',
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await firstValueFrom(this.reportSolicitudService.autorizarContraloria(record.id));
+      this.zone.run(() => {
+        this.toastrAlert.showSuccess('Orden autorizada correctamente.', '¡Autorizado!');
+        this.cargarDatos();
+      });
+    } catch {
+      this.zone.run(() => this.toastrAlert.showError('No se pudo autorizar el registro.', 'Error'));
+    }
+  }
+
+  async rechazarRegistro(record: ContraloriaRecord): Promise<void> {
+    const { isConfirmed, value: motivo } = await Swal.fire({
+      icon: 'warning',
+      title: 'Rechazar orden de movilización',
+      input: 'textarea',
+      inputLabel: 'Motivo del rechazo',
+      inputPlaceholder: 'Ingrese el motivo del rechazo...',
+      inputAttributes: { rows: '3', maxlength: '300' },
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+      preConfirm: (val: string) => {
+        if (!val?.trim()) {
+          Swal.showValidationMessage('El motivo del rechazo es obligatorio.');
+          return false;
+        }
+        return val.trim();
+      },
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      await firstValueFrom(this.reportSolicitudService.rechazarContraloria(record.id, motivo));
+      this.zone.run(() => {
+        this.toastrAlert.showWarning('Orden rechazada.', 'Rechazado');
+        this.cargarDatos();
+      });
+    } catch {
+      this.zone.run(() => this.toastrAlert.showError('No se pudo rechazar el registro.', 'Error'));
+    }
+  }
+
+  private async actualizarRegistro(raw: Record<string, unknown>): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.reportSolicitudService.actualizarContraloria(this.editingRecord!.id, raw),
+      );
+      this.zone.run(() => {
+        this.saving = false;
+        this.editingRecord = null;
+        this.form.reset();
+        this.toastrAlert.showSuccess('Registro actualizado correctamente.', '¡Actualizado!');
+        this.cargarDatos();
+      });
+    } catch (err: any) {
+      this.zone.run(() => {
+        this.saving = false;
+        const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo actualizar el registro';
+        this.toastrAlert.showError(mensaje, 'Error');
+      });
+    }
   }
 
   getFieldValue(record: ContraloriaRecord, key: string): unknown {
