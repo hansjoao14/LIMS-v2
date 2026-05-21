@@ -173,21 +173,22 @@
         }
 
         <div class="border border-slate-200 rounded overflow-x-auto">
-          <table class="w-full text-sm border-collapse table-fixed min-w-[1000px]">
+          <table class="w-full text-sm border-collapse table-fixed">
             <colgroup>
-              <col class="w-[50px]">
-              <col class="w-[110px]">
+              <col class="w-[38px]">
+              <col class="w-[85px]">
               <col>
-              <col class="w-[78px]">
-              <col class="w-[78px]">
-              <col class="w-[140px]">
-              <col class="w-[115px]">
-              <col class="w-[140px]">
-              <col class="w-[78px]">
-              <col class="w-[140px]">
-              <col class="w-[130px]">
+              <col class="w-[55px]">
+              <col class="w-[55px]">
+              <col class="w-[95px]">
+              <col class="w-[82px]">
+              <col class="w-[100px]">
+              <col class="w-[58px]">
+              <col class="w-[95px]">
+              <col class="w-[100px]">
+              <col class="w-[82px]">
               @if (hasAnyAction) {
-                <col class="w-[152px]">
+                <col class="w-[118px]">
               }
             </colgroup>
 
@@ -203,6 +204,7 @@
                 <th class="px-3 py-2.5 border-r border-slate-100 text-left">Funcionario</th>
                 <th class="px-3 py-2.5 border-r border-slate-100 text-center">Ocupantes</th>
                 <th class="px-3 py-2.5 border-r border-slate-100 text-left">Motivo</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
                 @if (hasAnyAction) {
                   <th class="px-3 py-2.5 border-r border-slate-100 text-left">Observaciones</th>
                   <th class="px-2 py-2.5 text-center">Acciones</th>
@@ -226,6 +228,7 @@
                     <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-4/5"></div></td>
                     <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-1/2 mx-auto"></div></td>
                     <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-5 bg-slate-200 rounded w-4/5 mx-auto"></div></td>
                     @if (hasAnyAction) {
                       <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
                       <td class="px-2 py-3">
@@ -242,7 +245,7 @@
               } @else {
                 @if (solicitudesAgrupadas.length === 0) {
                   <tr>
-                    <td [attr.colspan]="hasAnyAction ? 12 : 11" class="p-10 text-slate-400 italic text-center">
+                    <td [attr.colspan]="hasAnyAction ? 13 : 12" class="p-10 text-slate-400 italic text-center">
                       No hay órdenes de movilización registradas.
                     </td>
                   </tr>
@@ -251,7 +254,7 @@
 
                     <tr>
                       <td
-                        [attr.colspan]="hasAnyAction ? 12 : 11"
+                        [attr.colspan]="hasAnyAction ? 13 : 12"
                         class="py-3 px-4 text-center font-bold italic text-[#1d2b64] bg-[#eef0f8] border-y border-slate-200 text-sm tracking-widest uppercase"
                       >
                         {{ grupo.diaLabel }}
@@ -298,6 +301,19 @@
                             [title]="$any(getFieldValue(sol, 'val_motivo_movilizacion'))">
                           {{ getFieldValue(sol, 'val_motivo_movilizacion') }}
                         </td>
+                        <td class="px-3 py-2.5 border-r border-slate-100 text-center">
+                          @if ($any(sol['ctestado_id']) === 388) {
+                            <span class="block w-full text-center py-0.5 border border-blue-400 text-blue-700 font-bold text-[10px] rounded bg-blue-50">Creado</span>
+                          } @else if ($any(sol['ctestado_id']) === 2) {
+                            <span class="block w-full text-center py-0.5 border border-amber-400 text-amber-700 font-bold text-[10px] rounded bg-amber-50">Pendiente</span>
+                          } @else if ($any(sol['ctestado_id']) === 387) {
+                            <span class="block w-full text-center py-0.5 border border-green-400 text-green-700 font-bold text-[10px] rounded bg-green-50">Autorizado</span>
+                          } @else if ($any(sol['ctestado_id']) === 51) {
+                            <span class="block w-full text-center py-0.5 border border-red-400 text-red-700 font-bold text-[10px] rounded bg-red-50">Rechazado</span>
+                          } @else {
+                            <span class="block w-full text-center py-0.5 border border-slate-300 text-slate-500 font-bold text-[10px] rounded bg-slate-50">{{ sol['estado_solicitud'] ?? '—' }}</span>
+                          }
+                        </td>
                         @if (hasAnyAction) {
                           <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
                               [title]="$any(getFieldValue(sol, 'val_observaciones'))">
@@ -323,7 +339,7 @@
                                 <button
                                   type="button"
                                   (click)="autorizarRegistro(sol)"
-                                  [disabled]="saving"
+                                  [disabled]="procesandoId === sol.id"
                                   title="Autorizar orden"
                                   class="h-8 w-8 flex items-center justify-center rounded border border-green-400 text-green-700 bg-green-50 hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
                                   <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -336,7 +352,7 @@
                                 <button
                                   type="button"
                                   (click)="rechazarRegistro(sol)"
-                                  [disabled]="saving"
+                                  [disabled]="procesandoId === sol.id"
                                   title="Rechazar orden"
                                   class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
                                   <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

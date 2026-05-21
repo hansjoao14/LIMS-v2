@@ -8,7 +8,7 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { Subject, takeUntil, firstValueFrom } from 'rxjs';
+import { Subject, takeUntil, firstValueFrom, forkJoin, finalize } from 'rxjs';
 import Swal from 'sweetalert2';
 import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
 import { ToastrAlertService } from '../../services/toastr.service';
@@ -19,7 +19,7 @@ import {
   SolicitudPayload,
 } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
-import { ReportValorSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
+import { ReportSolicitud, ReportValorSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import {
   FieldConfig,
   FormularioLaboratorio,
@@ -30,6 +30,9 @@ import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/per
 import { LoadingComponent } from '../../shared/components/loading/loading';
 import { PaginationComponent } from '../../shared/components/pagination/pagination';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
+
+const ESTADO_AUTORIZADO = 387;
+const ESTADO_RECHAZADO  = 51;
 
 type VehiculoRecord = { id: string } & Record<string, unknown>;
 
@@ -46,6 +49,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   fields: FieldConfig[] = [];
   loading = true;
   saving = false;
+  procesandoId: string | null = null;
   editingRecord: VehiculoRecord | null = null;
   private todasSolicitudes: VehiculoRecord[] = [];
   solicitudes: VehiculoRecord[] = [];
@@ -228,7 +232,6 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.cargarDatos();
     this.cargarFormularioDinamico();
   }
 
@@ -249,6 +252,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
             this.applyBusinessRules();
             this.applyDependencyLogic();
             this.loading = false;
+            this.cargarDatos();
           });
         },
         error: () => {
@@ -363,14 +367,27 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   }
 
   cargarDatos(): void {
+    if (!this.formulario?.formulario_id) return;
     this.loadingTabla = true;
-    this.reportSolicitudService
-      .getValoresByTipoFormulario(1002)
+    forkJoin([
+      this.reportSolicitudService.getValoresByTipoFormulario(1002),
+      this.reportSolicitudService.getSolicitudesByFormulario(this.formulario.formulario_id),
+    ])
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
+        next: ([valores, solicitudes]) => {
           this.zone.run(() => {
-            this.todasSolicitudes = this.agruparPorSolicitud(data);
+            const estadoMap = new Map(solicitudes.map((s) => [s.id_solicitud, s]));
+            const records = this.agruparPorSolicitud(valores);
+            for (const r of records) {
+              const s = estadoMap.get(r.id);
+              if (s) {
+                r['ctestado_id']      = s.ctestado_id;
+                r['estado_solicitud'] = s.estado_solicitud;
+                r['_solicitud']       = s;
+              }
+            }
+            this.todasSolicitudes = records;
             this.irAPagina(1);
             this.loadingTabla = false;
           });
@@ -465,7 +482,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
         usuario_id: userId,
         entidad_id: 'F9687983-F6CF-4706-9004-A1B793E3A987',
         secuencial_id: null,
-        ctestado_id: 3,
+        ctestado_id: 388,
         periodo_id: periodo.id,
         descripcion: '',
         ejercicio_id: ejercicio.id,
@@ -602,6 +619,9 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   }
 
   async autorizarRegistro(record: VehiculoRecord): Promise<void> {
+    const sol = record['_solicitud'] as ReportSolicitud | undefined;
+    if (!sol) return;
+
     const confirm = await Swal.fire({
       icon: 'question',
       title: '¿Autorizar programación?',
@@ -615,54 +635,75 @@ export class HorariosLaborales implements OnInit, OnDestroy {
 
     if (!confirm.isConfirmed) return;
 
-    try {
-      await firstValueFrom(this.reportSolicitudService.autorizarVehiculo(record.id));
-      this.zone.run(() => {
-        this.toastrAlert.showSuccess('Programación autorizada correctamente.', '¡Autorizado!');
-        this.cargarDatos();
+    this.procesandoId = record.id;
+    this.solicitudService
+      .actualizarSolicitud(sol.id_solicitud, {
+        ctestado_id:  ESTADO_AUTORIZADO,
+        formulario_id: sol.formulario_id,
+        usuario_id:    sol.usuario_id,
+        entidad_id:    sol.establecimiento_id,
+        secuencial_id: sol.secuencial_id,
+        periodo_id:    sol.periodo_id,
+        descripcion:   sol.descripcion_solicitud,
+        estado:        sol.estado_logico_solicitud,
+        num_secuencial: sol.num_secuencial,
+      })
+      .pipe(takeUntil(this.destroy$), finalize(() => { this.procesandoId = null; }))
+      .subscribe({
+        next: () => {
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess('Programación autorizada correctamente.', '¡Autorizado!');
+            this.cargarDatos();
+          });
+        },
+        error: () => {
+          this.zone.run(() => this.toastrAlert.showError('No se pudo autorizar el registro.', 'Error'));
+        },
       });
-    } catch {
-      this.zone.run(() =>
-        this.toastrAlert.showError('No se pudo autorizar el registro.', 'Error'),
-      );
-    }
   }
 
   async rechazarRegistro(record: VehiculoRecord): Promise<void> {
-    const { isConfirmed, value: motivo } = await Swal.fire({
+    const sol = record['_solicitud'] as ReportSolicitud | undefined;
+    if (!sol) return;
+
+    const { isConfirmed } = await Swal.fire({
       icon: 'warning',
       title: 'Rechazar programación',
-      input: 'textarea',
-      inputLabel: 'Motivo del rechazo',
-      inputPlaceholder: 'Ingrese el motivo del rechazo...',
-      inputAttributes: { rows: '3', maxlength: '300' },
+      text: `Se rechazará la solicitud ${sol.num_secuencial ?? sol.id_solicitud}.`,
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Rechazar',
+      confirmButtonText: 'Sí, rechazar',
       cancelButtonText: 'Cancelar',
-      preConfirm: (val: string) => {
-        if (!val?.trim()) {
-          Swal.showValidationMessage('El motivo del rechazo es obligatorio.');
-          return false;
-        }
-        return val.trim();
-      },
     });
 
     if (!isConfirmed) return;
 
-    try {
-      await firstValueFrom(this.reportSolicitudService.rechazarVehiculo(record.id, motivo));
-      this.zone.run(() => {
-        this.toastrAlert.showWarning('Programación rechazada.', 'Rechazado');
-        this.cargarDatos();
+    this.procesandoId = record.id;
+    this.solicitudService
+      .actualizarSolicitud(sol.id_solicitud, {
+        ctestado_id:  ESTADO_RECHAZADO,
+        formulario_id: sol.formulario_id,
+        usuario_id:    sol.usuario_id,
+        entidad_id:    sol.establecimiento_id,
+        secuencial_id: sol.secuencial_id,
+        periodo_id:    sol.periodo_id,
+        descripcion:   sol.descripcion_solicitud,
+        estado:        sol.estado_logico_solicitud,
+        num_secuencial: sol.num_secuencial,
+      })
+      .pipe(takeUntil(this.destroy$), finalize(() => { this.procesandoId = null; }))
+      .subscribe({
+        next: () => {
+          this.zone.run(() => {
+            this.toastrAlert.showWarning('Programación rechazada.', 'Rechazado');
+            this.cargarDatos();
+          });
+        },
+        error: () => {
+          this.zone.run(() => this.toastrAlert.showError('No se pudo rechazar el registro.', 'Error'));
+        },
       });
-    } catch {
-      this.zone.run(() =>
-        this.toastrAlert.showError('No se pudo rechazar el registro.', 'Error'),
-      );
-    }
   }
 
   private parseFecha(fecha: string): Date | null {
