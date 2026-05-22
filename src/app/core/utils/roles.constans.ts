@@ -99,9 +99,14 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
 const rolesWithAccess = (menuKey: MenuKey) =>
   (Object.keys(MENU_PERMISSIONS[menuKey]) as AppRole[]).map((role) => ({ role }));
 
+const rolesWithAction = (menuKey: MenuKey, action: Action) =>
+  (Object.entries(MENU_PERMISSIONS[menuKey]) as [AppRole, Action[]][])
+    .filter(([, actions]) => actions.includes(action))
+    .map(([role]) => ({ role }));
+
 export const RoleAccess = {
   ALL_USERS:          rolesWithAccess(MenuKey.DASHBOARD),
-  SOLICITUD_TRABAJO:  rolesWithAccess(MenuKey.SOLICITUD_TRABAJO),
+  SOLICITUD_TRABAJO:  rolesWithAction(MenuKey.SOLICITUD_TRABAJO, 'crear'),
   LISTA_SOLICITUDES:  rolesWithAccess(MenuKey.LISTA_SOLICITUDES),
   LISTA_COTIZACIONES: rolesWithAccess(MenuKey.LISTA_COTIZACIONES),
   HORARIOS_LABORALES: rolesWithAccess(MenuKey.HORARIOS_LABORALES),
