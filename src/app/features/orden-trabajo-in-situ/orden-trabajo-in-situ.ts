@@ -29,6 +29,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
   readonly PAGE_SIZE = 8;
   busqueda = '';
   solicitudSeleccionada: ReportSolicitud | null = null;
+  loadingDetalle = false;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -118,12 +119,20 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
   seleccionarSolicitud(sol: ReportSolicitud): void {
     this.solicitudSeleccionada = sol;
     this.panelAbierto = false;
+    this.loadingDetalle = true;
 
     this.solicitudDetalleService
       .getSolicitudDetalle(sol.id_solicitud)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(detalle => {
-        this.poblarFormulario(detalle);
+      .subscribe({
+        next: (detalle) => {
+          this.poblarFormulario(detalle);
+          this.loadingDetalle = false;
+        },
+        error: () => {
+          this.loadingDetalle = false;
+          Swal.fire('Error', 'No se pudo cargar el detalle de la solicitud', 'error');
+        },
       });
   }
 
@@ -153,13 +162,13 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
 
     this.ensayosArray.clear();
     for (const e of f.ensayos ?? []) {
-      const parts = (e.metodo ?? '').split(', ');
+      const partes = (e.metodo ?? '').split(',');
       this.ensayosArray.push(this.fb.group({
         seleccionado:     [true],
         ensayo:           [e.analisis ?? ''],
         identificacion:   [e.identificacion ?? ''],
-        metodoInterno:    [parts[0] ?? ''],
-        metodoReferencia: [parts[1] ?? ''],
+        metodoInterno:    [partes[0]?.trim() ?? ''],
+        metodoReferencia: [partes.slice(1).join(',').trim()],
         unidad:           [''],
       }));
     }

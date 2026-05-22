@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import solicitudMock from '../../../data/solicitud.json';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 export interface SolicitudDetalle {
   id_solicitud: string;
@@ -35,6 +36,7 @@ export interface AtributoDetalle {
 export interface EnsayoDetalle {
   id: string;
   ensayo_id: number;
+  nombre_ensayo: string;
   metodo: string;
   identificacion: string;
   analisis: string;
@@ -44,11 +46,15 @@ export interface EnsayoDetalle {
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudDetalleService {
+  private readonly apiReportes = environment.api_reportes;
+
+  constructor(private http: HttpClient) {}
 
   getSolicitudDetalle(id: string): Observable<SolicitudDetalle> {
-
-    // TODO: reemplazar por REST real:
-    // return this.http.get<SolicitudDetalle>(`/api/solicitudes/${id}/detalle`);
-    return of(solicitudMock as SolicitudDetalle);
+    return this.http
+      .get<{ message: string; success: boolean; data: SolicitudDetalle }>(
+        `${this.apiReportes}/report-solicitud/${id}`,
+      )
+      .pipe(map((res) => res.data));
   }
 }
