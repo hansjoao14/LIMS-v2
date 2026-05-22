@@ -111,9 +111,13 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
 
   onTipoEnsayoChange(): void {
     if (!this.solicitudSeleccionada) return;
+    this.cargarDetalle();
+  }
+
+  private cargarDetalle(): void {
     this.loadingDetalle = true;
     this.solicitudDetalleService
-      .getSolicitudDetalle(this.solicitudSeleccionada.id_solicitud)
+      .getSolicitudDetalle(this.solicitudSeleccionada!.id_solicitud)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (detalle) => {
@@ -122,7 +126,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
         },
         error: () => {
           this.loadingDetalle = false;
-          Swal.fire('Error', 'No se pudo recargar los ensayos', 'error');
+          Swal.fire('Error', 'No se pudo cargar el detalle de la solicitud', 'error');
         },
       });
   }
@@ -181,21 +185,8 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
   seleccionarSolicitud(sol: ReportSolicitud): void {
     this.solicitudSeleccionada = sol;
     this.panelAbierto = false;
-    this.loadingDetalle = true;
-
-    this.solicitudDetalleService
-      .getSolicitudDetalle(sol.id_solicitud)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (detalle) => {
-          this.poblarFormulario(detalle);
-          this.loadingDetalle = false;
-        },
-        error: () => {
-          this.loadingDetalle = false;
-          Swal.fire('Error', 'No se pudo cargar el detalle de la solicitud', 'error');
-        },
-      });
+    this.ensayosArray.clear();
+    this.operadorAtributos = [];
   }
 
   private poblarFormulario(detalle: import('../../services/solicitudes/solicitud-detalle/solicitud-detalle.service').SolicitudDetalle): void {
@@ -205,11 +196,18 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
     const attr = (nombre: string) =>
       f.atributos?.find(a => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
 
+    const fechaEmision = f.fecha_emision_solicitud
+      ? new Date(f.fecha_emision_solicitud)
+      : null;
+    const fechaMaxima = fechaEmision
+      ? new Date(new Date(fechaEmision).setDate(fechaEmision.getDate() + 15))
+          .toISOString().split('T')[0]
+      : '';
+
     this.form.patchValue({
-      solicitudTrabajoNo: f.num_secuencial_solicitud,
-      fechaEmision: f.fecha_emision_solicitud
-        ? new Date(f.fecha_emision_solicitud).toISOString().split('T')[0]
-        : '',
+      solicitudTrabajoNo:   f.num_secuencial_solicitud,
+      fechaEmision:         fechaEmision ? fechaEmision.toISOString().split('T')[0] : '',
+      fechaMaximaEntrega:   fechaMaxima,
       cliente: {
         solicitadoPor:    f.nombre_completo,
         correoElectronico: attr('val_correo'),
@@ -239,10 +237,6 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
         metodoReferencia: [partes.slice(1).join(',').trim()],
         unidad:           [''],
       }));
-    }
-    if (this.ensayosArray.length === 0) {
-      this.ensayosArray.push(this.crearEnsayo());
-      this.ensayosArray.push(this.crearEnsayo());
     }
   }
 

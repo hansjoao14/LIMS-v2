@@ -118,7 +118,7 @@
               </label>
               <select
                 class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-opacity duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
-                [disabled]="loadingTipos"
+                [disabled]="loadingTipos || !solicitudSeleccionada"
                 [class.opacity-50]="loadingTipos"
                 [ngModel]="tipoEnsayoId"
                 [ngModelOptions]="{standalone: true}"
@@ -148,8 +148,8 @@
                 Fecha de emisión
               </label>
               <input
-                class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                type="date" formControlName="fechaEmision"
+                class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+                type="date" formControlName="fechaEmision" readonly
               />
             </div>
 
@@ -159,9 +159,10 @@
                 Fecha máxima de entrega
               </label>
               <input
-                class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                type="date" formControlName="fechaMaximaEntrega"
+                class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+                type="date" formControlName="fechaMaximaEntrega" readonly
               />
+              <p class="text-[10px] text-slate-400 mt-1">Generada automáticamente (15 días tras la emisión)</p>
             </div>
 
           </div>
@@ -174,23 +175,23 @@
             <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="flex flex-col">
                 <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Solicitado por</label>
-                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                  formControlName="solicitadoPor" placeholder="Nombre del solicitante" />
+                <input class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+                  formControlName="solicitadoPor" readonly />
               </div>
               <div class="flex flex-col">
                 <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Dirección</label>
-                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                  formControlName="direccion" placeholder="Dirección" />
+                <input class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+                  formControlName="direccion" readonly />
               </div>
               <div class="flex flex-col">
                 <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Solicitud No. (Fecha; hora)</label>
-                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                  formControlName="solicitudNo" placeholder="Ej: GADDMQ-SA-DMRCA-UCSA-2025-0052-M" />
+                <input class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+                  formControlName="solicitudNo" readonly />
               </div>
               <div class="flex flex-col">
                 <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Correo electrónico</label>
-                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                  type="email" formControlName="correoElectronico" placeholder="correo@ejemplo.com" />
+                <input class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+                  formControlName="correoElectronico" readonly />
               </div>
             </div>
           </section>
@@ -239,7 +240,7 @@
                 <tbody>
                   @if (ensayosArray.length === 0) {
                     <tr>
-                      <td colspan="6" class="p-10 text-slate-400 italic text-center">—</td>
+                      <td colspan="6" class="p-10 text-slate-400 italic text-center">No hay ensayos para el tipo de ensayo seleccionado.</td>
                     </tr>
                   }
                   @for (ensayo of ensayosArray.controls; track i; let i = $index) {
