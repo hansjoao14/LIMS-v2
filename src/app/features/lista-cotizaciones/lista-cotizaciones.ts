@@ -154,15 +154,16 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
         finalize(() => { this.procesandoId = null; }),
       )
       .subscribe({
-        next: async () => {
-          this.solicitudes = this.solicitudes.filter(s => s.id_solicitud !== doc.id_solicitud);
-          await Swal.fire({
+        next: () => {
+          this.cargarPagina(this.currentPage);
+          Swal.fire({
             title: '¡Autorizado!',
             text: `La solicitud ${doc.num_secuencial ?? doc.id_solicitud} fue autorizada correctamente.`,
             icon: 'success',
             confirmButtonColor: '#1d2b64',
+            timer: 2000,
+            showConfirmButton: false,
           });
-          this.cargarPagina(this.currentPage);
         },
         error: () => {
           Swal.fire('Error', 'No se pudo autorizar la solicitud', 'error');
@@ -203,15 +204,16 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
         finalize(() => { this.procesandoId = null; }),
       )
       .subscribe({
-        next: async () => {
-          this.solicitudes = this.solicitudes.filter(s => s.id_solicitud !== doc.id_solicitud);
-          await Swal.fire({
+        next: () => {
+          this.cargarPagina(this.currentPage);
+          Swal.fire({
             title: '¡Rechazada!',
             text: `La solicitud ${doc.num_secuencial ?? doc.id_solicitud} fue rechazada.`,
             icon: 'success',
             confirmButtonColor: '#1d2b64',
+            timer: 2000,
+            showConfirmButton: false,
           });
-          this.cargarPagina(this.currentPage);
         },
         error: () => {
           Swal.fire('Error', 'No se pudo rechazar la solicitud', 'error');
