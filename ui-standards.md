@@ -51,8 +51,7 @@ Todo módulo principal debe tener exactamente este shell exterior para garantiza
 - `min-h-screen` — evita que la página se corte en vistas con poco contenido
 - `text-slate-700 font-sans` — tipografía base
 - `pb-24` — espacio inferior para la navegación flotante (siempre `pb-24`, no `pb-20`)
-- `max-w-7xl mx-auto` — ancho máximo centrado (Patrón B: listados y formularios simples)
-- `max-w-6xl mx-auto` — solo para Patrón A (formularios multi-paso con stepper)
+- `max-w-7xl mx-auto` — ancho máximo centrado, **igual en todos los módulos** (Patrón A y B)
 - `<div class="animate-in fade-in">` — wrapper de animación de entrada del módulo. El PageHeader va DENTRO de este div, no fuera
 - **Prohibido:** `space-y-6` en el contenedor — provoca márgenes acumulados entre PageHeader y cards. Usar `mb-6` explícito en las cards cuando se necesite separación
 
@@ -83,8 +82,8 @@ bg-slate-50 (página)
 
 ```html
 <!-- Patrón A: página -->
-<div class="p-6 bg-slate-50 min-h-screen pb-24 font-sans text-slate-700">
-  <div class="max-w-6xl mx-auto mb-8">
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
 
     <app-page-header ... />
 

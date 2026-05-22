@@ -1,28 +1,36 @@
-<div class="dashboard-wrapper">
-  <div class="welcome-section">
-    <h1>Panel Principal <span>SGIA</span></h1>
-    <p>
-      Bienvenido al Sistema de Gestión Institucional Ambiental. Seleccione un módulo para continuar.
-    </p>
-  </div>
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
+    <div class="animate-in fade-in">
 
-  <div class="cards-grid">
-    @for (item of modulosVisibles(); track item.title) {
-      <a [routerLink]="item.route" class="card-item">
-        <div class="card-icon">{{ item.icon }}</div>
-        <div class="card-body">
-          <h3>{{ item.title }}</h3>
-          <p>{{ item.desc }}</p>
-        </div>
-        <div class="card-footer">
-          <span>Ingresar</span>
-          <i class="arrow-icon">→</i>
-        </div>
-      </a>
-    } @empty {
-      <div class="no-access">
-        <p>No tienes módulos asignados a tu rol actual.</p>
+      <div class="mb-10">
+        <h1 class="text-3xl font-light text-[#1d2b64]">
+          Panel Principal <span class="font-extrabold text-[#2a41a3]">SGIA</span>
+        </h1>
+        <p class="text-slate-500 mt-2 text-[15px]">
+          Bienvenido al Sistema de Gestión Institucional Ambiental. Seleccione un módulo para continuar.
+        </p>
       </div>
-    }
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @for (item of modulosVisibles(); track item.title) {
+          <a [routerLink]="item.route" class="card-item">
+            <div class="card-icon">{{ item.icon }}</div>
+            <div class="card-body">
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.desc }}</p>
+            </div>
+            <div class="card-footer">
+              <span>Ingresar</span>
+              <i class="arrow-icon">→</i>
+            </div>
+          </a>
+        } @empty {
+          <div class="col-span-3 p-10 text-slate-400 italic text-center">
+            <p>No tienes módulos asignados a tu rol actual.</p>
+          </div>
+        }
+      </div>
+
+    </div>
   </div>
 </div>
