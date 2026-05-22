@@ -81,8 +81,8 @@
           (estadoCambiado)="catalogosSeleccionados = $event"
           (ensayosMuestreoCambiado)="ensayosMuestreo = $event"
           (ensayosResidualesCambiado)="ensayosResiduales = $event"
-          (ensayosAireCambiado)="ensayosAire = $event"
-          (ensayosRuidoCambiado)="ensayosRuido = $event"
+          (ensayosAireCambiado)="onEnsayosAireCambiado($event)"
+          (ensayosRuidoCambiado)="onEnsayosRuidoCambiado($event)"
           (next)="onStep3Next($event)"
           (prev)="goPrevStep()"
         >

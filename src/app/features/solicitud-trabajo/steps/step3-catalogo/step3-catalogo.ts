@@ -126,6 +126,7 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
         this.loading = false;
         this.spinner.hide('catalogo-step3');
         this.cargarEnsayosActivos();
+        this.estadoCambiado.emit(this.matricesConHijos);
       },
       error: () => {
         this.loading = false;

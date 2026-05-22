@@ -655,6 +655,16 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     this.guardarEnsayosYAvanzar(data);
   }
 
+  onEnsayosAireCambiado(ensayos: EnsayoLaboratorio[]): void {
+    this.ensayosAire = ensayos;
+    this.ensayosAirePrevio = ensayos;
+  }
+
+  onEnsayosRuidoCambiado(ensayos: EnsayoLaboratorio[]): void {
+    this.ensayosRuido = ensayos;
+    this.ensayosRuidoPrevio = ensayos;
+  }
+
   private avanzarPaso(): void {
     this.currentStep++;
     window.scrollTo({ top: 0, behavior: 'smooth' });
