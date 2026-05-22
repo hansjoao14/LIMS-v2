@@ -61,11 +61,12 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   solicitudSeleccionada: ReportSolicitud | null = null;
 
   // ── Detalle de la solicitud ───────────────────────────────────────────────
-  detalleFechaEmision = '';
-  detalleCliente      = '';
-  detalleLatitud      = '';
-  detalleLongitud     = '';
-  detalleDireccion    = '';
+  detalleFechaEmision  = '';
+  detalleFechaMaxima   = '';
+  detalleCliente       = '';
+  detalleLatitud       = '';
+  detalleLongitud      = '';
+  detalleDireccion     = '';
   detalleEnsayos: EnsayoRow[] = [];
 
   ensayosLaboratorio: GrupoLaboratorio[] = [
@@ -194,8 +195,10 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     const attr = (nombre: string) =>
       f.atributos?.find(a => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
 
-    this.detalleFechaEmision = f.fecha_emision_solicitud
-      ? new Date(f.fecha_emision_solicitud).toLocaleDateString('es-EC')
+    const fechaEmision = f.fecha_emision_solicitud ? new Date(f.fecha_emision_solicitud) : null;
+    this.detalleFechaEmision = fechaEmision ? fechaEmision.toLocaleDateString('es-EC') : '';
+    this.detalleFechaMaxima  = fechaEmision
+      ? new Date(new Date(fechaEmision).setDate(fechaEmision.getDate() + 10)).toLocaleDateString('es-EC')
       : '';
     this.detalleCliente   = f.nombre_completo;
     this.detalleLatitud   = attr('val_lati');
@@ -220,6 +223,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.tipoAguaId            = null;
     this.busqueda              = '';
     this.detalleFechaEmision   = '';
+    this.detalleFechaMaxima    = '';
     this.detalleCliente        = '';
     this.detalleLatitud        = '';
     this.detalleLongitud       = '';

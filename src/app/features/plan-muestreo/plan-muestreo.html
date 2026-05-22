@@ -166,7 +166,7 @@
               <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">📄</div>
               <div>
                 <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Plan de Muestreo No</label>
-                <p class="text-sm font-bold text-slate-700">PM-058-25</p>
+                <p class="text-sm text-slate-400 italic">Se genera automáticamente al guardar</p>
               </div>
             </div>
 
@@ -174,7 +174,8 @@
               <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">🗓️</div>
               <div>
                 <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Fecha Máxima de Entrega</label>
-                <p class="text-sm text-slate-700">17/1/2025</p>
+                <p class="text-sm text-slate-700">{{ detalleFechaMaxima || '—' }}</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">Generada automáticamente (10 días tras la emisión)</p>
               </div>
             </div>
 
