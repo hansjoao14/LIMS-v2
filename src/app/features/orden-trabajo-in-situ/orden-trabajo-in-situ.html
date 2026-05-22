@@ -178,34 +178,24 @@
             </div>
           </section>
 
-          <!-- Section-card: Operador (Nivel 2B) -->
-          <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-8" formGroupName="operador">
-            <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
-              <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Operador</h4>
-            </div>
-            <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="flex flex-col">
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Razón Social</label>
-                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                  formControlName="razonSocial" placeholder="Razón social" />
+          <!-- Section-card: Operador (Nivel 2B) — campos dinámicos desde la API -->
+          @if (operadorAtributos.length > 0) {
+            <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-8">
+              <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+                <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Operador</h4>
               </div>
-              <div class="flex flex-col">
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Nombre Comercial</label>
-                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                  formControlName="nombreComercial" placeholder="Nombre comercial" />
+              <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                @for (attr of operadorAtributos; track attr.pregunta) {
+                  <div class="flex flex-col">
+                    <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">{{ attr.pregunta }}</label>
+                    <div class="w-full border border-slate-200 bg-slate-50 text-slate-700 p-2.5 rounded text-sm">
+                      {{ attr.valor || '—' }}
+                    </div>
+                  </div>
+                }
               </div>
-              <div class="flex flex-col">
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">R.U.C.</label>
-                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                  formControlName="ruc" placeholder="Ej: 1793167640001" />
-              </div>
-              <div class="flex flex-col">
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Dirección</label>
-                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                  formControlName="direccion" placeholder="Dirección" />
-              </div>
-            </div>
-          </section>
+            </section>
+          }
 
           <!-- Separador de sección -->
           <div class="bg-slate-100 text-center py-2.5 px-4 rounded text-[11px] font-bold text-[#1e3a8a] uppercase tracking-widest mb-4">

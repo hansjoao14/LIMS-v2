@@ -30,6 +30,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
   busqueda = '';
   solicitudSeleccionada: ReportSolicitud | null = null;
   loadingDetalle = false;
+  operadorAtributos: { pregunta: string; valor: string }[] = [];
 
   private readonly destroy$ = new Subject<void>();
 
@@ -152,13 +153,15 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
         solicitadoPor:    f.nombre_completo,
         correoElectronico: attr('val_correo'),
       },
-      operador: {
-        razonSocial:     attr('val_razon_op'),
-        nombreComercial: attr('val_come_op'),
-        ruc:             attr('val_ruc_op'),
-        direccion:       attr('val_dir_op'),
-      },
     });
+
+    this.operadorAtributos = (f.atributos ?? [])
+      .filter(a => a.nombre_atributo_formulario.endsWith('_op'))
+      .sort((a, b) => a.orden - b.orden)
+      .map(a => ({
+        pregunta: a.pregunta_atributo_formulario,
+        valor: a.nombre_valor_catalogo || a.valor_multiple_format || a.valor_texto || '',
+      }));
 
     this.ensayosArray.clear();
     for (const e of f.ensayos ?? []) {
@@ -181,6 +184,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
   limpiarSolicitud(): void {
     this.solicitudSeleccionada = null;
     this.busqueda = '';
+    this.operadorAtributos = [];
     this.form.reset();
     this.ensayosArray.clear();
   }
