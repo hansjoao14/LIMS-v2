@@ -84,9 +84,22 @@ export class Step2OperadorComponent {
     return 'text';
   }
 
+  get minDate(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  get maxDate(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + 15);
+    return d.toISOString().split('T')[0];
+  }
+
   agregarHorario(): void {
     this.draftError = '';
     if (!this.draftDate) { this.draftError = 'Seleccione una fecha.'; return; }
+    if (this.draftDate < this.minDate || this.draftDate > this.maxDate) {
+      this.draftError = 'La fecha debe estar entre hoy y los próximos 15 días.'; return;
+    }
     if (this.draftEnd <= this.draftStart) { this.draftError = 'La hora de fin debe ser posterior a la de inicio.'; return; }
     this.addManualSchedule.emit({ fecha_plan: this.draftDate, inicio_bloque: this.draftStart, fin_bloque: this.draftEnd });
     this.draftDate = '';

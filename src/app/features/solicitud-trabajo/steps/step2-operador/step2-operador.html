@@ -225,6 +225,8 @@
             <input
               type="date"
               [value]="draftDate"
+              [min]="minDate"
+              [max]="maxDate"
               (input)="draftDate = $any($event.target).value"
               class="border border-slate-300 rounded p-2 text-sm outline-none focus:border-[#1e3a8a] bg-white"
             />
