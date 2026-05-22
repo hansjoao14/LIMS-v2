@@ -859,9 +859,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   get isPasaporteSelected(): boolean {
-    const tipoField = this.fields.find((f) => f.key === 'val_ct_tipo');
+    const tipoField = this.fields.find((f) => f.key === 'val_ct_tipo_op');
     if (!tipoField) return false;
-    const selectedId = this.getFieldControl('val_ct_tipo')?.value;
+    const selectedId = this.getFieldControl('val_ct_tipo_op')?.value;
     return tipoField.options.some(
       (opt) =>
         String(opt.id) === String(selectedId) && opt.nombre?.toLowerCase().includes('pasaporte'),
@@ -987,13 +987,13 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   private resolveSection(pregunta: Pregunta): FieldSectionId {
     const n = pregunta.nombre;
-    if (n === 'val_ct_tipo' || n === 'val_ruc_op' || n === 'val_ced_op' || n === 'val_pasaporte')
+    if (n === 'val_ct_tipo_op' || n === 'val_ruc_op' || n === 'val_ced_op' || n === 'val_pasaporte')
       return 'identificacion';
     if (n === 'val_lati' || n === 'val_long') return 'ubicacion';
     if (n === 'val_jor_la') return 'horario';
     if (n === 'val_obs') return 'observaciones';
     if (n.includes('motivo')) return 'operador';
-    if (n.startsWith('val_ct_') && n !== 'val_ct_tipo') return 'contacto';
+    if (n.startsWith('val_ct_') && n !== 'val_ct_tipo_op') return 'contacto';
     return 'operador';
   }
 
