@@ -67,7 +67,7 @@ const GET_SOLICITUDES_FINALIZADAS = gql`
     collectionReportSolicitud(
       query: {
         orderBy: { fecha_creacion: DESC }
-        where: { ctestado_id: { equals: 3 } }
+        where: { ctestado_id: { equals: 387 } }
         pagination: { page: $page, take: $take }
       }
     ) {

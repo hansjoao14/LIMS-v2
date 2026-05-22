@@ -84,7 +84,7 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
     const hijo = grupo.hijos[hijoIdx];
     hijo.activo = !hijo.activo;
 
-    if (this.isMatriz(grupo, 'agua')) this.cargarEnsayosAgua(grupo);
+    if (this.isMatriz(grupo, 'agua')) this.cargarEnsayosAgua(grupo, hijoIdx);
     if (this.isMatriz(grupo, 'aire')) this.cargarEnsayosAire(grupo);
     if (this.isMatriz(grupo, 'ruido')) this.cargarEnsayosRuido(grupo);
     this.estadoCambiado.emit(this.matricesConHijos);
@@ -127,11 +127,32 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
     });
   }
 
-  private cargarEnsayosAgua(grupo: MatrizConHijosUI): void {
+  private cargarEnsayosAgua(grupo: MatrizConHijosUI, hijoIdx?: number): void {
+    // Si se desactivó un hijo específico, limpiar solo su tabla correspondiente
+    if (hijoIdx !== undefined && !grupo.hijos[hijoIdx].activo) {
+      if (hijoIdx === 0) {
+        this.ensayosMuestreo = [];
+        this.ensayosMuestreoCambiado.emit([]);
+      } else if (hijoIdx === 1) {
+        this.ensayosResiduales = [];
+        this.ensayosResidualesCambiado.emit([]);
+      }
+      // Si ningún hijo queda activo, limpiar todo
+      if (!grupo.hijos.some((h) => h.activo)) {
+        this.ensayosMuestreo = [];
+        this.ensayosResiduales = [];
+        this.ensayosMuestreoCambiado.emit([]);
+        this.ensayosResidualesCambiado.emit([]);
+      }
+      return;
+    }
+
     const hijoActivo = grupo.hijos.find((h) => h.activo);
     if (!hijoActivo) {
       this.ensayosMuestreo = [];
       this.ensayosResiduales = [];
+      this.ensayosMuestreoCambiado.emit([]);
+      this.ensayosResidualesCambiado.emit([]);
       return;
     }
 
