@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
@@ -30,7 +30,7 @@ export interface MatrizConHijosUI {
   imports: [CommonModule, FormsModule, NgxSpinnerModule],
   templateUrl: './step3-catalogo.html',
 })
-export class Step3CatalogoComponent implements OnInit, OnDestroy {
+export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   @Input() ensayosAire: EnsayoLaboratorio[] = [];
   @Input() ensayosRuido: EnsayoLaboratorio[] = [];
   @Input() notasAgua: string[] = [];
@@ -75,6 +75,13 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
     this.getMatricesConHijos();
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    // Si estadoPrevio llega después de que el catálogo ya cargó (carga async del padre), re-aplicar
+    if (changes['estadoPrevio'] && !this.loading && this.matricesConHijos.length > 0) {
+      this.aplicarEstadoPrevio();
+    }
+  }
+
   toggleMatrizCollapse(idx: number): void {
     this.matricesConHijos[idx].collapsed = !this.matricesConHijos[idx].collapsed;
   }
@@ -88,6 +95,14 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
     if (this.isMatriz(grupo, 'aire')) this.cargarEnsayosAire(grupo);
     if (this.isMatriz(grupo, 'ruido')) this.cargarEnsayosRuido(grupo);
     this.estadoCambiado.emit(this.matricesConHijos);
+  }
+
+  tieneHijosActivos(grupo: MatrizConHijosUI): boolean {
+    return grupo.hijos.some((h) => h.activo);
+  }
+
+  contarHijosActivos(grupo: MatrizConHijosUI): number {
+    return grupo.hijos.filter((h) => h.activo).length;
   }
 
   private getMatricesConHijos(): void {
@@ -104,27 +119,36 @@ export class Step3CatalogoComponent implements OnInit, OnDestroy {
         }));
         this.loading = false;
         this.spinner.hide('catalogo-step3');
-
-        const aguaGrupo = this.matricesConHijos.find((m) => this.isMatriz(m, 'agua'));
-        if (aguaGrupo?.hijos.some((h) => h.activo)) {
-          this.cargarEnsayosAgua(aguaGrupo);
-        }
-
-        const aireGrupo = this.matricesConHijos.find((m) => this.isMatriz(m, 'aire'));
-        if (aireGrupo?.hijos.some((h) => h.activo)) {
-          this.cargarEnsayosAire(aireGrupo);
-        }
-
-        const ruidoGrupo = this.matricesConHijos.find((m) => this.isMatriz(m, 'ruido'));
-        if (ruidoGrupo?.hijos.some((h) => h.activo)) {
-          this.cargarEnsayosRuido(ruidoGrupo);
-        }
+        this.cargarEnsayosActivos();
       },
       error: () => {
         this.loading = false;
         this.spinner.hide('catalogo-step3');
       },
     });
+  }
+
+  private aplicarEstadoPrevio(): void {
+    const previoHijos = this.estadoPrevio.flatMap((m) => m.hijos);
+    this.matricesConHijos = this.matricesConHijos.map((grupo) => ({
+      ...grupo,
+      hijos: grupo.hijos.map((h) => {
+        const previo = previoHijos.find((ph) => ph.id === h.id);
+        return { ...h, activo: previo?.activo ?? h.activo };
+      }),
+    }));
+    this.cargarEnsayosActivos();
+  }
+
+  private cargarEnsayosActivos(): void {
+    const aguaGrupo = this.matricesConHijos.find((m) => this.isMatriz(m, 'agua'));
+    if (aguaGrupo?.hijos.some((h) => h.activo)) this.cargarEnsayosAgua(aguaGrupo);
+
+    const aireGrupo = this.matricesConHijos.find((m) => this.isMatriz(m, 'aire'));
+    if (aireGrupo?.hijos.some((h) => h.activo)) this.cargarEnsayosAire(aireGrupo);
+
+    const ruidoGrupo = this.matricesConHijos.find((m) => this.isMatriz(m, 'ruido'));
+    if (ruidoGrupo?.hijos.some((h) => h.activo)) this.cargarEnsayosRuido(ruidoGrupo);
   }
 
   private cargarEnsayosAgua(grupo: MatrizConHijosUI, hijoIdx?: number): void {

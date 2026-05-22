@@ -37,17 +37,30 @@
       @for (grupo of matricesConHijos; track $index; let gi = $index) {
         <div class="border-b last:border-0 border-gray-200 relative">
           <div
-            class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-gray-100 cursor-pointer hover:bg-slate-100 transition-colors"
+            class="flex items-center gap-2 px-3 py-2 border-b border-gray-100 cursor-pointer transition-colors"
+            [class.bg-blue-50]="tieneHijosActivos(grupo)"
+            [class.hover:bg-blue-100]="tieneHijosActivos(grupo)"
+            [class.bg-slate-50]="!tieneHijosActivos(grupo)"
+            [class.hover:bg-slate-100]="!tieneHijosActivos(grupo)"
             (click)="toggleMatrizCollapse(gi)"
           >
             <span
-              class="flex items-center justify-center w-5 h-5 rounded bg-[#1e3a8a] text-white text-[10px] font-bold transition-transform"
+              class="flex items-center justify-center w-5 h-5 rounded text-white text-[10px] font-bold transition-transform"
+              [class.bg-[#1e3a8a]]="tieneHijosActivos(grupo)"
               [class.rotate-180]="grupo.collapsed"
+              [class.bg-slate-400]="!tieneHijosActivos(grupo)"
               >&#8964;</span
             >
-            <span class="text-[11px] font-bold text-[#1e3a8a] uppercase ml-1">{{
-              grupo.matriz.nombre
-            }}</span>
+            <span
+              class="text-[11px] font-bold uppercase ml-1"
+              [class.text-[#1e3a8a]]="tieneHijosActivos(grupo)"
+              [class.text-slate-500]="!tieneHijosActivos(grupo)"
+            >{{ grupo.matriz.nombre }}</span>
+            @if (tieneHijosActivos(grupo)) {
+              <span class="ml-auto mr-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#1e3a8a] text-white uppercase tracking-wide">
+                {{ contarHijosActivos(grupo) }} {{ contarHijosActivos(grupo) === 1 ? 'activo' : 'activos' }}
+              </span>
+            }
           </div>
 
           @if (!grupo.collapsed) {
