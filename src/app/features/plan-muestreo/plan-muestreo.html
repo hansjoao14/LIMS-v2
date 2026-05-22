@@ -72,9 +72,17 @@
                       } @else {
                         <ul class="max-h-64 overflow-y-auto custom-scroll">
                           @for (sol of solicitudesFinalizadas; track sol.id_solicitud) {
-                            <li class="px-4 py-2.5 border-b border-slate-100 text-xs font-bold text-[#1e3a8a] cursor-pointer hover:bg-blue-50 transition-colors"
-                                (click)="seleccionarSolicitud(sol)">
-                              {{ sol.num_secuencial ?? '—' }}
+                            <li (click)="seleccionarSolicitud(sol)"
+                              class="px-3.5 py-2.5 border-b border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors flex items-center justify-between gap-2">
+                              <div class="flex flex-col min-w-0">
+                                <span class="font-bold text-[#1e3a8a] text-xs truncate">{{ sol.num_secuencial ?? '—' }}</span>
+                                <span class="text-[10px] text-slate-400 truncate">{{ sol.nombres_completos }}</span>
+                              </div>
+                              @if (sol.prioridad_id === 386) {
+                                <span class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded border border-red-400 text-red-700 bg-red-50">Urgente</span>
+                              } @else if (sol.prioridad_id === 385) {
+                                <span class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50">Normal</span>
+                              }
                             </li>
                           }
                         </ul>
@@ -205,56 +213,73 @@
           <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">Tipo de Matriz</h3>
         </div>
         <div class="mb-4 max-w-xs">
-          <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Seleccione el tipo de matriz</label>
-          <select class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors">
-            <option>Selecciona el tipo de matriz</option>
+          <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Seleccione el tipo de matriz <span class="text-red-500">*</span></label>
+          <select
+            class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-opacity duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+            [disabled]="loadingTipoAgua || !solicitudSeleccionada"
+            [class.opacity-50]="loadingTipoAgua"
+            [ngModel]="tipoAguaId"
+            (ngModelChange)="tipoAguaId = +$event; onTipoAguaChange()">
+            <option [ngValue]="null" disabled>Selecciona el tipo de matriz</option>
+            @for (tipo of tipoAguaOpciones; track tipo.id) {
+              <option [ngValue]="tipo.id">{{ tipo.nombre }}</option>
+            }
           </select>
         </div>
-        <div class="h-24 bg-gradient-to-r from-[#1e3a8a] to-[#2541b2] rounded-lg flex items-center px-8">
-          <div>
-            <p class="text-blue-200 text-[10px] font-bold uppercase tracking-widest mb-1">Tipo de Matriz</p>
-            <h2 class="text-white text-2xl font-bold">Aguas Superficiales</h2>
+        @if (tipoAguaId !== null) {
+          <div class="h-24 bg-gradient-to-r from-[#1e3a8a] to-[#2541b2] rounded-lg flex items-center px-8">
+            <div>
+              <p class="text-blue-200 text-[10px] font-bold uppercase tracking-widest mb-1">Tipo de Matriz</p>
+              <h2 class="text-white text-2xl font-bold">{{ tipoAguaNombre }}</h2>
+            </div>
           </div>
-        </div>
+        }
       </div>
 
       <!-- ANÁLISIS IN SITU -->
-      <div class="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200">
-          <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">Análisis Requerido In Situ</h3>
+      @if (tipoAguaId !== null) {
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden relative" [class.pointer-events-none]="loadingDetalle">
+          @if (loadingDetalle) {
+            <div class="absolute inset-0 z-10 flex items-center justify-center bg-white/60 rounded">
+              <span class="animate-spin h-5 w-5 border-2 border-[#1e3a8a] border-t-transparent rounded-full"></span>
+            </div>
+          }
+          <div class="px-6 py-4 border-b border-slate-200">
+            <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">Análisis Requerido In Situ</h3>
+          </div>
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
+                <th class="px-4 py-2.5 border-r border-slate-100 text-left">Análisis Requerido</th>
+                <th class="px-4 py-2.5 border-r border-slate-100 text-left">Ensayo</th>
+                <th class="px-4 py-2.5 border-r border-slate-100 text-left">Identificación</th>
+                <th class="px-4 py-2.5 border-r border-slate-100 text-left">Método Interno</th>
+                <th class="px-4 py-2.5 border-r border-slate-100 text-left">Método Referencia</th>
+                <th class="px-4 py-2.5 text-left">Unidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (detalleEnsayos.length === 0) {
+                <tr>
+                  <td colspan="6" class="px-4 py-8 text-center text-slate-400 italic text-sm">No hay ensayos para el tipo de matriz seleccionado.</td>
+                </tr>
+              }
+              @for (e of detalleEnsayos; track $index) {
+                <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <td class="px-4 py-3 border-r border-slate-100">
+                    <span class="inline-block bg-[#1e3a8a] text-white text-[10px] font-bold px-3 py-1 rounded-full">SI</span>
+                  </td>
+                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700">{{ e.analisis }}</td>
+                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700">{{ e.identificacion }}</td>
+                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">{{ e.metodoInterno }}</td>
+                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">{{ e.metodoReferencia }}</td>
+                  <td class="px-4 py-3 text-slate-400">—</td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
-        <table class="w-full text-sm border-collapse">
-          <thead>
-            <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
-              <th class="px-4 py-2.5 border-r border-slate-100 text-left">Análisis Requerido</th>
-              <th class="px-4 py-2.5 border-r border-slate-100 text-left">Ensayo</th>
-              <th class="px-4 py-2.5 border-r border-slate-100 text-left">Identificación</th>
-              <th class="px-4 py-2.5 border-r border-slate-100 text-left">Método Interno</th>
-              <th class="px-4 py-2.5 border-r border-slate-100 text-left">Método Referencia</th>
-              <th class="px-4 py-2.5 text-left">Unidad</th>
-            </tr>
-          </thead>
-          <tbody>
-            @if (detalleEnsayos.length === 0) {
-              <tr>
-                <td colspan="6" class="px-4 py-8 text-center text-slate-400 italic text-sm">—</td>
-              </tr>
-            }
-            @for (e of detalleEnsayos; track $index) {
-              <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 border-r border-slate-100">
-                  <span class="inline-block bg-[#1e3a8a] text-white text-[10px] font-bold px-3 py-1 rounded-full">SI</span>
-                </td>
-                <td class="px-4 py-3 border-r border-slate-100 text-slate-700">{{ e.analisis }}</td>
-                <td class="px-4 py-3 border-r border-slate-100 text-slate-700">{{ e.identificacion }}</td>
-                <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">{{ e.metodoInterno }}</td>
-                <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">{{ e.metodoReferencia }}</td>
-                <td class="px-4 py-3 text-slate-400">—</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+      }
 
       <!-- ANÁLISIS LABORATORIO -->
       <div class="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden">

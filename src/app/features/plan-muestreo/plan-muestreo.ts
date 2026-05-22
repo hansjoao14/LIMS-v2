@@ -7,7 +7,8 @@ import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
-import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
+import { ItemCatalogo, PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
+import { CatalogoService } from '../../services/catalogo.service';
 import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 
@@ -39,21 +40,32 @@ export interface GrupoLaboratorio {
   styleUrl: './plan-muestreo.css',
 })
 export class PlanMuestreo implements OnInit, OnDestroy {
-  panelAbierto = false;
-  loadingBusqueda = false;
+
+  // ── Tipo de agua (catálogo 18: Aguas Superficiales / Aguas Residuales) ───
+  private readonly CATALOGO_AGUA     = 18;
+  private readonly PERMITIDOS_AGUA   = [92, 93];
+  tipoAguaOpciones: ItemCatalogo[]   = [];
+  loadingTipoAgua                    = true;
+  tipoAguaId: number | null          = null;
+
+  // ── Búsqueda de solicitudes finalizadas ──────────────────────────────────
+  panelAbierto     = false;
+  loadingBusqueda  = false;
+  loadingDetalle   = false;
   private todasSolicitudes: ReportSolicitud[] = [];
-  solicitudesFinalizadas: ReportSolicitud[] = [];
+  solicitudesFinalizadas: ReportSolicitud[]   = [];
   meta: PaginationMeta | null = null;
   currentPage = 1;
   readonly PAGE_SIZE = 8;
   busqueda = '';
   solicitudSeleccionada: ReportSolicitud | null = null;
 
+  // ── Detalle de la solicitud ───────────────────────────────────────────────
   detalleFechaEmision = '';
-  detalleCliente = '';
-  detalleLatitud = '';
-  detalleLongitud = '';
-  detalleDireccion = '';
+  detalleCliente      = '';
+  detalleLatitud      = '';
+  detalleLongitud     = '';
+  detalleDireccion    = '';
   detalleEnsayos: EnsayoRow[] = [];
 
   ensayosLaboratorio: GrupoLaboratorio[] = [
@@ -79,19 +91,27 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   constructor(
     private reportSolicitudService: ReportSolicitudService,
     private solicitudDetalleService: SolicitudDetalleService,
+    private catalogoService: CatalogoService,
     private router: Router,
   ) {}
 
-  siguiente(): void {
-    this.router.navigate(['/plan-muestreo/paso2']);
+  ngOnInit(): void {
+    this.catalogoService.getItemsByCatalogoId(this.CATALOGO_AGUA)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.tipoAguaOpciones = res.data.filter(t => this.PERMITIDOS_AGUA.includes(t.id));
+          this.loadingTipoAgua  = false;
+        },
+      });
   }
-
-  ngOnInit(): void {}
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
+
+  // ── Panel de búsqueda ────────────────────────────────────────────────────
 
   abrirPanel(): void {
     this.panelAbierto = true;
@@ -131,20 +151,39 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   private aplicarFiltro(): void {
     const q = this.busqueda.trim().toLowerCase();
     this.solicitudesFinalizadas = q
-      ? this.todasSolicitudes.filter(s =>
-          (s.num_secuencial ?? '').toLowerCase().includes(q)
-        )
+      ? this.todasSolicitudes.filter(s => (s.num_secuencial ?? '').toLowerCase().includes(q))
       : this.todasSolicitudes;
   }
 
   seleccionarSolicitud(sol: ReportSolicitud): void {
     this.solicitudSeleccionada = sol;
     this.panelAbierto = false;
+    this.detalleEnsayos = [];
+  }
+
+  get tipoAguaNombre(): string {
+    return this.tipoAguaOpciones.find(t => t.id === this.tipoAguaId)?.nombre ?? '';
+  }
+
+  onTipoAguaChange(): void {
+    if (!this.solicitudSeleccionada) return;
+    this.cargarDetalle();
+  }
+
+  private cargarDetalle(): void {
+    this.loadingDetalle = true;
     this.solicitudDetalleService
-      .getSolicitudDetalle(sol.id_solicitud)
+      .getSolicitudDetalle(this.solicitudSeleccionada!.id_solicitud)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(detalle => {
-        this.poblarDetalle(detalle);
+      .subscribe({
+        next: (detalle) => {
+          this.poblarDetalle(detalle);
+          this.loadingDetalle = false;
+        },
+        error: () => {
+          this.loadingDetalle = false;
+          Swal.fire('Error', 'No se pudo cargar el detalle de la solicitud', 'error');
+        },
       });
   }
 
@@ -163,25 +202,32 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.detalleLongitud  = attr('val_long');
     this.detalleDireccion = attr('val_dir_op');
 
-    this.detalleEnsayos = (f.ensayos ?? []).map(e => {
-      const parts = (e.metodo ?? '').split(', ');
-      return {
-        analisis:        e.analisis ?? '',
-        identificacion:  e.identificacion ?? '',
-        metodoInterno:   parts[0] ?? '',
-        metodoReferencia: parts[1] ?? '',
-      };
-    });
+    this.detalleEnsayos = (f.ensayos ?? [])
+      .filter(e => this.tipoAguaId === null || e.ctambiental_id === this.tipoAguaId)
+      .map(e => {
+        const parts = (e.metodo ?? '').split(', ');
+        return {
+          analisis:         e.analisis ?? '',
+          identificacion:   e.identificacion ?? '',
+          metodoInterno:    parts[0] ?? '',
+          metodoReferencia: parts[1] ?? '',
+        };
+      });
   }
 
   limpiarSolicitud(): void {
     this.solicitudSeleccionada = null;
-    this.busqueda = '';
-    this.detalleFechaEmision = '';
-    this.detalleCliente      = '';
-    this.detalleLatitud      = '';
-    this.detalleLongitud     = '';
-    this.detalleDireccion    = '';
-    this.detalleEnsayos      = [];
+    this.tipoAguaId            = null;
+    this.busqueda              = '';
+    this.detalleFechaEmision   = '';
+    this.detalleCliente        = '';
+    this.detalleLatitud        = '';
+    this.detalleLongitud       = '';
+    this.detalleDireccion      = '';
+    this.detalleEnsayos        = [];
+  }
+
+  siguiente(): void {
+    this.router.navigate(['/plan-muestreo/paso2']);
   }
 }
