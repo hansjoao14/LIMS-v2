@@ -76,8 +76,14 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // Si estadoPrevio llega después de que el catálogo ya cargó (carga async del padre), re-aplicar
-    if (changes['estadoPrevio'] && !this.loading && this.matricesConHijos.length > 0) {
+    const cambio = changes['estadoPrevio'];
+    if (!cambio || this.loading || this.matricesConHijos.length === 0) return;
+
+    const anterior = (cambio.previousValue as MatrizConHijosUI[]) ?? [];
+    const actual = (cambio.currentValue as MatrizConHijosUI[]) ?? [];
+
+    // Solo aplicar cuando el estadoPrevio pasa de vacío a tener datos (primera carga en edición)
+    if (anterior.length === 0 && actual.length > 0) {
       this.aplicarEstadoPrevio();
     }
   }
