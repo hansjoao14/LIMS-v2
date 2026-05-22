@@ -93,10 +93,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.zone.run(() => (this.cargandoItems = false));
-          this.toastr.showError(
-            err?.error?.message ?? 'No se pudo cargar los items del catálogo',
-            'Error',
-          );
+          this.toastr.showError('No se pudo cargar los items del catálogo', 'Error');
         },
       });
   }
@@ -123,10 +120,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
       .subscribe({
         next: ({ data }) => (this.tiposDato = data),
         error: (err) =>
-          this.toastr.showError(
-            err?.error?.message ?? 'No se pudo cargar los tipos de dato',
-            'Error',
-          ),
+          this.toastr.showError('No se pudo cargar los tipos de dato', 'Error'),
       });
   }
 
@@ -141,10 +135,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
       .subscribe({
         next: ({ data }) => (this.tiposRespuesta = data),
         error: (err) =>
-          this.toastr.showError(
-            err?.error?.message ?? 'No se pudo cargar los tipos de respuesta',
-            'Error',
-          ),
+          this.toastr.showError('No se pudo cargar los tipos de respuesta', 'Error'),
       });
 
     this.cataloService
@@ -153,7 +144,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
       .subscribe({
         next: ({ data }) => (this.jornadas = data),
         error: (err) =>
-          this.toastr.showError(err?.error?.message ?? 'No se pudo cargar las jornadas', 'Error'),
+          this.toastr.showError('No se pudo cargar las jornadas', 'Error'),
       });
 
     this.cataloService
@@ -162,7 +153,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (data) => (this.catalogos = data),
         error: (err) =>
-          this.toastr.showError(err?.error?.message ?? 'No se pudo cargar los catálogos', 'Error'),
+          this.toastr.showError('No se pudo cargar los catálogos', 'Error'),
       });
   }
 
@@ -192,7 +183,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.zone.run(() => {
           this.guardando = false;
-          this.toastr.showError(err?.error?.message ?? 'No se pudo guardar el atributo.', 'Error');
+          this.toastr.showError('No se pudo guardar el atributo.', 'Error');
         });
       },
     });

@@ -91,8 +91,7 @@ export class CompletarPerfilComponent implements OnInit {
           this.router.navigate(['/dashboard']);
         });
       },
-      error: (err) => {
-        console.error('Error al registrar perfil', err);
+      error: (_err) => {
         Swal.fire({
           icon: 'error',
           title: 'Error',

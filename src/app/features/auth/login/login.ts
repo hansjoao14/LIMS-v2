@@ -92,7 +92,6 @@ export class Login implements OnInit, OnDestroy {
       })
       .catch((err) => {
         this.spinnerComponent.hideSpinner();
-        console.error('Error en login:', err);
         Swal.fire({
           icon: 'error',
           title: 'Error de autenticación',

@@ -46,7 +46,6 @@ export const tokenRefreshInterceptor: HttpInterceptorFn = (
           error.error?.error === 'Token is not active');
 
       if (isUnauthorized) {
-        console.warn('🛑 Error de Auth detectado:', error.error);
         return handleTokenRefresh(authReq, next, authService);
       }
 

@@ -526,8 +526,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     } catch (err: any) {
       this.zone.run(() => {
         this.saving = false;
-        const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo guardar el registro';
-        this.toastrAlert.showError(mensaje, 'Error');
+        this.toastrAlert.showError('No se pudo guardar el registro', 'Error');
       });
     }
   }
@@ -570,8 +569,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     } catch (err: any) {
       this.zone.run(() => {
         this.saving = false;
-        const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo actualizar el registro';
-        this.toastrAlert.showError(mensaje, 'Error');
+        this.toastrAlert.showError('No se pudo actualizar el registro', 'Error');
       });
     }
   }

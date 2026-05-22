@@ -56,7 +56,6 @@ export class Header {
         // Parseamos el string '["manager","admin","gestor"]' a un array real
         this.userRoles = JSON.parse(rolesRaw);
       } catch (e) {
-        console.error('Error parseando roles:', e);
         this.userRoles = [];
       }
     }

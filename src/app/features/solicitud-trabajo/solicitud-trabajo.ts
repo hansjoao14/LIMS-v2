@@ -466,12 +466,10 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       });
     } catch (err: any) {
       this.isGuardando = false;
-      const mensaje =
-        err?.error?.message ?? err?.message ?? 'No se pudo guardar los valores de la solicitud';
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: mensaje,
+        text: 'No se pudo guardar los valores de la solicitud',
         confirmButtonColor: this.COLOR_PRIMARIO,
       });
     }
@@ -508,12 +506,10 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       });
     } catch (err: any) {
       this.isGuardando = false;
-      const mensaje =
-        err?.error?.message ?? err?.message ?? 'No se pudo guardar los ensayos de la solicitud';
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: mensaje,
+        text: 'No se pudo guardar los ensayos de la solicitud',
         confirmButtonColor: this.COLOR_PRIMARIO,
       });
     }
@@ -554,11 +550,10 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     } catch (err: any) {
       this.zone.run(() => {
         this.isCreandoSolicitud = false;
-        const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo registrar la solicitud';
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: mensaje,
+          text: 'No se pudo registrar la solicitud',
           confirmButtonColor: this.COLOR_PRIMARIO,
         });
       });
@@ -768,11 +763,10 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     } catch (err: any) {
       this.zone.run(() => {
         this.isGuardando = false;
-        const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo finalizar la solicitud';
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: mensaje,
+          text: 'No se pudo finalizar la solicitud',
           confirmButtonColor: this.COLOR_PRIMARIO,
         });
       });

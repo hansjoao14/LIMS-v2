@@ -57,7 +57,7 @@ export class AdminFormularios implements OnInit, OnDestroy {
         next: ({ data }) => (this.tiposFormulario = data),
         error: (err) =>
           this.toastr.showError(
-            err?.error?.message ?? 'No se pudo cargar los tipos de formulario',
+            'No se pudo cargar los tipos de formulario',
             'Error',
           ),
       });
@@ -78,7 +78,7 @@ export class AdminFormularios implements OnInit, OnDestroy {
         error: (err) => {
           this.loading = false;
           this.toastr.showError(
-            err?.error?.message ?? 'No se pudo cargar la lista de formularios',
+            'No se pudo cargar la lista de formularios',
             'Error',
           );
         },
@@ -137,7 +137,7 @@ export class AdminFormularios implements OnInit, OnDestroy {
           this.zone.run(() => {
             this.guardando = false;
             this.toastr.showError(
-              err?.error?.message ?? 'No se pudo crear el formulario.',
+              'No se pudo crear el formulario.',
               'Error',
             );
           });

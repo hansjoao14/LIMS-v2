@@ -80,7 +80,6 @@ export class AuthService {
       this.startAutoRefresh();
       return response;
     } catch (error: any) {
-      console.error('❌ Error de autenticación:', error);
       throw error;
     }
   }
@@ -113,7 +112,7 @@ export class AuthService {
 
     if (refresh_token) {
       this.http.post(`${this.API_URL}/logout`, { refresh_token }).subscribe({
-        error: (err) => console.warn('Backend logout failed', err)
+        error: () => {}
       });
     }
   }
@@ -159,7 +158,6 @@ export class AuthService {
       localStorage.setItem('user_roles', JSON.stringify(profile.roles));
 
     } catch (error) {
-      console.error('Error decodificando token:', error);
     }
   }
 

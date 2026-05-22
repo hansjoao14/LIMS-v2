@@ -60,7 +60,7 @@ export class FormularioDetalle implements OnChanges, OnDestroy {
         },
         error: (err) => {
           this.zone.run(() => (this.loading = false));
-          this.toastr.showError(err?.error?.message ?? 'No se pudo cargar los atributos del formulario', 'Error');
+          this.toastr.showError('No se pudo cargar los atributos del formulario', 'Error');
         },
       });
   }

@@ -82,7 +82,7 @@ export class KycloackBackendApiService {
           this.usuarioActualSignal.set(res.rows[0]);
         }
       },
-      error: (err) => console.error('Error cargando usuario global', err),
+      error: () => {},
     });
   }
 
@@ -233,7 +233,6 @@ export class KycloackBackendApiService {
       const payload = token.split('.')[1];
       return JSON.parse(window.atob(payload));
     } catch (e) {
-      console.error('Error al decodificar el token', e);
       return null;
     }
   }

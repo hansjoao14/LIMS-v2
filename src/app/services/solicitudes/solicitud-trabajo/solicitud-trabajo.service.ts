@@ -104,19 +104,16 @@ export class SolicitudService {
 
   // TODO: reemplazar con PUT /solicitud/:id { ctestado_id: 387 }
   autorizarSolicitudById(id: string): Observable<void> {
-    console.log('[ListaSolicitudes] autorizarSolicitud → id:', id);
     return of(undefined).pipe(delay(400));
   }
 
   // TODO: reemplazar con PUT /solicitud/:id { ctestado_id: 51, motivo_rechazo: motivo }
   rechazarSolicitudById(id: string, motivo: string): Observable<void> {
-    console.log('[ListaSolicitudes] rechazarSolicitud → id:', id, 'motivo:', motivo);
     return of(undefined).pipe(delay(400));
   }
 
   // TODO: reemplazar con DELETE /solicitud/:id
   eliminarSolicitudById(id: string): Observable<void> {
-    console.log('[ListaSolicitudes] eliminarSolicitud → id:', id);
     return of(undefined).pipe(delay(400));
   }
 }

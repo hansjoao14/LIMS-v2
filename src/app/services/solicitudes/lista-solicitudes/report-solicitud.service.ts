@@ -322,49 +322,41 @@ export class ReportSolicitudService {
 
   // TODO: reemplazar con mutación GraphQL real cuando el endpoint esté disponible
   eliminarVehiculo(id: string): Observable<void> {
-    console.log('[HorariosLaborales] eliminarVehiculo → id:', id);
     return of(undefined).pipe(delay(400));
   }
 
   // TODO: reemplazar con mutación GraphQL real cuando el endpoint esté disponible
   actualizarVehiculo(id: string, valores: Record<string, unknown>): Observable<void> {
-    console.log('[HorariosLaborales] actualizarVehiculo → id:', id, 'valores:', valores);
     return of(undefined).pipe(delay(400));
   }
 
   // TODO: reemplazar con mutación GraphQL real cuando el endpoint esté disponible
   autorizarVehiculo(id: string): Observable<void> {
-    console.log('[HorariosLaborales] autorizarVehiculo → id:', id);
     return of(undefined).pipe(delay(400));
   }
 
   // TODO: reemplazar con mutación GraphQL real cuando el endpoint esté disponible
   rechazarVehiculo(id: string, motivo: string): Observable<void> {
-    console.log('[HorariosLaborales] rechazarVehiculo → id:', id, 'motivo:', motivo);
     return of(undefined).pipe(delay(400));
   }
 
   // TODO: reemplazar con mutación GraphQL real cuando el endpoint esté disponible
   eliminarContraloria(id: string): Observable<void> {
-    console.log('[PorContraloria] eliminarContraloria → id:', id);
     return of(undefined).pipe(delay(400));
   }
 
   // TODO: reemplazar con mutación GraphQL real cuando el endpoint esté disponible
   actualizarContraloria(id: string, valores: Record<string, unknown>): Observable<void> {
-    console.log('[PorContraloria] actualizarContraloria → id:', id, 'valores:', valores);
     return of(undefined).pipe(delay(400));
   }
 
   // TODO: reemplazar con mutación GraphQL real cuando el endpoint esté disponible
   autorizarContraloria(id: string): Observable<void> {
-    console.log('[PorContraloria] autorizarContraloria → id:', id);
     return of(undefined).pipe(delay(400));
   }
 
   // TODO: reemplazar con mutación GraphQL real cuando el endpoint esté disponible
   rechazarContraloria(id: string, motivo: string): Observable<void> {
-    console.log('[PorContraloria] rechazarContraloria → id:', id, 'motivo:', motivo);
     return of(undefined).pipe(delay(400));
   }
 }
