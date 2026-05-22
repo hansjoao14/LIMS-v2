@@ -16,6 +16,8 @@ export interface ReportSolicitud {
   num_secuencial: string | null;
   periodo_id: number;
   periodo_nombre: string;
+  prioridad_id: number | null;
+  prioridad_nombre: string | null;
   secuencial_id: string | null;
   usuario_actualizacion: string | null;
   usuario_creacion: string;

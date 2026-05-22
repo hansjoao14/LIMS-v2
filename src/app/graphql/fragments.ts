@@ -45,6 +45,8 @@ export const REPORT_SOLICITUD_FIELDS = `
   num_secuencial
   periodo_id
   periodo_nombre
+  prioridad_id
+  prioridad_nombre
   secuencial_id
   usuario_actualizacion
   usuario_creacion

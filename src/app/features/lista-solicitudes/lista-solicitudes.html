@@ -98,9 +98,19 @@
                       }
                     </td>
                     <td class="px-3 py-2.5 border-r border-slate-100 text-center">
-                      <span class="block w-full text-center py-0.5 border border-orange-400 text-orange-700 font-bold text-[10px] rounded bg-orange-50">
-                        Alta
-                      </span>
+                      @if (doc.prioridad_id === 386) {
+                        <span class="block w-full text-center py-0.5 border border-red-400 text-red-700 font-bold text-[10px] rounded bg-red-50">
+                          Urgente
+                        </span>
+                      } @else if (doc.prioridad_id === 385) {
+                        <span class="block w-full text-center py-0.5 border border-slate-300 text-slate-600 font-bold text-[10px] rounded bg-slate-50">
+                          Normal
+                        </span>
+                      } @else {
+                        <span class="block w-full text-center py-0.5 border border-slate-200 text-slate-400 font-bold text-[10px] rounded bg-slate-50">
+                          {{ doc.prioridad_nombre ?? '—' }}
+                        </span>
+                      }
                     </td>
                     <td class="px-2 py-2.5 text-center">
                       <div class="flex items-center justify-center gap-1.5">
