@@ -71,8 +71,16 @@
                     <ul class="max-h-72 overflow-y-auto custom-scroll">
                       @for (sol of solicitudesFinalizadas; track sol.id_solicitud) {
                         <li (click)="seleccionarSolicitud(sol)"
-                          class="px-3.5 py-2.5 border-b border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors">
-                          <span class="font-bold text-[#1e3a8a] text-xs">{{ sol.num_secuencial ?? '—' }}</span>
+                          class="px-3.5 py-2.5 border-b border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors flex items-center justify-between gap-2">
+                          <div class="flex flex-col min-w-0">
+                            <span class="font-bold text-[#1e3a8a] text-xs truncate">{{ sol.num_secuencial ?? '—' }}</span>
+                            <span class="text-[10px] text-slate-400 truncate">{{ sol.nombres_completos }}</span>
+                          </div>
+                          @if (sol.prioridad_id === 386) {
+                            <span class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded border border-red-400 text-red-700 bg-red-50">Urgente</span>
+                          } @else if (sol.prioridad_id === 385) {
+                            <span class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50">Normal</span>
+                          }
                         </li>
                       }
                     </ul>
