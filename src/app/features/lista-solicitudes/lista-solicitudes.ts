@@ -57,6 +57,8 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
     return role ? hasPermission(MenuKey.LISTA_SOLICITUDES, role, 'eliminar') : false;
   });
 
+  canFirmar = computed(() => this.userAppRole() === AppRole.RESPONSABLE_LAB);
+
   constructor(
     private reportSolicitudService: ReportSolicitudService,
     private solicitudService: SolicitudService,

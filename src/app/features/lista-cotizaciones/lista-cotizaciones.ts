@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subject, takeUntil, finalize } from 'rxjs';
+import { Subject, takeUntil, finalize, timeout } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
@@ -28,7 +28,6 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
   solicitudes: ReportSolicitud[] = [];
   meta: PaginationMeta | null = null;
   loading = true;
-  procesandoId: string | null = null;
   currentPage = 1;
   readonly PAGE_SIZE = 10;
 
@@ -134,7 +133,9 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
     if (!result.isConfirmed || !result.value) return;
 
     const prioridadId = Number(result.value);
-    this.procesandoId = doc.id_solicitud;
+
+    // Remove row immediately — UI must not wait for the server
+    this.solicitudes = this.solicitudes.filter(s => s.id_solicitud !== doc.id_solicitud);
 
     this.solicitudService
       .actualizarSolicitud(doc.id_solicitud, {
@@ -149,10 +150,7 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
         estado: doc.estado_logico_solicitud,
         num_secuencial: doc.num_secuencial,
       })
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => { this.procesandoId = null; }),
-      )
+      .pipe(timeout(10000), takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.cargarPagina(this.currentPage);
@@ -166,6 +164,7 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
           });
         },
         error: () => {
+          this.cargarPagina(this.currentPage);
           Swal.fire('Error', 'No se pudo autorizar la solicitud', 'error');
         },
       });
@@ -185,7 +184,8 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
 
     if (!isConfirmed) return;
 
-    this.procesandoId = doc.id_solicitud;
+    // Remove row immediately — UI must not wait for the server
+    this.solicitudes = this.solicitudes.filter(s => s.id_solicitud !== doc.id_solicitud);
 
     this.solicitudService
       .actualizarSolicitud(doc.id_solicitud, {
@@ -199,10 +199,7 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
         estado: doc.estado_logico_solicitud,
         num_secuencial: doc.num_secuencial,
       })
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => { this.procesandoId = null; }),
-      )
+      .pipe(timeout(10000), takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.cargarPagina(this.currentPage);
@@ -216,6 +213,7 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
           });
         },
         error: () => {
+          this.cargarPagina(this.currentPage);
           Swal.fire('Error', 'No se pudo rechazar la solicitud', 'error');
         },
       });

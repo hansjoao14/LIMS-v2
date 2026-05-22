@@ -129,7 +129,7 @@
                               </svg>
                             }
                           </button>
-                        } @else if (doc.ctestado_id === 387) {
+                        } @else if (doc.ctestado_id === 387 && canFirmar()) {
                           <button
                             type="button"
                             (click)="abrirPanelFirma(doc)"
