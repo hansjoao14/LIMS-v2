@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, FormsModule } from '@angular/forms';
-import { Subject, takeUntil, forkJoin } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
@@ -93,34 +93,37 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    forkJoin({
-      tipos:         this.catalogoService.getItemsByCatalogoId(this.CATALOGO_TIPO_ENSAYO),
-      usoSuelo:      this.catalogoService.getItemsByCatalogoId(this.CATALOGO_USO_SUELO),
-      caracterizacion: this.catalogoService.getItemsByCatalogoId(this.CATALOGO_CARACTERIZACION),
-    })
-    .pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: ({ tipos, usoSuelo, caracterizacion }) => {
-        this.tiposEnsayo           = tipos.data.filter(t => this.TIPOS_ENSAYO_PERMITIDOS.includes(t.id));
-        this.usoSueloOpciones      = usoSuelo.data;
-        this.caracterizacionOpciones = caracterizacion.data;
+    this.catalogoService.getItemsByCatalogoId(this.CATALOGO_TIPO_ENSAYO)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: (res) => {
+        this.tiposEnsayo  = res.data.filter(t => this.TIPOS_ENSAYO_PERMITIDOS.includes(t.id));
         this.loadingTipos = false;
-      },
-      error: () => {
-        this.loadingTipos = false;
-        Swal.fire('Error', 'No se pudieron cargar los catálogos', 'error');
-      },
-    });
+      }});
+
+    this.catalogoService.getItemsByCatalogoId(this.CATALOGO_USO_SUELO)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: (res) => { this.usoSueloOpciones = res.data; }});
+
+    this.catalogoService.getItemsByCatalogoId(this.CATALOGO_CARACTERIZACION)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: (res) => { this.caracterizacionOpciones = res.data; }});
   }
 
   onTipoEnsayoChange(): void {
     if (!this.solicitudSeleccionada) return;
+    this.loadingDetalle = true;
     this.solicitudDetalleService
       .getSolicitudDetalle(this.solicitudSeleccionada.id_solicitud)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (detalle) => this.poblarFormulario(detalle),
-        error: () => Swal.fire('Error', 'No se pudo recargar los ensayos', 'error'),
+        next: (detalle) => {
+          this.poblarFormulario(detalle);
+          this.loadingDetalle = false;
+        },
+        error: () => {
+          this.loadingDetalle = false;
+          Swal.fire('Error', 'No se pudo recargar los ensayos', 'error');
+        },
       });
   }
 
