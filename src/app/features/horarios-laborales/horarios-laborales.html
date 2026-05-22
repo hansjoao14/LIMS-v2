@@ -1,5 +1,6 @@
-<div class="p-6 bg-slate-50 min-h-screen text-slate-800 font-sans pb-20">
-  <div class="max-w-7xl mx-auto space-y-6">
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
+    <div class="animate-in fade-in">
 
     <app-page-header
       breadcrumbSection="Gestión de Vehículos"
@@ -9,10 +10,10 @@
       edicion="12"
     />
 
-    <!-- ── Formulario ──────────────────────────────────────────────────────── -->
+    <!-- ── Form card (Nivel 1A) ──────────────────────────────────────────────── -->
     @if (canCreate() || editingRecord) {
       <div
-        class="bg-white p-8 rounded shadow-sm border border-slate-200 animate-in fade-in"
+        class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 mb-6"
         [class.border-amber-400]="editingRecord"
       >
 
@@ -37,15 +38,17 @@
           }
 
           <form [formGroup]="form" (ngSubmit)="guardar()">
-            <h3 class="text-lg font-bold text-[#1d2b64] mb-6 uppercase tracking-tight">
-              Programación semanal de vehículos
-            </h3>
+
+            <!-- Step-header (Nivel 2A) -->
+            <div class="mb-6 border-b border-slate-300 pb-4">
+              <h3 class="text-lg font-bold text-[#1e3a8a] mb-1">Programación semanal de vehículos</h3>
+            </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-6">
               @for (field of visibleFields; track field.id) {
                 <div class="flex flex-col" [ngClass]="getFieldSpanClass(field.key)">
                   <label
-                    class="text-[12px] font-bold text-[#1d2b64] mb-2"
+                    class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
                     [class.text-red-600]="esCampoInvalido(field.key)"
                   >
                     {{ field.label }}
@@ -57,7 +60,7 @@
                   @if (field.controlType === 'employee-list') {
                     <select
                       [formControlName]="field.key"
-                      class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
+                      class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
                       [class.border-red-500]="esCampoInvalido(field.key)"
                     >
                       <option value="">Seleccione un funcionario...</option>
@@ -68,7 +71,7 @@
                   } @else if (field.controlType === 'select') {
                     <select
                       [formControlName]="field.key"
-                      class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
+                      class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
                       [class.border-red-500]="esCampoInvalido(field.key)"
                     >
                       <option value="">Seleccione...</option>
@@ -82,7 +85,7 @@
                       rows="3"
                       [placeholder]="field.placeholder"
                       [maxlength]="field.maxLength ?? 9999"
-                      class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-3 rounded text-sm resize-none outline-none focus:border-[#1d2b64] transition-colors"
+                      class="w-full border border-slate-300 bg-white text-slate-700 p-3 rounded text-sm resize-none outline-none focus:border-[#1e3a8a] transition-colors"
                       [class.border-red-500]="esCampoInvalido(field.key)"
                     ></textarea>
                   } @else {
@@ -92,7 +95,7 @@
                       [placeholder]="field.placeholder"
                       [attr.min]="getInputMin(field)"
                       [attr.max]="getInputMax(field)"
-                      class="w-full bg-[#f1f4f8] border border-slate-200 text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1d2b64] transition-colors"
+                      class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
                       [class.border-red-500]="esCampoInvalido(field.key)"
                     />
                   }
@@ -104,21 +107,20 @@
               }
             </div>
 
-            <div class="mt-10 flex items-center gap-4">
+            <!-- Nav buttons estándar -->
+            <div class="flex items-center gap-4 pt-4 border-t border-slate-300 mt-8">
               <button
                 type="submit"
                 [disabled]="saving"
-                class="px-10 py-3 rounded text-sm font-bold uppercase tracking-widest shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed text-white"
+                class="px-8 py-2.5 rounded text-sm font-bold shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed text-white flex items-center gap-2"
                 [class.bg-amber-500]="editingRecord"
                 [class.hover:bg-amber-600]="editingRecord"
-                [class.bg-[#1d2b64]]="!editingRecord"
-                [class.hover:bg-[#2a3c85]]="!editingRecord"
+                [class.bg-[#1e3a8a]]="!editingRecord"
+                [class.hover:bg-[#2541b2]]="!editingRecord"
               >
                 @if (saving) {
-                  <span class="flex items-center gap-2">
-                    <span class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                    {{ editingRecord ? 'Actualizando...' : 'Guardando...' }}
-                  </span>
+                  <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                  {{ editingRecord ? 'Actualizando...' : 'Guardando...' }}
                 } @else {
                   {{ editingRecord ? 'ACTUALIZAR PROGRAMACIÓN' : 'GUARDAR PROGRAMACIÓN' }}
                 }
@@ -128,244 +130,236 @@
                 <button
                   type="button"
                   (click)="cancelarEdicion()"
-                  class="px-6 py-3 rounded text-sm font-semibold text-slate-600 border border-slate-300 hover:bg-slate-100 transition-colors"
+                  class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all"
                 >
                   Cancelar
                 </button>
               }
             </div>
+
           </form>
         }
       </div>
     }
 
-    <!-- ── Tabla ───────────────────────────────────────────────────────────── -->
-    <div class="bg-white p-8 rounded shadow-sm border border-slate-200 min-h-[70vh]">
-      <div class="animate-in fade-in">
+    <!-- ── Table card (Patrón B: sin padding, overflow-hidden) ──────────────── -->
+    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto custom-scroll">
+        <table class="w-full text-sm border-collapse table-fixed">
+          <colgroup>
+            <col class="w-[38px]">
+            <col class="w-[88px]">
+            <col>
+            <col class="w-[115px]">
+            <col class="w-[58px]">
+            <col class="w-[58px]">
+            <col class="w-[105px]">
+            <col class="w-[62px]">
+            <col class="w-[100px]">
+            <col class="w-[95px]">
+            @if (hasAnyAction) {
+              <col class="w-[122px]">
+            }
+          </colgroup>
 
-
-        <div class="border border-slate-200 rounded overflow-x-auto">
-          <table class="w-full text-sm border-collapse table-fixed">
-            <colgroup>
-              <col class="w-[38px]">
-              <col class="w-[88px]">
-              <col>
-              <col class="w-[115px]">
-              <col class="w-[58px]">
-              <col class="w-[58px]">
-              <col class="w-[105px]">
-              <col class="w-[62px]">
-              <col class="w-[100px]">
-              <col class="w-[95px]">
+          <thead>
+            <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
+              <th class="px-3 py-2.5 border-r border-slate-100 text-center">No.</th>
+              <th class="px-3 py-2.5 border-r border-slate-100 text-center">Fecha</th>
+              <th class="px-3 py-2.5 border-r border-slate-100 text-left">Sector / Destino</th>
+              <th class="px-3 py-2.5 border-r border-slate-100 text-left">Actividad</th>
+              <th class="px-3 py-2.5 border-r border-slate-100 text-center">Salida</th>
+              <th class="px-3 py-2.5 border-r border-slate-100 text-center">Retorno</th>
+              <th class="px-3 py-2.5 border-r border-slate-100 text-left">Funcionario</th>
+              <th class="px-3 py-2.5 border-r border-slate-100 text-center">Ocupantes</th>
+              <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
               @if (hasAnyAction) {
-                <col class="w-[122px]">
-              }
-            </colgroup>
-
-            <thead>
-              <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
-                <th class="px-3 py-2.5 border-r border-slate-100 text-center">No.</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Fecha</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-left">Sector / Destino</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-left">Actividad</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Salida</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Retorno</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-left">Funcionario</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Ocupantes</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
-                @if (hasAnyAction) {
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Observaciones</th>
-                  <th class="px-2 py-2.5 text-center">Acciones</th>
-                } @else {
-                  <th class="px-3 py-2.5 text-left">Observaciones</th>
-                }
-              </tr>
-            </thead>
-
-            <tbody>
-              @if (loadingTabla) {
-                @for (_ of [1,2,3,4,5,6,7,8]; track $index) {
-                  <tr class="border-b border-slate-200 animate-pulse">
-                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4 mx-auto"></div></td>
-                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4 mx-auto"></div></td>
-                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-2/3"></div></td>
-                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
-                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-2/3 mx-auto"></div></td>
-                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-2/3 mx-auto"></div></td>
-                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-4/5"></div></td>
-                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-1/2 mx-auto"></div></td>
-                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-5 bg-slate-200 rounded w-4/5 mx-auto"></div></td>
-                    @if (hasAnyAction) {
-                      <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
-                      <td class="px-2 py-3">
-                        <div class="flex items-center justify-center gap-1.5">
-                          <div class="h-8 w-8 bg-slate-200 rounded"></div>
-                          <div class="h-8 w-8 bg-slate-200 rounded"></div>
-                        </div>
-                      </td>
-                    } @else {
-                      <td class="px-3 py-3"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
-                    }
-                  </tr>
-                }
+                <th class="px-3 py-2.5 border-r border-slate-100 text-left">Observaciones</th>
+                <th class="px-2 py-2.5 text-center">Acciones</th>
               } @else {
-                @if (solicitudesAgrupadas.length === 0) {
+                <th class="px-3 py-2.5 text-left">Observaciones</th>
+              }
+            </tr>
+          </thead>
+
+          <tbody>
+            @if (loadingTabla) {
+              @for (_ of [1,2,3,4,5,6,7,8]; track $index) {
+                <tr class="border-b border-slate-200 animate-pulse">
+                  <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4 mx-auto"></div></td>
+                  <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4 mx-auto"></div></td>
+                  <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-2/3"></div></td>
+                  <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
+                  <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-2/3 mx-auto"></div></td>
+                  <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-2/3 mx-auto"></div></td>
+                  <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-4/5"></div></td>
+                  <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-1/2 mx-auto"></div></td>
+                  <td class="px-3 py-3 border-r border-slate-100"><div class="h-5 bg-slate-200 rounded w-4/5 mx-auto"></div></td>
+                  @if (hasAnyAction) {
+                    <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
+                    <td class="px-2 py-3">
+                      <div class="flex items-center justify-center gap-1.5">
+                        <div class="h-8 w-8 bg-slate-200 rounded"></div>
+                        <div class="h-8 w-8 bg-slate-200 rounded"></div>
+                      </div>
+                    </td>
+                  } @else {
+                    <td class="px-3 py-3"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
+                  }
+                </tr>
+              }
+            } @else {
+              @if (solicitudesAgrupadas.length === 0) {
+                <tr>
+                  <td [attr.colspan]="hasAnyAction ? 11 : 10" class="p-10 text-slate-400 italic text-center">
+                    No hay vehículos programados.
+                  </td>
+                </tr>
+              } @else {
+                @for (grupo of solicitudesAgrupadas; track grupo.groupKey) {
+
+                  <!-- Fila de grupo de día -->
                   <tr>
-                    <td [attr.colspan]="hasAnyAction ? 11 : 10" class="p-10 text-slate-400 italic text-center">
-                      No hay vehículos programados.
+                    <td
+                      [attr.colspan]="hasAnyAction ? 11 : 10"
+                      class="py-3 px-4 text-center font-bold italic text-[#1e3a8a] bg-blue-50/40 border-y border-slate-200 text-sm tracking-widest uppercase"
+                    >
+                      {{ grupo.diaLabel }}
                     </td>
                   </tr>
-                } @else {
-                  @for (grupo of solicitudesAgrupadas; track grupo.groupKey) {
 
-                    <tr>
-                      <td
-                        [attr.colspan]="hasAnyAction ? 11 : 10"
-                        class="py-3 px-4 text-center font-bold italic text-[#1d2b64] bg-[#eef0f8] border-y border-slate-200 text-sm tracking-widest uppercase"
-                      >
-                        {{ grupo.diaLabel }}
+                  @for (sol of grupo.items; track sol.id) {
+                    <tr
+                      class="border-b border-slate-200 hover:bg-slate-50 transition-colors"
+                      [class.bg-amber-50]="editingRecord?.id === sol.id"
+                    >
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-center font-mono text-slate-400 text-xs">
+                        {{ (currentPage - 1) * PAGE_SIZE + $any(sol['_flatIdx']) + 1 }}
                       </td>
-                    </tr>
-
-                    @for (sol of grupo.items; track sol.id) {
-                      <tr
-                        class="border-b border-slate-200 hover:bg-slate-50 transition-colors"
-                        [class.bg-amber-50]="editingRecord?.id === sol.id"
-                      >
-                        <td class="px-3 py-2.5 border-r border-slate-100 text-center font-mono text-slate-400 text-xs">
-                          {{ (currentPage - 1) * PAGE_SIZE + $any(sol['_flatIdx']) + 1 }}
-                        </td>
-                        <td class="px-3 py-2.5 border-r border-slate-100 text-center text-slate-500 whitespace-nowrap text-xs">
-                          {{ getFieldValue(sol, 'val_fecha_programacion') }}
-                        </td>
-                        <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
-                            [title]="$any(getFieldValue(sol, 'val_destino_direccion'))">
-                          {{ getFieldValue(sol, 'val_destino_direccion') }}
-                        </td>
-                        <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
-                            [title]="$any(getFieldValue(sol, 'val_descripcion_actividad'))">
-                          {{ getFieldValue(sol, 'val_descripcion_actividad') }}
-                        </td>
-                        <td class="px-3 py-2.5 border-r border-slate-100 text-center text-slate-500 whitespace-nowrap text-xs">
-                          {{ getFieldValue(sol, 'val_hora_salida') }}
-                        </td>
-                        <td class="px-3 py-2.5 border-r border-slate-100 text-center text-slate-500 whitespace-nowrap text-xs">
-                          {{ getFieldValue(sol, 'val_hora_retorno') }}
-                        </td>
-                        <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
-                            [title]="getEmployeeName('val_funcionario_id', getFieldValue(sol, 'val_funcionario_id'))">
-                          {{ getEmployeeName('val_funcionario_id', getFieldValue(sol, 'val_funcionario_id')) }}
-                        </td>
-                        <td class="px-3 py-2.5 border-r border-slate-100 text-center text-slate-600">
-                          {{ getFieldValue(sol, 'val_num_ocupantes') }}
-                        </td>
-                        <td class="px-3 py-2.5 border-r border-slate-100 text-center">
-                          @if ($any(sol['ctestado_id']) === 388) {
-                            <span class="block w-full text-center py-0.5 border border-blue-400 text-blue-700 font-bold text-[10px] rounded bg-blue-50">Creado</span>
-                          } @else if ($any(sol['ctestado_id']) === 2) {
-                            <span class="block w-full text-center py-0.5 border border-amber-400 text-amber-700 font-bold text-[10px] rounded bg-amber-50">Pendiente</span>
-                          } @else if ($any(sol['ctestado_id']) === 387) {
-                            <span class="block w-full text-center py-0.5 border border-green-400 text-green-700 font-bold text-[10px] rounded bg-green-50">Autorizado</span>
-                          } @else if ($any(sol['ctestado_id']) === 51) {
-                            <span class="block w-full text-center py-0.5 border border-red-400 text-red-700 font-bold text-[10px] rounded bg-red-50">Rechazado</span>
-                          } @else {
-                            <span class="block w-full text-center py-0.5 border border-slate-300 text-slate-500 font-bold text-[10px] rounded bg-slate-50">{{ sol['estado_solicitud'] ?? '—' }}</span>
-                          }
-                        </td>
-                        @if (hasAnyAction) {
-                          <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
-                              [title]="$any(getFieldValue(sol, 'val_observaciones'))">
-                            {{ getFieldValue(sol, 'val_observaciones') }}
-                          </td>
-                          <td class="px-2 py-2.5 text-center">
-                            <div class="flex items-center justify-center gap-1.5">
-
-                              @if (canEdit()) {
-                                <button
-                                  type="button"
-                                  (click)="cargarParaEditar(sol)"
-                                  [disabled]="saving"
-                                  title="Editar registro"
-                                  class="h-8 w-8 flex items-center justify-center rounded border border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shrink-0">
-                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                </button>
-                              }
-
-                              @if (canAutorizar()) {
-                                <button
-                                  type="button"
-                                  (click)="autorizarRegistro(sol)"
-                                  [disabled]="procesandoId === sol.id"
-                                  title="Autorizar programación"
-                                  class="h-8 w-8 flex items-center justify-center rounded border border-green-400 text-green-700 bg-green-50 hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
-                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                </button>
-                              }
-
-                              @if (canRechazar()) {
-                                <button
-                                  type="button"
-                                  (click)="rechazarRegistro(sol)"
-                                  [disabled]="procesandoId === sol.id"
-                                  title="Rechazar programación"
-                                  class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
-                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                </button>
-                              }
-
-                              @if (canDelete()) {
-                                <button
-                                  type="button"
-                                  (click)="eliminarRegistro(sol)"
-                                  [disabled]="saving"
-                                  title="Eliminar registro"
-                                  class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
-                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
-                              }
-
-                            </div>
-                          </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-center text-slate-500 whitespace-nowrap text-xs">
+                        {{ getFieldValue(sol, 'val_fecha_programacion') }}
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
+                          [title]="$any(getFieldValue(sol, 'val_destino_direccion'))">
+                        {{ getFieldValue(sol, 'val_destino_direccion') }}
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
+                          [title]="$any(getFieldValue(sol, 'val_descripcion_actividad'))">
+                        {{ getFieldValue(sol, 'val_descripcion_actividad') }}
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-center text-slate-500 whitespace-nowrap text-xs">
+                        {{ getFieldValue(sol, 'val_hora_salida') }}
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-center text-slate-500 whitespace-nowrap text-xs">
+                        {{ getFieldValue(sol, 'val_hora_retorno') }}
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
+                          [title]="getEmployeeName('val_funcionario_id', getFieldValue(sol, 'val_funcionario_id'))">
+                        {{ getEmployeeName('val_funcionario_id', getFieldValue(sol, 'val_funcionario_id')) }}
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-center text-slate-600">
+                        {{ getFieldValue(sol, 'val_num_ocupantes') }}
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-center">
+                        @if ($any(sol['ctestado_id']) === 388) {
+                          <span class="block w-full text-center py-0.5 border border-blue-400 text-blue-700 font-bold text-[10px] rounded bg-blue-50">Creado</span>
+                        } @else if ($any(sol['ctestado_id']) === 2) {
+                          <span class="block w-full text-center py-0.5 border border-amber-400 text-amber-700 font-bold text-[10px] rounded bg-amber-50">Pendiente</span>
+                        } @else if ($any(sol['ctestado_id']) === 387) {
+                          <span class="block w-full text-center py-0.5 border border-green-400 text-green-700 font-bold text-[10px] rounded bg-green-50">Autorizado</span>
+                        } @else if ($any(sol['ctestado_id']) === 51) {
+                          <span class="block w-full text-center py-0.5 border border-red-400 text-red-700 font-bold text-[10px] rounded bg-red-50">Rechazado</span>
                         } @else {
-                          <td class="px-3 py-2.5 text-slate-600 truncate"
-                              [title]="$any(getFieldValue(sol, 'val_observaciones'))">
-                            {{ getFieldValue(sol, 'val_observaciones') }}
-                          </td>
+                          <span class="block w-full text-center py-0.5 border border-slate-300 text-slate-500 font-bold text-[10px] rounded bg-slate-50">{{ sol['estado_solicitud'] ?? '—' }}</span>
                         }
-                      </tr>
-                    }
+                      </td>
+                      @if (hasAnyAction) {
+                        <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
+                            [title]="$any(getFieldValue(sol, 'val_observaciones'))">
+                          {{ getFieldValue(sol, 'val_observaciones') }}
+                        </td>
+                        <td class="px-2 py-2.5 text-center">
+                          <div class="flex items-center justify-center gap-1.5">
 
+                            @if (canEdit()) {
+                              <button
+                                type="button"
+                                (click)="cargarParaEditar(sol)"
+                                [disabled]="saving"
+                                title="Editar registro"
+                                class="h-8 w-8 flex items-center justify-center rounded border border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                            }
+
+                            @if (canAutorizar()) {
+                              <button
+                                type="button"
+                                (click)="autorizarRegistro(sol)"
+                                [disabled]="procesandoId === sol.id"
+                                title="Autorizar programación"
+                                class="h-8 w-8 flex items-center justify-center rounded border border-green-400 text-green-700 bg-green-50 hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </button>
+                            }
+
+                            @if (canRechazar()) {
+                              <button
+                                type="button"
+                                (click)="rechazarRegistro(sol)"
+                                [disabled]="procesandoId === sol.id"
+                                title="Rechazar programación"
+                                class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </button>
+                            }
+
+                            @if (canDelete()) {
+                              <button
+                                type="button"
+                                (click)="eliminarRegistro(sol)"
+                                [disabled]="saving"
+                                title="Eliminar registro"
+                                class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            }
+
+                          </div>
+                        </td>
+                      } @else {
+                        <td class="px-3 py-2.5 text-slate-600 truncate"
+                            [title]="$any(getFieldValue(sol, 'val_observaciones'))">
+                          {{ getFieldValue(sol, 'val_observaciones') }}
+                        </td>
+                      }
+                    </tr>
                   }
+
                 }
               }
-            </tbody>
-          </table>
-        </div>
-
-        <app-pagination
-          [meta]="metaTabla"
-          [currentPage]="currentPage"
-          [itemsShown]="solicitudes.length"
-          itemLabel="registros"
-          (pageChange)="irAPagina($event)">
-        </app-pagination>
-
+            }
+          </tbody>
+        </table>
       </div>
+
+      <app-pagination
+        [meta]="metaTabla"
+        [currentPage]="currentPage"
+        [itemsShown]="solicitudes.length"
+        itemLabel="registros"
+        (pageChange)="irAPagina($event)">
+      </app-pagination>
     </div>
 
+    </div>
   </div>
 </div>
-
-<style>
-  .animate-in { animation: animateIn 0.3s ease-out forwards; }
-  .fade-in { opacity: 0; }
-  @keyframes animateIn { to { opacity: 1; transform: translate(0); } }
-</style>

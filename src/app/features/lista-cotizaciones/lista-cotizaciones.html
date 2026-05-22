@@ -1,7 +1,8 @@
-<div class="p-6 bg-slate-50 min-h-screen text-slate-800 font-sans pb-20">
-  <div class="max-w-7xl mx-auto bg-white p-8 rounded shadow-sm border border-slate-200 min-h-[70vh]">
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
 
     <div class="animate-in fade-in">
+
       <app-page-header
         breadcrumbSection="Lista de Autorizaciones"
         title="Por Autorizar"
@@ -10,7 +11,8 @@
         edicion="24"
       />
 
-      <div class="border border-slate-200 rounded">
+      <!-- Table-card: sin padding interior, overflow-hidden para respetar border-radius -->
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
         <table class="w-full text-sm border-collapse table-fixed">
           <colgroup>
             <col class="w-[150px]">
@@ -50,7 +52,7 @@
             } @else {
               @for (doc of solicitudes; track doc.id_solicitud) {
                 <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors">
-                  <td class="px-3 py-2.5 border-r border-slate-100 font-bold text-[#1d2b64] break-words" [title]="doc.num_secuencial ?? '—'">
+                  <td class="px-3 py-2.5 border-r border-slate-100 font-bold text-[#1e3a8a] break-words" [title]="doc.num_secuencial ?? '—'">
                     {{ doc.num_secuencial ?? '—' }}
                   </td>
                   <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate" [title]="doc.establecimiento_nombre">
@@ -69,6 +71,7 @@
                     <div class="flex items-center justify-center gap-1.5">
                       @if (canAutorizar()) {
                         <button
+                          type="button"
                           (click)="cotizarSolicitud(doc)"
                           [disabled]="procesandoId === doc.id_solicitud"
                           title="Autorizar solicitud"
@@ -84,6 +87,7 @@
                       }
                       @if (canRechazar()) {
                         <button
+                          type="button"
                           (click)="rechazarSolicitud(doc)"
                           [disabled]="procesandoId === doc.id_solicitud"
                           title="Rechazar solicitud"
@@ -119,13 +123,8 @@
         itemLabel="solicitudes"
         (pageChange)="cargarPagina($event)">
       </app-pagination>
+
     </div>
 
   </div>
 </div>
-
-<style>
-  .animate-in { animation: animateIn 0.3s ease-out forwards; }
-  .fade-in { opacity: 0; }
-  @keyframes animateIn { to { opacity: 1; transform: translate(0); } }
-</style>

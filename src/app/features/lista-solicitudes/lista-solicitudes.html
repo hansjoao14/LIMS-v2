@@ -1,9 +1,9 @@
-<div class="p-6 bg-slate-50 min-h-screen text-slate-800 font-sans pb-20">
-
-  <div class="max-w-7xl mx-auto bg-white p-8 rounded shadow-sm border border-slate-200 min-h-[70vh]">
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
 
     @if (!viewingSignature) {
       <div class="animate-in fade-in">
+
         <app-page-header
           breadcrumbSection="Lista de Solicitudes"
           title="Lista de Solicitudes"
@@ -12,7 +12,8 @@
           edicion="24"
         />
 
-        <div class="border border-slate-200 rounded">
+        <!-- Table-card: borde y sombra propia, sin padding interno -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
           <table class="w-full text-sm border-collapse table-fixed">
             <colgroup>
               <col class="w-[150px]">
@@ -58,7 +59,7 @@
               } @else {
                 @for (doc of solicitudes; track doc.id_solicitud) {
                   <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors">
-                    <td class="px-3 py-2.5 border-r border-slate-100 font-bold text-[#1d2b64] break-words" [title]="doc.num_secuencial ?? '—'">
+                    <td class="px-3 py-2.5 border-r border-slate-100 font-bold text-[#1e3a8a] break-words" [title]="doc.num_secuencial ?? '—'">
                       {{ doc.num_secuencial ?? '—' }}
                     </td>
                     <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate" [title]="doc.establecimiento_nombre">
@@ -104,10 +105,12 @@
                     <td class="px-2 py-2.5 text-center">
                       <div class="flex items-center justify-center gap-1.5">
                         @if (doc.ctestado_id === 2 && canEdit()) {
-                          <button (click)="editarSolicitud(doc)"
-                                  [disabled]="cargandoEdicionId === doc.id_solicitud"
-                                  title="Editar solicitud"
-                                  class="h-8 w-8 flex items-center justify-center rounded border border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shrink-0">
+                          <button
+                            type="button"
+                            (click)="editarSolicitud(doc)"
+                            [disabled]="cargandoEdicionId === doc.id_solicitud"
+                            title="Editar solicitud"
+                            class="h-8 w-8 flex items-center justify-center rounded border border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shrink-0">
                             @if (cargandoEdicionId === doc.id_solicitud) {
                               <span class="animate-spin h-3.5 w-3.5 border-2 border-amber-600 border-t-transparent rounded-full"></span>
                             } @else {
@@ -117,18 +120,22 @@
                             }
                           </button>
                         } @else if (doc.ctestado_id !== 2) {
-                          <button (click)="abrirPanelFirma(doc)"
-                                  title="Firmar documento"
-                                  class="h-8 w-8 flex items-center justify-center rounded bg-[#0f172a] text-white hover:bg-[#1e293b] transition-colors shrink-0">
+                          <button
+                            type="button"
+                            (click)="abrirPanelFirma(doc)"
+                            title="Firmar documento"
+                            class="h-8 w-8 flex items-center justify-center rounded bg-[#1e3a8a] text-white hover:bg-[#2541b2] transition-colors shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>
                           </button>
                         }
                         @if (canDelete()) {
-                          <button (click)="eliminarSolicitud(doc)"
-                                  title="Eliminar solicitud"
-                                  class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 transition-colors shrink-0">
+                          <button
+                            type="button"
+                            (click)="eliminarSolicitud(doc)"
+                            title="Eliminar solicitud"
+                            class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 transition-colors shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -156,38 +163,38 @@
           itemLabel="solicitudes"
           (pageChange)="cargarPagina($event)">
         </app-pagination>
+
       </div>
     }
 
-
     @if (viewingSignature) {
-      <div class="animate-in slide-in-from-right-8">
 
-        <div class="flex justify-between items-start mb-8 border-b border-slate-200 pb-6">
-          <div>
-            <p class="text-sm font-medium text-slate-500 mb-1">
-              Sistema LIMS / <span class="font-bold text-[#1d2b64]">Firma de solicitud</span>
-            </p>
-            <h2 class="text-2xl font-bold text-[#1d2b64]">Firma de solicitud</h2>
-            <p class="text-sm text-slate-800 mt-1">
-              N° secuencial: <strong>{{ selectedDoc?.num_secuencial ?? '—' }}</strong>
-            </p>
-          </div>
-          <div class="text-right text-[12px] leading-relaxed text-slate-600 font-medium">
-            <p class="font-bold text-[#1d2b64] text-sm mb-1 uppercase">{{ selectedDoc?.formulario_nombre }}</p>
-            <p>Solicitante: {{ selectedDoc?.nombres_completos }}</p>
-            <p>Establecimiento: {{ selectedDoc?.establecimiento_nombre }}</p>
-            <p>Fecha: {{ selectedDoc?.fecha_creacion | date:'dd/MM/yyyy' }}</p>
-          </div>
+      <!-- PageHeader a nivel de página, fuera de la step-card -->
+      <app-page-header
+        breadcrumbSection="Lista de Solicitudes"
+        title="Firma de solicitud"
+        [subtitle]="'N° secuencial: ' + (selectedDoc?.num_secuencial ?? '—')"
+      >
+        <div #pageAction pageAction class="text-right text-[13px] leading-relaxed text-slate-700">
+          <p class="font-bold text-[#1e3a8a] text-sm mb-1 uppercase">{{ selectedDoc?.formulario_nombre }}</p>
+          <p>Solicitante: <span class="font-medium">{{ selectedDoc?.nombres_completos }}</span></p>
+          <p>Establecimiento: <span class="font-medium">{{ selectedDoc?.establecimiento_nombre }}</span></p>
+          <p>Fecha: <span class="font-medium">{{ selectedDoc?.fecha_creacion | date:'dd/MM/yyyy' }}</span></p>
         </div>
+      </app-page-header>
 
-        <div class="mb-6">
-          <h3 class="text-lg font-bold text-[#1d2b64]">Firma Electrónica en Línea</h3>
-          <p class="text-sm text-slate-600">Firmar directamente usando certificado digital en archivo (solo se aceptan archivos .p12)</p>
+      <!-- Step-card (Nivel 1A) — igual que los pasos de solicitud-trabajo -->
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 animate-in slide-in-from-right-4">
+
+        <!-- Step-header (Nivel 2A) -->
+        <div class="mb-6 border-b border-slate-300 pb-4">
+          <h3 class="text-lg font-bold text-[#1e3a8a] mb-1">Firma Electrónica en Línea</h3>
+          <p class="text-sm text-slate-700">Firmar directamente usando certificado digital en archivo (solo se aceptan archivos .p12)</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
+          <!-- Visor de documento simulado -->
           <div class="bg-[#323639] rounded-lg p-4 flex flex-col items-center justify-center overflow-hidden min-h-[500px] relative shadow-inner">
             <div class="absolute top-0 left-0 right-0 h-10 bg-[#282c2f] flex items-center px-4 justify-between text-slate-300 text-xs">
               <div class="flex items-center gap-2">
@@ -224,8 +231,9 @@
             </div>
           </div>
 
+          <!-- Panel de carga del certificado -->
           <div class="flex flex-col justify-center">
-            <h4 class="text-[#1d2b64] font-bold mb-4 text-lg">Seleccionar certificado digital (.p12)</h4>
+            <h4 class="text-lg font-bold text-[#1e3a8a] mb-4">Seleccionar certificado digital (.p12)</h4>
 
             <div class="border-2 border-dashed border-blue-300 bg-[#f8fafc] rounded-lg p-10 text-center hover:bg-blue-50 transition-colors relative cursor-pointer group mb-6"
                  [class.border-green-400]="archivoFirma"
@@ -233,11 +241,13 @@
               <input type="file" (change)="onFileSelected($event)" accept=".p12" [disabled]="isFirmando"
                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10">
               @if (!archivoFirma) {
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-slate-400 mb-3 group-hover:text-[#1d2b64] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-slate-400 mb-3 group-hover:text-[#1e3a8a] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <p class="text-sm font-bold text-slate-500 uppercase tracking-wide">ARRASTRA AQUÍ O SUBE UN ARCHIVO (.p12)</p>
-                <button type="button" class="mt-4 bg-[#1d2b64] text-white px-6 py-2 rounded text-xs font-bold uppercase shadow-sm">Escoger un archivo</button>
+                <button type="button" class="mt-4 bg-[#1e3a8a] text-white px-6 py-2 rounded text-xs font-bold uppercase shadow-sm hover:bg-[#2541b2] transition-colors">
+                  Escoger un archivo
+                </button>
               } @else {
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-green-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -247,33 +257,36 @@
               }
             </div>
 
-            <div class="relative mb-8">
+            <div class="relative mb-6">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
-              <input type="password" [(ngModel)]="claveFirma" [disabled]="isFirmando" placeholder="Ingrese su contraseña"
-                     class="w-full bg-[#f1f4f8] border border-slate-300 text-slate-700 py-3 pl-10 pr-4 rounded outline-none focus:border-[#1d2b64] transition-colors disabled:opacity-50">
-            </div>
-
-            <div class="flex gap-4">
-              <button type="button" (click)="regresarLista()" [disabled]="isFirmando"
-                      class="flex-1 bg-[#0f172a] text-white py-3.5 rounded text-xs font-bold uppercase tracking-widest hover:bg-[#1e293b] transition-colors disabled:opacity-50">
-                REGRESAR
-              </button>
-              <button type="button" (click)="ejecutarFirma()"
-                      [disabled]="isFirmando || !archivoFirma || !claveFirma"
-                      class="flex-1 text-white py-3.5 rounded text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 disabled:bg-slate-400"
-                      [class.bg-[#1d2b64]]="archivoFirma && claveFirma && !isFirmando">
-                @if (isFirmando) {
-                  <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Firmando...
-                } @else {
-                  FIRMAR
-                }
-              </button>
+              <input type="password" [(ngModel)]="claveFirma" [disabled]="isFirmando"
+                     placeholder="Ingrese su contraseña"
+                     class="w-full bg-slate-50 border border-slate-300 text-slate-700 p-2.5 pl-10 rounded outline-none focus:border-[#1e3a8a] transition-colors disabled:opacity-50">
             </div>
           </div>
+
+        </div>
+
+        <!-- Nav buttons (Nivel estándar: border-t + justify-between) -->
+        <div class="flex justify-between pt-4 border-t border-slate-300 mt-8">
+          <button type="button" (click)="regresarLista()" [disabled]="isFirmando"
+                  class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all disabled:opacity-50">
+            REGRESAR
+          </button>
+          <button type="button" (click)="ejecutarFirma()"
+                  [disabled]="isFirmando || !archivoFirma || !claveFirma"
+                  class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
+            @if (isFirmando) {
+              <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+              Firmando...
+            } @else {
+              FIRMAR
+            }
+          </button>
         </div>
 
       </div>
@@ -281,12 +294,3 @@
 
   </div>
 </div>
-
-<style>
-  .animate-in { animation: animateIn 0.3s ease-out forwards; }
-  .fade-in { opacity: 0; }
-  .slide-in-from-right-8 { transform: translateX(2rem); opacity: 0; animation: slideIn 0.3s ease-out forwards; }
-
-  @keyframes animateIn { to { opacity: 1; transform: translate(0); } }
-  @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
-</style>

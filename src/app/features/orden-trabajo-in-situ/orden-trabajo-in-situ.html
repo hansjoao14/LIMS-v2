@@ -1,198 +1,267 @@
-<div class="insitu-page">
-  <app-page-header
-    breadcrumbSection="Operaciones de campo"
-    title="Orden de trabajo In Situ"
-    subtitle="Aquí podrás visualizar los detalles de la orden de trabajo In Situ"
-    codigoFormulario="F-PG-09-03"
-    edicion="16"
-  />
-  <form [formGroup]="form">
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
+    <div class="animate-in fade-in">
 
-    <div class="top-cards">
-      <div class="card card-gray">
-        <div class="form-group">
-          <label>Solicitud de trabajo No</label>
+      <app-page-header
+        breadcrumbSection="Operaciones de campo"
+        title="Orden de trabajo In Situ"
+        subtitle="Aquí podrás visualizar los detalles de la orden de trabajo In Situ"
+        codigoFormulario="F-PG-09-03"
+        edicion="16"
+      />
 
-          @if (solicitudSeleccionada) {
-            <div class="solicitud-seleccionada">
-              <div class="solicitud-seleccionada-info">
-                <span class="solicitud-num">{{ solicitudSeleccionada.num_secuencial ?? solicitudSeleccionada.id_solicitud }}</span>
-              </div>
-              <button type="button" class="btn-limpiar" (click)="limpiarSolicitud()" title="Cambiar solicitud">✕</button>
-            </div>
-          } @else {
-            <button type="button" class="btn-buscar-solicitud" (click)="abrirPanel()">
-              <span class="btn-buscar-icon">🔍</span>
-              Buscar solicitud finalizada...
-            </button>
-          }
+      <!-- Step-card (Nivel 1A) -->
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
+        <form [formGroup]="form">
 
-          @if (panelAbierto) {
-            <div class="panel-busqueda">
-              <div class="panel-busqueda-header">
-                <input
-                  type="text"
-                  class="panel-search-input"
-                  placeholder="Buscar por No. secuencial, solicitante o formulario..."
-                  [ngModel]="busqueda"
-                  [ngModelOptions]="{standalone: true}"
-                  (ngModelChange)="onBusquedaChange($event)"
-                  autofocus
-                />
-                <button type="button" class="panel-cerrar" (click)="cerrarPanel()">✕</button>
-              </div>
+          <!-- Step-header (Nivel 2A) -->
+          <div class="mb-6 border-b border-slate-300 pb-4">
+            <h3 class="text-lg font-bold text-[#1e3a8a] mb-1">Información de la Orden</h3>
+          </div>
 
-              @if (loadingBusqueda) {
-                <div class="panel-loading">Buscando...</div>
-              } @else if (solicitudesFinalizadas.length === 0) {
-                <div class="panel-vacio">No se encontraron solicitudes finalizadas.</div>
+          <!-- Top fields -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6 mb-8">
+
+            <!-- Solicitud de trabajo No -->
+            <div class="flex flex-col">
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+                Solicitud de trabajo No
+              </label>
+
+              @if (solicitudSeleccionada) {
+                <div class="flex items-center justify-between bg-blue-50 border border-blue-300 rounded px-3 py-2 gap-2">
+                  <span class="font-bold text-[#1e3a8a] text-sm truncate">
+                    {{ solicitudSeleccionada.num_secuencial ?? solicitudSeleccionada.id_solicitud }}
+                  </span>
+                  <button type="button" (click)="limpiarSolicitud()" title="Cambiar solicitud"
+                    class="shrink-0 text-slate-400 hover:text-red-500 text-sm leading-none transition-colors">
+                    ✕
+                  </button>
+                </div>
               } @else {
-                <ul class="panel-lista">
-                  @for (sol of solicitudesFinalizadas; track sol.id_solicitud) {
-                    <li class="panel-item" (click)="seleccionarSolicitud(sol)">
-                      <span class="panel-item-num">{{ sol.num_secuencial ?? '—' }}</span>
-                    </li>
-                  }
-                </ul>
-                @if (meta && meta.totalPages > 1) {
-                  <div class="panel-paginacion">
-                    <span class="panel-pag-info">Página {{ meta.page }} de {{ meta.totalPages }} · {{ meta.total }} resultados</span>
-                    <div class="panel-pag-btns">
-                      <button type="button" [disabled]="!meta.hasPrevPage" (click)="cargarPagina(currentPage - 1)" class="panel-pag-btn">‹</button>
-                      <button type="button" [disabled]="!meta.hasNextPage" (click)="cargarPagina(currentPage + 1)" class="panel-pag-btn">›</button>
-                    </div>
+                <button type="button" (click)="abrirPanel()"
+                  class="w-full flex items-center gap-2 bg-white border border-dashed border-slate-300 text-slate-500 px-3 py-2.5 rounded text-sm hover:border-[#1e3a8a] hover:text-[#1e3a8a] transition-colors">
+                  <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                  </svg>
+                  Buscar solicitud finalizada...
+                </button>
+              }
+
+              @if (panelAbierto) {
+                <div class="relative mt-1.5 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden">
+                  <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-200 bg-slate-50">
+                    <input
+                      type="text"
+                      class="flex-1 border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-[#1e3a8a]"
+                      placeholder="Buscar por No. secuencial, solicitante o formulario..."
+                      [ngModel]="busqueda"
+                      [ngModelOptions]="{standalone: true}"
+                      (ngModelChange)="onBusquedaChange($event)"
+                      autofocus
+                    />
+                    <button type="button" (click)="cerrarPanel()" class="text-slate-400 hover:text-red-500 text-xl leading-none">✕</button>
                   </div>
-                }
+
+                  @if (loadingBusqueda) {
+                    <p class="py-5 text-center text-sm text-slate-400 italic">Buscando...</p>
+                  } @else if (solicitudesFinalizadas.length === 0) {
+                    <p class="py-5 text-center text-sm text-slate-400 italic">No se encontraron solicitudes finalizadas.</p>
+                  } @else {
+                    <ul class="max-h-72 overflow-y-auto custom-scroll">
+                      @for (sol of solicitudesFinalizadas; track sol.id_solicitud) {
+                        <li (click)="seleccionarSolicitud(sol)"
+                          class="px-3.5 py-2.5 border-b border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                          <span class="font-bold text-[#1e3a8a] text-xs">{{ sol.num_secuencial ?? '—' }}</span>
+                        </li>
+                      }
+                    </ul>
+                    @if (meta && meta.totalPages > 1) {
+                      <div class="flex items-center justify-between px-3.5 py-2 border-t border-slate-200 bg-slate-50">
+                        <span class="text-[11px] text-slate-400">
+                          Página {{ meta.page }} de {{ meta.totalPages }} · {{ meta.total }} resultados
+                        </span>
+                        <div class="flex gap-1">
+                          <button type="button" [disabled]="!meta.hasPrevPage" (click)="cargarPagina(currentPage - 1)"
+                            class="w-7 h-7 flex items-center justify-center border border-slate-200 rounded bg-white text-[#1e3a8a] hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                            ‹
+                          </button>
+                          <button type="button" [disabled]="!meta.hasNextPage" (click)="cargarPagina(currentPage + 1)"
+                            class="w-7 h-7 flex items-center justify-center border border-slate-200 rounded bg-white text-[#1e3a8a] hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                            ›
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  }
+                </div>
               }
             </div>
-          }
-        </div>
-        <div class="form-group">
-          <label>Orden de trabajo No</label>
-          <input
-            class="form-input"
-            formControlName="ordenTrabajoNo"
-            placeholder="Ej: OT-009-25-R"
-          />
-        </div>
+
+            <!-- Orden de trabajo No -->
+            <div class="flex flex-col">
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+                Orden de trabajo No
+              </label>
+              <input
+                class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                formControlName="ordenTrabajoNo"
+                placeholder="Ej: OT-009-25-R"
+              />
+            </div>
+
+            <!-- Fecha de emisión -->
+            <div class="flex flex-col">
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+                Fecha de emisión
+              </label>
+              <input
+                class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                type="date" formControlName="fechaEmision"
+              />
+            </div>
+
+            <!-- Fecha máxima de entrega -->
+            <div class="flex flex-col">
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+                Fecha máxima de entrega
+              </label>
+              <input
+                class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                type="date" formControlName="fechaMaximaEntrega"
+              />
+            </div>
+
+          </div>
+
+          <!-- Section-card: Cliente (Nivel 2B) -->
+          <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-6" formGroupName="cliente">
+            <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+              <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Cliente</h4>
+            </div>
+            <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="flex flex-col">
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Solicitado por</label>
+                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                  formControlName="solicitadoPor" placeholder="Nombre del solicitante" />
+              </div>
+              <div class="flex flex-col">
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Dirección</label>
+                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                  formControlName="direccion" placeholder="Dirección" />
+              </div>
+              <div class="flex flex-col">
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Solicitud No. (Fecha; hora)</label>
+                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                  formControlName="solicitudNo" placeholder="Ej: GADDMQ-SA-DMRCA-UCSA-2025-0052-M" />
+              </div>
+              <div class="flex flex-col">
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Correo electrónico</label>
+                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                  type="email" formControlName="correoElectronico" placeholder="correo@ejemplo.com" />
+              </div>
+            </div>
+          </section>
+
+          <!-- Section-card: Operador (Nivel 2B) -->
+          <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-8" formGroupName="operador">
+            <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+              <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Operador</h4>
+            </div>
+            <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="flex flex-col">
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Razón Social</label>
+                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                  formControlName="razonSocial" placeholder="Razón social" />
+              </div>
+              <div class="flex flex-col">
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Nombre Comercial</label>
+                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                  formControlName="nombreComercial" placeholder="Nombre comercial" />
+              </div>
+              <div class="flex flex-col">
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">R.U.C.</label>
+                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                  formControlName="ruc" placeholder="Ej: 1793167640001" />
+              </div>
+              <div class="flex flex-col">
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Dirección</label>
+                <input class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                  formControlName="direccion" placeholder="Dirección" />
+              </div>
+            </div>
+          </section>
+
+          <!-- Separador de sección -->
+          <div class="bg-slate-100 text-center py-2.5 px-4 rounded text-[11px] font-bold text-[#1e3a8a] uppercase tracking-widest mb-4">
+            ANÁLISIS REQUERIDO IN SITU
+          </div>
+
+          <!-- Table-card: Ensayos (Nivel 2C) -->
+          <div class="mb-8">
+            <h4 class="text-sm font-bold text-[#1e3a8a] uppercase mb-3">
+              Ensayos Fisico-Químicos de Emisiones Gaseosas...
+            </h4>
+            <div class="border border-gray-200 rounded overflow-hidden shadow-sm overflow-x-auto custom-scroll">
+              <table class="w-full text-sm border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-gray-200 tracking-wider">
+                    <th class="px-3 py-2.5 border-r border-gray-100 text-center w-[100px]">ANÁLISIS</th>
+                    <th class="px-3 py-2.5 border-r border-gray-100 text-left">ENSAYO</th>
+                    <th class="px-3 py-2.5 border-r border-gray-100 text-left">IDENTIFICACIÓN</th>
+                    <th class="px-3 py-2.5 border-r border-gray-100 text-left">MÉTODO INTERNO</th>
+                    <th class="px-3 py-2.5 border-r border-gray-100 text-left">MÉTODO REFERENCIA</th>
+                    <th class="px-3 py-2.5 text-left">UNIDAD</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @if (ensayosArray.length === 0) {
+                    <tr>
+                      <td colspan="6" class="p-10 text-slate-400 italic text-center">—</td>
+                    </tr>
+                  }
+                  @for (ensayo of ensayosArray.controls; track i; let i = $index) {
+                    <tr class="border-b border-gray-100 hover:bg-slate-50 transition-colors">
+                      <td class="px-3 py-2.5 border-r border-gray-100 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                          <div class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+                               [class.bg-[#1e3a8a]]="ensayo.get('seleccionado')?.value"
+                               [class.bg-slate-300]="!ensayo.get('seleccionado')?.value">
+                            <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+                                  [class.translate-x-4]="ensayo.get('seleccionado')?.value"
+                                  [class.translate-x-0.5]="!ensayo.get('seleccionado')?.value">
+                            </span>
+                          </div>
+                          <span class="text-[11px] font-bold w-5"
+                                [class.text-[#1e3a8a]]="ensayo.get('seleccionado')?.value"
+                                [class.text-slate-400]="!ensayo.get('seleccionado')?.value">
+                            {{ ensayo.get('seleccionado')?.value ? 'Sí' : 'No' }}
+                          </span>
+                        </div>
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-gray-100 text-slate-600 text-xs">{{ ensayo.get('ensayo')?.value || '—' }}</td>
+                      <td class="px-3 py-2.5 border-r border-gray-100 text-slate-600 text-xs">{{ ensayo.get('identificacion')?.value || '—' }}</td>
+                      <td class="px-3 py-2.5 border-r border-gray-100 text-slate-600 text-xs">{{ ensayo.get('metodoInterno')?.value || '—' }}</td>
+                      <td class="px-3 py-2.5 border-r border-gray-100 text-slate-600 text-xs">{{ ensayo.get('metodoReferencia')?.value || '—' }}</td>
+                      <td class="px-3 py-2.5 text-slate-600 text-xs">{{ ensayo.get('unidad')?.value || '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Nav buttons estándar -->
+          <div class="flex items-center pt-4 border-t border-slate-300">
+            <button type="button" (click)="guardar()"
+              class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all">
+              GUARDAR
+            </button>
+          </div>
+
+        </form>
       </div>
-      <div class="card card-gray">
-        <div class="form-group">
-          <label>Fechas de emisión</label>
-          <input class="form-input" type="date" formControlName="fechaEmision" />
-        </div>
-        <div class="form-group">
-          <label>Fechas máxima de entrega</label>
-          <input class="form-input" type="date" formControlName="fechaMaximaEntrega" />
-        </div>
-      </div>
+
     </div>
-
-    <div class="section-card card-blue" formGroupName="cliente">
-      <h3>Cliente</h3>
-      <div class="grid-2">
-        <div class="form-group">
-          <label>Solicitado por</label>
-          <input
-            class="form-input"
-            formControlName="solicitadoPor"
-            placeholder="Nombre del solicitante"
-          />
-        </div>
-        <div class="form-group">
-          <label>Dirección</label>
-          <input class="form-input" formControlName="direccion" placeholder="Dirección" />
-        </div>
-        <div class="form-group">
-          <label>Solicitud No. (Fecha; hora)</label>
-          <input
-            class="form-input"
-            formControlName="solicitudNo"
-            placeholder="Ej: GADDMQ-SA-DMRCA-UCSA-2025-0052-M"
-          />
-        </div>
-        <div class="form-group">
-          <label>Correo electrónico</label>
-          <input
-            class="form-input"
-            type="email"
-            formControlName="correoElectronico"
-            placeholder="correo@ejemplo.com"
-          />
-        </div>
-      </div>
-    </div>
-
-    <div class="section-card card-blue-darker" formGroupName="operador">
-      <h3>Operador</h3>
-      <div class="grid-2">
-        <div class="form-group">
-          <label>Razón Social</label>
-          <input class="form-input" formControlName="razonSocial" placeholder="Razón social" />
-        </div>
-        <div class="form-group">
-          <label>Nombre Comercial</label>
-          <input
-            class="form-input"
-            formControlName="nombreComercial"
-            placeholder="Nombre comercial"
-          />
-        </div>
-        <div class="form-group">
-          <label>R.U.C.</label>
-          <input class="form-input" formControlName="ruc" placeholder="Ej: 1793167640001" />
-        </div>
-        <div class="form-group">
-          <label>Dirección</label>
-          <input class="form-input" formControlName="direccion" placeholder="Dirección" />
-        </div>
-      </div>
-    </div>
-
-    <div class="analysis-bar">ANÁLISIS REQUERIDO IN SITU</div>
-
-    <div class="table-section">
-      <h4>Ensayos Fisico-Químicos de Emisiones Gaseosas...</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>ANÁLISIS REQUERIDO</th>
-            <th>ENSAYO</th>
-            <th>IDENTIFICACIÓN</th>
-            <th>MÉTODO INTERNO</th>
-            <th>MÉTODO REFERENCIA</th>
-            <th>UNIDAD</th>
-          </tr>
-        </thead>
-        <tbody>
-          @if (ensayosArray.length === 0) {
-            <tr>
-              <td colspan="6" class="table-empty">—</td>
-            </tr>
-          }
-          @for (ensayo of ensayosArray.controls; track i; let i = $index) {
-            <tr>
-              <td>
-                <div class="toggle-container">
-                  <div class="toggle" [class.toggle-on]="ensayo.get('seleccionado')?.value"></div>
-                  <span>{{ ensayo.get('seleccionado')?.value ? 'Sí' : 'No' }}</span>
-                </div>
-              </td>
-              <td>{{ ensayo.get('ensayo')?.value || '—' }}</td>
-              <td>{{ ensayo.get('identificacion')?.value || '—' }}</td>
-              <td>{{ ensayo.get('metodoInterno')?.value || '—' }}</td>
-              <td>{{ ensayo.get('metodoReferencia')?.value || '—' }}</td>
-              <td>{{ ensayo.get('unidad')?.value || '—' }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-
-
-    <div class="footer-actions">
-      <button type="button" class="btn btn-navy" (click)="guardar()">GUARDAR</button>
-    </div>
-  </form>
+  </div>
 </div>

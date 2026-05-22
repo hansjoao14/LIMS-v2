@@ -22,6 +22,7 @@ const CATALOGO_PRIORIDAD_ID = 30;
   standalone: true,
   imports: [CommonModule, PaginationComponent, PageHeader],
   templateUrl: './lista-cotizaciones.html',
+  styleUrl: './lista-cotizaciones.css',
 })
 export class ListaCotizaciones implements OnInit, OnDestroy {
   solicitudes: ReportSolicitud[] = [];

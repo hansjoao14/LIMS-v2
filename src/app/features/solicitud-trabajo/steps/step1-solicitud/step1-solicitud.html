@@ -8,7 +8,7 @@
   <div class="grid grid-cols-12 gap-6 pb-6 border-b border-slate-300 mb-6">
     <div class="col-span-12 md:col-span-4">
       <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido('entidad_id')">LISTADO DE JEFATURAS O DIRECCIÓN *</label>
-      <select formControlName="entidad_id" class="w-full border border-slate-300 p-2.5 rounded text-sm bg-white outline-none focus:border-blue-500" [class.border-red-500]="esCampoInvalido('entidad_id')">
+      <select formControlName="entidad_id" class="w-full border border-slate-300 p-2.5 rounded text-sm bg-white outline-none focus:border-[#1e3a8a]" [class.border-red-500]="esCampoInvalido('entidad_id')">
         <option value="">Seleccione...</option>
         @for (e of entidadesMock; track e.id) {
           <option [value]="e.id">{{ e.nombre }}</option>
@@ -17,7 +17,7 @@
     </div>
     <div class="col-span-12 md:col-span-4">
       <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1" [class.text-red-600]="esCampoInvalido('tecnico_id')">SOLICITADO POR *</label>
-      <select formControlName="tecnico_id" class="w-full border border-slate-300 p-2.5 rounded text-sm bg-white outline-none focus:border-blue-500" [class.border-red-500]="esCampoInvalido('tecnico_id')">
+      <select formControlName="tecnico_id" class="w-full border border-slate-300 p-2.5 rounded text-sm bg-white outline-none focus:border-[#1e3a8a]" [class.border-red-500]="esCampoInvalido('tecnico_id')">
         <option value="">Seleccione...</option>
         @for (t of tecnicosFiltrados; track t.id) {
           <option [value]="t.id">{{ t.nombre }}</option>

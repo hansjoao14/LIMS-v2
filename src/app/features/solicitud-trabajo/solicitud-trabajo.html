@@ -12,9 +12,9 @@
 
     <div class="mb-6">
       <div class="flex justify-between items-center mb-3">
-        <h1 class="text-xl font-extrabold text-[#1e3a8a] uppercase tracking-tight">
+        <p class="text-xl font-bold text-[#1e3a8a] uppercase tracking-tight">
           RF02 - SOLICITUD DE ORDEN DE TRABAJO
-        </h1>
+        </p>
         <span
           class="text-[10px] font-bold text-[#1e3a8a] bg-blue-100 px-3 py-1 rounded-full uppercase tracking-widest"
           >PASO {{ currentStep }} DE 4</span
@@ -133,12 +133,14 @@
         </p>
         <div class="flex gap-3">
           <button
+            type="button"
             (click)="showTerminosModal = false"
             class="flex-1 border border-gray-300 text-slate-700 font-bold uppercase text-xs py-3 rounded hover:bg-gray-50"
           >
             Cerrar
           </button>
           <button
+            type="button"
             (click)="aceptarTerminos()"
             class="flex-1 bg-[#1e3a8a] text-white font-bold uppercase text-xs py-3 rounded hover:bg-[#2541b2]"
           >
@@ -182,6 +184,7 @@
       <div class="px-6 py-3 border-t border-gray-200">
         <div class="flex gap-3">
           <button
+            type="button"
             (click)="showConfidencialidadModal = false"
             [disabled]="isGuardando"
             class="flex-1 border border-gray-300 text-slate-700 font-bold uppercase text-xs py-3 rounded hover:bg-gray-50 disabled:opacity-50"
@@ -189,6 +192,7 @@
             Cerrar
           </button>
           <button
+            type="button"
             (click)="aceptarConfidencialidad()"
             [disabled]="isGuardando"
             class="flex-1 bg-[#1e3a8a] text-white font-bold uppercase text-xs py-3 rounded hover:bg-[#2541b2] disabled:opacity-50 flex justify-center items-center gap-2"
@@ -230,6 +234,7 @@
       </div>
       <div class="flex items-center gap-2">
         <button
+          type="button"
           (click)="descargarPdf()"
           [disabled]="!pdfPreviewUrl"
           class="flex items-center gap-2 bg-white text-[#1e3a8a] font-bold text-xs px-4 py-2 rounded-lg shadow hover:bg-slate-100 disabled:opacity-40 transition-colors"
@@ -240,6 +245,7 @@
           Descargar PDF
         </button>
         <button
+          type="button"
           (click)="showPdfFinal = false"
           class="flex items-center gap-1.5 border border-white/40 text-white font-bold text-xs px-4 py-2 rounded-lg hover:bg-white/10 transition-colors"
         >
@@ -271,6 +277,7 @@
           </svg>
           <p class="text-slate-400 text-sm">No se pudo cargar el documento</p>
           <button
+            type="button"
             (click)="abrirPdfFinal()"
             class="text-xs font-bold text-blue-400 hover:text-blue-300 uppercase tracking-wide"
           >
@@ -288,17 +295,18 @@
     class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
   >
     <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
-      <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
-        <h3 class="font-bold text-[#1e3a8a] uppercase tracking-wide">Ubicación Exacta</h3>
-        <button (click)="closeMap()" class="text-slate-400 hover:text-red-500 text-2xl font-light">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h3 class="text-base font-bold text-[#1e3a8a] uppercase tracking-wide">Ubicación Exacta</h3>
+        <button type="button" (click)="closeMap()" class="text-slate-400 hover:text-red-500 text-xl leading-none">
           &times;
         </button>
       </div>
-      <div class="p-0"><div id="map-container" class="h-[400px] w-full shadow-inner"></div></div>
-      <div class="p-4 border-t bg-slate-50 text-right">
+      <div><div id="map-container" class="h-[400px] w-full shadow-inner"></div></div>
+      <div class="px-6 py-3 border-t border-gray-200 text-right">
         <button
+          type="button"
           (click)="closeMap()"
-          class="bg-[#1e3a8a] text-white px-8 py-2 rounded text-xs font-bold uppercase hover:bg-[#2541b2]"
+          class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-xs font-bold uppercase hover:bg-[#2541b2]"
         >
           Confirmar Coordenadas
         </button>
