@@ -1,12 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
-import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
+import { ItemCatalogo, PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
+import { CatalogoService } from '../../services/catalogo.service';
 import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 
@@ -18,6 +19,26 @@ import { PageHeader } from '../../shared/components/page-header/page-header';
 })
 export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
   form: FormGroup;
+
+  // ── Tipo de ensayo (catálogo 17: Agua / Aire / Ruido) ────────────────────
+  private readonly CATALOGO_TIPO_ENSAYO    = 17;
+  private readonly CATALOGO_USO_SUELO      = 1003;
+  private readonly CATALOGO_CARACTERIZACION = 1005;
+  private readonly TIPOS_ENSAYO_PERMITIDOS = [90, 91]; // Aire, Ruido
+  private readonly OTROS_ID                = 2015;
+
+  tiposEnsayo: ItemCatalogo[] = [];
+  usoSueloOpciones: ItemCatalogo[] = [];
+  caracterizacionOpciones: ItemCatalogo[] = [];
+  loadingTipos = true;
+  tipoEnsayoId: number | null = null;
+
+  get esOtrosOperador(): boolean {
+    return this.form.get('usoSuelo.usoSueloOperadorId')?.value === this.OTROS_ID;
+  }
+  get esOtrosPca(): boolean {
+    return this.form.get('usoSuelo.usoSueloPcaId')?.value === this.OTROS_ID;
+  }
 
   // ── Búsqueda de solicitudes finalizadas ──────────────────────────────────
   panelAbierto = false;
@@ -38,6 +59,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private reportSolicitudService: ReportSolicitudService,
     private solicitudDetalleService: SolicitudDetalleService,
+    private catalogoService: CatalogoService,
   ) {
     this.form = this.fb.group({
       solicitudTrabajoNo: [''],
@@ -57,14 +79,50 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
         direccion: [''],
       }),
       ensayos: this.fb.array([]),
-      tiposUsoSuelo: this.fb.group({
-        usoSuelo: [''],
-        caracterizacionHoraria: [''],
+      observaciones: [''],
+      usoSuelo: this.fb.group({
+        usoSueloOperadorId:  [null],
+        usoSueloOperadorOtro: [''],
+        usoSueloPcaId:       [null],
+        usoSueloPcaOtro:     [''],
+        caracterizacionId:   [null],
+        direccionPca:        [''],
+        telefonoPca:         [''],
       }),
     });
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    forkJoin({
+      tipos:         this.catalogoService.getItemsByCatalogoId(this.CATALOGO_TIPO_ENSAYO),
+      usoSuelo:      this.catalogoService.getItemsByCatalogoId(this.CATALOGO_USO_SUELO),
+      caracterizacion: this.catalogoService.getItemsByCatalogoId(this.CATALOGO_CARACTERIZACION),
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: ({ tipos, usoSuelo, caracterizacion }) => {
+        this.tiposEnsayo           = tipos.data.filter(t => this.TIPOS_ENSAYO_PERMITIDOS.includes(t.id));
+        this.usoSueloOpciones      = usoSuelo.data;
+        this.caracterizacionOpciones = caracterizacion.data;
+        this.loadingTipos = false;
+      },
+      error: () => {
+        this.loadingTipos = false;
+        Swal.fire('Error', 'No se pudieron cargar los catálogos', 'error');
+      },
+    });
+  }
+
+  onTipoEnsayoChange(): void {
+    if (!this.solicitudSeleccionada) return;
+    this.solicitudDetalleService
+      .getSolicitudDetalle(this.solicitudSeleccionada.id_solicitud)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (detalle) => this.poblarFormulario(detalle),
+        error: () => Swal.fire('Error', 'No se pudo recargar los ensayos', 'error'),
+      });
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -163,8 +221,12 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
         valor: a.nombre_valor_catalogo || a.valor_multiple_format || a.valor_texto || '',
       }));
 
+    const ensayosFiltrados = (f.ensayos ?? []).filter(
+      e => this.tipoEnsayoId === null || e.parent_ambiental === this.tipoEnsayoId,
+    );
+
     this.ensayosArray.clear();
-    for (const e of f.ensayos ?? []) {
+    for (const e of ensayosFiltrados) {
       const partes = (e.metodo ?? '').split(',');
       this.ensayosArray.push(this.fb.group({
         seleccionado:     [true],
@@ -183,6 +245,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
 
   limpiarSolicitud(): void {
     this.solicitudSeleccionada = null;
+    this.tipoEnsayoId = null;
     this.busqueda = '';
     this.operadorAtributos = [];
     this.form.reset();

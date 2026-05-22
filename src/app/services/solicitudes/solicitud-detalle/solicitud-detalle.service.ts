@@ -37,6 +37,7 @@ export interface EnsayoDetalle {
   id: string;
   ensayo_id: number;
   nombre_ensayo: string;
+  parent_ambiental: number;
   metodo: string;
   identificacion: string;
   analisis: string;
