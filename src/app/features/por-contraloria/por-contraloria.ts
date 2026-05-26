@@ -67,20 +67,6 @@ export class PorContraloria implements OnInit, OnDestroy {
   pdfPreviewUrl: SafeResourceUrl | null = null;
   private pdfBlobUrl: string | null = null;
 
-  // ── Menú de acciones ─────────────────────────────────────────────────────
-  openMenuId: string | null = null;
-  menuOpenUp = false;
-
-  toggleMenu(id: string, event: MouseEvent): void {
-    event.stopPropagation();
-    if (this.openMenuId === id) { this.openMenuId = null; return; }
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.menuOpenUp = (window.innerHeight - rect.bottom) < 220;
-    this.openMenuId = id;
-  }
-
-  closeMenu(): void { this.openMenuId = null; }
-
   private readonly destroy$ = new Subject<void>();
 
   // ── Permisos ─────────────────────────────────────────────────────────────
