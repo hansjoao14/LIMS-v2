@@ -23,7 +23,6 @@ export interface OrdenTrabajoPayload {
 }
 
 export interface OrdenTrabajoDetallePayload {
-  orden_trabajo_id: string;
   solicitud_ensayo_id: string;
   estado: boolean;
 }

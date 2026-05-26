@@ -15,6 +15,10 @@ import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/per
 import { ToastrAlertService } from '../../services/toastr.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 
+const TECNICOS_HARDCODED = [
+  { id: 'jose-luis-montenegro', nombre: 'José Luis Montenegro', cargo: 'Técnico/a de Muestreo en Campo' },
+];
+
 @Component({
   selector: 'app-orden-trabajo-in-situ',
   imports: [CommonModule, ReactiveFormsModule, FormsModule, PageHeader],
@@ -56,6 +60,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
   solicitudSeleccionada: ReportSolicitud | null = null;
   loadingDetalle = false;
   saving = false;
+  readonly tecnicos = TECNICOS_HARDCODED;
   operadorAtributos: { pregunta: string; valor: string }[] = [];
 
   private readonly destroy$ = new Subject<void>();
@@ -296,6 +301,43 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
       return;
     }
 
+    const opcionesUsuario = this.tecnicos
+      .map((u) => `<option value="${u.id}">${u.nombre} — ${u.cargo}</option>`)
+      .join('');
+
+    const swalResult = await Swal.fire<{ usuario: string }>({
+      title: 'Técnico asignado',
+      html: `
+        <label style="font-size:11px;font-weight:700;color:#1e3a8a;text-transform:uppercase;display:block;text-align:left;margin-bottom:4px;">
+          Técnico asignado *
+        </label>
+        <select id="swal-usuario" class="swal2-input" style="margin:0;width:100%;">
+          <option value="">Seleccione...</option>
+          ${opcionesUsuario}
+        </select>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#1e3a8a',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Continuar',
+      cancelButtonText: 'Cancelar',
+      focusConfirm: false,
+      preConfirm: () => {
+        const sel = document.getElementById('swal-usuario') as HTMLSelectElement;
+        if (!sel?.value) {
+          Swal.showValidationMessage('Debe seleccionar un técnico asignado');
+          return false;
+        }
+        return { usuario: sel.value };
+      },
+    });
+
+    if (!swalResult.isConfirmed || !swalResult.value) return;
+
+    const tecnicoSeleccionado = this.tecnicos.find(u => u.id === swalResult.value!.usuario) ?? null;
+    console.log('[orden-in-situ:tecnico]', JSON.parse(JSON.stringify({ tecnicoSeleccionado })));
+
     this.saving = true;
     const raw = this.form.getRawValue();
     const now = new Date();
@@ -324,7 +366,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
           entidad_id:                  'F9687983-F6CF-4706-9004-A1B793E3A987',
           ctambiente_id:               this.tipoEnsayoId,
           periodo_id:                  periodo.id,
-          secuencial_id:               this.solicitudSeleccionada.secuencial_id ?? null,
+          secuencial_id:               null,
           num_secuencial:              null,
           ctuso_suelo_id:              raw.usoSuelo.usoSueloOperadorId ?? null,
           ctcaracteristica_horaria_id: raw.usoSuelo.caracterizacionId ?? null,
@@ -332,12 +374,11 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
           direccion_pca:               raw.usoSuelo.direccionPca || null,
           telefono_pca:                raw.usoSuelo.telefonoPca || null,
           observacion:                 raw.observaciones || null,
-          ctestado_id:                 388,
+          ctestado_id:                 2,
           estado:                      true,
           ctformulario_id:             0,
         },
         ordenTrabajoDetalle: ensayosSeleccionados.map((e: any) => ({
-          orden_trabajo_id:    '',
           solicitud_ensayo_id: e.ensayoId,
           estado:              true,
         })),
