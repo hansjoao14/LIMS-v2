@@ -431,7 +431,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
           valor_booleano: null,
           valor_multiple: null,
           valor_catalogo: esSelect ? Number(value) || 0 : 0,
-          valor_uuid: raw.tecnico_id ?? '',
+          valor_uuid: raw.tecnico_id ?? null,
         };
       });
 
@@ -446,7 +446,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         valor_booleano: null,
         valor_multiple: this.manualSchedules.length > 0 ? JSON.stringify(this.manualSchedules) : null,
         valor_catalogo: 0,
-        valor_uuid: raw.tecnico_id ?? '',
+        valor_uuid: raw.tecnico_id ?? null,
       }));
 
     const valorSolicitud = [...camposNormales, ...camposSchedule];
