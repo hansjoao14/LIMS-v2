@@ -73,16 +73,16 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     {
       preservante: 'H2SO4',
       ensayos: [
-        { activo: true, ensayo: 'DEMANDA QUÍMICA DE OXÍGENO', identificacion: 'DQO', metodoInterno: 'PEE/IAM-Q/03', metodoReferencia: 'APHA 5220D', unidad: 'mg/L' },
-        { activo: true, ensayo: 'ACEITES Y GRASAS', identificacion: 'AyG', metodoInterno: 'PEE/IAM-Q/05', metodoReferencia: 'EPA 1664', unidad: 'mg/L' },
+        { activo: false, ensayo: 'DEMANDA QUÍMICA DE OXÍGENO', identificacion: 'DQO', metodoInterno: 'PEE/IAM-Q/03', metodoReferencia: 'APHA 5220D', unidad: 'mg/L' },
+        { activo: false, ensayo: 'ACEITES Y GRASAS', identificacion: 'AyG', metodoInterno: 'PEE/IAM-Q/05', metodoReferencia: 'EPA 1664', unidad: 'mg/L' },
       ],
     },
     {
       preservante: 'TEMPERATURA',
       ensayos: [
-        { activo: true, ensayo: 'DEMANDA BIOQUÍMICA DE OXÍGENO', identificacion: 'DBO5', metodoInterno: 'PEE/IAM-Q/27', metodoReferencia: 'APHA 5210B', unidad: 'mg/L' },
-        { activo: true, ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES', identificacion: 'SST', metodoInterno: 'PEE/IAM-Q/02', metodoReferencia: 'APHA 2540D', unidad: 'mg/L' },
-        { activo: true, ensayo: 'TURBIDEZ', identificacion: '-', metodoInterno: 'PEE/IAM-Q/31', metodoReferencia: 'SM 2130 B', unidad: 'NTU' },
+        { activo: false, ensayo: 'DEMANDA BIOQUÍMICA DE OXÍGENO', identificacion: 'DBO5', metodoInterno: 'PEE/IAM-Q/27', metodoReferencia: 'APHA 5210B', unidad: 'mg/L' },
+        { activo: false, ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES', identificacion: 'SST', metodoInterno: 'PEE/IAM-Q/02', metodoReferencia: 'APHA 2540D', unidad: 'mg/L' },
+        { activo: false, ensayo: 'TURBIDEZ', identificacion: '-', metodoInterno: 'PEE/IAM-Q/31', metodoReferencia: 'SM 2130 B', unidad: 'NTU' },
       ],
     },
   ];
