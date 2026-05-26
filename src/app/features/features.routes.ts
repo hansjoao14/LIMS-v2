@@ -73,4 +73,10 @@ export const featuresRoutes: Routes = [
     canActivate: [canActivateWithRealmRoles],
     data: { title: 'Plan de Muestreo - Paso 2', requiredRoles: RoleAccess.PLAN_MUESTREO },
   },
+  {
+    path: 'plan-muestreo/paso3',
+    loadComponent: () => import('./plan-muestreo/plan-muestreo-paso3').then((m) => m.PlanMuestreoPaso3),
+    canActivate: [canActivateWithRealmRoles],
+    data: { title: 'Plan de Muestreo - Paso 3', requiredRoles: RoleAccess.PLAN_MUESTREO },
+  },
 ];

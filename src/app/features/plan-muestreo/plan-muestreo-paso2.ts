@@ -93,6 +93,6 @@ export class PlanMuestreoPaso2 {
   }
 
   siguiente(): void {
-    // navegar al siguiente paso
+    this.router.navigate(['/plan-muestreo/paso3']);
   }
 }
