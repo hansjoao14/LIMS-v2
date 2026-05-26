@@ -164,11 +164,9 @@
           <colgroup>
             <col class="w-[38px]">
             <col class="w-[85px]">
-            <col>
+            <col class="w-[150px]">
             <col class="w-[55px]">
             <col class="w-[55px]">
-            <col class="w-[95px]">
-            <col class="w-[82px]">
             <col class="w-[100px]">
             <col class="w-[58px]">
             <col class="w-[95px]">
@@ -186,8 +184,6 @@
               <th class="px-3 py-2.5 border-r border-slate-100 text-left">Lugar de Destino</th>
               <th class="px-3 py-2.5 border-r border-slate-100 text-center">Salida</th>
               <th class="px-3 py-2.5 border-r border-slate-100 text-center">Retorno</th>
-              <th class="px-3 py-2.5 border-r border-slate-100 text-left">Solicitante</th>
-              <th class="px-3 py-2.5 border-r border-slate-100 text-left">Cargo</th>
               <th class="px-3 py-2.5 border-r border-slate-100 text-left">Funcionario</th>
               <th class="px-3 py-2.5 border-r border-slate-100 text-center">Ocupantes</th>
               <th class="px-3 py-2.5 border-r border-slate-100 text-left">Motivo</th>
@@ -211,8 +207,6 @@
                   <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-2/3 mx-auto"></div></td>
                   <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-2/3 mx-auto"></div></td>
                   <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-4/5"></div></td>
-                  <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
-                  <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-4/5"></div></td>
                   <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-1/2 mx-auto"></div></td>
                   <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
                   <td class="px-3 py-3 border-r border-slate-100"><div class="h-5 bg-slate-200 rounded w-4/5 mx-auto"></div></td>
@@ -232,7 +226,7 @@
             } @else {
               @if (solicitudesAgrupadas.length === 0) {
                 <tr>
-                  <td [attr.colspan]="hasAnyAction ? 13 : 12" class="p-10 text-slate-400 italic text-center">
+                  <td [attr.colspan]="hasAnyAction ? 11 : 10" class="p-10 text-slate-400 italic text-center">
                     No hay órdenes de movilización registradas.
                   </td>
                 </tr>
@@ -241,7 +235,7 @@
 
                   <tr>
                     <td
-                      [attr.colspan]="hasAnyAction ? 13 : 12"
+                      [attr.colspan]="hasAnyAction ? 11 : 10"
                       class="py-3 px-4 text-center font-bold italic text-[#1e3a8a] bg-blue-50/40 border-y border-slate-200 text-sm tracking-widest uppercase"
                     >
                       {{ grupo.diaLabel }}
@@ -268,14 +262,6 @@
                       </td>
                       <td class="px-3 py-2.5 border-r border-slate-100 text-center text-slate-500 whitespace-nowrap text-xs">
                         {{ getFieldValue(sol, 'val_hora_retorno') }}
-                      </td>
-                      <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
-                          [title]="$any(getFieldValue(sol, 'val_nombre_solicitante'))">
-                        {{ getFieldValue(sol, 'val_nombre_solicitante') }}
-                      </td>
-                      <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
-                          [title]="$any(getFieldValue(sol, 'val_cargo_solicitante'))">
-                        {{ getFieldValue(sol, 'val_cargo_solicitante') }}
                       </td>
                       <td class="px-3 py-2.5 border-r border-slate-100 text-slate-600 truncate"
                           [title]="getEmployeeName('val_funcionario_id', getFieldValue(sol, 'val_funcionario_id'))">
