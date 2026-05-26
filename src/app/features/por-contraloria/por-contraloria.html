@@ -299,14 +299,15 @@
                             }
                             <button
                               type="button"
-                              (click)="toggleMenu(sol.id); $event.stopPropagation()"
+                              (click)="toggleMenu(sol.id, $event)"
                               class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 transition-colors shrink-0">
                               <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
                               </svg>
                             </button>
                             @if (openMenuId === sol.id) {
-                              <div class="absolute right-0 top-9 z-20 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40 text-left">
+                              <div class="absolute right-0 z-20 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40 text-left"
+                                   [class.top-9]="!menuOpenUp" [class.bottom-9]="menuOpenUp">
                                 @if (canEdit()) {
                                   <button type="button" (click)="cargarParaEditar(sol); closeMenu()"
                                     [disabled]="saving"

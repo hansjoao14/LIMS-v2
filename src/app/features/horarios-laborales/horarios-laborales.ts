@@ -69,7 +69,16 @@ export class HorariosLaborales implements OnInit, OnDestroy {
 
   // ── Menú de acciones ─────────────────────────────────────────────────────
   openMenuId: string | null = null;
-  toggleMenu(id: string): void { this.openMenuId = this.openMenuId === id ? null : id; }
+  menuOpenUp = false;
+
+  toggleMenu(id: string, event: MouseEvent): void {
+    event.stopPropagation();
+    if (this.openMenuId === id) { this.openMenuId = null; return; }
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.menuOpenUp = (window.innerHeight - rect.bottom) < 220;
+    this.openMenuId = id;
+  }
+
   closeMenu(): void { this.openMenuId = null; }
 
   private userAppRole = computed<AppRole | null>(() => {
