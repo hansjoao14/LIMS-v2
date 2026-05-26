@@ -18,6 +18,7 @@ export interface PreservacionMuestra {
 export interface Equipo {
   nombre: string;
   seleccion: string;
+  opciones: string[];
 }
 
 export interface Material {
@@ -63,14 +64,14 @@ export class PlanMuestreoPaso2 {
   ];
 
   equiposMedicion: Equipo[] = [
-    { nombre: 'MULTIPARÁMETROS', seleccion: '' },
-    { nombre: 'TERMÓMETRO DIGITAL', seleccion: '' },
-    { nombre: 'AFORADOR DOPPLER', seleccion: '' },
-    { nombre: 'MEDIDOR DE CAUDAL MAGNÉTICO', seleccion: '' },
+    { nombre: 'MULTIPARÁMETROS', seleccion: '', opciones: ['IDM-21-15', 'IDM-21-26'] },
+    { nombre: 'TERMÓMETRO DIGITAL', seleccion: '', opciones: ['IDM-21-15'] },
+    { nombre: 'AFORADOR DOPPLER', seleccion: '', opciones: ['IDM-21-15'] },
+    { nombre: 'MEDIDOR DE CAUDAL MAGNÉTICO - INDUCTIVO', seleccion: '', opciones: ['IDM-21-15'] },
   ];
 
   equiposPreservacion: Equipo[] = [
-    { nombre: 'FRIGORÍFICO PORTÁTIL', seleccion: '' },
+    { nombre: 'FRIGORÍFICO PORTÁTIL', seleccion: '', opciones: ['A-21-18','A-21-19'] },
   ];
 
   materiales: Material[] = [
@@ -81,10 +82,10 @@ export class PlanMuestreoPaso2 {
     { nombre: 'JARRA DE VIDRIO DE 1 LITRO', activo: false },
   ];
 
-  personasEnCampo = 2;
-  movilizacion = 'En camioneta desde la Secretaria de Ambiente al punto de muestreo aprox. XX km, XX min.';
-  tiempoPermanencia = 2;
-  duracionMuestreo = 2;
+  personasEnCampo = 0;
+  movilizacion = '';
+  tiempoPermanencia = 0;
+  duracionMuestreo = 0;
 
   constructor(private router: Router) {}
 

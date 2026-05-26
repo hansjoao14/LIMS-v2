@@ -116,7 +116,10 @@
                     <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">{{ eq.nombre }}</label>
                     <select [(ngModel)]="eq.seleccion"
                       class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors">
-                      <option value="">Selecciona el equipo e.g. IMD-21-15</option>
+                      <option value="">Seleccione...</option>
+                      @for (opt of eq.opciones; track opt) {
+                        <option [value]="opt">{{ opt }}</option>
+                      }
                     </select>
                   </div>
                 }
@@ -131,7 +134,10 @@
                     <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">{{ eq.nombre }}</label>
                     <select [(ngModel)]="eq.seleccion"
                       class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors">
-                      <option value="">Selecciona el equipo e.g. IMD-21-18</option>
+                      <option value="">Seleccione...</option>
+                      @for (opt of eq.opciones; track opt) {
+                        <option [value]="opt">{{ opt }}</option>
+                      }
                     </select>
                   </div>
                 }

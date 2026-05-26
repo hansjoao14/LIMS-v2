@@ -21,13 +21,13 @@ export class PlanMuestreoPaso3 {
     'Casco, overol con cintas reflectivas, zapatos punta de acero, gafas, mascarilla para vapores ácidos, guantes de nitrilo, guantes de hilo, botiquín de primeros auxilios, gel antibacterial, conos';
 
   soluciones: SolucionBuffer[] = [
-    { nombre: 'BUFFER DE PH 2 CÓD. QC-18', activo: true },
-    { nombre: 'BUFFER DE PH 4 CÓD. QC-17', activo: true },
-    { nombre: 'BUFFER DE PH 7 CÓD. QC-16', activo: true },
-    { nombre: 'BUFFER DE PH 10 CÓD. QC-14', activo: true },
+    { nombre: 'BUFFER DE PH 2 CÓD. QC-18', activo: false },
+    { nombre: 'BUFFER DE PH 4 CÓD. QC-17', activo: false },
+    { nombre: 'BUFFER DE PH 7 CÓD. QC-16', activo: false },
+    { nombre: 'BUFFER DE PH 10 CÓD. QC-14', activo: false },
     { nombre: 'PE DE PH 6.63', activo: false },
-    { nombre: 'ESTÁNDAR OXÍGENO DISUELTO 0 MG/L CÓD. RV-42', activo: true },
-    { nombre: 'ESTÁNDAR CONDUCTIVIDAD 1413 CÓD. RV-63', activo: true },
+    { nombre: 'ESTÁNDAR OXÍGENO DISUELTO 0 MG/L CÓD. RV-42', activo: false },
+    { nombre: 'ESTÁNDAR CONDUCTIVIDAD 1413 CÓD. RV-63', activo: false },
     { nombre: 'ESTÁNDAR CONDUCTIVIDAD 147 CÓD. RV-62', activo: false },
   ];
 
