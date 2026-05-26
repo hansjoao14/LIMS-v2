@@ -97,5 +97,6 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     path: '/admin-formularios',
     label: 'Administración de Formularios',
     icon: CarpetaIcon,
+    requiredRoles: RoleAccess.ADMIN_ONLY,
   },
 ];
