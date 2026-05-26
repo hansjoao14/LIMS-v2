@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
@@ -9,6 +9,10 @@ import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/
 import { ItemCatalogo, PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { CatalogoService } from '../../services/catalogo.service';
 import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
+import { OrdenTrabajoService } from '../../services/solicitudes/orden-trabajo/orden-trabajo.service';
+import { AuthService } from '../auth/service/auth-service';
+import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/periodo.service';
+import { ToastrAlertService } from '../../services/toastr.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 
 @Component({
@@ -51,6 +55,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
   busqueda = '';
   solicitudSeleccionada: ReportSolicitud | null = null;
   loadingDetalle = false;
+  saving = false;
   operadorAtributos: { pregunta: string; valor: string }[] = [];
 
   private readonly destroy$ = new Subject<void>();
@@ -60,6 +65,10 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
     private reportSolicitudService: ReportSolicitudService,
     private solicitudDetalleService: SolicitudDetalleService,
     private catalogoService: CatalogoService,
+    private ordenTrabajoService: OrdenTrabajoService,
+    private authService: AuthService,
+    private periodoService: PeriodoService,
+    private toastrAlert: ToastrAlertService,
   ) {
     this.form = this.fb.group({
       solicitudTrabajoNo: [''],
@@ -230,6 +239,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
     for (const e of ensayosFiltrados) {
       const partes = (e.metodo ?? '').split(',');
       this.ensayosArray.push(this.fb.group({
+        ensayoId:         [e.id ?? ''],
         seleccionado:     [true],
         ensayo:           [e.analisis ?? ''],
         identificacion:   [e.identificacion ?? ''],
@@ -253,12 +263,13 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
 
   crearEnsayo(): FormGroup {
     return this.fb.group({
-      seleccionado: [false],
-      ensayo: [''],
-      identificacion: [''],
-      metodoInterno: [''],
+      ensayoId:         [''],
+      seleccionado:     [false],
+      ensayo:           [''],
+      identificacion:   [''],
+      metodoInterno:    [''],
       metodoReferencia: [''],
-      unidad: [''],
+      unidad:           [''],
     });
   }
 
@@ -275,20 +286,73 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
     control?.setValue(!control.value);
   }
 
-  private readonly COLOR_PRIMARIO = '#1e3a8a';
-
-  guardar(): void {
-    this.form.reset();
-    this.solicitudSeleccionada = null;
-    while (this.ensayosArray.length > 2) {
-      this.ensayosArray.removeAt(this.ensayosArray.length - 1);
+  async guardar(): Promise<void> {
+    if (!this.solicitudSeleccionada) {
+      this.toastrAlert.showWarning('Seleccione una solicitud de trabajo antes de guardar.', 'Requerido');
+      return;
     }
-    Swal.fire({
-      title: '¡Guardado con éxito!',
-      text: 'La orden de trabajo In Situ ha sido guardada correctamente.',
-      icon: 'success',
-      confirmButtonColor: this.COLOR_PRIMARIO,
-      timer: 2500,
-    });
+    if (!this.tipoEnsayoId) {
+      this.toastrAlert.showWarning('Seleccione el tipo de ensayo antes de guardar.', 'Requerido');
+      return;
+    }
+
+    this.saving = true;
+    const raw = this.form.getRawValue();
+    const now = new Date();
+
+    try {
+      const ejercicio = await this.periodoService.getEjercicioByAnio(now.getFullYear());
+      if (!ejercicio) throw new Error(`No hay ejercicio activo para ${now.getFullYear()}`);
+
+      const periodo = await this.periodoService.getPeriodoByEjercicioAndMes(
+        ejercicio.id,
+        now.getMonth() + 1,
+      );
+      if (!periodo) throw new Error(`No hay periodo activo para el mes ${now.getMonth() + 1}`);
+
+      const { id: userId } = this.authService.currentUser();
+
+      const ensayosSeleccionados = (raw.ensayos as any[]).filter(
+        (e: any) => e.seleccionado && e.ensayoId,
+      );
+
+      //TODO: Cambiar el entidad_id
+      const payload = {
+        ordenTrabajo: {
+          solicitud_id:                this.solicitudSeleccionada.id_solicitud,
+          usuario_id:                  userId,
+          entidad_id:                  'F9687983-F6CF-4706-9004-A1B793E3A987',
+          ctambiente_id:               this.tipoEnsayoId,
+          periodo_id:                  periodo.id,
+          secuencial_id:               this.solicitudSeleccionada.secuencial_id ?? null,
+          num_secuencial:              null,
+          ctuso_suelo_id:              raw.usoSuelo.usoSueloOperadorId ?? null,
+          ctcaracteristica_horaria_id: raw.usoSuelo.caracterizacionId ?? null,
+          ctpunto_critico_id:          raw.usoSuelo.usoSueloPcaId ?? null,
+          direccion_pca:               raw.usoSuelo.direccionPca || null,
+          telefono_pca:                raw.usoSuelo.telefonoPca || null,
+          observacion:                 raw.observaciones || null,
+          ctestado_id:                 388,
+          estado:                      true,
+          ctformulario_id:             0,
+        },
+        ordenTrabajoDetalle: ensayosSeleccionados.map((e: any) => ({
+          orden_trabajo_id:    '',
+          solicitud_ensayo_id: e.ensayoId,
+          estado:              true,
+        })),
+      };
+
+      console.log('[orden-in-situ:guardar]', JSON.parse(JSON.stringify(payload)));
+
+      await firstValueFrom(this.ordenTrabajoService.crearOrdenTrabajoConDetalle(payload));
+
+      this.toastrAlert.showSuccess('La orden de trabajo In Situ ha sido guardada.', '¡Guardado!');
+      this.limpiarSolicitud();
+    } catch {
+      this.toastrAlert.showError('No se pudo guardar la orden de trabajo.', 'Error');
+    } finally {
+      this.saving = false;
+    }
   }
 }

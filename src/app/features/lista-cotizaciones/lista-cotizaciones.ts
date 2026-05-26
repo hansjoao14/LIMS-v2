@@ -13,6 +13,10 @@ import { AuthService } from '../auth/service/auth-service';
 import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 
+const TECNICOS_HARDCODED = [
+  { id: 'jose-luis-montenegro', nombre: 'José Luis Montenegro', cargo: 'Técnico/a de Muestreo en Campo' },
+];
+
 const ESTADO_AUTORIZADO = 387;
 const ESTADO_RECHAZADO = 51;
 const CATALOGO_PRIORIDAD_ID = 30;
@@ -32,6 +36,7 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
   readonly PAGE_SIZE = 10;
 
   prioridades: ItemCatalogo[] = [];
+  readonly tecnicos = TECNICOS_HARDCODED;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -95,22 +100,33 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
   }
 
   async cotizarSolicitud(doc: ReportSolicitud): Promise<void> {
-    const opcionesHtml = this.prioridades
+    const opcionesPrioridad = this.prioridades
       .map((p) => `<option value="${p.id}">${p.nombre}</option>`)
       .join('');
 
-    const result = await Swal.fire<string>({
+    const opcionesUsuario = this.tecnicos
+      .map((u) => `<option value="${u.id}">${u.nombre} — ${u.cargo}</option>`)
+      .join('');
+
+    const result = await Swal.fire<{ prioridad: string; usuario: string }>({
       title: 'Autorizar Solicitud',
       html: `
         <p style="font-size:13px;color:#475569;margin-bottom:12px;">
           Solicitud: <strong>${doc.num_secuencial ?? doc.id_solicitud}</strong>
         </p>
         <label style="font-size:11px;font-weight:700;color:#1e3a8a;text-transform:uppercase;display:block;text-align:left;margin-bottom:4px;">
-          Seleccione la Prioridad *
+          Prioridad *
         </label>
-        <select id="swal-prioridad" class="swal2-input" style="margin:0;width:100%;">
+        <select id="swal-prioridad" class="swal2-input" style="margin:0 0 12px;width:100%;">
           <option value="">Seleccione...</option>
-          ${opcionesHtml}
+          ${opcionesPrioridad}
+        </select>
+        <label style="font-size:11px;font-weight:700;color:#1e3a8a;text-transform:uppercase;display:block;text-align:left;margin-bottom:4px;">
+          Técnico asignado *
+        </label>
+        <select id="swal-usuario" class="swal2-input" style="margin:0;width:100%;">
+          <option value="">Seleccione...</option>
+          ${opcionesUsuario}
         </select>
       `,
       icon: 'question',
@@ -121,18 +137,31 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
       cancelButtonText: 'Cancelar',
       focusConfirm: false,
       preConfirm: () => {
-        const sel = document.getElementById('swal-prioridad') as HTMLSelectElement;
-        if (!sel?.value) {
+        const selPrioridad = document.getElementById('swal-prioridad') as HTMLSelectElement;
+        const selUsuario   = document.getElementById('swal-usuario')   as HTMLSelectElement;
+        if (!selPrioridad?.value) {
           Swal.showValidationMessage('Debe seleccionar una prioridad');
           return false;
         }
-        return sel.value;
+        if (!selUsuario?.value) {
+          Swal.showValidationMessage('Debe seleccionar un técnico asignado');
+          return false;
+        }
+        return { prioridad: selPrioridad.value, usuario: selUsuario.value };
       },
     });
 
     if (!result.isConfirmed || !result.value) return;
 
-    const prioridadId = Number(result.value);
+    const { prioridad, usuario } = result.value;
+    const prioridadId = Number(prioridad);
+    const usuarioSeleccionado = this.tecnicos.find(u => u.id === usuario) ?? null;
+
+    console.log('[lista-cotizaciones:autorizar]', JSON.parse(JSON.stringify({
+      solicitud:           doc.num_secuencial ?? doc.id_solicitud,
+      prioridadId,
+      tecnicoSeleccionado: usuarioSeleccionado,
+    })));
 
     // Remove row immediately — UI must not wait for the server
     this.solicitudes = this.solicitudes.filter(s => s.id_solicitud !== doc.id_solicitud);
