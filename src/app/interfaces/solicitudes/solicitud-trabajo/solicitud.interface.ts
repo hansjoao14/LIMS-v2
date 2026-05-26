@@ -7,7 +7,7 @@ export interface ValorSolicitudItem {
   valor_booleano: boolean | null;
   valor_multiple: string | null;
   valor_catalogo: number;
-  valor_uuid: string;
+  valor_uuid: string | null;
   estado?: boolean;
 }
 

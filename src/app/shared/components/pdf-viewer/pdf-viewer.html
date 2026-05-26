@@ -1,0 +1,40 @@
+@if (visible) {
+  <div class="fixed inset-0 z-50 flex flex-col bg-white">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-3 border-b border-slate-200 bg-white shadow-sm shrink-0">
+      <h3 class="font-bold text-[#1e3a8a] text-sm uppercase tracking-wide">{{ titulo }}</h3>
+      <div class="flex items-center gap-3">
+        <button type="button" (click)="downloaded.emit()"
+          class="flex items-center gap-1.5 text-xs font-bold text-[#1e3a8a] border border-[#1e3a8a] px-3 py-1.5 rounded hover:bg-blue-50 transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          Descargar
+        </button>
+        <button type="button" (click)="closed.emit()"
+          class="flex items-center gap-1.5 text-xs font-bold text-slate-600 border border-slate-300 px-3 py-1.5 rounded hover:bg-slate-50 transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Cerrar
+        </button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    @if (loading) {
+      <div class="flex-1 flex items-center justify-center">
+        <span class="animate-spin h-8 w-8 border-4 border-[#1e3a8a] border-t-transparent rounded-full"></span>
+      </div>
+    } @else if (pdfUrl) {
+      <iframe [src]="pdfUrl" class="flex-1 w-full border-0"></iframe>
+    } @else {
+      <div class="flex-1 flex items-center justify-center text-slate-400 text-sm italic">
+        No se pudo cargar el documento.
+      </div>
+    }
+
+  </div>
+}

@@ -8,6 +8,7 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject, takeUntil, firstValueFrom, forkJoin, finalize } from 'rxjs';
 import Swal from 'sweetalert2';
 import { ToastrAlertService } from '../../services/toastr.service';
@@ -31,6 +32,7 @@ import { LoadingComponent } from '../../shared/components/loading/loading';
 import { PaginationComponent } from '../../shared/components/pagination/pagination';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { PageHeader } from '../../shared/components/page-header/page-header';
+import { PdfViewerComponent } from '../../shared/components/pdf-viewer/pdf-viewer';
 
 const ESTADO_AUTORIZADO = 387;
 const ESTADO_RECHAZADO  = 51;
@@ -40,7 +42,7 @@ type ContraloriaRecord = { id: string } & Record<string, unknown>;
 @Component({
   selector: 'app-por-contraloria',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, LoadingComponent, PaginationComponent, PageHeader],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, LoadingComponent, PaginationComponent, PageHeader, PdfViewerComponent],
   templateUrl: './por-contraloria.html',
   styleUrls: ['./por-contraloria.css'],
 })
@@ -58,6 +60,12 @@ export class PorContraloria implements OnInit, OnDestroy {
   metaTabla: PaginationMeta | null = null;
   currentPage = 1;
   readonly PAGE_SIZE = 10;
+
+  // ── PDF viewer ───────────────────────────────────────────────────────────
+  showPdfModal    = false;
+  isPdfCargando   = false;
+  pdfPreviewUrl: SafeResourceUrl | null = null;
+  private pdfBlobUrl: string | null = null;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -104,6 +112,7 @@ export class PorContraloria implements OnInit, OnDestroy {
     private periodoService: PeriodoService,
     private zone: NgZone,
     private toastrAlert: ToastrAlertService,
+    private sanitizer: DomSanitizer,
   ) {
     this.form = this.fb.group({});
   }
@@ -443,7 +452,7 @@ export class PorContraloria implements OnInit, OnDestroy {
             valor_booleano: null,
             valor_multiple: null,
             valor_catalogo: esSelect ? Number(value) || 0 : 0,
-            valor_uuid: esEmployee ? ((value as string) ?? '') : userId,
+            valor_uuid: esEmployee ? ((value as string) ?? '') : null,
             estado: true,
           };
         });
@@ -612,7 +621,7 @@ export class PorContraloria implements OnInit, OnDestroy {
           valor_booleano: null,
           valor_multiple: null,
           valor_catalogo: esSelect ? Number(value) || 0 : 0,
-          valor_uuid: esEmployee ? ((value as string) ?? '') : userId,
+          valor_uuid: esEmployee ? ((value as string) ?? '') : null,
           estado: true,
         };
       });
@@ -649,7 +658,49 @@ export class PorContraloria implements OnInit, OnDestroy {
     return emp?.nombre_empleado ?? String(value);
   }
 
+  // ── PDF vehiculo ─────────────────────────────────────────────────────────
+
+  imprimirRegistro(record: ContraloriaRecord): void {
+    this.showPdfModal  = true;
+    this.isPdfCargando = true;
+    this.pdfPreviewUrl = null;
+    if (this.pdfBlobUrl) { URL.revokeObjectURL(this.pdfBlobUrl); this.pdfBlobUrl = null; }
+
+    this.solicitudService.getPdfVehiculo(record.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) => {
+          this.zone.run(() => {
+            this.pdfBlobUrl    = URL.createObjectURL(blob);
+            this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
+            this.isPdfCargando = false;
+          });
+        },
+        error: () => {
+          this.zone.run(() => {
+            this.isPdfCargando = false;
+            this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
+          });
+        },
+      });
+  }
+
+  cerrarPdf(): void {
+    this.showPdfModal  = false;
+    this.pdfPreviewUrl = null;
+    if (this.pdfBlobUrl) { URL.revokeObjectURL(this.pdfBlobUrl); this.pdfBlobUrl = null; }
+  }
+
+  descargarPdf(): void {
+    if (!this.pdfBlobUrl) return;
+    const a = document.createElement('a');
+    a.href = this.pdfBlobUrl;
+    a.download = 'orden-movilizacion.pdf';
+    a.click();
+  }
+
   ngOnDestroy(): void {
+    if (this.pdfBlobUrl) { URL.revokeObjectURL(this.pdfBlobUrl); }
     this.destroy$.next();
     this.destroy$.complete();
   }

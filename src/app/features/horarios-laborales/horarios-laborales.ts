@@ -8,6 +8,7 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject, takeUntil, firstValueFrom, forkJoin, finalize } from 'rxjs';
 import Swal from 'sweetalert2';
 import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
@@ -31,6 +32,7 @@ import { LoadingComponent } from '../../shared/components/loading/loading';
 import { PaginationComponent } from '../../shared/components/pagination/pagination';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { PageHeader } from '../../shared/components/page-header/page-header';
+import { PdfViewerComponent } from '../../shared/components/pdf-viewer/pdf-viewer';
 
 const ESTADO_AUTORIZADO = 387;
 const ESTADO_RECHAZADO  = 51;
@@ -40,7 +42,7 @@ type VehiculoRecord = { id: string } & Record<string, unknown>;
 @Component({
   selector: 'app-horarios-laborales',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, LoadingComponent, PaginationComponent, PageHeader],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, LoadingComponent, PaginationComponent, PageHeader, PdfViewerComponent],
   templateUrl: './horarios-laborales.html',
   styleUrls: ['./horarios-laborales.css'],
 })
@@ -58,6 +60,12 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   currentPage = 1;
   loadingTabla = false;
   readonly PAGE_SIZE = 10;
+
+  // ── PDF viewer ───────────────────────────────────────────────────────────
+  showPdfModal    = false;
+  isPdfCargando   = false;
+  pdfPreviewUrl: SafeResourceUrl | null = null;
+  private pdfBlobUrl: string | null = null;
 
   private userAppRole = computed<AppRole | null>(() => {
     const roles = this.authService.userProfile()?.roles ?? [];
@@ -228,6 +236,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     private periodoService: PeriodoService,
     private zone: NgZone,
     private toastrAlert: ToastrAlertService,
+    private sanitizer: DomSanitizer,
   ) {
     this.form = this.fb.group({});
   }
@@ -510,7 +519,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
             valor_booleano: null,
             valor_multiple: null,
             valor_catalogo: esSelect ? Number(value) || 0 : 0,
-            valor_uuid: esEmployee ? ((value as string) ?? '') : userId,
+            valor_uuid: esEmployee ? ((value as string) ?? '') : null,
             estado: true,
           };
         });
@@ -550,7 +559,7 @@ export class HorariosLaborales implements OnInit, OnDestroy {
           valor_booleano: null,
           valor_multiple: null,
           valor_catalogo: esSelect ? Number(value) || 0 : 0,
-          valor_uuid: esEmployee ? ((value as string) ?? '') : userId,
+          valor_uuid: esEmployee ? ((value as string) ?? '') : null,
           estado: true,
         };
       });
@@ -569,7 +578,8 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     } catch (err: any) {
       this.zone.run(() => {
         this.saving = false;
-        this.toastrAlert.showError('No se pudo actualizar el registro', 'Error');
+        const mensaje = err?.error?.message ?? err?.message ?? 'No se pudo actualizar el registro';
+        this.toastrAlert.showError(mensaje, 'Error');
       });
     }
   }
@@ -767,7 +777,49 @@ export class HorariosLaborales implements OnInit, OnDestroy {
     return d.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
+  // ── PDF vehiculo ─────────────────────────────────────────────────────────
+
+  imprimirRegistro(record: VehiculoRecord): void {
+    this.showPdfModal  = true;
+    this.isPdfCargando = true;
+    this.pdfPreviewUrl = null;
+    if (this.pdfBlobUrl) { URL.revokeObjectURL(this.pdfBlobUrl); this.pdfBlobUrl = null; }
+
+    this.solicitudService.getPdfVehiculo(record.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) => {
+          this.zone.run(() => {
+            this.pdfBlobUrl    = URL.createObjectURL(blob);
+            this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
+            this.isPdfCargando = false;
+          });
+        },
+        error: () => {
+          this.zone.run(() => {
+            this.isPdfCargando = false;
+            this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
+          });
+        },
+      });
+  }
+
+  cerrarPdf(): void {
+    this.showPdfModal  = false;
+    this.pdfPreviewUrl = null;
+    if (this.pdfBlobUrl) { URL.revokeObjectURL(this.pdfBlobUrl); this.pdfBlobUrl = null; }
+  }
+
+  descargarPdf(): void {
+    if (!this.pdfBlobUrl) return;
+    const a = document.createElement('a');
+    a.href = this.pdfBlobUrl;
+    a.download = 'programacion-vehiculo.pdf';
+    a.click();
+  }
+
   ngOnDestroy(): void {
+    if (this.pdfBlobUrl) { URL.revokeObjectURL(this.pdfBlobUrl); }
     this.destroy$.next();
     this.destroy$.complete();
   }
