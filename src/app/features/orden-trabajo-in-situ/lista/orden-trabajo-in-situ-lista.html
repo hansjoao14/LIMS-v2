@@ -1,0 +1,160 @@
+<div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+
+  <!-- Botón nueva orden -->
+  <div class="flex justify-end mb-4">
+    <button type="button" (click)="nuevaOrden.emit()"
+      class="bg-[#1e3a8a] text-white px-5 py-2 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nueva Orden
+    </button>
+  </div>
+
+  <!-- Tabla con skeleton loader -->
+  <div class="border border-slate-200 rounded">
+    <table class="w-full text-sm border-collapse table-fixed">
+      <colgroup>
+        <col class="w-[140px]">
+        <col class="w-[130px]">
+        <col class="w-[100px]">
+        <col class="w-[130px]">
+        <col class="w-[160px]">
+        <col class="w-[110px]">
+        <col class="w-[120px]">
+        <col class="w-[118px]">
+      </colgroup>
+      <thead>
+        <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
+          <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Orden</th>
+          <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Solicitud</th>
+          <th class="px-3 py-2.5 border-r border-slate-100 text-left">Ambiente</th>
+          <th class="px-3 py-2.5 border-r border-slate-100 text-left">Periodo</th>
+          <th class="px-3 py-2.5 border-r border-slate-100 text-left">Responsable</th>
+          <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
+          <th class="px-3 py-2.5 border-r border-slate-100 text-left">Fecha creación</th>
+          <th class="px-2 py-2.5 text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading) {
+          @for (_ of [1,2,3,4,5,6,7,8]; track $index) {
+            <tr class="border-b border-slate-200 animate-pulse">
+              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
+              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-4/5"></div></td>
+              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
+              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4 mx-auto"></div></td>
+              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-4/5"></div></td>
+              <td class="px-3 py-3 border-r border-slate-100"><div class="h-5 bg-slate-200 rounded w-4/5 mx-auto"></div></td>
+              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
+              <td class="px-2 py-3">
+                <div class="flex items-center justify-center gap-1.5">
+                  <div class="h-8 w-8 bg-slate-200 rounded"></div>
+                  <div class="h-8 w-8 bg-slate-200 rounded"></div>
+                  <div class="h-8 w-8 bg-slate-200 rounded"></div>
+                </div>
+              </td>
+            </tr>
+          }
+        } @else {
+          @for (orden of ordenes; track orden.id) {
+            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-3 py-2.5 border-r border-slate-100 text-xs font-semibold text-[#1e3a8a] truncate">
+                {{ orden.num_secuencial ?? '—' }}
+              </td>
+              <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
+                {{ orden.solicitud_num_secuencial }}
+              </td>
+              <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
+                {{ orden.ctambiente_nombre }}
+              </td>
+              <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 text-center">
+                {{ orden.periodo_nombre_mes }} {{ orden.periodo_anio }}
+              </td>
+              <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
+                {{ orden.usuario_nombre_completo }}
+              </td>
+              <td class="px-3 py-2.5 border-r border-slate-100 text-center">
+                @if (orden.ctestado_id === 3) {
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50">{{ orden.ctestado_nombre }}</span>
+                } @else if (orden.ctestado_id === 388) {
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-blue-400 text-blue-700 bg-blue-50">{{ orden.ctestado_nombre }}</span>
+                } @else {
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50">{{ orden.ctestado_nombre }}</span>
+                }
+              </td>
+              <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-500">
+                {{ +orden.creado_en | date:'dd/MM/yyyy' }}
+              </td>
+              <td class="px-2 py-2.5 text-center">
+                <div class="flex items-center justify-center gap-1.5">
+                  <button type="button" title="Finalizar"
+                    (click)="finalizarOrden(orden)"
+                    class="h-8 w-8 flex items-center justify-center rounded border border-green-400 text-green-700 bg-green-50 hover:bg-green-100 transition-colors shrink-0">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                  <button type="button" title="Rechazar"
+                    (click)="rechazarOrden(orden)"
+                    class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 transition-colors shrink-0">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                  <button type="button" title="Más acciones"
+                    (click)="toggleMenu(orden.id, $event)"
+                    class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 transition-colors shrink-0">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="8" class="p-10 text-slate-400 italic text-center">No hay registros.</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+@if (openMenuId !== null) {
+  <div class="fixed inset-0 z-40" (click)="closeMenu()"></div>
+  <div class="fixed z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40"
+       [style.top.px]="menuTop"
+       [style.left.px]="menuLeft">
+    @for (orden of ordenes; track orden.id) {
+      @if (orden.id === openMenuId) {
+        <button type="button" (click)="editarOrden(orden); closeMenu()"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50">
+          <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          Editar
+        </button>
+        <button type="button" (click)="eliminarOrden(orden); closeMenu()"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50">
+          <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Eliminar
+        </button>
+        <div class="border-t border-slate-100 mt-1 pt-1">
+          <button type="button" (click)="imprimirOrden(orden); closeMenu()"
+            class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">
+            <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Imprimir
+          </button>
+        </div>
+      }
+    }
+  </div>
+}

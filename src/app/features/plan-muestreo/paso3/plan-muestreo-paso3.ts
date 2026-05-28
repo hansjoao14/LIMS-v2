@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { PageHeader } from '../../shared/components/page-header/page-header';
+import { PageHeader } from '../../../shared/components/page-header/page-header';
 
 export interface SolucionBuffer {
   nombre: string;
@@ -14,7 +14,7 @@ export interface SolucionBuffer {
   standalone: true,
   imports: [CommonModule, FormsModule, PageHeader],
   templateUrl: './plan-muestreo-paso3.html',
-  styleUrl: './plan-muestreo.css',
+  styleUrl: '../plan-muestreo.css',
 })
 export class PlanMuestreoPaso3 {
   equipamientoSeguridad =

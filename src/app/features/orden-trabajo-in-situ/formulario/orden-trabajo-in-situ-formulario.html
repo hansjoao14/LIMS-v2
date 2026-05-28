@@ -1,0 +1,434 @@
+<div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
+  <form [formGroup]="form">
+
+    <!-- Step-header (Nivel 2A) -->
+    <div class="mb-6 border-b border-slate-300 pb-4">
+      <h3 class="text-lg font-bold text-[#1e3a8a] mb-1">Información de la Orden</h3>
+    </div>
+
+    <!-- Top fields -->
+    <div class="relative grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6 mb-8"
+         [class.pointer-events-none]="loadingDetalle">
+      @if (loadingDetalle) {
+        <div class="absolute inset-0 z-10 flex items-center justify-center bg-white/60 rounded">
+          <span class="animate-spin h-5 w-5 border-2 border-[#1e3a8a] border-t-transparent rounded-full"></span>
+        </div>
+      }
+
+      <!-- Solicitud de trabajo No -->
+      <div class="flex flex-col">
+        <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+          Solicitud de trabajo No <span class="text-red-500">*</span>
+        </label>
+
+        @if (solicitudSeleccionada) {
+          <div class="flex items-center justify-between bg-blue-50 border border-blue-300 rounded px-3 py-2 gap-2">
+            <span class="font-bold text-[#1e3a8a] text-sm truncate">
+              {{ solicitudSeleccionada.num_secuencial ?? solicitudSeleccionada.id_solicitud }}
+            </span>
+            <button type="button" (click)="limpiarSolicitud()" title="Cambiar solicitud"
+              class="shrink-0 text-slate-400 hover:text-red-500 text-sm leading-none transition-colors">
+              ✕
+            </button>
+          </div>
+        } @else {
+          <button type="button" (click)="abrirPanel()"
+            class="w-full flex items-center gap-2 bg-white border border-dashed border-slate-300 text-slate-500 px-3 py-2.5 rounded text-sm hover:border-[#1e3a8a] hover:text-[#1e3a8a] transition-colors">
+            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            Buscar solicitud finalizada...
+          </button>
+        }
+
+        @if (panelAbierto) {
+          <div class="relative mt-1.5 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden">
+            <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-200 bg-slate-50">
+              <input
+                type="text"
+                class="flex-1 border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-[#1e3a8a]"
+                placeholder="Buscar por No. secuencial, solicitante o formulario..."
+                [ngModel]="busqueda"
+                [ngModelOptions]="{standalone: true}"
+                (ngModelChange)="onBusquedaChange($event)"
+                autofocus
+              />
+              <button type="button" (click)="cerrarPanel()" class="text-slate-400 hover:text-red-500 text-xl leading-none">✕</button>
+            </div>
+
+            @if (loadingBusqueda) {
+              <p class="py-5 text-center text-sm text-slate-400 italic">Buscando...</p>
+            } @else if (solicitudesFinalizadas.length === 0) {
+              <p class="py-5 text-center text-sm text-slate-400 italic">No se encontraron solicitudes finalizadas.</p>
+            } @else {
+              <ul class="max-h-72 overflow-y-auto custom-scroll">
+                @for (sol of solicitudesFinalizadas; track sol.id_solicitud) {
+                  <li (click)="seleccionarSolicitud(sol)"
+                    class="px-3.5 py-2.5 border-b border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors flex items-center justify-between gap-2">
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-bold text-[#1e3a8a] text-xs truncate">{{ sol.num_secuencial ?? '—' }}</span>
+                      <span class="text-[10px] text-slate-400 truncate">{{ sol.nombres_completos }}</span>
+                    </div>
+                    @if (sol.prioridad_id === 386) {
+                      <span class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded border border-red-400 text-red-700 bg-red-50">Urgente</span>
+                    } @else if (sol.prioridad_id === 385) {
+                      <span class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50">Normal</span>
+                    }
+                  </li>
+                }
+              </ul>
+              @if (meta && meta.totalPages > 1) {
+                <div class="flex items-center justify-between px-3.5 py-2 border-t border-slate-200 bg-slate-50">
+                  <span class="text-[11px] text-slate-400">
+                    Página {{ meta.page }} de {{ meta.totalPages }} · {{ meta.total }} resultados
+                  </span>
+                  <div class="flex gap-1">
+                    <button type="button" [disabled]="!meta.hasPrevPage" (click)="cargarPagina(currentPage - 1)"
+                      class="w-7 h-7 flex items-center justify-center border border-slate-200 rounded bg-white text-[#1e3a8a] hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">‹</button>
+                    <button type="button" [disabled]="!meta.hasNextPage" (click)="cargarPagina(currentPage + 1)"
+                      class="w-7 h-7 flex items-center justify-center border border-slate-200 rounded bg-white text-[#1e3a8a] hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">›</button>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Tipo de Ensayo -->
+      <div class="flex flex-col">
+        <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+          Tipo de Ensayo <span class="text-red-500">*</span>
+        </label>
+        <select
+          class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-opacity duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+          [disabled]="loadingTipos || !solicitudSeleccionada"
+          [class.opacity-50]="loadingTipos"
+          [ngModel]="tipoEnsayoId"
+          [ngModelOptions]="{standalone: true}"
+          (ngModelChange)="tipoEnsayoId = +$event; onTipoEnsayoChange()">
+          <option [ngValue]="null" disabled>Seleccione un tipo...</option>
+          @for (tipo of tiposEnsayo; track tipo.id) {
+            <option [ngValue]="tipo.id">{{ tipo.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Orden de trabajo No -->
+      <div class="flex flex-col">
+        <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Orden de trabajo No</label>
+        <input
+          class="w-full border border-slate-200 bg-slate-50 text-slate-400 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+          formControlName="ordenTrabajoNo"
+          placeholder="Se genera automáticamente al guardar"
+          readonly
+        />
+      </div>
+
+      <!-- Fecha de emisión -->
+      <div class="flex flex-col">
+        <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Fecha de emisión</label>
+        <input
+          class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+          type="date" formControlName="fechaEmision" readonly
+        />
+      </div>
+
+      <!-- Fecha máxima de entrega -->
+      <div class="flex flex-col">
+        <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Fecha máxima de entrega</label>
+        <input
+          class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+          type="date" formControlName="fechaMaximaEntrega" readonly
+        />
+        <p class="text-[10px] text-slate-400 mt-1">Generada automáticamente (15 días tras la emisión)</p>
+      </div>
+
+    </div>
+
+    <!-- Section-card: Cliente (Nivel 2B) -->
+    <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-6" formGroupName="cliente">
+      <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+        <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Cliente</h4>
+      </div>
+      <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="flex flex-col">
+          <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Solicitado por</label>
+          <input class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+            formControlName="solicitadoPor" readonly />
+        </div>
+        <div class="flex flex-col">
+          <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Dirección</label>
+          <input class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+            formControlName="direccion" readonly />
+        </div>
+        <div class="flex flex-col">
+          <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Solicitud No. (Fecha; hora)</label>
+          <input class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+            formControlName="solicitudNo" readonly />
+        </div>
+        <div class="flex flex-col">
+          <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Correo electrónico</label>
+          <input class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+            formControlName="correoElectronico" readonly />
+        </div>
+      </div>
+    </section>
+
+    <!-- Section-card: Operador (Nivel 2B) -->
+    @if (operadorAtributos.length > 0) {
+      <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-8">
+        <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+          <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Operador</h4>
+        </div>
+        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+          @for (attr of operadorAtributos; track attr.pregunta) {
+            <div class="flex flex-col">
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">{{ attr.pregunta }}</label>
+              <div class="w-full border border-slate-200 bg-slate-50 text-slate-700 p-2.5 rounded text-sm">
+                {{ attr.valor || '—' }}
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Separador de sección -->
+    <div class="bg-slate-100 text-center py-2.5 px-4 rounded text-[11px] font-bold text-[#1e3a8a] uppercase tracking-widest mb-4">
+      ANÁLISIS REQUERIDO IN SITU
+    </div>
+
+    <!-- Table-card: Ensayos (Nivel 2C) -->
+    <div class="mb-8">
+      <h4 class="text-sm font-bold text-[#1e3a8a] uppercase mb-3">Ensayos Fisico-Químicos de Emisiones Gaseosas...</h4>
+      <div class="border border-gray-200 rounded overflow-hidden shadow-sm overflow-x-auto custom-scroll">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-gray-200 tracking-wider">
+              <th class="px-3 py-2.5 border-r border-gray-100 text-center w-[100px]">ANÁLISIS</th>
+              <th class="px-3 py-2.5 border-r border-gray-100 text-left">ENSAYO</th>
+              <th class="px-3 py-2.5 border-r border-gray-100 text-left">IDENTIFICACIÓN</th>
+              <th class="px-3 py-2.5 border-r border-gray-100 text-left">MÉTODO INTERNO</th>
+              <th class="px-3 py-2.5 border-r border-gray-100 text-left">MÉTODO REFERENCIA</th>
+              <th class="px-3 py-2.5 text-left">UNIDAD</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (ensayosControls.length === 0) {
+              <tr>
+                <td colspan="6" class="p-10 text-slate-400 italic text-center">No hay ensayos para el tipo de ensayo seleccionado.</td>
+              </tr>
+            }
+            @for (ensayo of ensayosControls; track i; let i = $index) {
+              <tr class="border-b border-gray-100 hover:bg-slate-50 transition-colors">
+                <td class="px-3 py-2.5 border-r border-gray-100 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <div class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+                         [class.bg-[#1e3a8a]]="ensayo.get('seleccionado')?.value"
+                         [class.bg-slate-300]="!ensayo.get('seleccionado')?.value">
+                      <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+                            [class.translate-x-4]="ensayo.get('seleccionado')?.value"
+                            [class.translate-x-0.5]="!ensayo.get('seleccionado')?.value"></span>
+                    </div>
+                    <span class="text-[11px] font-bold w-5"
+                          [class.text-[#1e3a8a]]="ensayo.get('seleccionado')?.value"
+                          [class.text-slate-400]="!ensayo.get('seleccionado')?.value">
+                      {{ ensayo.get('seleccionado')?.value ? 'Sí' : 'No' }}
+                    </span>
+                  </div>
+                </td>
+                <td class="px-3 py-2.5 border-r border-gray-100 text-slate-600 text-xs">{{ ensayo.get('ensayo')?.value || '—' }}</td>
+                <td class="px-3 py-2.5 border-r border-gray-100 text-slate-600 text-xs">{{ ensayo.get('identificacion')?.value || '—' }}</td>
+                <td class="px-3 py-2.5 border-r border-gray-100 text-slate-600 text-xs">{{ ensayo.get('metodoInterno')?.value || '—' }}</td>
+                <td class="px-3 py-2.5 border-r border-gray-100 text-slate-600 text-xs">{{ ensayo.get('metodoReferencia')?.value || '—' }}</td>
+                <td class="px-3 py-2.5 text-slate-600 text-xs">{{ ensayo.get('unidad')?.value || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section: Tipos de uso de suelo — solo visible cuando se selecciona Ruido (id=91) -->
+    @if (tipoEnsayoId === 91) {
+      <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-8 animate-in fade-in" formGroupName="usoSuelo">
+        <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+          <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Tipos de uso de suelo</h4>
+        </div>
+        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <!-- Uso de suelo del Operador -->
+          <div class="flex flex-col">
+            <label class="block text-[11px] font-bold uppercase mb-1"
+              [class.text-red-600]="form.get('usoSuelo.usoSueloOperadorId')?.invalid && form.get('usoSuelo.usoSueloOperadorId')?.touched"
+              [class.text-[#1e3a8a]]="!(form.get('usoSuelo.usoSueloOperadorId')?.invalid && form.get('usoSuelo.usoSueloOperadorId')?.touched)">
+              Uso de suelo del Operador <span class="text-red-500">*</span>
+            </label>
+            <select formControlName="usoSueloOperadorId"
+              class="w-full border bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+              [class.border-red-400]="form.get('usoSuelo.usoSueloOperadorId')?.invalid && form.get('usoSuelo.usoSueloOperadorId')?.touched"
+              [class.border-slate-300]="!(form.get('usoSuelo.usoSueloOperadorId')?.invalid && form.get('usoSuelo.usoSueloOperadorId')?.touched)">
+              <option [ngValue]="null" disabled>Seleccione...</option>
+              @for (op of usoSueloOpciones; track op.id) {
+                <option [ngValue]="op.id">{{ op.nombre }}</option>
+              }
+            </select>
+            @if (form.get('usoSuelo.usoSueloOperadorId')?.invalid && form.get('usoSuelo.usoSueloOperadorId')?.touched) {
+              <span class="text-red-500 text-[11px] mt-1">Este campo es obligatorio.</span>
+            }
+          </div>
+
+          <!-- Otro - Uso de suelo del Operador -->
+          @if (esOtrosOperador) {
+            <div class="flex flex-col animate-in fade-in">
+              <label class="block text-[11px] font-bold uppercase mb-1"
+                [class.text-red-600]="form.get('usoSuelo.usoSueloOperadorOtro')?.invalid && form.get('usoSuelo.usoSueloOperadorOtro')?.touched"
+                [class.text-[#1e3a8a]]="!(form.get('usoSuelo.usoSueloOperadorOtro')?.invalid && form.get('usoSuelo.usoSueloOperadorOtro')?.touched)">
+                Otro - Uso de suelo del Operador <span class="text-red-500">*</span>
+              </label>
+              <input formControlName="usoSueloOperadorOtro"
+                class="w-full border bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                [class.border-red-400]="form.get('usoSuelo.usoSueloOperadorOtro')?.invalid && form.get('usoSuelo.usoSueloOperadorOtro')?.touched"
+                [class.border-slate-300]="!(form.get('usoSuelo.usoSueloOperadorOtro')?.invalid && form.get('usoSuelo.usoSueloOperadorOtro')?.touched)"
+                placeholder="Especifique el uso de suelo" maxlength="32" />
+              @if (form.get('usoSuelo.usoSueloOperadorOtro')?.invalid && form.get('usoSuelo.usoSueloOperadorOtro')?.touched) {
+                <span class="text-red-500 text-[11px] mt-1">Este campo es obligatorio.</span>
+              }
+            </div>
+          }
+
+          <!-- Uso de suelo del PCA -->
+          <div class="flex flex-col">
+            <label class="block text-[11px] font-bold uppercase mb-1"
+              [class.text-red-600]="form.get('usoSuelo.usoSueloPcaId')?.invalid && form.get('usoSuelo.usoSueloPcaId')?.touched"
+              [class.text-[#1e3a8a]]="!(form.get('usoSuelo.usoSueloPcaId')?.invalid && form.get('usoSuelo.usoSueloPcaId')?.touched)">
+              Uso de suelo del punto crítico de afectación (PCA) <span class="text-red-500">*</span>
+            </label>
+            <select formControlName="usoSueloPcaId"
+              class="w-full border bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+              [class.border-red-400]="form.get('usoSuelo.usoSueloPcaId')?.invalid && form.get('usoSuelo.usoSueloPcaId')?.touched"
+              [class.border-slate-300]="!(form.get('usoSuelo.usoSueloPcaId')?.invalid && form.get('usoSuelo.usoSueloPcaId')?.touched)">
+              <option [ngValue]="null" disabled>Seleccione...</option>
+              @for (op of usoSueloOpciones; track op.id) {
+                <option [ngValue]="op.id">{{ op.nombre }}</option>
+              }
+            </select>
+            @if (form.get('usoSuelo.usoSueloPcaId')?.invalid && form.get('usoSuelo.usoSueloPcaId')?.touched) {
+              <span class="text-red-500 text-[11px] mt-1">Este campo es obligatorio.</span>
+            }
+          </div>
+
+          <!-- Otro - Uso de suelo del PCA -->
+          @if (esOtrosPca) {
+            <div class="flex flex-col animate-in fade-in">
+              <label class="block text-[11px] font-bold uppercase mb-1"
+                [class.text-red-600]="form.get('usoSuelo.usoSueloPcaOtro')?.invalid && form.get('usoSuelo.usoSueloPcaOtro')?.touched"
+                [class.text-[#1e3a8a]]="!(form.get('usoSuelo.usoSueloPcaOtro')?.invalid && form.get('usoSuelo.usoSueloPcaOtro')?.touched)">
+                Otro - Uso de suelo del PCA <span class="text-red-500">*</span>
+              </label>
+              <input formControlName="usoSueloPcaOtro"
+                class="w-full border bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                [class.border-red-400]="form.get('usoSuelo.usoSueloPcaOtro')?.invalid && form.get('usoSuelo.usoSueloPcaOtro')?.touched"
+                [class.border-slate-300]="!(form.get('usoSuelo.usoSueloPcaOtro')?.invalid && form.get('usoSuelo.usoSueloPcaOtro')?.touched)"
+                placeholder="Especifique el uso de suelo" maxlength="32" />
+              @if (form.get('usoSuelo.usoSueloPcaOtro')?.invalid && form.get('usoSuelo.usoSueloPcaOtro')?.touched) {
+                <span class="text-red-500 text-[11px] mt-1">Este campo es obligatorio.</span>
+              }
+            </div>
+          }
+
+          <!-- Caracterización horaria -->
+          <div class="flex flex-col">
+            <label class="block text-[11px] font-bold uppercase mb-1"
+              [class.text-red-600]="form.get('usoSuelo.caracterizacionId')?.invalid && form.get('usoSuelo.caracterizacionId')?.touched"
+              [class.text-[#1e3a8a]]="!(form.get('usoSuelo.caracterizacionId')?.invalid && form.get('usoSuelo.caracterizacionId')?.touched)">
+              Caracterización horaria <span class="text-red-500">*</span>
+            </label>
+            <select formControlName="caracterizacionId"
+              class="w-full border bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+              [class.border-red-400]="form.get('usoSuelo.caracterizacionId')?.invalid && form.get('usoSuelo.caracterizacionId')?.touched"
+              [class.border-slate-300]="!(form.get('usoSuelo.caracterizacionId')?.invalid && form.get('usoSuelo.caracterizacionId')?.touched)">
+              <option [ngValue]="null" disabled>Seleccione...</option>
+              @for (op of caracterizacionOpciones; track op.id) {
+                <option [ngValue]="op.id">{{ op.nombre }}</option>
+              }
+            </select>
+            @if (form.get('usoSuelo.caracterizacionId')?.invalid && form.get('usoSuelo.caracterizacionId')?.touched) {
+              <span class="text-red-500 text-[11px] mt-1">Este campo es obligatorio.</span>
+            }
+          </div>
+
+          <!-- Dirección PCA -->
+          <div class="flex flex-col">
+            <label class="block text-[11px] font-bold uppercase mb-1"
+              [class.text-red-600]="form.get('usoSuelo.direccionPca')?.invalid && form.get('usoSuelo.direccionPca')?.touched"
+              [class.text-[#1e3a8a]]="!(form.get('usoSuelo.direccionPca')?.invalid && form.get('usoSuelo.direccionPca')?.touched)">
+              Dirección PCA <span class="text-red-500">*</span>
+            </label>
+            <input formControlName="direccionPca"
+              class="w-full border bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+              [class.border-red-400]="form.get('usoSuelo.direccionPca')?.invalid && form.get('usoSuelo.direccionPca')?.touched"
+              [class.border-slate-300]="!(form.get('usoSuelo.direccionPca')?.invalid && form.get('usoSuelo.direccionPca')?.touched)"
+              placeholder="Ej: Av. Eloy Alfaro N43-185 y José Queri" maxlength="128" />
+            @if (form.get('usoSuelo.direccionPca')?.invalid && form.get('usoSuelo.direccionPca')?.touched) {
+              <span class="text-red-500 text-[11px] mt-1">Este campo es obligatorio.</span>
+            }
+          </div>
+
+          <!-- Teléfono PCA -->
+          <div class="flex flex-col">
+            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Teléfono PCA</label>
+            <input formControlName="telefonoPca"
+              class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+              placeholder="Ej: 098483595" maxlength="10" />
+          </div>
+
+        </div>
+      </section>
+    }
+
+    <!-- Observaciones (opcional) -->
+    <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-6">
+      <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+        <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Observaciones <span class="text-slate-400 font-normal normal-case text-xs">(opcional)</span></h4>
+      </div>
+      <div class="p-5">
+        <textarea
+          formControlName="observaciones"
+          [rows]="3"
+          class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white text-slate-700"
+          placeholder="Ingrese observaciones adicionales...">
+        </textarea>
+      </div>
+    </section>
+
+    <!-- Notas -->
+    <div class="bg-slate-50 border border-slate-200 rounded p-4 mb-6">
+      <p class="text-[11px] font-bold text-slate-800 mb-2">ⓘ Notas Importantes:</p>
+      <ul class="list-decimal pl-4 space-y-1">
+        <li class="text-[11px] text-slate-600 leading-tight">Los ensayos marcados con (*) no están incluidos en el alcance de acreditación del SAE.</li>
+        <li class="text-[11px] text-slate-600 leading-tight">Los resultados obtenidos podrán utilizarse para la elaboración de informes técnicos cuando así lo requiera la Secretaría de Ambiente.</li>
+      </ul>
+    </div>
+
+    <!-- Nav buttons estándar -->
+    <div class="flex items-center gap-3 pt-4 border-t border-slate-300">
+      <button type="button" (click)="cancelado.emit()"
+        class="border border-slate-300 text-slate-600 px-6 py-2.5 rounded text-sm font-bold hover:bg-slate-50 transition-all">
+        Cancelar
+      </button>
+      <button type="button" (click)="guardar()"
+        [disabled]="saving"
+        class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
+        @if (saving) {
+          <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+          Guardando...
+        } @else {
+          GUARDAR
+        }
+      </button>
+    </div>
+
+  </form>
+</div>
