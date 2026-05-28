@@ -79,7 +79,7 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
   // Orden de trabajo in situ F-PG-09-03
   [MenuKey.ORDEN_TRABAJO_IN_SITU]: {
     [AppRole.ANALISTA_CALIDAD]: ['ver'],
-    [AppRole.RESPONSABLE_LAB]:  ['ver', 'editar', 'crear', 'autorizar', 'rechazar'],
+    [AppRole.RESPONSABLE_LAB]:  ['ver', 'editar', 'crear', 'autorizar', 'rechazar', 'eliminar'],
     [AppRole.ANALISTA_CAMPO]:   ['ver'],
     [AppRole.ANALISTA_LAB]:     ['ver'],
     [AppRole.ADMIN]:            ['ver', 'eliminar'],

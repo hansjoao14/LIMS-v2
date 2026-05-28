@@ -11,7 +11,7 @@ const CLIENT_NAME = 'reportes';
 
 const GET_COLLECTION_REPORT_ORDEN_DETALLE = gql`
   query CollectionReportOrdenDetalle {
-    collectionReportOrdenDetalle {
+    collectionReportOrdenDetalle(query: { where: { estado: { equals: true } } }) {
       data {
         id
         orden_trabajo_id
@@ -32,7 +32,8 @@ const GET_COLLECTION_REPORT_ORDEN_DETALLE = gql`
 
 const GET_COLLECTION_REPORT_ORDEN = gql`
   query CollectionReportOrden {
-    collectionReportOrden(where: { estado: { equals: true } }) {
+    collectionReportOrden(query: { where: { estado: { equals: true } } }) {
+
       count
       data {
         actualizado_en
@@ -97,6 +98,6 @@ export class ReportOrdenService {
         query: GET_COLLECTION_REPORT_ORDEN,
         fetchPolicy: 'network-only',
       })
-      .pipe(map((result) => (result.data?.collectionReportOrden?.data ?? []).filter(o => o.estado)));
+      .pipe(map((result) => (result.data?.collectionReportOrden?.data ?? [])));
   }
 }
