@@ -32,7 +32,7 @@ const GET_COLLECTION_REPORT_ORDEN_DETALLE = gql`
 
 const GET_COLLECTION_REPORT_ORDEN = gql`
   query CollectionReportOrden {
-    collectionReportOrden {
+    collectionReportOrden(where: { estado: { equals: true } }) {
       count
       data {
         actualizado_en
@@ -97,6 +97,6 @@ export class ReportOrdenService {
         query: GET_COLLECTION_REPORT_ORDEN,
         fetchPolicy: 'network-only',
       })
-      .pipe(map((result) => result.data?.collectionReportOrden?.data ?? []));
+      .pipe(map((result) => (result.data?.collectionReportOrden?.data ?? []).filter(o => o.estado)));
   }
 }

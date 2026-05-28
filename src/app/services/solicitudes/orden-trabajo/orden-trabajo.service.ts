@@ -57,6 +57,6 @@ export class OrdenTrabajoService {
   }
 
   deshabilitarOrden(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.apiSolicitud}/orden-trabajo/${id}/disable`);
+    return this.http.patch<any>(`${this.apiSolicitud}/orden-trabajo/${id}/disable`, {});
   }
 }
