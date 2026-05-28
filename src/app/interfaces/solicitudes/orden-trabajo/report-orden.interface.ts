@@ -33,6 +33,21 @@ export interface ReportOrden {
   usuario_nombre_completo: string;
 }
 
+export interface ReportOrdenDetalle {
+  id: string;
+  orden_trabajo_id: string;
+  solicitud_ensayo_id: string;
+  analisis: string;
+  identificacion: string;
+  metodo: string;
+  ctambiente_id: string;
+  ctambiente_nombre: string;
+  ctambiente_id_padre: string;
+  ctambiente_nombre_padre: string;
+  ensayo_id_ensayo: number;
+  estado: string;
+}
+
 export interface ReportOrdenCollectionResponse {
   count: number;
   data: ReportOrden[];

@@ -11,13 +11,18 @@
       />
 
       @if (vista === 'lista') {
-        <app-orden-trabajo-in-situ-lista (nuevaOrden)="irAFormulario()" />
+        <app-orden-trabajo-in-situ-lista
+          (nuevaOrden)="irAFormulario()"
+          (editar)="onEditar($event)"
+        />
       }
 
       @if (vista === 'formulario') {
         <app-orden-trabajo-in-situ-formulario
+          [editingRecord]="editingRecord"
           (guardado)="volverALista()"
-          (cancelado)="volverALista()" />
+          (cancelado)="volverALista()"
+        />
       }
 
     </div>

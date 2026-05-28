@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy, Output, EventEmitter, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, FormsModule, Validators } from '@angular/forms';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
@@ -11,6 +11,8 @@ import { CatalogoService } from '../../../services/catalogo.service';
 import { SolicitudDetalleService } from '../../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { SolicitudDetalle } from '../../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { OrdenTrabajoService } from '../../../services/solicitudes/orden-trabajo/orden-trabajo.service';
+import { ReportOrdenService } from '../../../services/solicitudes/orden-trabajo/report-orden.service';
+import { ReportOrden } from '../../../interfaces/solicitudes/orden-trabajo/report-orden.interface';
 import { AuthService } from '../../auth/service/auth-service';
 import { PeriodoService } from '../../../services/solicitudes/solicitud-trabajo/periodo.service';
 import { ToastrAlertService } from '../../../services/toastr.service';
@@ -24,9 +26,12 @@ const TECNICOS_HARDCODED = [
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './orden-trabajo-in-situ-formulario.html',
 })
-export class OrdenTrabajoInSituFormulario implements OnInit, OnDestroy {
+export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestroy {
+  @Input() editingRecord: ReportOrden | null = null;
   @Output() guardado  = new EventEmitter<void>();
   @Output() cancelado = new EventEmitter<void>();
+
+  modoEdicion = false;
 
   form: FormGroup;
 
@@ -74,6 +79,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnDestroy {
     private solicitudDetalleService: SolicitudDetalleService,
     private catalogoService: CatalogoService,
     private ordenTrabajoService: OrdenTrabajoService,
+    private reportOrdenService: ReportOrdenService,
     private authService: AuthService,
     private periodoService: PeriodoService,
     private toastrAlert: ToastrAlertService,
@@ -107,6 +113,15 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnDestroy {
         telefonoPca:          [''],
       }),
     });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['editingRecord'] && this.editingRecord) {
+      this.cargarParaEditar(this.editingRecord);
+    }
+    if (changes['editingRecord'] && !this.editingRecord) {
+      this.modoEdicion = false;
+    }
   }
 
   ngOnInit(): void {
@@ -256,6 +271,55 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnDestroy {
         unidad:           [''],
       }));
     }
+  }
+
+  private cargarParaEditar(orden: ReportOrden): void {
+    this.modoEdicion = true;
+    this.tipoEnsayoId = orden.ctambiente_id;
+
+    const fechaEmision = orden.creado_en
+      ? new Date(+orden.creado_en).toISOString().split('T')[0]
+      : '';
+
+    this.form.patchValue({
+      solicitudTrabajoNo: orden.solicitud_num_secuencial,
+      ordenTrabajoNo:     orden.num_secuencial ?? '',
+      fechaEmision,
+      observaciones: orden.observacion ?? '',
+      cliente: { solicitadoPor: orden.usuario_nombre_completo },
+      usoSuelo: {
+        usoSueloOperadorId: orden.ctuso_suelo_id,
+        usoSueloPcaId:      orden.ctpunto_critico_id,
+        caracterizacionId:  orden.ctcaracteristica_horaria_id,
+        direccionPca:       orden.direccion_pca ?? '',
+        telefonoPca:        orden.telefono_pca ?? '',
+      },
+    });
+
+    this.solicitudSeleccionada = { id_solicitud: orden.solicitud_id } as ReportSolicitud;
+
+    this.loadingDetalle = true;
+    this.reportOrdenService.getDetallesByOrdenId(orden.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (detalles) => {
+          this.ensayosArray.clear();
+          for (const d of detalles) {
+            const partes = (d.metodo ?? '').split(',');
+            this.ensayosArray.push(this.fb.group({
+              ensayoId:         [d.solicitud_ensayo_id],
+              seleccionado:     [true],
+              ensayo:           [d.analisis ?? ''],
+              identificacion:   [d.identificacion ?? ''],
+              metodoInterno:    [partes[0]?.trim() ?? ''],
+              metodoReferencia: [partes.slice(1).join(',').trim()],
+              unidad:           [''],
+            }));
+          }
+          this.loadingDetalle = false;
+        },
+        error: () => { this.loadingDetalle = false; },
+      });
   }
 
   limpiarSolicitud(): void {

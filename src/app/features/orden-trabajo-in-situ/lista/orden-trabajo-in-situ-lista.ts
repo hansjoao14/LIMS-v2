@@ -12,6 +12,7 @@ import { ReportOrden } from '../../../interfaces/solicitudes/orden-trabajo/repor
 })
 export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
   @Output() nuevaOrden = new EventEmitter<void>();
+  @Output() editar     = new EventEmitter<ReportOrden>();
 
   loading = true;
   ordenes: ReportOrden[] = [];
@@ -73,7 +74,7 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
   }
 
   editarOrden(orden: ReportOrden): void {
-    console.log('[orden-in-situ:editar]', orden);
+    this.editar.emit(orden);
   }
 
   eliminarOrden(orden: ReportOrden): void {

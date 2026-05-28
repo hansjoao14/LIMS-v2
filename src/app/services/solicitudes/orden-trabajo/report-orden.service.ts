@@ -2,10 +2,33 @@ import { Injectable } from '@angular/core';
 import { Apollo, gql } from 'apollo-angular';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ReportOrden, ReportOrdenCollectionResponse } from '../../../interfaces/solicitudes/orden-trabajo/report-orden.interface';
+import {
+  ReportOrden, ReportOrdenCollectionResponse, ReportOrdenDetalle,
+} from '../../../interfaces/solicitudes/orden-trabajo/report-orden.interface';
 import { META_FIELDS } from '../../../graphql/fragments';
 
 const CLIENT_NAME = 'reportes';
+
+const GET_COLLECTION_REPORT_ORDEN_DETALLE = gql`
+  query CollectionReportOrdenDetalle {
+    collectionReportOrdenDetalle {
+      data {
+        id
+        orden_trabajo_id
+        solicitud_ensayo_id
+        analisis
+        identificacion
+        metodo
+        ctambiente_id
+        ctambiente_nombre
+        ctambiente_id_padre
+        ctambiente_nombre_padre
+        ensayo_id_ensayo
+        estado
+      }
+    }
+  }
+`;
 
 const GET_COLLECTION_REPORT_ORDEN = gql`
   query CollectionReportOrden {
@@ -53,6 +76,19 @@ const GET_COLLECTION_REPORT_ORDEN = gql`
 @Injectable({ providedIn: 'root' })
 export class ReportOrdenService {
   constructor(private apollo: Apollo) {}
+
+  getDetallesByOrdenId(ordenId: string): Observable<ReportOrdenDetalle[]> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionReportOrdenDetalle: { data: ReportOrdenDetalle[] } }>({
+        query: GET_COLLECTION_REPORT_ORDEN_DETALLE,
+        fetchPolicy: 'network-only',
+      })
+      .pipe(map(r =>
+        (r.data?.collectionReportOrdenDetalle?.data ?? [])
+          .filter(d => d.orden_trabajo_id === ordenId)
+      ));
+  }
 
   getOrdenes(): Observable<ReportOrden[]> {
     return this.apollo
