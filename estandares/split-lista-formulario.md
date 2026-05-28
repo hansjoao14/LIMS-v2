@@ -89,3 +89,4 @@ HTML padre:
 | Módulo | Fecha | Notas |
 |--------|-------|-------|
 | `horarios-laborales` | 2026-05-28 | Referencia principal del patrón |
+| `por-contraloria` | 2026-05-28 | `eliminarContraloria`, agrupa por `val_fecha_movilizacion`, context menu itera `solicitudesAgrupadas` |

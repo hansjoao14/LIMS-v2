@@ -24,7 +24,7 @@ export class HorariosLaborales {
   editingRecord:  VehiculoRecord | null = null;
   formularioNombre = 'Solicitud de transporte';
   fields:          FieldConfig[] = [];
-  formularioId:    number | null = null;
+  formularioId:    string | null = null;
 
   private userAppRole = computed<AppRole | null>(() => {
     const roles = this.authService.userProfile()?.roles ?? [];

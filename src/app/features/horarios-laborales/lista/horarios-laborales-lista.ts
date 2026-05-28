@@ -30,7 +30,7 @@ type VehiculoRecord = { id: string } & Record<string, unknown>;
   templateUrl: './horarios-laborales-lista.html',
 })
 export class HorariosLaboralesLista implements OnInit, OnChanges, OnDestroy {
-  @Input() formularioId: number | null = null;
+  @Input() formularioId: string | null = null;
   @Input() fields: FieldConfig[] = [];
   @Input() editingRecordId: string | null = null;
   @Output() editar = new EventEmitter<VehiculoRecord>();

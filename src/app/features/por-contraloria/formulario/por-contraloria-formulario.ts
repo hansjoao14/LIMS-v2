@@ -24,7 +24,7 @@ type ContraloriaRecord = { id: string } & Record<string, unknown>;
 export interface FormularioReadyEvent {
   nombre: string;
   fields: FieldConfig[];
-  formularioId: number;
+  formularioId: string;
 }
 
 @Component({
