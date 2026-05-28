@@ -10,6 +10,126 @@
         edicion="16"
       />
 
+      <!-- ── Vista: Lista ─────────────────────────────────────────────────── -->
+      @if (vista === 'lista') {
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+
+          <!-- Botón nueva orden -->
+          <div class="flex justify-end mb-4">
+            <button type="button" (click)="irAFormulario()"
+              class="bg-[#1e3a8a] text-white px-5 py-2 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Nueva Orden
+            </button>
+          </div>
+
+          <!-- Tabla con skeleton loader -->
+          <div class="border border-slate-200 rounded">
+            <table class="w-full text-sm border-collapse table-fixed">
+              <colgroup>
+                <col class="w-[140px]">
+                <col class="w-[130px]">
+                <col class="w-[100px]">
+                <col class="w-[130px]">
+                <col class="w-[160px]">
+                <col class="w-[110px]">
+                <col class="w-[120px]">
+              </colgroup>
+              <thead>
+                <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Orden</th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Solicitud</th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Ambiente</th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Periodo</th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Responsable</th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
+                  <th class="px-3 py-2.5 text-left">Fecha creación</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (loadingOrdenes) {
+                  @for (_ of [1,2,3,4,5,6,7,8]; track $index) {
+                    <tr class="border-b border-slate-200 animate-pulse">
+                      <td class="px-3 py-3 border-r border-slate-100">
+                        <div class="h-3 bg-slate-200 rounded w-3/4"></div>
+                      </td>
+                      <td class="px-3 py-3 border-r border-slate-100">
+                        <div class="h-3 bg-slate-200 rounded w-4/5"></div>
+                      </td>
+                      <td class="px-3 py-3 border-r border-slate-100">
+                        <div class="h-3 bg-slate-200 rounded w-3/4"></div>
+                      </td>
+                      <td class="px-3 py-3 border-r border-slate-100">
+                        <div class="h-3 bg-slate-200 rounded w-3/4 mx-auto"></div>
+                      </td>
+                      <td class="px-3 py-3 border-r border-slate-100">
+                        <div class="h-3 bg-slate-200 rounded w-4/5"></div>
+                      </td>
+                      <td class="px-3 py-3 border-r border-slate-100">
+                        <div class="h-5 bg-slate-200 rounded w-4/5 mx-auto"></div>
+                      </td>
+                      <td class="px-3 py-3">
+                        <div class="h-3 bg-slate-200 rounded w-3/4"></div>
+                      </td>
+                    </tr>
+                  }
+                } @else {
+                  @for (orden of ordenes; track orden.id) {
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-xs font-semibold text-[#1e3a8a] truncate">
+                        {{ orden.num_secuencial ?? '—' }}
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
+                        {{ orden.solicitud_num_secuencial }}
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
+                        {{ orden.ctambiente_nombre }}
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 text-center">
+                        {{ orden.periodo_nombre_mes }} {{ orden.periodo_anio }}
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
+                        {{ orden.usuario_nombre_completo }}
+                      </td>
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-center">
+                        @if (orden.ctestado_id === 3) {
+                          <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50">
+                            {{ orden.ctestado_nombre }}
+                          </span>
+                        } @else if (orden.ctestado_id === 388) {
+                          <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-blue-400 text-blue-700 bg-blue-50">
+                            {{ orden.ctestado_nombre }}
+                          </span>
+                        } @else {
+                          <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50">
+                            {{ orden.ctestado_nombre }}
+                          </span>
+                        }
+                      </td>
+                      <td class="px-3 py-2.5 text-xs text-slate-500">
+                        {{ +orden.creado_en | date:'dd/MM/yyyy' }}
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="7" class="p-10 text-slate-400 italic text-center">
+                        No hay registros.
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      }
+
+      <!-- ── Vista: Formulario ────────────────────────────────────────────── -->
+      @if (vista === 'formulario') {
+
       <!-- Step-card (Nivel 1A) -->
       <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
         <form [formGroup]="form">
@@ -396,7 +516,11 @@
           </div>
 
           <!-- Nav buttons estándar -->
-          <div class="flex items-center pt-4 border-t border-slate-300">
+          <div class="flex items-center gap-3 pt-4 border-t border-slate-300">
+            <button type="button" (click)="volverALista()"
+              class="border border-slate-300 text-slate-600 px-6 py-2.5 rounded text-sm font-bold hover:bg-slate-50 transition-all">
+              Cancelar
+            </button>
             <button type="button" (click)="guardar()"
               [disabled]="saving"
               class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
@@ -411,6 +535,8 @@
 
         </form>
       </div>
+
+      } <!-- fin @if vista formulario -->
 
     </div>
   </div>

@@ -10,6 +10,8 @@ import { ItemCatalogo, PaginationMeta } from '../../interfaces/catalogos/catalog
 import { CatalogoService } from '../../services/catalogo.service';
 import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { OrdenTrabajoService } from '../../services/solicitudes/orden-trabajo/orden-trabajo.service';
+import { ReportOrdenService } from '../../services/solicitudes/orden-trabajo/report-orden.service';
+import { ReportOrden } from '../../interfaces/solicitudes/orden-trabajo/report-orden.interface';
 import { AuthService } from '../auth/service/auth-service';
 import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/periodo.service';
 import { ToastrAlertService } from '../../services/toastr.service';
@@ -26,6 +28,10 @@ const TECNICOS_HARDCODED = [
   styleUrl: './orden-trabajo-in-situ.css',
 })
 export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
+  vista: 'lista' | 'formulario' = 'lista';
+  loadingOrdenes = true;
+  ordenes: ReportOrden[] = [];
+
   form: FormGroup;
 
   // ── Tipo de ensayo (catálogo 17: Agua / Aire / Ruido) ────────────────────
@@ -71,6 +77,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
     private solicitudDetalleService: SolicitudDetalleService,
     private catalogoService: CatalogoService,
     private ordenTrabajoService: OrdenTrabajoService,
+    private reportOrdenService: ReportOrdenService,
     private authService: AuthService,
     private periodoService: PeriodoService,
     private toastrAlert: ToastrAlertService,
@@ -106,7 +113,33 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
     });
   }
 
+  cargarOrdenes(): void {
+    this.loadingOrdenes = true;
+    this.reportOrdenService.getOrdenes()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.ordenes = data;
+          this.loadingOrdenes = false;
+        },
+        error: () => {
+          this.loadingOrdenes = false;
+        },
+      });
+  }
+
+  irAFormulario(): void {
+    this.vista = 'formulario';
+  }
+
+  volverALista(): void {
+    this.vista = 'lista';
+    this.limpiarSolicitud();
+    this.cargarOrdenes();
+  }
+
   ngOnInit(): void {
+    this.cargarOrdenes();
     this.catalogoService.getItemsByCatalogoId(this.CATALOGO_TIPO_ENSAYO)
       .pipe(takeUntil(this.destroy$))
       .subscribe({ next: (res) => {
@@ -389,7 +422,7 @@ export class OrdenTrabajoInSitu implements OnInit, OnDestroy {
       await firstValueFrom(this.ordenTrabajoService.crearOrdenTrabajoConDetalle(payload));
 
       this.toastrAlert.showSuccess('La orden de trabajo In Situ ha sido guardada.', '¡Guardado!');
-      this.limpiarSolicitud();
+      this.volverALista();
     } catch {
       this.toastrAlert.showError('No se pudo guardar la orden de trabajo.', 'Error');
     } finally {
