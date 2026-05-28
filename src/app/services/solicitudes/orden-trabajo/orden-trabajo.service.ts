@@ -32,6 +32,12 @@ export interface CrearOrdenTrabajoConDetallePayload {
   ordenTrabajoDetalle: OrdenTrabajoDetallePayload[];
 }
 
+export interface FinalizarOrdenPayload {
+  idOrden: string;
+  identifcadorSecuecnial: string;
+  ctestado: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class OrdenTrabajoService {
   private readonly apiSolicitud = environment.api_solicitud;
@@ -40,5 +46,17 @@ export class OrdenTrabajoService {
 
   crearOrdenTrabajoConDetalle(payload: CrearOrdenTrabajoConDetallePayload): Observable<any> {
     return this.http.post<any>(`${this.apiSolicitud}/orden-trabajo/create-detalle`, payload);
+  }
+
+  actualizarOrden(id: string, payload: OrdenTrabajoPayload): Observable<any> {
+    return this.http.put<any>(`${this.apiSolicitud}/orden-trabajo/${id}`, payload);
+  }
+
+  autorizarOrden(payload: FinalizarOrdenPayload): Observable<any> {
+    return this.http.post<any>(`${this.apiSolicitud}/orden-trabajo/finalizar`, payload);
+  }
+
+  deshabilitarOrden(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiSolicitud}/orden-trabajo/${id}/disable`);
   }
 }

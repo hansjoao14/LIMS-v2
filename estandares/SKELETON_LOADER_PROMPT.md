@@ -106,7 +106,7 @@ El `<colgroup>` y el `<thead>` condicionan esa columna con `@if (hasAnyAction)`.
 Hay dos tipos de acciones:
 
 - **Botones directos** — visibles siempre en la fila. Se usan para acciones primarias como Autorizar y Rechazar.
-- **Menú contextual (⋮)** — desplegable posicionado con `fixed`. Se usa para acciones secundarias: Editar, Eliminar, Imprimir.
+- **Menú contextual (⋮)** — desplegable posicionado con `absolute` relativo al botón. Se usa para acciones secundarias: Editar, Eliminar, Imprimir.
 
 Ambos conviven en la misma celda `<td class="px-2 py-2.5 text-center">`.
 
@@ -140,63 +140,69 @@ Ambos conviven en la misma celda `<td class="px-2 py-2.5 text-center">`.
       </button>
     }
 
-    <!-- Botón de menú contextual (⋮) -->
+    <!-- Botón de menú contextual (⋮) + menú inline -->
     @if (canEdit() || canDelete()) {
-      <button type="button" title="Más acciones"
-        (click)="toggleMenu(item.id, $event)"
-        class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 transition-colors shrink-0">
-        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
-        </svg>
-      </button>
+      <div class="relative">
+        <button type="button" title="Más acciones"
+          (click)="toggleMenu(item.id, $event)"
+          class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 transition-colors shrink-0">
+          <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+          </svg>
+        </button>
+        @if (openMenuId === item.id) {
+          <div class="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40">
+            <!-- ítems del menú (ver sección HTML del menú contextual) -->
+          </div>
+        }
+      </div>
     }
 
   </div>
 </td>
 ```
 
-### HTML del menú contextual (fuera de la tabla, al final del template)
+### HTML del menú contextual (ítems — dentro del `<div class="relative">`)
 
-Se posiciona con `fixed` usando coordenadas calculadas en el `.ts` al hacer click. Un overlay invisible cierra el menú al hacer click fuera.
+El menú va **dentro del `@for` de filas**, en un `<div class="relative">` que envuelve el botón de los 3 puntos. Esto garantiza que siempre aparezca junto al botón sin importar si hay transforms CSS en los ancestros (`animate-in`, etc.).
 
 ```html
-@if (openMenuId !== null) {
-  <!-- Overlay para cerrar al hacer click fuera -->
-  <div class="fixed inset-0 z-40" (click)="closeMenu()"></div>
+<!-- Dentro del @for, en la celda de acciones -->
+<div class="relative">
+  <button type="button" title="Más acciones"
+    (click)="toggleMenu(item.id, $event)"
+    class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 transition-colors shrink-0">
+    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+      <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+    </svg>
+  </button>
+  @if (openMenuId === item.id) {
+    <div class="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40">
 
-  <!-- Menú posicionado -->
-  <div class="fixed z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40"
-       [style.top.px]="menuTop"
-       [style.left.px]="menuLeft">
+      <!-- Opción: Editar -->
+      @if (canEdit()) {
+        <button type="button" (click)="editar.emit(item); closeMenu()"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50">
+          <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          Editar
+        </button>
+      }
 
-    @for (item of items; track item.id) {
-      @if (item.id === openMenuId) {
+      <!-- Opción: Eliminar -->
+      @if (canDelete()) {
+        <button type="button" (click)="eliminarRegistro(item); closeMenu()"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50">
+          <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Eliminar
+        </button>
+      }
 
-        <!-- Opción: Editar -->
-        @if (canEdit()) {
-          <button type="button" (click)="cargarParaEditar(item); closeMenu()"
-            [disabled]="saving"
-            class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed">
-            <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            Editar
-          </button>
-        }
-
-        <!-- Opción: Eliminar -->
-        @if (canDelete()) {
-          <button type="button" (click)="eliminarRegistro(item); closeMenu()"
-            [disabled]="saving"
-            class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed">
-            <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            Eliminar
-          </button>
-        }
-
-        <!-- Opción: Imprimir (separada con borde) — solo cuando aplica por estado -->
+      <!-- Opción: Imprimir (solo cuando aplica por estado, separada con borde) -->
+      @if ($any(item['ctestado_id']) === 387) {
         <div class="border-t border-slate-100 mt-1 pt-1">
           <button type="button" (click)="imprimirRegistro(item); closeMenu()"
             class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">
@@ -206,36 +212,152 @@ Se posiciona con `fixed` usando coordenadas calculadas en el `.ts` al hacer clic
             Imprimir
           </button>
         </div>
-
       }
-    }
-  </div>
+
+    </div>
+  }
+</div>
+```
+
+Al final del template (fuera de la tabla), solo el overlay de cierre:
+
+```html
+@if (openMenuId !== null) {
+  <div class="fixed inset-0 z-40" (click)="closeMenu()"></div>
 }
 ```
 
 ### Lógica del menú en el `.ts`
 
+**NO usar `position: fixed` con coordenadas calculadas.** Los ancestros con `animate-in` crean un nuevo containing block que desplaza las coordenadas del viewport.
+
 ```typescript
 openMenuId: string | null = null;
-menuTop = 0;
-menuLeft = 0;
 
 toggleMenu(id: string, event: MouseEvent): void {
-  if (this.openMenuId === id) {
-    this.openMenuId = null;
-    return;
-  }
-  const btn = event.currentTarget as HTMLElement;
-  const rect = btn.getBoundingClientRect();
-  this.menuTop  = rect.bottom + 4;
-  this.menuLeft = rect.left - 120;  // ajustar según ancho del menú (w-40 = 160px)
-  this.openMenuId = id;
+  event.stopPropagation();
+  this.openMenuId = this.openMenuId === id ? null : id;
 }
 
 closeMenu(): void {
   this.openMenuId = null;
 }
 ```
+
+---
+
+## Autorizar / Rechazar
+
+### Patrón estándar (TypeScript)
+
+Usa Swal.fire para confirmación, `procesandoId` para deshabilitar el botón durante la petición, y `actualizarSolicitud` para cambiar el estado. La referencia a `ReportSolicitud` se guarda en `record['_solicitud']` al cargar los datos.
+
+```typescript
+import Swal from 'sweetalert2';
+import { finalize } from 'rxjs';
+
+// Constantes de estado (arriba del @Component)
+const ESTADO_AUTORIZADO = 387;
+const ESTADO_RECHAZADO  = 51;
+
+// En la clase
+procesandoId: string | null = null;
+
+async autorizarRegistro(record: VehiculoRecord): Promise<void> {
+  const sol = record['_solicitud'] as ReportSolicitud | undefined;
+  if (!sol) return;
+  const confirm = await Swal.fire({
+    icon: 'question',
+    title: '¿Autorizar solicitud?',
+    text: 'Se aprobará la solicitud seleccionada.',
+    showCancelButton: true,
+    confirmButtonColor: '#16a34a',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Sí, autorizar',
+    cancelButtonText: 'Cancelar',
+  });
+  if (!confirm.isConfirmed) return;
+  this.procesandoId = record.id;
+  this.solicitudService
+    .actualizarSolicitud(sol.id_solicitud, {
+      ctestado_id:    ESTADO_AUTORIZADO, formulario_id:  sol.formulario_id,
+      usuario_id:     sol.usuario_id,    entidad_id:     sol.establecimiento_id,
+      secuencial_id:  sol.secuencial_id, periodo_id:     sol.periodo_id,
+      descripcion:    sol.descripcion_solicitud, estado: sol.estado_logico_solicitud,
+      num_secuencial: sol.num_secuencial,
+    })
+    .pipe(takeUntil(this.destroy$), finalize(() => { this.procesandoId = null; }))
+    .subscribe({
+      next:  () => this.zone.run(() => {
+        this.toastrAlert.showSuccess('Autorizado correctamente.', '¡Autorizado!');
+        this.cargarDatos();
+      }),
+      error: () => this.zone.run(() =>
+        this.toastrAlert.showError('No se pudo autorizar el registro.', 'Error')
+      ),
+    });
+}
+
+async rechazarRegistro(record: VehiculoRecord): Promise<void> {
+  const sol = record['_solicitud'] as ReportSolicitud | undefined;
+  if (!sol) return;
+  const { isConfirmed } = await Swal.fire({
+    icon: 'warning',
+    title: 'Rechazar solicitud',
+    text: `Se rechazará la solicitud ${sol.num_secuencial ?? sol.id_solicitud}.`,
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Sí, rechazar',
+    cancelButtonText: 'Cancelar',
+  });
+  if (!isConfirmed) return;
+  this.procesandoId = record.id;
+  this.solicitudService
+    .actualizarSolicitud(sol.id_solicitud, {
+      ctestado_id:    ESTADO_RECHAZADO, formulario_id:  sol.formulario_id,
+      usuario_id:     sol.usuario_id,   entidad_id:     sol.establecimiento_id,
+      secuencial_id:  sol.secuencial_id, periodo_id:    sol.periodo_id,
+      descripcion:    sol.descripcion_solicitud, estado: sol.estado_logico_solicitud,
+      num_secuencial: sol.num_secuencial,
+    })
+    .pipe(takeUntil(this.destroy$), finalize(() => { this.procesandoId = null; }))
+    .subscribe({
+      next:  () => this.zone.run(() => {
+        this.toastrAlert.showWarning('Solicitud rechazada.', 'Rechazado');
+        this.cargarDatos();
+      }),
+      error: () => this.zone.run(() =>
+        this.toastrAlert.showError('No se pudo rechazar el registro.', 'Error')
+      ),
+    });
+}
+```
+
+### Cómo adjuntar `_solicitud` al record al cargar datos
+
+```typescript
+// En cargarDatos(), después de obtener valores y solicitudes con forkJoin:
+const estadoMap = new Map(solicitudes.map(s => [s.id_solicitud, s]));
+for (const r of records) {
+  const s = estadoMap.get(r.id);
+  if (s) {
+    r['ctestado_id']      = s.ctestado_id;
+    r['estado_solicitud'] = s.estado_solicitud;
+    r['_solicitud']       = s;   // ← referencia completa para autorizar/rechazar
+  }
+}
+```
+
+### Swal config por acción
+
+| Acción | `icon` | `confirmButtonColor` | `confirmButtonText` |
+|---|---|---|---|
+| Autorizar | `'question'` | `'#16a34a'` (verde) | `'Sí, autorizar'` |
+| Rechazar | `'warning'` | `'#d33'` (rojo) | `'Sí, rechazar'` |
+| Eliminar | `'warning'` | `'#d33'` (rojo) | `'Sí, eliminar'` |
+
+`cancelButtonColor` siempre `'#6b7280'` (slate).
 
 ### Colores por tipo de acción
 
@@ -252,8 +374,9 @@ closeMenu(): void {
 
 - Todos los botones son `h-8 w-8`, con `shrink-0` para que no se compriman.
 - El contenedor siempre es `flex items-center justify-center gap-1.5`.
-- El menú contextual siempre va **al final del template**, fuera de la tabla.
-- El overlay `fixed inset-0 z-40` cierra el menú al hacer click fuera.
+- El menú contextual va **dentro del `@for` de filas**, en un `<div class="relative">` alrededor del botón de los 3 puntos. **No usar `position: fixed` con coordenadas**.
+- El overlay `fixed inset-0 z-40` va al final del template (fuera de la tabla) y cierra el menú al hacer click fuera.
 - El menú tiene `z-50` (mayor que el overlay).
 - Imprimir y otras acciones condicionales por estado van separadas con `border-t border-slate-100 mt-1 pt-1`.
 - Si la columna de acciones no aplica (`!hasAnyAction`), no se agrega ni el `<col>` ni el `<th>`.
+- Autorizar/Rechazar siempre usan `Swal.fire` + `procesandoId` + `[disabled]="procesandoId === item.id"` en el botón.
