@@ -10,7 +10,7 @@ import { ItemCatalogo, PaginationMeta } from '../../../interfaces/catalogos/cata
 import { CatalogoService } from '../../../services/catalogo.service';
 import { SolicitudDetalleService } from '../../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { SolicitudDetalle } from '../../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
-import { OrdenTrabajoService } from '../../../services/solicitudes/orden-trabajo/orden-trabajo.service';
+import { OrdenTrabajoService, OrdenTrabajoPayload } from '../../../services/solicitudes/orden-trabajo/orden-trabajo.service';
 import { ReportOrdenService } from '../../../services/solicitudes/orden-trabajo/report-orden.service';
 import { ReportOrden } from '../../../interfaces/solicitudes/orden-trabajo/report-orden.interface';
 import { AuthService } from '../../auth/service/auth-service';
@@ -365,48 +365,78 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       }
     }
 
-    const opcionesUsuario = this.tecnicos
-      .map((u) => `<option value="${u.id}">${u.nombre} — ${u.cargo}</option>`)
-      .join('');
-
-    const swalResult = await Swal.fire<{ usuario: string }>({
-      title: 'Técnico asignado',
-      html: `
-        <label style="font-size:11px;font-weight:700;color:#1e3a8a;text-transform:uppercase;display:block;text-align:left;margin-bottom:4px;">
-          Técnico asignado *
-        </label>
-        <select id="swal-usuario" class="swal2-input" style="margin:0;width:100%;">
-          <option value="">Seleccione...</option>
-          ${opcionesUsuario}
-        </select>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1e3a8a',
-      cancelButtonColor: '#64748b',
-      confirmButtonText: 'Continuar',
-      cancelButtonText: 'Cancelar',
-      focusConfirm: false,
-      preConfirm: () => {
-        const sel = document.getElementById('swal-usuario') as HTMLSelectElement;
-        if (!sel?.value) {
-          Swal.showValidationMessage('Debe seleccionar un técnico asignado');
-          return false;
-        }
-        return { usuario: sel.value };
-      },
-    });
-
-    if (!swalResult.isConfirmed || !swalResult.value) return;
-
-    const tecnicoSeleccionado = this.tecnicos.find(u => u.id === swalResult.value!.usuario) ?? null;
-    console.log('[orden-in-situ:tecnico]', JSON.parse(JSON.stringify({ tecnicoSeleccionado })));
-
     this.saving = true;
     const raw = this.form.getRawValue();
-    const now = new Date();
+    const { id: userId } = this.authService.currentUser();
 
     try {
+      if (this.modoEdicion) {
+        const ordenPayload: OrdenTrabajoPayload = {
+          solicitud_id:                this.solicitudSeleccionada.id_solicitud,
+          usuario_id:                  userId,
+          entidad_id:                  this.editingRecord!.entidad_id,
+          ctambiente_id:               this.tipoEnsayoId,
+          periodo_id:                  this.editingRecord!.periodo_id,
+          secuencial_id:               this.editingRecord!.secuencial_id ?? null,
+          num_secuencial:              this.editingRecord!.num_secuencial ?? null,
+          ctuso_suelo_id:              raw.usoSuelo.usoSueloOperadorId ?? null,
+          ctcaracteristica_horaria_id: raw.usoSuelo.caracterizacionId ?? null,
+          ctpunto_critico_id:          raw.usoSuelo.usoSueloPcaId ?? null,
+          direccion_pca:               raw.usoSuelo.direccionPca || null,
+          telefono_pca:                raw.usoSuelo.telefonoPca || null,
+          observacion:                 raw.observaciones || null,
+          ctestado_id:                 this.editingRecord!.ctestado_id,
+          estado:                      this.editingRecord!.estado,
+          ctformulario_id:             this.editingRecord!.ctformulario_id,
+        };
+
+        await firstValueFrom(this.ordenTrabajoService.actualizarOrden(this.editingRecord!.id, ordenPayload));
+        this.toastrAlert.showSuccess('La orden de trabajo In Situ ha sido actualizada.', '¡Actualizado!');
+        this.guardado.emit();
+        return;
+      }
+
+      const opcionesUsuario = this.tecnicos
+        .map((u) => `<option value="${u.id}">${u.nombre} — ${u.cargo}</option>`)
+        .join('');
+
+      const swalResult = await Swal.fire<{ usuario: string }>({
+        title: 'Técnico asignado',
+        html: `
+          <label style="font-size:11px;font-weight:700;color:#1e3a8a;text-transform:uppercase;display:block;text-align:left;margin-bottom:4px;">
+            Técnico asignado *
+          </label>
+          <select id="swal-usuario" class="swal2-input" style="margin:0;width:100%;">
+            <option value="">Seleccione...</option>
+            ${opcionesUsuario}
+          </select>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#1e3a8a',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Continuar',
+        cancelButtonText: 'Cancelar',
+        focusConfirm: false,
+        preConfirm: () => {
+          const sel = document.getElementById('swal-usuario') as HTMLSelectElement;
+          if (!sel?.value) {
+            Swal.showValidationMessage('Debe seleccionar un técnico asignado');
+            return false;
+          }
+          return { usuario: sel.value };
+        },
+      });
+
+      if (!swalResult.isConfirmed || !swalResult.value) {
+        this.saving = false;
+        return;
+      }
+
+      const tecnicoSeleccionado = this.tecnicos.find(u => u.id === swalResult.value!.usuario) ?? null;
+      console.log('[orden-in-situ:tecnico]', JSON.parse(JSON.stringify({ tecnicoSeleccionado })));
+
+      const now = new Date();
       const ejercicio = await this.periodoService.getEjercicioByAnio(now.getFullYear());
       if (!ejercicio) throw new Error(`No hay ejercicio activo para ${now.getFullYear()}`);
 
@@ -415,8 +445,6 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
         now.getMonth() + 1,
       );
       if (!periodo) throw new Error(`No hay periodo activo para el mes ${now.getMonth() + 1}`);
-
-      const { id: userId } = this.authService.currentUser();
 
       const ensayosSeleccionados = (raw.ensayos as any[]).filter(
         (e: any) => e.seleccionado && e.ensayoId,

@@ -9,7 +9,8 @@ En lugar de mostrar un spinner mientras carga, se muestra la tabla completa con 
 El `<table>` siempre está visible con `<colgroup>` y `<thead>` estáticos. Dentro del `<tbody>` se usa `@if (loading)` para mostrar el skeleton y `@else` para mostrar la data real.
 
 ```html
-<div class="border border-slate-200 rounded">
+<div class="border border-slate-200 rounded overflow-hidden">
+  <div class="overflow-x-auto custom-scroll">
   <table class="w-full text-sm border-collapse table-fixed">
     <colgroup>
       <!-- mismas columnas que la tabla real -->
@@ -53,6 +54,7 @@ El `<table>` siempre está visible con `<colgroup>` y `<thead>` estáticos. Dent
       }
     </tbody>
   </table>
+  </div>
 </div>
 ```
 

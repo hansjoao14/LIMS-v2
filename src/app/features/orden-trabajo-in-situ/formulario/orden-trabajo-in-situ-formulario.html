@@ -26,10 +26,12 @@
             <span class="font-bold text-[#1e3a8a] text-sm truncate">
               {{ solicitudSeleccionada.num_secuencial ?? solicitudSeleccionada.id_solicitud }}
             </span>
-            <button type="button" (click)="limpiarSolicitud()" title="Cambiar solicitud"
-              class="shrink-0 text-slate-400 hover:text-red-500 text-sm leading-none transition-colors">
-              ✕
-            </button>
+            @if (!modoEdicion) {
+              <button type="button" (click)="limpiarSolicitud()" title="Cambiar solicitud"
+                class="shrink-0 text-slate-400 hover:text-red-500 text-sm leading-none transition-colors">
+                ✕
+              </button>
+            }
           </div>
         } @else {
           <button type="button" (click)="abrirPanel()"
@@ -102,7 +104,7 @@
         </label>
         <select
           class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-opacity duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
-          [disabled]="loadingTipos || !solicitudSeleccionada"
+          [disabled]="loadingTipos || !solicitudSeleccionada || modoEdicion"
           [class.opacity-50]="loadingTipos"
           [ngModel]="tipoEnsayoId"
           [ngModelOptions]="{standalone: true}"
@@ -423,9 +425,9 @@
         class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
         @if (saving) {
           <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-          Guardando...
+          {{ modoEdicion ? 'Actualizando...' : 'Guardando...' }}
         } @else {
-          GUARDAR
+          {{ modoEdicion ? 'ACTUALIZAR' : 'GUARDAR' }}
         }
       </button>
     </div>
