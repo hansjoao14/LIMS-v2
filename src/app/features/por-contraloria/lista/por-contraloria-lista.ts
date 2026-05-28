@@ -48,8 +48,6 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
   private pdfBlobUrl: string | null = null;
 
   openMenuId: string | null = null;
-  menuTop = 0;
-  menuLeft = 0;
 
   procesandoId: string | null = null;
 
@@ -111,11 +109,7 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
 
   toggleMenu(id: string, event: MouseEvent): void {
     event.stopPropagation();
-    if (this.openMenuId === id) { this.openMenuId = null; return; }
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.menuTop  = rect.bottom + 4;
-    this.menuLeft = rect.right - 160;
-    this.openMenuId = id;
+    this.openMenuId = this.openMenuId === id ? null : id;
   }
 
   closeMenu(): void { this.openMenuId = null; }

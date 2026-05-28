@@ -18,8 +18,6 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
   ordenes: ReportOrden[] = [];
 
   openMenuId: string | null = null;
-  menuTop = 0;
-  menuLeft = 0;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -50,15 +48,8 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
   }
 
   toggleMenu(id: string, event: MouseEvent): void {
-    if (this.openMenuId === id) {
-      this.openMenuId = null;
-      return;
-    }
-    const btn = event.currentTarget as HTMLElement;
-    const rect = btn.getBoundingClientRect();
-    this.menuTop  = rect.bottom + 4;
-    this.menuLeft = rect.left - 120;
-    this.openMenuId = id;
+    event.stopPropagation();
+    this.openMenuId = this.openMenuId === id ? null : id;
   }
 
   closeMenu(): void {

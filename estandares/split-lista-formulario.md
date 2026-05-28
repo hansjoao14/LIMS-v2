@@ -35,7 +35,7 @@ El componente formulario:
 ### Reglas de la LISTA
 
 El componente lista:
-- `@Input() formularioId: number | null` — arranca `cargarDatos()` en `ngOnChanges` cuando llega
+- `@Input() formularioId: string | null` — arranca `cargarDatos()` en `ngOnChanges` cuando llega
 - `@Input() fields: FieldConfig[]` — para resolver nombres de empleados
 - `@Input() editingRecordId: string | null` — resalta la fila en edición (`[class.bg-amber-50]`)
 - `@Output() editar` — emite el `VehiculoRecord` al hacer clic en Editar del menú contextual
@@ -49,7 +49,7 @@ El componente lista:
 editingRecord: VehiculoRecord | null = null;
 formularioNombre = 'Título por defecto';
 fields: FieldConfig[] = [];
-formularioId: number | null = null;
+formularioId: string | null = null;
 canCreate = computed(...)  // solo si el padre necesita mostrarlo en el header
 
 onFormularioReady(e): void  // guarda nombre, fields, formularioId
@@ -76,6 +76,43 @@ HTML padre:
 ```
 
 ---
+
+### Menú contextual (3 puntos)
+
+**NO usar `position: fixed` con coordenadas calculadas.** Los ancestros con `animate-in` u otras animaciones CSS crean un nuevo containing block que desplaza las coordenadas del viewport.
+
+Patrón correcto — menú `absolute` relativo al botón:
+
+```html
+<!-- Dentro del @for de filas -->
+<div class="relative">
+  <button type="button" (click)="toggleMenu(sol.id, $event)" ...>
+    <!-- icono 3 puntos -->
+  </button>
+  @if (openMenuId === sol.id) {
+    <div class="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40">
+      <!-- ítems del menú -->
+    </div>
+  }
+</div>
+
+<!-- Al final del template (fuera de la tabla) -->
+@if (openMenuId !== null) {
+  <div class="fixed inset-0 z-40" (click)="closeMenu()"></div>
+}
+```
+
+En el TS, `toggleMenu` solo cambia `openMenuId` — sin coordenadas:
+```typescript
+openMenuId: string | null = null;
+
+toggleMenu(id: string, event: MouseEvent): void {
+  event.stopPropagation();
+  this.openMenuId = this.openMenuId === id ? null : id;
+}
+
+closeMenu(): void { this.openMenuId = null; }
+```
 
 ### Restricciones
 - NO mover el CSS del padre

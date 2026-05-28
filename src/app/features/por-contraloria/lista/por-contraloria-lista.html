@@ -155,13 +155,48 @@
                           </button>
                         }
                         @if (canEdit() || canDelete() || $any(sol['ctestado_id']) === 387) {
-                          <button type="button" title="Más acciones"
-                            (click)="toggleMenu(sol.id, $event)"
-                            class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 transition-colors shrink-0">
-                            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
-                            </svg>
-                          </button>
+                          <div class="relative">
+                            <button type="button" title="Más acciones"
+                              (click)="toggleMenu(sol.id, $event)"
+                              class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 transition-colors shrink-0">
+                              <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                              </svg>
+                            </button>
+                            @if (openMenuId === sol.id) {
+                              <div class="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40">
+                                @if (canEdit()) {
+                                  <button type="button" (click)="editar.emit(sol); closeMenu()"
+                                    class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50">
+                                    <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    Editar
+                                  </button>
+                                }
+                                @if (canDelete()) {
+                                  <button type="button" (click)="eliminarRegistro(sol); closeMenu()"
+                                    class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50">
+                                    <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Eliminar
+                                  </button>
+                                }
+                                @if ($any(sol['ctestado_id']) === 387) {
+                                  <div class="border-t border-slate-100 mt-1 pt-1">
+                                    <button type="button" (click)="imprimirRegistro(sol); closeMenu()"
+                                      class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">
+                                      <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                      </svg>
+                                      Imprimir
+                                    </button>
+                                  </div>
+                                }
+                              </div>
+                            }
+                          </div>
                         }
                       </div>
                     </td>
@@ -192,45 +227,6 @@
 
 @if (openMenuId !== null) {
   <div class="fixed inset-0 z-40" (click)="closeMenu()"></div>
-  <div class="fixed z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40"
-       [style.top.px]="menuTop"
-       [style.left.px]="menuLeft">
-    @for (grupo of solicitudesAgrupadas; track grupo.groupKey) {
-      @for (sol of grupo.items; track sol.id) {
-        @if (sol.id === openMenuId) {
-          @if (canEdit()) {
-            <button type="button" (click)="editar.emit(sol); closeMenu()"
-              class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50">
-              <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Editar
-            </button>
-          }
-          @if (canDelete()) {
-            <button type="button" (click)="eliminarRegistro(sol); closeMenu()"
-              class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50">
-              <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Eliminar
-            </button>
-          }
-          @if ($any(sol['ctestado_id']) === 387) {
-            <div class="border-t border-slate-100 mt-1 pt-1">
-              <button type="button" (click)="imprimirRegistro(sol); closeMenu()"
-                class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">
-                <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Imprimir
-              </button>
-            </div>
-          }
-        }
-      }
-    }
-  </div>
 }
 
 <app-pdf-viewer
