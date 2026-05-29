@@ -18,6 +18,7 @@ export enum MenuKey {
   POR_CONTRALORIA        = 'POR_CONTRALORIA',
   ORDEN_TRABAJO_IN_SITU  = 'ORDEN_TRABAJO_IN_SITU',
   PLAN_MUESTREO          = 'PLAN_MUESTREO',
+  CALIBRACION_EQUIPOS    = 'CALIBRACION_EQUIPOS',
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -93,6 +94,15 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
     [AppRole.ANALISTA_LAB]:     ['ver'],
     [AppRole.ADMIN]:            ['ver', 'eliminar'],
   },
+
+  // Calibración de equipos F-PEE-11-02
+  [MenuKey.CALIBRACION_EQUIPOS]: {
+    [AppRole.ANALISTA_CALIDAD]: ['ver'],
+    [AppRole.RESPONSABLE_LAB]:  ['ver', 'editar', 'crear', 'eliminar'],
+    [AppRole.ANALISTA_CAMPO]:   ['ver'],
+    [AppRole.ANALISTA_LAB]:     ['ver', 'editar', 'crear'],
+    [AppRole.ADMIN]:            ['ver', 'editar', 'crear', 'eliminar'],
+  },
 };
 
 // ─── Route-guard groups (who can access the route at all) ────────────────────
@@ -111,9 +121,10 @@ export const RoleAccess = {
   LISTA_COTIZACIONES: rolesWithAccess(MenuKey.LISTA_COTIZACIONES),
   HORARIOS_LABORALES: rolesWithAccess(MenuKey.HORARIOS_LABORALES),
   POR_CONTRALORIA:    rolesWithAccess(MenuKey.POR_CONTRALORIA),
-  ORDEN_IN_SITU:      rolesWithAccess(MenuKey.ORDEN_TRABAJO_IN_SITU),
-  PLAN_MUESTREO:      rolesWithAccess(MenuKey.PLAN_MUESTREO),
-  ADMIN_ONLY:         [{ role: AppRole.ADMIN }],
+  ORDEN_IN_SITU:          rolesWithAccess(MenuKey.ORDEN_TRABAJO_IN_SITU),
+  PLAN_MUESTREO:          rolesWithAccess(MenuKey.PLAN_MUESTREO),
+  CALIBRACION_EQUIPOS:    rolesWithAccess(MenuKey.CALIBRACION_EQUIPOS),
+  ADMIN_ONLY:             [{ role: AppRole.ADMIN }],
 };
 
 // ─── Helper ───────────────────────────────────────────────────────────────────

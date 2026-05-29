@@ -9,6 +9,7 @@ import { OperacionesCampoIcon } from '../../../ui/icons/operaciones-campo-icon/o
 import { OrdenTrabajoInSituIcon } from '../../../ui/icons/orden-trabajo-in-situ-icon/orden-trabajo-in-situ-icon';
 import { PlanMuestreoIcon } from '../../../ui/icons/plan-muestreo-icon/plan-muestreo-icon';
 import { AccesoAutorizado } from '../../../ui/icons/acceso-autorizado/acceso-autorizado';
+import { CalibracionEquiposIcon } from '../../../ui/icons/calibracion-equipos-icon/calibracion-equipos-icon';
 import { RoleAccess } from '../../../core/utils/roles.constans';
 
 export interface MenuItem {
@@ -92,6 +93,12 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
         requiredRoles: RoleAccess.PLAN_MUESTREO,
       },
     ],
+  },
+  {
+    path: '/calibracion-equipos',
+    label: 'Calibración de equipos',
+    icon: CalibracionEquiposIcon,
+    requiredRoles: RoleAccess.CALIBRACION_EQUIPOS,
   },
   {
     path: '/admin-formularios',

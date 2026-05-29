@@ -79,4 +79,11 @@ export const featuresRoutes: Routes = [
     canActivate: [canActivateWithRealmRoles],
     data: { title: 'Plan de Muestreo - Paso 3', requiredRoles: RoleAccess.PLAN_MUESTREO },
   },
+  {
+    path: 'calibracion-equipos',
+    loadComponent: () =>
+      import('./calibracion-equipos/calibracion-equipos').then((m) => m.CalibracionEquipos),
+    canActivate: [canActivateWithRealmRoles],
+    data: { title: 'Calibración de Equipos', requiredRoles: RoleAccess.CALIBRACION_EQUIPOS },
+  },
 ];

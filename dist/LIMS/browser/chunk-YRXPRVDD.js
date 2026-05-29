@@ -1,1 +1,0 @@
-var A={ADMIN_ONLY:[{role:"admin"}],MANAGEMENT:[{role:"admin"},{role:"direccion_unidad"},{role:"analista_responsable"}],OPERATIONAL:[{role:"admin"},{role:"tecnico_laboratorio"},{role:"responsable_campo"}],ALL_USERS:[{role:"admin"},{role:"direccion_unidad"},{role:"analista_responsable"},{role:"tecnico_laboratorio"},{role:"responsable_campo"}]};export{A as a};

@@ -1,0 +1,30 @@
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
+    <div class="animate-in fade-in">
+
+      <app-page-header
+        breadcrumbSection="Calibración de equipos"
+        title="Verificación Intermedia de Calibradores Acústicos"
+        subtitle="Aquí podrás realizar el formulario para Calibradores Acústicos"
+        codigoFormulario="F-PEE-11-02"
+        edicion="3"
+      />
+
+      @if (vista === 'lista') {
+        <app-calibracion-equipos-lista
+          (nuevaCalibracion)="irAFormulario()"
+          (editar)="onEditar($event)"
+        />
+      }
+
+      @if (vista === 'formulario') {
+        <app-calibracion-equipos-formulario
+          [editingRecord]="editingRecord"
+          (guardado)="volverALista()"
+          (cancelado)="volverALista()"
+        />
+      }
+
+    </div>
+  </div>
+</div>
