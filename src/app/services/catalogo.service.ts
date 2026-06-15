@@ -1,13 +1,18 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Apollo, gql } from 'apollo-angular';
 import { Observable, map, switchMap } from 'rxjs';
 import {
   Catalogo,
+  CatalogoPayload,
   CollectionCatalogoResponse,
   CollectionItemCatalogoResponse,
   ItemCatalogo,
+  ItemCatalogoPayload,
+  PaginationMeta,
 } from '../interfaces/catalogos/catalogo.interface';
 import { META_FIELDS } from '../graphql/fragments';
+import { environment } from '../../environments/environment';
 
 const CLIENT_NAME = 'catalogo';
 
@@ -36,10 +41,53 @@ const GET_COLLECTION_CATALOGO = gql`
   }
 `;
 
+const GET_COLLECTION_CATALOGO_ADMIN = gql`
+  query CollectionCatalogoAdmin($page: Int, $take: Int, $nombre: String) {
+    collectionCatalogo(query: {
+      where: { nombre: { contains: $nombre } }
+      pagination: { page: $page, take: $take }
+    }) {
+      count
+      data {
+        descripcion
+        estado
+        id
+        nombre
+      }
+      meta { ${META_FIELDS} }
+    }
+  }
+`;
+
 const GET_ITEMS_BY_CATALOGO_ID = gql`
   query CollectionItemCatalogo($catalogoId: Int!) {
     collectionItemCatalogo(
       query: { where: { catalogo_id: { equals: $catalogoId }, estado: { equals: true } } }
+    ) {
+      count
+      data {
+        catalogo_id
+        estado
+        grupo
+        id
+        item_catalogo_id
+        nombre
+        orden
+        sigla
+        valor
+      }
+      meta { ${META_FIELDS} }
+    }
+  }
+`;
+
+const GET_ALL_ITEMS_ADMIN = gql`
+  query GetAllItemsAdmin($catalogoId: Int!, $page: Int, $take: Int) {
+    collectionItemCatalogo(
+      query: {
+        where: { catalogo_id: { equals: $catalogoId } },
+        pagination: { page: $page, take: $take }
+      }
     ) {
       count
       data {
@@ -84,7 +132,10 @@ const GET_CHILDREN_BY_PARENT_IDS = gql`
   providedIn: 'root',
 })
 export class CatalogoService {
-  constructor(private apollo: Apollo) {}
+  private readonly baseCatalogo = `${environment.api_catalogo}/catalogo`;
+  private readonly baseItemCatalogo = `${environment.api_catalogo}/item-catalogo`;
+
+  constructor(private apollo: Apollo, private http: HttpClient) {}
 
   getCatalogo(): Observable<any[]> {
     return this.apollo
@@ -104,6 +155,22 @@ export class CatalogoService {
       );
   }
 
+  getCollectionCatalogoAdmin(page: number, limit: number, nombre = ''): Observable<{ data: Catalogo[]; meta: PaginationMeta }> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionCatalogo: CollectionCatalogoResponse }>({
+        query: GET_COLLECTION_CATALOGO_ADMIN,
+        variables: { page, take: limit, nombre },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(
+        map((result) => ({
+          data: (result.data?.collectionCatalogo?.data ?? []) as Catalogo[],
+          meta: result.data?.collectionCatalogo?.meta as PaginationMeta,
+        })),
+      );
+  }
+
   getItemsByCatalogoId(catalogoId: number): Observable<CollectionItemCatalogoResponse> {
     return this.apollo
       .use(CLIENT_NAME)
@@ -119,6 +186,19 @@ export class CatalogoService {
               data: [],
             }) as CollectionItemCatalogoResponse,
         ),
+      );
+  }
+
+  getAllItemsAdmin(catalogoId: number): Observable<ItemCatalogo[]> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionItemCatalogo: CollectionItemCatalogoResponse }>({
+        query: GET_ALL_ITEMS_ADMIN,
+        variables: { catalogoId, page: null, take: 200 },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(
+        map((result) => result.data?.collectionItemCatalogo?.data ?? []),
       );
   }
 
@@ -157,5 +237,33 @@ export class CatalogoService {
         );
       }),
     );
+  }
+
+  // ── Catálogo mutations ────────────────────────────────────────────────────
+
+  createCatalogo(payload: CatalogoPayload): Observable<Catalogo> {
+    return this.http.post<Catalogo>(this.baseCatalogo, payload);
+  }
+
+  updateCatalogo(id: number, payload: CatalogoPayload): Observable<Catalogo> {
+    return this.http.put<Catalogo>(`${this.baseCatalogo}/${id}`, payload);
+  }
+
+  disableCatalogo(id: number): Observable<void> {
+    return this.http.patch<void>(`${this.baseCatalogo}/${id}/disable`, {});
+  }
+
+  // ── ItemCatálogo mutations ────────────────────────────────────────────────
+
+  createItemCatalogo(payload: ItemCatalogoPayload): Observable<ItemCatalogo> {
+    return this.http.post<ItemCatalogo>(this.baseItemCatalogo, payload);
+  }
+
+  updateItemCatalogo(id: number, payload: ItemCatalogoPayload): Observable<ItemCatalogo> {
+    return this.http.put<ItemCatalogo>(`${this.baseItemCatalogo}/${id}`, payload);
+  }
+
+  disableItemCatalogo(id: number): Observable<void> {
+    return this.http.patch<void>(`${this.baseItemCatalogo}/${id}/disable`, {});
   }
 }

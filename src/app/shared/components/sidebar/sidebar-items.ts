@@ -106,4 +106,10 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     icon: CarpetaIcon,
     requiredRoles: RoleAccess.ADMIN_ONLY,
   },
+  {
+    path: '/admin-catalogos',
+    label: 'Administración de Catálogos',
+    icon: CarpetaIcon,
+    requiredRoles: RoleAccess.ADMIN_CATALOGOS,
+  },
 ];

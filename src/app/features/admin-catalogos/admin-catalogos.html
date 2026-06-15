@@ -1,0 +1,73 @@
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
+    <div class="animate-in fade-in">
+
+      <app-page-header
+        breadcrumbSection="Administración"
+        title="Catálogos"
+        subtitle="Gestiona catálogos y sus ítems"
+      />
+
+      @if (vista === 'main') {
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+          <!-- Panel izquierdo: lista de catálogos -->
+          <div class="lg:col-span-2">
+            <app-catalogo-lista
+              [selectedId]="selectedCatalogo?.id ?? null"
+              (seleccionar)="onSelectCatalogo($event)"
+              (nuevo)="onNuevoCatalogo()"
+              (editar)="onEditarCatalogo($event)"
+            />
+          </div>
+
+          <!-- Panel derecho: ítems del catálogo seleccionado -->
+          <div class="lg:col-span-3">
+            @if (selectedCatalogo) {
+              <app-item-catalogo-lista
+                [catalogo]="selectedCatalogo"
+                [reloadTrigger]="reloadItemsTrigger"
+                (nuevo)="onNuevoItem()"
+                (editar)="onEditarItem($event)"
+              />
+            } @else {
+              <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-12 flex flex-col items-center justify-center text-center min-h-[200px]">
+                <svg class="w-10 h-10 text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 10h16M4 14h8M4 18h8"/>
+                </svg>
+                <p class="text-sm text-slate-400 font-medium">Selecciona un catálogo para ver sus ítems</p>
+              </div>
+            }
+          </div>
+
+        </div>
+      }
+
+      @if (vista === 'form-catalogo') {
+        <app-catalogo-formulario
+          [editingRecord]="editingCatalogo"
+          (guardado)="onCatalogoGuardado($event)"
+          (cancelado)="volverALista()"
+        />
+      }
+
+      @if (vista === 'form-item') {
+        @if (selectedCatalogo) {
+          <app-item-catalogo-formulario
+            [catalogo]="selectedCatalogo"
+            [editingRecord]="editingItem"
+            (guardado)="onItemGuardado()"
+            (cancelado)="volverALista()"
+          />
+        }
+      }
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .animate-in { animation: animateIn 0.3s ease-out forwards; }
+  .fade-in { opacity: 0; }
+  @keyframes animateIn { to { opacity: 1; } }
+</style>

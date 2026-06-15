@@ -19,6 +19,7 @@ export enum MenuKey {
   ORDEN_TRABAJO_IN_SITU  = 'ORDEN_TRABAJO_IN_SITU',
   PLAN_MUESTREO          = 'PLAN_MUESTREO',
   CALIBRACION_EQUIPOS    = 'CALIBRACION_EQUIPOS',
+  ADMIN_CATALOGOS        = 'ADMIN_CATALOGOS',
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -103,6 +104,11 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
     [AppRole.ANALISTA_LAB]:     ['ver', 'editar', 'crear'],
     [AppRole.ADMIN]:            ['ver', 'editar', 'crear', 'eliminar'],
   },
+
+  // Administración de catálogos e ítems
+  [MenuKey.ADMIN_CATALOGOS]: {
+    [AppRole.ADMIN]: ['ver', 'editar', 'crear', 'eliminar'],
+  },
 };
 
 // ─── Route-guard groups (who can access the route at all) ────────────────────
@@ -124,6 +130,7 @@ export const RoleAccess = {
   ORDEN_IN_SITU:          rolesWithAccess(MenuKey.ORDEN_TRABAJO_IN_SITU),
   PLAN_MUESTREO:          rolesWithAccess(MenuKey.PLAN_MUESTREO),
   CALIBRACION_EQUIPOS:    rolesWithAccess(MenuKey.CALIBRACION_EQUIPOS),
+  ADMIN_CATALOGOS:        rolesWithAccess(MenuKey.ADMIN_CATALOGOS),
   ADMIN_ONLY:             [{ role: AppRole.ADMIN }],
 };
 

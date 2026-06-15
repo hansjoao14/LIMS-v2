@@ -86,4 +86,11 @@ export const featuresRoutes: Routes = [
     canActivate: [canActivateWithRealmRoles],
     data: { title: 'Calibración de Equipos', requiredRoles: RoleAccess.CALIBRACION_EQUIPOS },
   },
+  {
+    path: 'admin-catalogos',
+    loadComponent: () =>
+      import('./admin-catalogos/admin-catalogos').then((m) => m.AdminCatalogos),
+    canActivate: [canActivateWithRealmRoles],
+    data: { title: 'Administración de Catálogos', requiredRoles: RoleAccess.ADMIN_CATALOGOS },
+  },
 ];

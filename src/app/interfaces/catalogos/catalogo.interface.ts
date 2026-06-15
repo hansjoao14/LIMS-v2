@@ -40,3 +40,18 @@ export interface CollectionItemCatalogoResponse {
   data: ItemCatalogo[];
   meta: PaginationMeta;
 }
+
+export interface CatalogoPayload {
+  nombre: string;
+  descripcion?: string | null;
+}
+
+export interface ItemCatalogoPayload {
+  catalogo_id: number;
+  nombre: string;
+  sigla?: string | null;
+  valor?: string | null;
+  grupo?: string | null;
+  orden?: number | null;
+  item_catalogo_id?: number | null;
+}
