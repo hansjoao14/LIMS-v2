@@ -8,8 +8,9 @@
           breadcrumbSection="Lista de Solicitudes"
           title="Lista de Solicitudes"
           subtitle="Listado de solicitudes de trabajo registradas en el sistema."
-          codigoFormulario="F-PG-09-01"
-          edicion="24"
+          [codigoFormulario]="formulario?.descripcion ?? null"
+          [edicion]="formulario?.version ?? null"
+          [fechaSolicitud]="fechaEmision"
         />
 
         <!-- Table-card: borde y sombra propia, sin padding interno -->

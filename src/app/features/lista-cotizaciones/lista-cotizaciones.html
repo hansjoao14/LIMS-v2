@@ -7,8 +7,9 @@
         breadcrumbSection="Lista de Autorizaciones"
         title="Por Autorizar"
         subtitle="Solicitudes finalizadas pendientes de autorización o rechazo."
-        codigoFormulario="F-PG-09-01"
-        edicion="24"
+        [codigoFormulario]="formulario?.descripcion ?? null"
+        [edicion]="formulario?.version ?? null"
+        [fechaSolicitud]="fechaEmision"
       />
 
       <!-- Table-card: sin padding interior, overflow-hidden para respetar border-radius -->

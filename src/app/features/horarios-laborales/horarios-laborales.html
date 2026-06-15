@@ -6,8 +6,9 @@
         breadcrumbSection="Gestión de Vehículos"
         [title]="formularioNombre"
         subtitle="Complete la siguiente información para solicitar un vehículo de la DMRCA"
-        codigoFormulario="FOR.ADM.SVR.001.02"
-        edicion="12"
+        [codigoFormulario]="formulario?.descripcion ?? null"
+        [edicion]="formulario?.version ?? null"
+        [fechaSolicitud]="fechaEmision"
       />
 
       <app-horarios-laborales-formulario

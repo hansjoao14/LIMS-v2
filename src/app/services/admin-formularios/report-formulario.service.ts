@@ -39,6 +39,31 @@ const GET_COLLECTION_REPORT_FORMULARIO = gql`
   }
 `;
 
+const GET_FORMULARIO_BY_CT_ID = gql`
+  query CollectionReportFormularioByCTId($ctformularioId: Int!) {
+    collectionReportFormulario(
+      query: { where: { ctformulario_id: { equals: $ctformularioId } } }
+    ) {
+      count
+      data {
+        ctformulario_id
+        descripcion
+        estado
+        fecha_actualizacion
+        fecha_creacion
+        fecha_emision
+        id
+        nombre
+        sigla
+        tipo_formulario
+        usuario_actualizacion
+        usuario_creacion
+        version
+      }
+    }
+  }
+`;
+
 const GET_ATRIBUTOS_DEPENDIENTES = gql`
   query CollectionReportAtributoFormularioDependientes($formularioId: String!) {
     collectionReportAtributoFormulario(
@@ -178,6 +203,17 @@ export class ReportFormularioService {
           return [...data].sort((a, b) => a.orden - b.orden) as ReportAtributoFormulario[];
         }),
       );
+  }
+
+  getFormularioByCTId(ctformularioId: number): Observable<ReportFormulario | null> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionReportFormulario: ReportFormularioCollectionResponse }>({
+        query: GET_FORMULARIO_BY_CT_ID,
+        variables: { ctformularioId },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(map((result) => result.data?.collectionReportFormulario?.data?.[0] ?? null));
   }
 
   getFormularios(): Observable<FormulariosResult> {

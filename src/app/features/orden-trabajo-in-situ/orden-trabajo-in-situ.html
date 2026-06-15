@@ -6,8 +6,9 @@
         breadcrumbSection="Operaciones de campo"
         title="Orden de trabajo In Situ"
         subtitle="Aquí podrás visualizar los detalles de la orden de trabajo In Situ"
-        codigoFormulario="F-PG-09-03"
-        edicion="16"
+        [codigoFormulario]="formulario?.descripcion ?? null"
+        [edicion]="formulario?.version ?? null"
+        [fechaSolicitud]="fechaEmision"
       />
 
       @if (vista === 'lista') {

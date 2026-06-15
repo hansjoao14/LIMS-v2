@@ -7,7 +7,9 @@ import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
+import { ReportFormulario } from '../../interfaces/admin-formularios/report-formulario.interface';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { PaginationComponent } from '../../shared/components/pagination/pagination';
 import { AuthService } from '../auth/service/auth-service';
@@ -28,6 +30,10 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   archivoFirma: File | null = null;
   claveFirma = '';
   isFirmando = false;
+
+  // ── Formulario metadata ──────────────────────────────────────────────────
+  formulario: ReportFormulario | null = null;
+  fechaEmision: Date | null = null;
 
   // ── Lista ────────────────────────────────────────────────────────────────
   solicitudes: ReportSolicitud[] = [];
@@ -62,12 +68,28 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   constructor(
     private reportSolicitudService: ReportSolicitudService,
     private solicitudService: SolicitudService,
+    private reportFormularioService: ReportFormularioService,
     private router: Router,
     public authService: AuthService,
   ) {}
 
   ngOnInit(): void {
+    this.cargarFormulario();
     this.cargarPagina(1);
+  }
+
+  cargarFormulario(): void {
+    this.reportFormularioService
+      .getFormularioByCTId(380)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (formulario) => {
+          this.formulario = formulario;
+          if (formulario?.fecha_emision) {
+            this.fechaEmision = new Date(Number(formulario.fecha_emision));
+          }
+        },
+      });
   }
 
   ngOnDestroy(): void {

@@ -6,7 +6,9 @@ import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
+import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
+import { ReportFormulario } from '../../interfaces/admin-formularios/report-formulario.interface';
 import { ItemCatalogo, PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { CatalogoService } from '../../services/catalogo.service';
 import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
@@ -40,6 +42,9 @@ export interface GrupoLaboratorio {
   styleUrl: './plan-muestreo.css',
 })
 export class PlanMuestreo implements OnInit, OnDestroy {
+
+  formulario: ReportFormulario | null = null;
+  fechaEmision: Date | null = null;
 
   // ── Tipo de agua (catálogo 18: Aguas Superficiales / Aguas Residuales) ───
   private readonly CATALOGO_AGUA     = 18;
@@ -91,12 +96,24 @@ export class PlanMuestreo implements OnInit, OnDestroy {
 
   constructor(
     private reportSolicitudService: ReportSolicitudService,
+    private reportFormularioService: ReportFormularioService,
     private solicitudDetalleService: SolicitudDetalleService,
     private catalogoService: CatalogoService,
     private router: Router,
   ) {}
 
   ngOnInit(): void {
+    this.reportFormularioService
+      .getFormularioByCTId(2019)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (formulario) => {
+          this.formulario = formulario;
+          if (formulario?.fecha_emision) {
+            this.fechaEmision = new Date(Number(formulario.fecha_emision));
+          }
+        },
+      });
     this.catalogoService.getItemsByCatalogoId(this.CATALOGO_AGUA)
       .pipe(takeUntil(this.destroy$))
       .subscribe({

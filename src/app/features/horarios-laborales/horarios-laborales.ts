@@ -1,8 +1,11 @@
-import { Component, ViewChild, computed } from '@angular/core';
+import { Component, ViewChild, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subject, takeUntil } from 'rxjs';
 import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
 import { AuthService } from '../auth/service/auth-service';
 import { FieldConfig } from '../solicitud-trabajo/model/solicitud-trabajo.model';
+import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
+import { ReportFormulario } from '../../interfaces/admin-formularios/report-formulario.interface';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import {
   HorariosLaboralesFormulario, FormularioReadyEvent,
@@ -18,13 +21,18 @@ type VehiculoRecord = { id: string } & Record<string, unknown>;
   templateUrl: './horarios-laborales.html',
   styleUrls: ['./horarios-laborales.css'],
 })
-export class HorariosLaborales {
+export class HorariosLaborales implements OnInit, OnDestroy {
   @ViewChild(HorariosLaboralesLista) listaRef!: HorariosLaboralesLista;
 
   editingRecord:  VehiculoRecord | null = null;
   formularioNombre = 'Solicitud de transporte';
   fields:          FieldConfig[] = [];
   formularioId:    string | null = null;
+
+  formulario: ReportFormulario | null = null;
+  fechaEmision: Date | null = null;
+
+  private readonly destroy$ = new Subject<void>();
 
   private userAppRole = computed<AppRole | null>(() => {
     const roles = this.authService.userProfile()?.roles ?? [];
@@ -36,7 +44,29 @@ export class HorariosLaborales {
     return role ? hasPermission(MenuKey.HORARIOS_LABORALES, role, 'crear') : false;
   });
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private reportFormularioService: ReportFormularioService,
+  ) {}
+
+  ngOnInit(): void {
+    this.reportFormularioService
+      .getFormularioByCTId(1002)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (formulario) => {
+          this.formulario = formulario;
+          if (formulario?.fecha_emision) {
+            this.fechaEmision = new Date(Number(formulario.fecha_emision));
+          }
+        },
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   onFormularioReady(event: FormularioReadyEvent): void {
     this.formularioNombre = event.nombre;

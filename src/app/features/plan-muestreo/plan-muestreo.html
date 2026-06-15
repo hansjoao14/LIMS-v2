@@ -6,8 +6,9 @@
         breadcrumbSection="Operaciones de campo"
         title="Plan de muestreo"
         subtitle="Aquí podrás visualizar los detalles del plan de muestreo"
-        codigoFormulario="F-PEE-42-01"
-        edicion="11"
+        [codigoFormulario]="formulario?.descripcion ?? null"
+        [edicion]="formulario?.version ?? null"
+        [fechaSolicitud]="fechaEmision"
       />
 
       <!-- OBJETIVO -->

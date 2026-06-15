@@ -4,7 +4,9 @@ import { Subject, takeUntil, finalize, timeout } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
+import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
+import { ReportFormulario } from '../../interfaces/admin-formularios/report-formulario.interface';
 import { PaginationMeta, ItemCatalogo } from '../../interfaces/catalogos/catalogo.interface';
 import { PaginationComponent } from '../../shared/components/pagination/pagination';
 import { CatalogoService } from '../../services/catalogo.service';
@@ -25,6 +27,9 @@ const CATALOGO_PRIORIDAD_ID = 30;
   styleUrl: './lista-cotizaciones.css',
 })
 export class ListaCotizaciones implements OnInit, OnDestroy {
+  formulario: ReportFormulario | null = null;
+  fechaEmision: Date | null = null;
+
   solicitudes: ReportSolicitud[] = [];
   meta: PaginationMeta | null = null;
   loading = true;
@@ -53,14 +58,30 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
 
   constructor(
     private reportSolicitudService: ReportSolicitudService,
+    private reportFormularioService: ReportFormularioService,
     private catalogoService: CatalogoService,
     private solicitudService: SolicitudService,
     private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
+    this.cargarFormulario();
     this.cargarPrioridades();
     this.cargarPagina(1);
+  }
+
+  cargarFormulario(): void {
+    this.reportFormularioService
+      .getFormularioByCTId(380)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (formulario) => {
+          this.formulario = formulario;
+          if (formulario?.fecha_emision) {
+            this.fechaEmision = new Date(Number(formulario.fecha_emision));
+          }
+        },
+      });
   }
 
   ngOnDestroy(): void {
