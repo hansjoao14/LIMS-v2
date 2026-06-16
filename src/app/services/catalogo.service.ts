@@ -275,9 +275,10 @@ export class CatalogoService {
     return this.http.put<Catalogo>(`${this.baseCatalogo}/${id}`, payload);
   }
 
-  disableCatalogo(id: number): Observable<void> {
-    return this.http.patch<void>(`${this.baseCatalogo}/${id}/disable`, {});
+  toggleCatalogo(id: number, estado: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.baseCatalogo}/${id}/disable`, { estado });
   }
+
 
   // ── ItemCatálogo mutations ────────────────────────────────────────────────
 
@@ -289,7 +290,8 @@ export class CatalogoService {
     return this.http.put<ItemCatalogo>(`${this.baseItemCatalogo}/${id}`, payload);
   }
 
-  disableItemCatalogo(id: number): Observable<void> {
-    return this.http.patch<void>(`${this.baseItemCatalogo}/${id}/disable`, {});
+  toggleItemCatalogo(id: number, estado: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.baseItemCatalogo}/${id}/disable`, { estado });
   }
+
 }

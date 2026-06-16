@@ -138,45 +138,21 @@
                 @if (hasAnyAction) {
                   <td class="px-2 py-2.5 text-center">
                     <div class="flex items-center justify-center">
-                      <div class="relative">
-                        <button type="button" title="Más acciones"
-                          (click)="toggleMenu(item.id, $event)"
-                          [disabled]="procesandoId === item.id"
-                          class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 disabled:opacity-40 transition-colors shrink-0">
-                          @if (procesandoId === item.id) {
-                            <svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                            </svg>
-                          } @else {
-                            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
-                            </svg>
-                          }
-                        </button>
-                        @if (openMenuId === item.id) {
-                          <div class="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40">
-                            @if (canEdit()) {
-                              <button type="button" (click)="editar.emit(item); closeMenu()"
-                                class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50">
-                                <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                </svg>
-                                Editar
-                              </button>
-                            }
-                            @if (canDelete()) {
-                              <button type="button" (click)="deshabilitarItem(item); closeMenu()"
-                                class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50">
-                                <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
-                                </svg>
-                                Deshabilitar
-                              </button>
-                            }
-                          </div>
+                      <button type="button" title="Más acciones"
+                        (click)="toggleMenu(item.id, item, $event)"
+                        [disabled]="procesandoId === item.id"
+                        class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 disabled:opacity-40 transition-colors shrink-0">
+                        @if (procesandoId === item.id) {
+                          <svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                          </svg>
+                        } @else {
+                          <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                          </svg>
                         }
-                      </div>
+                      </button>
                     </div>
                   </td>
                 }
@@ -205,6 +181,37 @@
 
 </div>
 
-@if (openMenuId !== null) {
+@if (openMenuId !== null && menuItem && menuPos) {
+  <div class="fixed z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40"
+       [style.top.px]="menuPos.top"
+       [style.right.px]="menuPos.right">
+    @if (canEdit()) {
+      <button type="button" (click)="editar.emit(menuItem); closeMenu()"
+        class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50">
+        <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+        Editar
+      </button>
+    }
+    @if (canDelete()) {
+      <button type="button" (click)="toggleEstadoItem(menuItem); closeMenu()"
+        [class]="menuItem.estado
+          ? 'w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50'
+          : 'w-full flex items-center gap-2.5 px-3 py-2 text-xs text-green-700 hover:bg-green-50'">
+        @if (menuItem.estado) {
+          <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+          </svg>
+          Deshabilitar
+        } @else {
+          <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Habilitar
+        }
+      </button>
+    }
+  </div>
   <div class="fixed inset-0 z-40" (click)="closeMenu()"></div>
 }

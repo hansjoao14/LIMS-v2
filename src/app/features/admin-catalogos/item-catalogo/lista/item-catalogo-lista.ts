@@ -81,6 +81,8 @@ export class ItemCatalogoLista implements OnInit, OnDestroy, OnChanges {
 
   collapsedIds = new Set<number>();
   openMenuId: number | null = null;
+  menuItem: ItemTree | null = null;
+  menuPos: { top: number; right: number } | null = null;
   procesandoId: number | null = null;
 
   private readonly destroy$ = new Subject<void>();
@@ -196,37 +198,51 @@ export class ItemCatalogoLista implements OnInit, OnDestroy, OnChanges {
     this.rebuildFlat();
   }
 
-  toggleMenu(id: number, event: MouseEvent): void {
+  toggleMenu(id: number, item: ItemTree, event: MouseEvent): void {
     event.stopPropagation();
-    this.openMenuId = this.openMenuId === id ? null : id;
+    if (this.openMenuId === id) {
+      this.openMenuId = null;
+      this.menuItem = null;
+      this.menuPos = null;
+    } else {
+      const btn = event.currentTarget as HTMLElement;
+      const rect = btn.getBoundingClientRect();
+      this.openMenuId = id;
+      this.menuItem = item;
+      this.menuPos = { top: rect.bottom + 4, right: window.innerWidth - rect.right };
+    }
   }
 
   closeMenu(): void {
     this.openMenuId = null;
+    this.menuItem = null;
+    this.menuPos = null;
   }
 
-  async deshabilitarItem(item: ItemCatalogo): Promise<void> {
+  async toggleEstadoItem(item: ItemCatalogo): Promise<void> {
+    const accion = item.estado ? 'deshabilitar' : 'habilitar';
     const confirm = await Swal.fire({
       icon: 'warning',
-      title: '¿Deshabilitar ítem?',
-      text: `Se deshabilitará "${item.nombre}".`,
+      title: `¿${item.estado ? 'Deshabilitar' : 'Habilitar'} ítem?`,
+      text: `Se ${accion}á "${item.nombre}".`,
       showCancelButton: true,
-      confirmButtonColor: '#d33',
+      confirmButtonColor: item.estado ? '#d33' : '#16a34a',
       cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Sí, deshabilitar',
+      confirmButtonText: `Sí, ${accion}`,
       cancelButtonText: 'Cancelar',
     });
     if (!confirm.isConfirmed) return;
     this.procesandoId = item.id;
-    this.catService.disableItemCatalogo(item.id)
+    const call$ = this.catService.toggleItemCatalogo(item.id, !item.estado);
+    call$
       .pipe(takeUntil(this.destroy$), finalize(() => { this.procesandoId = null; }))
       .subscribe({
         next: () => this.zone.run(() => {
-          this.toastrAlert.showSuccess('Ítem deshabilitado.', '¡Listo!');
+          this.toastrAlert.showSuccess(`Ítem ${item.estado ? 'deshabilitado' : 'habilitado'}.`, '¡Listo!');
           this.cargarDatos();
         }),
         error: () => this.zone.run(() =>
-          this.toastrAlert.showError('No se pudo deshabilitar el ítem.', 'Error')
+          this.toastrAlert.showError(`No se pudo ${accion} el ítem.`, 'Error')
         ),
       });
   }

@@ -1,0 +1,76 @@
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
+    <div class="animate-in fade-in">
+
+      <app-page-header
+        breadcrumbSection="Administración"
+        title="Ensayos"
+        subtitle="Gestiona ensayos y sus tipos ambientales"
+      />
+
+      @if (vista === 'main') {
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+
+          <!-- Panel izquierdo: lista de ensayos -->
+          <div class="lg:col-span-2">
+            <app-ensayo-lista
+              [selectedId]="selectedEnsayo?.id ?? null"
+              [reloadTrigger]="reloadItemsTrigger"
+              (seleccionar)="onSeleccionar($event)"
+              (nuevo)="onNuevoEnsayo()"
+              (editar)="onEditarEnsayo($event)"
+            />
+          </div>
+
+          <!-- Panel derecho: ítems del ensayo seleccionado -->
+          <div class="lg:col-span-3">
+            @if (selectedEnsayo) {
+              <div class="flex flex-col gap-4">
+                <app-ensayo-item-lista
+                  [ensayoId]="selectedEnsayo.id"
+                  [reloadTrigger]="reloadItemsTrigger"
+                  (nuevo)="onNuevoItem()"
+                  (editar)="onEditarItem($event)"
+                />
+              </div>
+            } @else {
+              <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-12 flex flex-col items-center justify-center text-center min-h-[200px]">
+                <svg class="w-10 h-10 text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.822l-5.406-2.702V4h1a1 1 0 000-2H8a1 1 0 000 2h1v7.906l-5.406 2.702a2 2 0 00-1.022.822l-.99 1.65A1.5 1.5 0 002.868 21h18.264a1.5 1.5 0 001.286-2.272l-.99-1.65z"/>
+                </svg>
+                <p class="text-sm text-slate-400 font-medium">Selecciona un ensayo para ver sus tipos ambientales</p>
+              </div>
+            }
+          </div>
+
+        </div>
+      }
+
+      @if (vista === 'form-ensayo') {
+        <app-ensayo-formulario
+          [editingRecord]="editingEnsayo"
+          (guardado)="onGuardadoEnsayo($event)"
+          (cancelado)="onCanceladoEnsayo()"
+        />
+      }
+
+      @if (vista === 'form-item') {
+        @if (selectedEnsayo) {
+          <app-ensayo-item-formulario
+            [ensayo]="selectedEnsayo"
+            [editingRecord]="editingItem"
+            (guardado)="onGuardadoItem()"
+            (cancelado)="onCanceladoItem()"
+          />
+        }
+      }
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .animate-in { animation: animateIn 0.3s ease-out forwards; }
+  .fade-in { opacity: 0; }
+  @keyframes animateIn { to { opacity: 1; } }
+</style>

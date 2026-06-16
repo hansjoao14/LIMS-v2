@@ -11,6 +11,8 @@ import { PlanMuestreoIcon } from '../../../ui/icons/plan-muestreo-icon/plan-mues
 import { AccesoAutorizado } from '../../../ui/icons/acceso-autorizado/acceso-autorizado';
 import { CalibracionEquiposIcon } from '../../../ui/icons/calibracion-equipos-icon/calibracion-equipos-icon';
 import { BookIcon } from '../../../ui/icons/book-icon/book-icon';
+import { FlaskIcon } from '../../../ui/icons/flask-icon/flask-icon';
+import { SettingsComponent } from '../../../ui/icons/settings/settings.component';
 import { RoleAccess } from '../../../core/utils/roles.constans';
 
 export interface MenuItem {
@@ -102,15 +104,29 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     requiredRoles: RoleAccess.CALIBRACION_EQUIPOS,
   },
   {
-    path: '/admin-formularios',
-    label: 'Administración de Formularios',
-    icon: CarpetaIcon,
+    label: 'Configuración',
+    icon: SettingsComponent,
+    expanded: false,
     requiredRoles: RoleAccess.ADMIN_ONLY,
-  },
-  {
-    path: '/admin-catalogos',
-    label: 'Administración de Catálogos',
-    icon: BookIcon,
-    requiredRoles: RoleAccess.ADMIN_CATALOGOS,
+    children: [
+      {
+        path: '/admin-formularios',
+        label: 'Formularios',
+        icon: CarpetaIcon,
+        requiredRoles: RoleAccess.ADMIN_ONLY,
+      },
+      {
+        path: '/admin-catalogos',
+        label: 'Catálogos',
+        icon: BookIcon,
+        requiredRoles: RoleAccess.ADMIN_CATALOGOS,
+      },
+      {
+        path: '/admin-ensayos',
+        label: 'Ensayos',
+        icon: FlaskIcon,
+        requiredRoles: RoleAccess.ADMIN_ENSAYOS,
+      },
+    ],
   },
 ];

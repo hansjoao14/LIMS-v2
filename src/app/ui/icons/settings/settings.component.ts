@@ -10,6 +10,6 @@ import colors from '../../constants/colors';
 export class SettingsComponent {
 
   @Input() size = 1;
-  @Input() color = colors.black;
+  @Input() color = colors.white;
 
 }

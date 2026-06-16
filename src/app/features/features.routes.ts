@@ -93,4 +93,11 @@ export const featuresRoutes: Routes = [
     canActivate: [canActivateWithRealmRoles],
     data: { title: 'Administración de Catálogos', requiredRoles: RoleAccess.ADMIN_CATALOGOS },
   },
+  {
+    path: 'admin-ensayos',
+    loadComponent: () =>
+      import('./admin-ensayos/admin-ensayos').then((m) => m.AdminEnsayos),
+    canActivate: [canActivateWithRealmRoles],
+    data: { title: 'Administración de Ensayos', requiredRoles: RoleAccess.ADMIN_ENSAYOS },
+  },
 ];

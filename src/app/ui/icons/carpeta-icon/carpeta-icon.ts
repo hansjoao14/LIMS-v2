@@ -11,6 +11,6 @@ export class CarpetaIcon {
 
 
     @Input() size = 1;
-  @Input() color = colors.black;;
+  @Input() color = colors.white;
 
 }

@@ -30,6 +30,8 @@ export class CatalogoLista implements OnInit, OnDestroy {
   busqueda = '';
 
   openMenuId: number | null = null;
+  menuItem: Catalogo | null = null;
+  menuPos: { top: number; right: number } | null = null;
   procesandoId: number | null = null;
 
   private readonly destroy$ = new Subject<void>();
@@ -94,37 +96,51 @@ export class CatalogoLista implements OnInit, OnDestroy {
       });
   }
 
-  toggleMenu(id: number, event: MouseEvent): void {
+  toggleMenu(id: number, item: Catalogo, event: MouseEvent): void {
     event.stopPropagation();
-    this.openMenuId = this.openMenuId === id ? null : id;
+    if (this.openMenuId === id) {
+      this.openMenuId = null;
+      this.menuItem = null;
+      this.menuPos = null;
+    } else {
+      const btn = event.currentTarget as HTMLElement;
+      const rect = btn.getBoundingClientRect();
+      this.openMenuId = id;
+      this.menuItem = item;
+      this.menuPos = { top: rect.bottom + 4, right: window.innerWidth - rect.right };
+    }
   }
 
   closeMenu(): void {
     this.openMenuId = null;
+    this.menuItem = null;
+    this.menuPos = null;
   }
 
-  async deshabilitarCatalogo(item: Catalogo): Promise<void> {
+  async toggleEstadoCatalogo(item: Catalogo): Promise<void> {
+    const accion = item.estado ? 'deshabilitar' : 'habilitar';
     const confirm = await Swal.fire({
       icon: 'warning',
-      title: '¿Deshabilitar catálogo?',
-      text: `Se deshabilitará "${item.nombre}".`,
+      title: `¿${item.estado ? 'Deshabilitar' : 'Habilitar'} catálogo?`,
+      text: `Se ${accion}á "${item.nombre}".`,
       showCancelButton: true,
-      confirmButtonColor: '#d33',
+      confirmButtonColor: item.estado ? '#d33' : '#16a34a',
       cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Sí, deshabilitar',
+      confirmButtonText: `Sí, ${accion}`,
       cancelButtonText: 'Cancelar',
     });
     if (!confirm.isConfirmed) return;
     this.procesandoId = item.id;
-    this.catService.disableCatalogo(item.id)
+    const call$ = this.catService.toggleCatalogo(item.id, !item.estado);
+    call$
       .pipe(takeUntil(this.destroy$), finalize(() => { this.procesandoId = null; }))
       .subscribe({
         next: () => this.zone.run(() => {
-          this.toastrAlert.showSuccess('Catálogo deshabilitado.', '¡Listo!');
+          this.toastrAlert.showSuccess(`Catálogo ${item.estado ? 'deshabilitado' : 'habilitado'}.`, '¡Listo!');
           this.cargarPagina(this.currentPage);
         }),
         error: () => this.zone.run(() =>
-          this.toastrAlert.showError('No se pudo deshabilitar el catálogo.', 'Error')
+          this.toastrAlert.showError(`No se pudo ${accion} el catálogo.`, 'Error')
         ),
       });
   }
