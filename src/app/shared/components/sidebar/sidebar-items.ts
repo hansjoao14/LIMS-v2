@@ -10,6 +10,7 @@ import { OrdenTrabajoInSituIcon } from '../../../ui/icons/orden-trabajo-in-situ-
 import { PlanMuestreoIcon } from '../../../ui/icons/plan-muestreo-icon/plan-muestreo-icon';
 import { AccesoAutorizado } from '../../../ui/icons/acceso-autorizado/acceso-autorizado';
 import { CalibracionEquiposIcon } from '../../../ui/icons/calibracion-equipos-icon/calibracion-equipos-icon';
+import { BookIcon } from '../../../ui/icons/book-icon/book-icon';
 import { RoleAccess } from '../../../core/utils/roles.constans';
 
 export interface MenuItem {
@@ -109,7 +110,7 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
   {
     path: '/admin-catalogos',
     label: 'Administración de Catálogos',
-    icon: CarpetaIcon,
+    icon: BookIcon,
     requiredRoles: RoleAccess.ADMIN_CATALOGOS,
   },
 ];
