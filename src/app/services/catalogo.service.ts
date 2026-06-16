@@ -106,6 +106,21 @@ const GET_ALL_ITEMS_ADMIN = gql`
   }
 `;
 
+const GET_ITEMS_BY_IDS = gql`
+  query GetItemsByIds($ids: [Int!]!) {
+    collectionItemCatalogo(
+      query: { where: { id: { in: $ids } } }
+    ) {
+      data {
+        id
+        nombre
+        catalogo_id
+        item_catalogo_id
+      }
+    }
+  }
+`;
+
 const GET_CHILDREN_BY_PARENT_IDS = gql`
   query CollectionItemCatalogoChildren($parentIds: [Int!]!) {
     collectionItemCatalogo(
@@ -200,6 +215,17 @@ export class CatalogoService {
       .pipe(
         map((result) => result.data?.collectionItemCatalogo?.data ?? []),
       );
+  }
+
+  getItemsByIds(ids: number[]): Observable<ItemCatalogo[]> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionItemCatalogo: CollectionItemCatalogoResponse }>({
+        query: GET_ITEMS_BY_IDS,
+        variables: { ids },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(map((result) => result.data?.collectionItemCatalogo?.data ?? []));
   }
 
   getChildrenByParentIds(parentIds: number[]): Observable<CollectionItemCatalogoResponse> {

@@ -71,6 +71,29 @@
             }
           } @else {
             @for (item of pagedItems; track trackByFn($index, item)) {
+              <!-- Fila externa: padre de otro catálogo, solo cabecera visual -->
+              @if (item.isExternal) {
+                <tr class="border-b border-slate-100 bg-slate-50">
+                  <td [attr.colspan]="hasAnyAction ? 6 : 5" class="px-3 py-2 border-r border-slate-100">
+                    <div class="flex items-center gap-1.5" [style.padding-left.px]="item.level * 16">
+                      <button type="button" (click)="toggleExpand(item, $event)"
+                        class="h-4 w-4 flex items-center justify-center text-slate-400 hover:text-slate-600 shrink-0 transition-colors">
+                        <svg class="h-3 w-3 transition-transform duration-150"
+                          [class.rotate-90]="item.expanded"
+                          fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                        </svg>
+                      </button>
+                      <svg class="h-3.5 w-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                      </svg>
+                      <span class="text-[11px] font-semibold text-slate-500 italic truncate">{{ item.nombre }}</span>
+                      <span class="text-[10px] text-slate-400 ml-1">(catálogo externo)</span>
+                    </div>
+                  </td>
+                </tr>
+              } @else {
+              <!-- Fila normal -->
               <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
                 [class.opacity-50]="!item.estado">
                 <td class="px-3 py-2.5 border-r border-slate-100">
@@ -158,6 +181,7 @@
                   </td>
                 }
               </tr>
+              } <!-- end @else (fila normal) -->
             } @empty {
               <tr>
                 <td [attr.colspan]="hasAnyAction ? 6 : 5" class="p-10 text-slate-400 italic text-center text-xs">

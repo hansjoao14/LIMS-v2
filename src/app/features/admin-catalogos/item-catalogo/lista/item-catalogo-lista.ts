@@ -3,7 +3,7 @@ import {
   Output, EventEmitter, Input, NgZone, computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subject, takeUntil, finalize } from 'rxjs';
+import { Subject, takeUntil, finalize, switchMap, of } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { CatalogoService } from '../../../../services/catalogo.service';
@@ -17,6 +17,7 @@ export interface ItemTree extends ItemCatalogo {
   level: number;
   hasChildren: boolean;
   expanded: boolean;
+  isExternal: boolean; // padre de otro catálogo, solo como cabecera visual
 }
 
 function buildFlat(items: ItemCatalogo[], parentId: number | null, level: number, collapsed: Set<number>): ItemTree[] {
@@ -25,7 +26,6 @@ function buildFlat(items: ItemCatalogo[], parentId: number | null, level: number
   const children = items
     .filter(i => {
       if (parentId === null) {
-        // raíz: sin padre o cuyo padre no está en la lista local
         return i.item_catalogo_id === null || !knownIds.has(i.item_catalogo_id!);
       }
       return i.item_catalogo_id === parentId;
@@ -36,7 +36,8 @@ function buildFlat(items: ItemCatalogo[], parentId: number | null, level: number
   for (const item of children) {
     const hasChildren = items.some(i => i.item_catalogo_id === item.id);
     const isExpanded = !collapsed.has(item.id);
-    result.push({ ...item, level, hasChildren, expanded: isExpanded });
+    const isExternal = (item as any)['_isExternal'] === true;
+    result.push({ ...item, level, hasChildren, expanded: isExpanded, isExternal });
     if (isExpanded) {
       result.push(...buildFlat(items, item.id, level + 1, collapsed));
     }
@@ -45,7 +46,7 @@ function buildFlat(items: ItemCatalogo[], parentId: number | null, level: number
 }
 
 function buildFakeMeta(total: number, page: number, pageSize: number): PaginationMeta {
-  const totalPages = Math.ceil(total / pageSize);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   return {
     total,
     totalPages,
@@ -137,11 +138,35 @@ export class ItemCatalogoLista implements OnInit, OnDestroy, OnChanges {
 
   cargarDatos(): void {
     this.loading = true;
+
     this.catService.getAllItemsAdmin(this.catalogo.id)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntil(this.destroy$),
+        switchMap((localItems) => {
+          // Detectar IDs de padres que no están en la lista local
+          const localIds = new Set(localItems.map(i => i.id));
+          const externalParentIds = [
+            ...new Set(
+              localItems
+                .map(i => i.item_catalogo_id)
+                .filter((pid): pid is number => pid !== null && !localIds.has(pid))
+            ),
+          ];
+
+          if (externalParentIds.length === 0) {
+            return of({ localItems, externalParents: [] as ItemCatalogo[] });
+          }
+
+          return this.catService.getItemsByIds(externalParentIds).pipe(
+            switchMap(externalParents => of({ localItems, externalParents }))
+          );
+        }),
+      )
       .subscribe({
-        next: (data) => {
-          this.allItems = data;
+        next: ({ localItems, externalParents }) => {
+          // Marcar padres externos con flag interno para buildFlat
+          const virtuales = externalParents.map(p => ({ ...p, _isExternal: true }));
+          this.allItems = [...virtuales, ...localItems];
           this.rebuildFlat();
           this.loading = false;
         },
