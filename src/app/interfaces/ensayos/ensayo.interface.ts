@@ -13,6 +13,17 @@ export interface EnsayoItemCatalogo {
   id: number;
   nombre: string;
   catalogo_id: number;
+  item_catalogo_id: number | null;
+}
+
+export interface EnsayoItemNode {
+  isExternal: boolean;
+  nivel: number;
+  // solo para filas de cabecera externa
+  catId?: number;
+  catNombre?: string;
+  // solo para filas de ensayo-item real
+  ensayoItem?: EnsayoItem;
 }
 
 export interface EnsayoItem {

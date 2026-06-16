@@ -55,41 +55,67 @@
               </tr>
             }
           } @else {
-            @for (item of items; track item.ctambiental_id) {
-              <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                [class.opacity-50]="!item.estado">
-                <td class="px-3 py-2.5 border-r border-slate-100">
-                  <span class="text-xs text-slate-700">{{ item.item_catalogo?.nombre ?? '—' }}</span>
-                </td>
-                <td class="px-3 py-2.5 border-r border-slate-100 text-center">
-                  @if (item.estado) {
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-700">Activo</span>
-                  } @else {
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">Inactivo</span>
-                  }
-                </td>
-                @if (hasAnyAction) {
-                  <td class="px-2 py-2.5 text-center">
-                    <div class="flex items-center justify-center">
-                      <button type="button" title="Más acciones"
-                        (click)="toggleMenu(item.ctambiental_id, item, $event)"
-                        [disabled]="procesandoId === item.ctambiental_id"
-                        class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 disabled:opacity-40 transition-colors shrink-0">
-                        @if (procesandoId === item.ctambiental_id) {
-                          <svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                          </svg>
-                        } @else {
-                          <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
-                          </svg>
-                        }
-                      </button>
+            @for (node of flatNodes; track $index) {
+
+              @if (node.isExternal) {
+                <!-- Fila cabecera: padre de otro catálogo -->
+                <tr class="border-b border-slate-100 bg-slate-50">
+                  <td [attr.colspan]="hasAnyAction ? 3 : 2" class="px-3 py-2">
+                    <div class="flex items-center gap-2" [style.padding-left.px]="node.nivel * 16">
+                      <svg class="h-3.5 w-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+                      </svg>
+                      <span class="text-[11px] font-semibold text-slate-500">{{ node.catNombre }}</span>
+                      <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-500 uppercase tracking-wide">catálogo externo</span>
                     </div>
                   </td>
-                }
-              </tr>
+                </tr>
+
+              } @else {
+                <!-- Fila normal: ensayo-item real -->
+                <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <td class="px-3 py-2.5 border-r border-slate-100">
+                    <div class="flex items-center gap-1" [style.padding-left.px]="node.nivel * 16">
+                      @if (node.nivel > 0) {
+                        <span class="text-slate-300 text-xs shrink-0">└</span>
+                      }
+                      <span class="text-xs text-slate-700">
+                        {{ node.ensayoItem!.item_catalogo?.nombre ?? '—' }}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="px-3 py-2.5 border-r border-slate-100 text-center">
+                    @if (node.ensayoItem!.estado) {
+                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-700">Activo</span>
+                    } @else {
+                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">Inactivo</span>
+                    }
+                  </td>
+                  @if (hasAnyAction) {
+                    <td class="px-2 py-2.5 text-center">
+                      <div class="flex items-center justify-center">
+                        <button type="button" title="Más acciones"
+                          (click)="toggleMenu(node.ensayoItem!.ctambiental_id, node.ensayoItem!, $event)"
+                          [disabled]="procesandoId === node.ensayoItem!.ctambiental_id"
+                          class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 disabled:opacity-40 transition-colors shrink-0">
+                          @if (procesandoId === node.ensayoItem!.ctambiental_id) {
+                            <svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                            </svg>
+                          } @else {
+                            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                            </svg>
+                          }
+                        </button>
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+
             } @empty {
               <tr>
                 <td [attr.colspan]="hasAnyAction ? 3 : 2" class="p-10 text-slate-400 italic text-center text-xs">

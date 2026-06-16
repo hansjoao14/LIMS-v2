@@ -41,7 +41,7 @@ const GET_ENSAYO_ITEMS = gql`
         ctambiental_id
         ensayo_id
         estado
-        item_catalogo { id nombre catalogo_id }
+        item_catalogo { id nombre catalogo_id item_catalogo_id }
       }
     }
   }

@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil, switchMap, of } from 'rxjs';
+import { Subject, takeUntil, switchMap, of, map } from 'rxjs';
 
 import { CatalogoService } from '../../../../services/catalogo.service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
@@ -11,24 +11,6 @@ export interface ItemPadreOpcion {
   id: number;
   label: string;
   level: number;
-}
-
-function buildOpciones(items: ItemCatalogo[], parentId: number | null, level: number, excludeId: number | null): ItemPadreOpcion[] {
-  const knownIds = new Set(items.map(i => i.id));
-  const children = items
-    .filter(i => {
-      if (parentId === null) {
-        return (i.item_catalogo_id === null || !knownIds.has(i.item_catalogo_id!)) && i.estado && i.id !== excludeId;
-      }
-      return i.item_catalogo_id === parentId && i.estado && i.id !== excludeId;
-    })
-    .sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999));
-  const result: ItemPadreOpcion[] = [];
-  for (const item of children) {
-    result.push({ id: item.id, label: item.nombre, level });
-    result.push(...buildOpciones(items, item.id, level + 1, excludeId));
-  }
-  return result;
 }
 
 @Component({
@@ -83,25 +65,41 @@ export class ItemCatalogoFormulario implements OnInit, OnDestroy {
 
   cargarPadres(): void {
     this.loadingPadres = true;
-    const parentId = this.editingRecord?.item_catalogo_id ?? null;
-
     this.catService.getAllItemsAdmin(this.catalogo.id)
       .pipe(
         takeUntil(this.destroy$),
         switchMap((items) => {
-          this.opcionesPadre = buildOpciones(items, null, 0, this.editingRecord?.id ?? null);
-          // Si el padre actual no está en la lista local, lo buscamos por ID
-          const faltaPadre = parentId !== null && !this.opcionesPadre.some(o => o.id === parentId);
-          return faltaPadre
-            ? this.catService.getItemsByIds([parentId])
-            : of([]);
+          const knownIds = new Set(items.map(i => i.id));
+
+          // IDs that appear as a parent reference in this catalog
+          const parentIdsInUse = new Set(
+            items.map(i => i.item_catalogo_id).filter((id): id is number => id !== null),
+          );
+
+          // Items in this catalog that have at least one child (exclude editing item to avoid cycles)
+          const internalParents = items.filter(
+            i => parentIdsInUse.has(i.id) && i.id !== this.editingRecord?.id,
+          );
+
+          // External parent IDs: referenced by items in this catalog but not belonging to it
+          const externalParentIds = [...new Set(
+            [...parentIdsInUse].filter(id => !knownIds.has(id)),
+          )];
+
+          if (externalParentIds.length === 0) {
+            return of({ internalParents, externalParents: [] as ItemCatalogo[] });
+          }
+          return this.catService.getItemsByIds(externalParentIds).pipe(
+            map(ext => ({ internalParents, externalParents: ext })),
+          );
         }),
       )
       .subscribe({
-        next: (externos) => {
-          if (externos.length > 0) {
-            this.opcionesPadre.unshift({ id: externos[0].id, label: externos[0].nombre, level: 0 });
-          }
+        next: ({ internalParents, externalParents }) => {
+          this.opcionesPadre = [
+            ...externalParents.map(p => ({ id: p.id, label: p.nombre, level: 0 })),
+            ...internalParents.map(p => ({ id: p.id, label: p.nombre, level: 0 })),
+          ];
           this.loadingPadres = false;
         },
         error: () => { this.loadingPadres = false; },
