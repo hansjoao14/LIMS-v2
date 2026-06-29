@@ -37,33 +37,9 @@
         </tr>
       </thead>
 
+      <tbody appTableSkeleton [rows]="loadingTabla ? 8 : 0" [cols]="hasAnyAction ? 10 : 9" [actionButtons]="hasAnyAction ? 2 : 0"></tbody>
       <tbody>
-        @if (loadingTabla) {
-          @for (_ of [1,2,3,4,5,6,7,8]; track $index) {
-            <tr class="border-b border-slate-200 animate-pulse">
-              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4 mx-auto"></div></td>
-              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4 mx-auto"></div></td>
-              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-2/3"></div></td>
-              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
-              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-2/3 mx-auto"></div></td>
-              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-2/3 mx-auto"></div></td>
-              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-4/5"></div></td>
-              <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-1/2 mx-auto"></div></td>
-              <td class="px-3 py-3 border-r border-slate-100"><div class="h-5 bg-slate-200 rounded w-4/5 mx-auto"></div></td>
-              @if (hasAnyAction) {
-                <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
-                <td class="px-2 py-3">
-                  <div class="flex items-center justify-center gap-1.5">
-                    <div class="h-8 w-8 bg-slate-200 rounded"></div>
-                    <div class="h-8 w-8 bg-slate-200 rounded"></div>
-                  </div>
-                </td>
-              } @else {
-                <td class="px-3 py-3"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
-              }
-            </tr>
-          }
-        } @else {
+        @if (!loadingTabla) {
           @if (solicitudesAgrupadas.length === 0) {
             <tr>
               <td [attr.colspan]="hasAnyAction ? 11 : 10" class="p-10 text-slate-400 italic text-center">

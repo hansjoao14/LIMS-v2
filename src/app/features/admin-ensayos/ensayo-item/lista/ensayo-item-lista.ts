@@ -14,10 +14,11 @@ import { buildFlatNodes } from '../../../../core/utils/ensayo-tree.utils';
 import { AuthService } from '../../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
 import { AppRole, MenuKey, hasPermission } from '../../../../core/utils/roles.constans';
+import { TableSkeleton } from '../../../../ui/table-skeleton/table-skeleton';
 
 @Component({
   selector: 'app-ensayo-item-lista',
-  imports: [CommonModule],
+  imports: [CommonModule, TableSkeleton],
   templateUrl: './ensayo-item-lista.html',
 })
 export class EnsayoItemLista implements OnInit, OnDestroy, OnChanges {

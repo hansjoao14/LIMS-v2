@@ -46,7 +46,7 @@
         Unidad <span class="text-red-500">*</span>
       </label>
       @if (loadingOptions) {
-        <div class="h-10 bg-slate-100 rounded animate-pulse"></div>
+        <app-field-skeleton />
       } @else {
         <select
           [ngModel]="ctunidad_id ?? ''"

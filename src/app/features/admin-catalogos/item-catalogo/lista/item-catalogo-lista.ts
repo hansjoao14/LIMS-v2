@@ -12,6 +12,7 @@ import { PaginationComponent } from '../../../../shared/components/pagination/pa
 import { AuthService } from '../../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
 import { AppRole, MenuKey, hasPermission } from '../../../../core/utils/roles.constans';
+import { TableSkeleton } from '../../../../ui/table-skeleton/table-skeleton';
 
 export interface ItemTree extends ItemCatalogo {
   level: number;
@@ -62,7 +63,7 @@ function buildFakeMeta(total: number, page: number, pageSize: number): Paginatio
 
 @Component({
   selector: 'app-item-catalogo-lista',
-  imports: [CommonModule, PaginationComponent],
+  imports: [CommonModule, PaginationComponent, TableSkeleton],
   templateUrl: './item-catalogo-lista.html',
 })
 export class ItemCatalogoLista implements OnInit, OnDestroy, OnChanges {

@@ -6,6 +6,7 @@ import { Subject, takeUntil, switchMap, of, map } from 'rxjs';
 import { CatalogoService } from '../../../../services/catalogo.service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
 import { Catalogo, ItemCatalogo } from '../../../../interfaces/catalogos/catalogo.interface';
+import { FieldSkeleton } from '../../../../ui/field-skeleton/field-skeleton';
 
 export interface ItemPadreOpcion {
   id: number;
@@ -15,7 +16,7 @@ export interface ItemPadreOpcion {
 
 @Component({
   selector: 'app-item-catalogo-formulario',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FieldSkeleton],
   templateUrl: './item-catalogo-formulario.html',
 })
 export class ItemCatalogoFormulario implements OnInit, OnDestroy {

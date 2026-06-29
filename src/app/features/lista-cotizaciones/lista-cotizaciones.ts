@@ -14,6 +14,7 @@ import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/s
 import { AuthService } from '../auth/service/auth-service';
 import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
 import { PageHeader } from '../../shared/components/page-header/page-header';
+import { TableSkeleton } from '../../ui/table-skeleton/table-skeleton';
 
 const ESTADO_AUTORIZADO = 387;
 const ESTADO_RECHAZADO = 51;
@@ -22,7 +23,7 @@ const CATALOGO_PRIORIDAD_ID = 30;
 @Component({
   selector: 'app-lista-cotizaciones',
   standalone: true,
-  imports: [CommonModule, PaginationComponent, PageHeader],
+  imports: [CommonModule, PaginationComponent, PageHeader, TableSkeleton],
   templateUrl: './lista-cotizaciones.html',
   styleUrl: './lista-cotizaciones.css',
 })

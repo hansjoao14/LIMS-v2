@@ -18,6 +18,7 @@ import { AuthService } from '../../auth/service/auth-service';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
+import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 
 const ESTADO_AUTORIZADO = 387;
 const ESTADO_RECHAZADO  = 51;
@@ -26,7 +27,7 @@ type ContraloriaRecord = { id: string } & Record<string, unknown>;
 
 @Component({
   selector: 'app-por-contraloria-lista',
-  imports: [CommonModule, PaginationComponent, PdfViewerComponent],
+  imports: [CommonModule, PaginationComponent, PdfViewerComponent, TableSkeleton],
   templateUrl: './por-contraloria-lista.html',
 })
 export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {

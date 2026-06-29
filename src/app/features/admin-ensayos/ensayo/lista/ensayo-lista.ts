@@ -11,10 +11,11 @@ import { PaginationComponent } from '../../../../shared/components/pagination/pa
 import { AuthService } from '../../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
 import { AppRole, MenuKey, hasPermission } from '../../../../core/utils/roles.constans';
+import { TableSkeleton } from '../../../../ui/table-skeleton/table-skeleton';
 
 @Component({
   selector: 'app-ensayo-lista',
-  imports: [CommonModule, FormsModule, PaginationComponent],
+  imports: [CommonModule, FormsModule, PaginationComponent, TableSkeleton],
   templateUrl: './ensayo-lista.html',
 })
 export class EnsayoLista implements OnInit, OnDestroy {

@@ -2,27 +2,27 @@ import {
   Router,
   RouterOutlet,
   provideRouter
-} from "./chunk-TEDJSKV5.js";
+} from "./chunk-UAQD7B5Z.js";
 import {
   provideToastr
-} from "./chunk-PWNMWNUA.js";
+} from "./chunk-BBC4P6SM.js";
 import {
   DomRendererFactory2,
   bootstrapApplication
-} from "./chunk-XTPUTV4O.js";
+} from "./chunk-GSQNXGZJ.js";
 import {
   RoleAccess
-} from "./chunk-O4XHAB45.js";
+} from "./chunk-JI325HE7.js";
 import {
   require_sweetalert2_all
-} from "./chunk-TTWGDTQR.js";
+} from "./chunk-ZCY535AF.js";
 import {
   APOLLO_NAMED_OPTIONS,
   ApolloLink,
   InMemoryCache,
   print,
   provideApollo
-} from "./chunk-7OA5XFJQ.js";
+} from "./chunk-DPKW7NRU.js";
 import {
   AuthService,
   HttpClient,
@@ -31,7 +31,7 @@ import {
   environment,
   provideHttpClient,
   registerLocaleData
-} from "./chunk-FYBL3SR2.js";
+} from "./chunk-CIDLATYD.js";
 import {
   ANIMATION_MODULE_TYPE,
   ChangeDetectionScheduler,
@@ -61,7 +61,7 @@ import {
   ɵɵelement,
   ɵɵinject,
   ɵɵinvalidFactory
-} from "./chunk-4XEQTJJK.js";
+} from "./chunk-WHOAKDIK.js";
 
 // node_modules/@angular/platform-browser/fesm2022/animations-async.mjs
 var ANIMATION_PREFIX = "@";
@@ -89,7 +89,7 @@ var AsyncAnimationRendererFactory = class _AsyncAnimationRendererFactory {
     this._engine?.flush();
   }
   loadImpl() {
-    const loadFn = () => this.moduleImpl ?? import("./chunk-7FA57MTC.js").then((m) => m);
+    const loadFn = () => this.moduleImpl ?? import("./chunk-O27ACWZC.js").then((m) => m);
     let moduleImplPromise;
     if (this.loadingSchedulerFn) {
       moduleImplPromise = this.loadingSchedulerFn(loadFn);
@@ -318,75 +318,87 @@ var canActivateWithRealmRoles = (route, state) => {
 var featuresRoutes = [
   {
     path: "dashboard",
-    loadComponent: () => import("./chunk-D3V7MOTL.js").then((m) => m.Dashboard),
+    loadComponent: () => import("./chunk-GI4O7CHV.js").then((m) => m.Dashboard),
     canActivate: [canActivateWithRealmRoles],
     data: { title: "Dashboard", requiredRoles: RoleAccess.ALL_USERS }
   },
   {
     path: "solicitud-trabajo",
-    loadComponent: () => import("./chunk-QTCIWYIF.js").then((m) => m.SolicitudTrabajo),
+    loadComponent: () => import("./chunk-SFENUZWZ.js").then((m) => m.SolicitudTrabajo),
     canActivate: [canActivateWithRealmRoles],
     data: { title: "Solicitud de Trabajo", requiredRoles: RoleAccess.SOLICITUD_TRABAJO }
   },
   {
     path: "admin-formularios",
-    loadComponent: () => import("./chunk-7WBQCRKG.js").then((m) => m.AdminFormularios),
+    loadComponent: () => import("./chunk-QQ6B6QAH.js").then((m) => m.AdminFormularios),
     canActivate: [canActivateWithRealmRoles],
     data: { title: "Administraci\xF3n de Formularios", requiredRoles: RoleAccess.ADMIN_ONLY }
   },
   {
     path: "lista-solicitudes",
-    loadComponent: () => import("./chunk-4S2ZD33S.js").then((m) => m.ListaSolicitudes),
+    loadComponent: () => import("./chunk-QPDHQPCL.js").then((m) => m.ListaSolicitudes),
     canActivate: [canActivateWithRealmRoles],
     data: { title: "Lista de Solicitudes", requiredRoles: RoleAccess.LISTA_SOLICITUDES }
   },
   {
     path: "lista-cotizaciones",
-    loadComponent: () => import("./chunk-GPESQXAZ.js").then((m) => m.ListaCotizaciones),
+    loadComponent: () => import("./chunk-4SKWZYGX.js").then((m) => m.ListaCotizaciones),
     canActivate: [canActivateWithRealmRoles],
     data: { title: "Por Autorizar", requiredRoles: RoleAccess.LISTA_COTIZACIONES }
   },
   {
     path: "horarios-laborales",
-    loadComponent: () => import("./chunk-LBSVO4ZE.js").then((m) => m.HorariosLaborales),
+    loadComponent: () => import("./chunk-7DIQHEDQ.js").then((m) => m.HorariosLaborales),
     canActivate: [canActivateWithRealmRoles],
     data: { title: "Horarios Laborales", requiredRoles: RoleAccess.HORARIOS_LABORALES }
   },
   {
     path: "por-contraloria",
-    loadComponent: () => import("./chunk-GQQVW6WE.js").then((m) => m.PorContraloria),
+    loadComponent: () => import("./chunk-BEMX2FHX.js").then((m) => m.PorContraloria),
     canActivate: [canActivateWithRealmRoles],
     data: { title: "Por Contralor\xEDa", requiredRoles: RoleAccess.POR_CONTRALORIA }
   },
   {
     path: "orden-trabajo-in-situ",
-    loadComponent: () => import("./chunk-QEWYAT2B.js").then((m) => m.OrdenTrabajoInSitu),
+    loadComponent: () => import("./chunk-FRLRMKJA.js").then((m) => m.OrdenTrabajoInSitu),
     canActivate: [canActivateWithRealmRoles],
     data: { title: "Orden de Trabajo In Situ", requiredRoles: RoleAccess.ORDEN_IN_SITU }
   },
   {
     path: "plan-muestreo",
-    loadComponent: () => import("./chunk-AYM66RGA.js").then((m) => m.PlanMuestreo),
+    loadComponent: () => import("./chunk-IHKO2PMY.js").then((m) => m.PlanMuestreo),
     canActivate: [canActivateWithRealmRoles],
     data: { title: "Plan de Muestreo", requiredRoles: RoleAccess.PLAN_MUESTREO }
   },
   {
     path: "plan-muestreo/paso2",
-    loadComponent: () => import("./chunk-FEUPTCDS.js").then((m) => m.PlanMuestreoPaso2),
+    loadComponent: () => import("./chunk-DSAPIV6Q.js").then((m) => m.PlanMuestreoPaso2),
     canActivate: [canActivateWithRealmRoles],
     data: { title: "Plan de Muestreo - Paso 2", requiredRoles: RoleAccess.PLAN_MUESTREO }
   },
   {
     path: "plan-muestreo/paso3",
-    loadComponent: () => import("./chunk-ZUQBYGUV.js").then((m) => m.PlanMuestreoPaso3),
+    loadComponent: () => import("./chunk-4HXP7U6M.js").then((m) => m.PlanMuestreoPaso3),
     canActivate: [canActivateWithRealmRoles],
     data: { title: "Plan de Muestreo - Paso 3", requiredRoles: RoleAccess.PLAN_MUESTREO }
   },
   {
     path: "calibracion-equipos",
-    loadComponent: () => import("./chunk-WYHIZFKV.js").then((m) => m.CalibracionEquipos),
+    loadComponent: () => import("./chunk-XC6M6EIW.js").then((m) => m.CalibracionEquipos),
     canActivate: [canActivateWithRealmRoles],
     data: { title: "Calibraci\xF3n de Equipos", requiredRoles: RoleAccess.CALIBRACION_EQUIPOS }
+  },
+  {
+    path: "admin-catalogos",
+    loadComponent: () => import("./chunk-GRIZRBP2.js").then((m) => m.AdminCatalogos),
+    canActivate: [canActivateWithRealmRoles],
+    data: { title: "Administraci\xF3n de Cat\xE1logos", requiredRoles: RoleAccess.ADMIN_CATALOGOS }
+  },
+  {
+    path: "admin-ensayos",
+    loadComponent: () => import("./chunk-MPMJG5SB.js").then((m) => m.AdminEnsayos),
+    canActivate: [canActivateWithRealmRoles],
+    data: { title: "Administraci\xF3n de Ensayos", requiredRoles: RoleAccess.ADMIN_ENSAYOS }
   }
 ];
 
@@ -399,12 +411,12 @@ var routes = [
   },
   {
     path: "",
-    loadComponent: () => import("./chunk-RBB5CGZ2.js").then((m) => m.Layout),
+    loadComponent: () => import("./chunk-BJFNTUPQ.js").then((m) => m.Layout),
     children: featuresRoutes
   },
   {
     path: "login",
-    loadComponent: () => import("./chunk-KC7S2VBP.js").then((m) => m.Login),
+    loadComponent: () => import("./chunk-L5J3SQDP.js").then((m) => m.Login),
     // canActivate: [AuthenticatedGuard]
     data: {
       title: "Login"

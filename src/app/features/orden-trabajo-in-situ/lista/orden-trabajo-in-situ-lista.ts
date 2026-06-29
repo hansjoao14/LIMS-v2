@@ -9,13 +9,14 @@ import { ReportOrden } from '../../../interfaces/solicitudes/orden-trabajo/repor
 import { AuthService } from '../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../services/toastr.service';
 import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
+import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 
 const ESTADO_FINALIZADO = 3;
 const ESTADO_RECHAZADO  = 51;
 
 @Component({
   selector: 'app-orden-trabajo-in-situ-lista',
-  imports: [CommonModule],
+  imports: [CommonModule, TableSkeleton],
   templateUrl: './orden-trabajo-in-situ-lista.html',
 })
 export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {

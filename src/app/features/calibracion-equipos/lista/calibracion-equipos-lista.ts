@@ -8,10 +8,11 @@ import { CalibracionEquipo } from '../../../interfaces/calibracion-equipos/calib
 import { AuthService } from '../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../services/toastr.service';
 import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
+import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 
 @Component({
   selector: 'app-calibracion-equipos-lista',
-  imports: [CommonModule],
+  imports: [CommonModule, TableSkeleton],
   templateUrl: './calibracion-equipos-lista.html',
 })
 export class CalibracionEquiposLista implements OnInit, OnDestroy {

@@ -6,10 +6,11 @@ import { Subject, takeUntil } from 'rxjs';
 import { EnsayoService } from '../../../../services/ensayo.service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
 import { Ensayo, EnsayoItem, EnsayoItemPayload, ItemCatalogoOption } from '../../../../interfaces/ensayos/ensayo.interface';
+import { FieldSkeleton } from '../../../../ui/field-skeleton/field-skeleton';
 
 @Component({
   selector: 'app-ensayo-item-formulario',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FieldSkeleton],
   templateUrl: './ensayo-item-formulario.html',
 })
 export class EnsayoItemFormulario implements OnInit, OnDestroy {

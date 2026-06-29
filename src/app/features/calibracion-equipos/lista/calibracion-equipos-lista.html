@@ -41,27 +41,9 @@
             }
           </tr>
         </thead>
+        <tbody appTableSkeleton [rows]="loading ? 8 : 0" [cols]="6" [actionButtons]="hasAnyAction ? 2 : 0"></tbody>
         <tbody>
-          @if (loading) {
-            @for (_ of [1,2,3,4,5,6,7,8]; track $index) {
-              <tr class="border-b border-slate-200 animate-pulse">
-                <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
-                <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-4/5"></div></td>
-                <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
-                <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4 mx-auto"></div></td>
-                <td class="px-3 py-3 border-r border-slate-100"><div class="h-5 bg-slate-200 rounded w-4/5 mx-auto"></div></td>
-                <td class="px-3 py-3 border-r border-slate-100"><div class="h-3 bg-slate-200 rounded w-3/4"></div></td>
-                @if (hasAnyAction) {
-                  <td class="px-2 py-3">
-                    <div class="flex items-center justify-center gap-1.5">
-                      <div class="h-8 w-8 bg-slate-200 rounded"></div>
-                      <div class="h-8 w-8 bg-slate-200 rounded"></div>
-                    </div>
-                  </td>
-                }
-              </tr>
-            }
-          } @else {
+          @if (!loading) {
             @for (item of calibraciones; track item.id) {
               <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                 <td class="px-3 py-2.5 border-r border-slate-100 text-xs font-semibold text-[#1e3a8a] truncate">
