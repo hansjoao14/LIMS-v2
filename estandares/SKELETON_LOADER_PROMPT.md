@@ -4,76 +4,107 @@
 
 En lugar de mostrar un spinner mientras carga, se muestra la tabla completa con sus cabeceras visibles y filas de barras grises pulsantes en el tbody. Cuando llega la data real, las filas del skeleton se reemplazan con los datos.
 
-### Estructura base
+### Componente reutilizable `TableSkeleton`
 
-El `<table>` siempre está visible con `<colgroup>` y `<thead>` estáticos. Dentro del `<tbody>` se usa `@if (loading)` para mostrar el skeleton y `@else` para mostrar la data real.
+El skeleton de tabla está encapsulado en `src/app/ui/table-skeleton/table-skeleton.ts` como componente standalone con selector `tbody[appTableSkeleton]`. Esto aplica el componente sobre un `<tbody>` existente (no agrega un elemento extra al DOM).
+
+**Inputs:**
+
+| Input | Tipo | Default | Descripción |
+|---|---|---|---|
+| `rows` | `number` | `8` | Número de filas fantasma. Pasar `0` para no mostrar nada. |
+| `cols` | `number` | `4` | Columnas de datos (sin contar la columna de acciones). |
+| `actionButtons` | `number` | `0` | Número de botones de acción a simular en la última columna. |
+
+### Estructura base en el template HTML
+
+Se usan **dos `<tbody>` hermanos** en lugar de un `@if/@else` externo. Esto es necesario porque el parser de Angular rechaza `</tbody>` dentro de un bloque `@else` cuando hay condiciones en `<colgroup>` o `<thead>`.
 
 ```html
 <div class="border border-slate-200 rounded overflow-hidden">
   <div class="overflow-x-auto custom-scroll">
-  <table class="w-full text-sm border-collapse table-fixed">
-    <colgroup>
-      <!-- mismas columnas que la tabla real -->
-    </colgroup>
-    <thead>
-      <!-- mismo thead que la tabla real -->
-    </thead>
-    <tbody>
-      @if (loading) {
-        @for (_ of [1,2,3,4,5,6,7,8]; track $index) {
-          <tr class="border-b border-slate-200 animate-pulse">
-            <td class="px-3 py-3 border-r border-slate-100">
-              <div class="h-3 bg-slate-200 rounded w-3/4"></div>
-            </td>
-            <td class="px-3 py-3 border-r border-slate-100">
-              <div class="h-3 bg-slate-200 rounded w-4/5"></div>
-            </td>
-            <!-- badge (estado, prioridad) -->
-            <td class="px-3 py-3 border-r border-slate-100">
-              <div class="h-5 bg-slate-200 rounded w-4/5 mx-auto"></div>
-            </td>
-            <!-- acciones -->
-            <td class="px-2 py-3">
-              <div class="flex items-center justify-center gap-1.5">
-                <div class="h-8 w-8 bg-slate-200 rounded"></div>
-                <div class="h-8 w-8 bg-slate-200 rounded"></div>
-              </div>
-            </td>
-          </tr>
+    <table class="w-full text-sm border-collapse table-fixed">
+      <colgroup>
+        <!-- mismas columnas que la tabla real -->
+        @if (hasAnyAction) {
+          <col class="w-[100px]">
         }
-      } @else {
-        @for (item of items; track item.id) {
-          <tr><!-- filas reales --></tr>
-        } @empty {
-          <tr>
-            <td colspan="N" class="p-10 text-slate-400 italic text-center">
-              No hay registros.
-            </td>
-          </tr>
+      </colgroup>
+      <thead>
+        <!-- mismo thead que la tabla real -->
+      </thead>
+
+      <!-- tbody 1: skeleton (rows=0 cuando no está cargando → no renderiza nada) -->
+      <tbody appTableSkeleton
+        [rows]="loading ? 8 : 0"
+        [cols]="4"
+        [actionButtons]="hasAnyAction ? 1 : 0">
+      </tbody>
+
+      <!-- tbody 2: datos reales, ocultos mientras carga -->
+      <tbody>
+        @if (!loading) {
+          @for (item of items; track item.id) {
+            <tr><!-- filas reales --></tr>
+          } @empty {
+            <tr>
+              <td colspan="N" class="p-10 text-slate-400 italic text-center">
+                No hay registros.
+              </td>
+            </tr>
+          }
         }
-      }
-    </tbody>
-  </table>
+      </tbody>
+
+    </table>
   </div>
 </div>
 ```
 
-### Reglas de las barras según tipo de columna
+### Importar en el componente `.ts`
 
-| Tipo de columna | Clases de la barra |
-|---|---|
-| Texto (ID, nombre, solicitante) | `h-3 bg-slate-200 rounded w-3/4` |
-| Texto centrado (periodo, fecha) | `h-3 bg-slate-200 rounded w-3/4 mx-auto` |
-| Badge (estado, prioridad) | `h-5 bg-slate-200 rounded w-4/5 mx-auto` |
-| Botones de acción | `flex gap-1.5` con `div` de `h-8 w-8 bg-slate-200 rounded` por botón |
+```typescript
+import { TableSkeleton } from '../../../../ui/table-skeleton/table-skeleton';
+
+@Component({
+  standalone: true,
+  imports: [TableSkeleton, /* ... */],
+})
+```
 
 ### Reglas de implementación
 
-1. Reemplaza el `@if (loading) { spinner } @else { tabla }` actual por la estructura de arriba.
-2. Mantén el `<colgroup>` y `<thead>` fuera del `@if`/`@else`, siempre visibles.
-3. En el skeleton usa `@for (_ of [1,2,3,4,5,6,7,8]; track $index)` para generar 8 filas fantasma.
-4. Ajusta el número de `<td>` del skeleton para que coincida exactamente con las columnas del `<thead>`.
-5. No cambies la lógica del componente `.ts` — solo el template `.html`.
+1. Usar siempre el componente `TableSkeleton` — no escribir `animate-pulse` inline en tablas.
+2. Mantén el `<colgroup>` y `<thead>` fuera de cualquier `@if`, siempre visibles.
+3. El valor de `[rows]` usa el ternario `loading ? 8 : 0`; cuando es `0` el componente no renderiza nada.
+4. `[cols]` cuenta solo las columnas de datos, sin incluir la columna de acciones (que se maneja con `[actionButtons]`).
+5. **No** envolver los dos `<tbody>` en un `@if (loading) { ... } @else { ... }` externo: el parser Angular rechaza `</tbody>` dentro de `@else` cuando hay `@if` en `<colgroup>` o `<thead>`.
+
+---
+
+## Skeleton loader para campos de formulario
+
+Para estados de carga en selects o inputs (mientras se cargan opciones de un catálogo), usar el componente `FieldSkeleton` ubicado en `src/app/ui/field-skeleton/field-skeleton.ts`.
+
+```html
+<!-- En lugar de mostrar el select directamente mientras carga -->
+@if (loadingOpciones) {
+  <app-field-skeleton [height]="'h-10'" />
+} @else {
+  <select ...>...</select>
+}
+```
+
+**Input `height`:** clase Tailwind de altura (`h-8`, `h-9`, `h-10`, `h-11`, `h-12`). Default: `h-10`.
+
+```typescript
+import { FieldSkeleton } from '../../../../ui/field-skeleton/field-skeleton';
+
+@Component({
+  standalone: true,
+  imports: [FieldSkeleton, /* ... */],
+})
+```
 
 ### Verificación importante en el servicio
 
