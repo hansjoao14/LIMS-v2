@@ -54,15 +54,7 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   readonly ENSAYO_ID_MUESTREO = 19;
 
   matricesConHijos: MatrizConHijosUI[] = [];
-
-  private _matrizSeleccionada = '';
-  get matrizSeleccionada(): string { return this._matrizSeleccionada; }
-  set matrizSeleccionada(nueva: string) {
-    if (this._matrizSeleccionada === nueva) return;
-    this.limpiarMatricesDistintas(nueva);
-    this._matrizSeleccionada = nueva;
-  }
-
+  matrizSeleccionada = '';
   loading = true;
   loadingEnsayos = false;
 
@@ -373,37 +365,6 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   toggleEnsayoRuido(idx: number): void {
     this.ensayosRuidoServer[idx].activo = !this.ensayosRuidoServer[idx].activo;
     this.ensayosRuidoCambiado.emit(this.ensayosRuidoServer);
-  }
-
-  private limpiarMatricesDistintas(nueva: string): void {
-    if (!nueva) return;
-
-    // Desactivar todos los hijos de matrices que NO son la nueva selección
-    this.matricesConHijos.forEach(grupo => {
-      if (!this.isMatriz(grupo, nueva)) {
-        grupo.hijos.forEach(h => { h.activo = false; });
-      }
-    });
-
-    // Limpiar ensayos de las matrices descartadas
-    if (nueva !== 'agua') {
-      this.ensayosMuestreo = [];
-      this.ensayosResiduales = [];
-      Promise.resolve().then(() => {
-        this.ensayosMuestreoCambiado.emit([]);
-        this.ensayosResidualesCambiado.emit([]);
-      });
-    }
-    if (nueva !== 'aire') {
-      this.ensayosAireServer = [];
-      Promise.resolve().then(() => this.ensayosAireCambiado.emit([]));
-    }
-    if (nueva !== 'ruido') {
-      this.ensayosRuidoServer = [];
-      Promise.resolve().then(() => this.ensayosRuidoCambiado.emit([]));
-    }
-
-    Promise.resolve().then(() => this.estadoCambiado.emit(this.matricesConHijos));
   }
 
   ngOnDestroy(): void {

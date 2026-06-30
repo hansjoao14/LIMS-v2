@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Apollo, gql } from 'apollo-angular';
-import { Observable, map, switchMap } from 'rxjs';
+import { Observable, filter, map, switchMap, take } from 'rxjs';
 import {
   Catalogo,
   CatalogoPayload,
@@ -250,6 +250,8 @@ export class CatalogoService {
     catalogoId: number,
   ): Observable<{ matriz: ItemCatalogo; hijos: ItemCatalogo[] }[]> {
     return this.getItemsByCatalogoId(catalogoId).pipe(
+      filter(response => response.data.length > 0),
+      take(1),
       switchMap((response) => {
         const matrices = response.data;
         const parentIds = matrices.map((m) => m.id);

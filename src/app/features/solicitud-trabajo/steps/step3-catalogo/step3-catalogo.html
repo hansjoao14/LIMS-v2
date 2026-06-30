@@ -1,5 +1,5 @@
 <div
-  class="bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-8 space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-right-4"
+  class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 space-y-8 animate-in fade-in slide-in-from-right-4"
 >
   <div class="mb-6 border-b pb-4">
     <h3 class="text-xl font-bold text-[#1e3a8a]">Catálogo de Servicios</h3>
@@ -20,28 +20,20 @@
   </ngx-spinner>
 
   @if (!loading) {
-    <div class="mb-5">
-      <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1.5">
-        Tipo de servicio ambiental
+    <div class="mb-4">
+      <label class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">
+        Matriz ambiental
       </label>
       <select
         [(ngModel)]="matrizSeleccionada"
         class="w-full border border-slate-300 rounded px-3 py-2.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-[#1e3a8a] transition-colors"
       >
-        <option value="">Seleccione una matriz ambiental...</option>
-        <option
-          *ngFor="let grupo of matricesConHijos"
-          [value]="grupo.matriz.nombre.toLowerCase()"
-        >{{ grupo.matriz.nombre }}</option>
+        <option value="">Seleccione una matriz...</option>
+        <option *ngFor="let grupo of matricesConHijos" [value]="grupo.matriz.nombre">
+          {{ grupo.matriz.nombre }}
+        </option>
       </select>
     </div>
-
-    @if (!matrizSeleccionada) {
-      <div class="flex flex-col items-center justify-center py-14 text-slate-400">
-        <span class="text-4xl mb-3">&#9651;</span>
-        <p class="text-sm font-medium">Seleccione una matriz ambiental para continuar.</p>
-      </div>
-    }
 
     @if (matrizSeleccionada) {
     <div class="border border-gray-200 rounded overflow-hidden shadow-sm">
@@ -91,28 +83,28 @@
           @if (!grupo.collapsed) {
             <div class="flex">
               <div
-                class="flex flex-col items-center justify-center min-w-[56px] sm:min-w-[120px] px-2 sm:px-4 py-3 sm:py-4 border-r border-gray-200 bg-white"
+                class="flex flex-col items-center justify-center min-w-[120px] px-4 py-4 border-r border-gray-200 bg-white"
               >
                 <div
-                  class="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-[#1e3a8a] flex items-center justify-center mb-1 sm:mb-2 text-white font-bold text-base sm:text-lg shadow-inner"
+                  class="w-12 h-12 rounded-full bg-[#1e3a8a] flex items-center justify-center mb-2 text-white font-bold text-lg shadow-inner"
                 >
                   {{ grupo.matriz.nombre[0] }}
                 </div>
-                <span class="hidden sm:block text-[11px] font-bold text-slate-700 uppercase">{{
+                <span class="text-[11px] font-bold text-slate-700 uppercase">{{
                   grupo.matriz.nombre
                 }}</span>
               </div>
               <div class="flex-1 divide-y divide-gray-100">
                 @for (hijo of grupo.hijos; track $index; let hi = $index) {
                   <div
-                    class="grid grid-cols-1 sm:grid-cols-2 items-center bg-white hover:bg-slate-50 transition-colors"
+                    class="grid grid-cols-2 items-center bg-white hover:bg-slate-50 transition-colors"
                   >
                     <div
-                      class="px-3 sm:px-4 py-3 sm:py-4 text-[11px] font-semibold text-slate-700 uppercase border-b sm:border-b-0 sm:border-r border-gray-200"
+                      class="px-4 py-4 text-[11px] font-semibold text-slate-700 uppercase border-r border-gray-200"
                     >
                       {{ hijo.nombre }}
                     </div>
-                    <div class="px-3 sm:px-4 py-3 sm:py-4 flex items-center gap-3 justify-center">
+                    <div class="px-4 py-4 flex items-center gap-3 justify-center">
                       <button
                         type="button"
                         (click)="toggleHijo(gi, hi)"
@@ -144,7 +136,7 @@
             !grupo.collapsed &&
             (grupo.hijos[0]?.activo || grupo.hijos[1]?.activo)
           ) {
-            <div class="border-t border-gray-200 bg-white px-3 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8 animate-in fade-in">
+            <div class="border-t border-gray-200 bg-white px-6 py-6 space-y-8 animate-in fade-in">
               @if (grupo.hijos[0]?.activo) {
                 <div class="bg-white rounded border shadow-sm">
                   <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">
@@ -332,7 +324,7 @@
           }
 
           @if (isMatriz(grupo, 'aire') && !grupo.collapsed && grupo.hijos[0]?.activo) {
-            <div class="border-t border-gray-200 bg-white px-3 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8 animate-in fade-in">
+            <div class="border-t border-gray-200 bg-white px-6 py-6 space-y-8 animate-in fade-in">
               <div class="bg-white rounded border shadow-sm">
                 <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">
                   Ensayos para Calidad de Aire
@@ -424,7 +416,7 @@
           }
 
           @if (isMatriz(grupo, 'ruido') && !grupo.collapsed && grupo.hijos[0]?.activo) {
-            <div class="border-t border-gray-200 bg-white px-3 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8 animate-in fade-in">
+            <div class="border-t border-gray-200 bg-white px-6 py-6 space-y-8 animate-in fade-in">
               <div class="bg-white rounded border shadow-sm">
                 <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">
                   Ensayos para Acústica Ambiental
@@ -515,17 +507,17 @@
             </div>
           }
         </div>
-        } <!-- end @if isMatriz -->
+        }
       }
     </div>
-    } <!-- end @if matrizSeleccionada -->
+    }
   }
 
   <div class="flex justify-between pt-4 border-t border-slate-300">
     <button
       type="button"
       (click)="prev.emit()"
-      class="bg-white border border-slate-300 text-slate-700 px-4 sm:px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all"
+      class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all"
     >
       REGRESAR
     </button>
@@ -533,7 +525,7 @@
       type="button"
       (click)="next.emit(matricesConHijos)"
       [disabled]="cargando"
-      class="bg-[#1e3a8a] text-white px-4 sm:px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+      class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
     >
       @if (cargando) {
         <span
