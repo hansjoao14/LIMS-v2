@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, computed } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import Swal from 'sweetalert2';
 
@@ -8,7 +9,7 @@ import { SidebarService } from '../../service/sidebar.service';
 import { MenuItem, SIDEBAR_MENU_ITEMS } from './sidebar-items';
 import { CloseSidebarIconComponent } from "../../../ui/icons/close-sidebar-icon/close-sidebar-icon.component";
 import { OpenSidebarIconComponent } from "../../../ui/icons/open-sidebar-icon/open-sidebar-icon.component";
-import { CloseIconComponent } from "../../../ui/icons/close-icon/close-icon.component"; // Importa tus items actualizados
+import { CloseIconComponent } from "../../../ui/icons/close-icon/close-icon.component";
 
 @Component({
   selector: 'app-sidebar',
@@ -20,7 +21,7 @@ import { CloseIconComponent } from "../../../ui/icons/close-icon/close-icon.comp
     CloseSidebarIconComponent,
     OpenSidebarIconComponent,
     CloseIconComponent
-],
+  ],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
@@ -30,46 +31,36 @@ export class Sidebar implements OnInit {
   private router = inject(Router);
 
   public collapsed = false;
+  public sidebarMobileOpen = this.sidebarService.mobileOpen;
 
-  // 🔄 Menú reactivo: se recalcula cuando cambia el perfil o roles
   public menuItems = computed(() => {
     const profile = this.authService.userProfile();
-    // Obtenemos los roles del usuario (como strings desde Keycloak/AuthService)
     const userRoles = profile?.roles || [];
     return this.filterMenuByRole(SIDEBAR_MENU_ITEMS, userRoles);
   });
 
   ngOnInit(): void {
     this.collapsed = !this.sidebarService.isOpen();
+
+    // Cierra el sidebar móvil al navegar a otra ruta
+    this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd))
+      .subscribe(() => this.sidebarService.closeMobile());
   }
 
-  /**
-   * Filtra el menú comparando los strings de userRoles 
-   * contra la propiedad .role de los objetos en requiredRoles
-   */
   private filterMenuByRole(items: MenuItem[], userRoles: string[]): MenuItem[] {
     return items
       .filter(item => {
-        // Si no hay roles requeridos, es público para todos los logueados
         if (!item.requiredRoles || item.requiredRoles.length === 0) return true;
-
-        // Mapeamos el array de objetos [{role: 'admin'}] a strings ['admin'] para comparar
         const requiredRolesList = item.requiredRoles.map(r => r.role);
-        
-        // Verificamos si el usuario tiene al menos uno de los roles permitidos
         return requiredRolesList.some(role => userRoles.includes(role));
       })
       .map(item => {
-        // Procesar hijos de forma recursiva
         if (item.children) {
-          return {
-            ...item,
-            children: this.filterMenuByRole(item.children, userRoles)
-          };
+          return { ...item, children: this.filterMenuByRole(item.children, userRoles) };
         }
         return item;
       })
-      // Eliminar carpetas padres que se quedaron sin hijos después del filtrado
       .filter(item => !item.children || item.children.length > 0 || item.path);
   }
 
@@ -83,9 +74,7 @@ export class Sidebar implements OnInit {
       item.expanded = !item.expanded;
     } else {
       this.collapsed = false;
-      setTimeout(() => {
-        item.expanded = true;
-      }, 100);
+      setTimeout(() => { item.expanded = true; }, 100);
     }
   }
 

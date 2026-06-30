@@ -1,6 +1,9 @@
 <aside
-  [ngClass]="collapsed ? 'w-20' : 'w-72'"
-  class="bg-linear-to-br from-[#172030] via-[#28367F] to-[#1275BB] fixed left-4 top-4 z-50 h-[calc(100vh-32px)] rounded-xl transition-all duration-300 overflow-hidden flex flex-col shadow-2xl"
+  [ngClass]="[
+    collapsed ? 'w-20' : 'w-72',
+    sidebarMobileOpen() ? 'translate-x-0' : '-translate-x-full'
+  ]"
+  class="bg-linear-to-br from-[#172030] via-[#28367F] to-[#1275BB] fixed left-4 top-4 z-50 h-[calc(100vh-32px)] rounded-xl transition-all duration-300 overflow-hidden flex flex-col shadow-2xl xl:translate-x-0"
 >
   <div
     class="flex items-center justify-between border-b border-white/20 px-4 py-4 shrink-0"

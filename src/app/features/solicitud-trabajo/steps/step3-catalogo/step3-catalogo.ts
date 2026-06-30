@@ -54,6 +54,7 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   readonly ENSAYO_ID_MUESTREO = 19;
 
   matricesConHijos: MatrizConHijosUI[] = [];
+  matrizSeleccionada = '';
   loading = true;
   loadingEnsayos = false;
 

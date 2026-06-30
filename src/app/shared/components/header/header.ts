@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router, ActivationEnd } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { filter, map } from 'rxjs';
 import Swal from 'sweetalert2';
 import { AuthService } from '../../../features/auth/service/auth-service';
+import { SidebarService } from '../../service/sidebar.service';
 import { SettingsComponent } from "../../../ui/icons/settings/settings.component";
 import { NotificationIconComponent } from "../../../ui/icons/notification-icon/notification-icon.component";
 import { HamburgerIconComponent } from "../../../ui/icons/hamburger-icon/hamburger-icon.component";
@@ -16,13 +17,12 @@ import { UserComponent } from "../../../ui/icons/user/user.component";
   styleUrl: './header.css',
 })
 export class Header {
-
-   public Title: any;
-  
-  // Variables para mostrar en la interfaz
+  public Title: any;
   public userName: string = '';
   public userEmail: string = '';
   public userRoles: string[] = [];
+
+  private sidebarService = inject(SidebarService);
 
   constructor(
     private authService: AuthService,
@@ -46,19 +46,21 @@ export class Header {
   }
 
   private loadUserData(): void {
-    // Extraer datos según las keys de tu imagen
     this.userName = localStorage.getItem('user_name') || 'Usuario';
     this.userEmail = localStorage.getItem('user_email') || '';
-    
+
     const rolesRaw = localStorage.getItem('user_roles');
     if (rolesRaw) {
       try {
-        // Parseamos el string '["manager","admin","gestor"]' a un array real
         this.userRoles = JSON.parse(rolesRaw);
       } catch (e) {
         this.userRoles = [];
       }
     }
+  }
+
+  toggleMobileSidebar(): void {
+    this.sidebarService.toggleMobile();
   }
 
   logout(): void {
@@ -89,5 +91,3 @@ export class Header {
     });
   }
 }
-
-
