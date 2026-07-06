@@ -99,6 +99,11 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   // ── Modo edición ─────────────────────────────────────────────────────────
   modoEdicion = false;
+  // true tras el primer guardado exitoso en esta sesión (aunque no sea
+  // modoEdicion): si el usuario regresa a un paso anterior y vuelve a
+  // confirmar, evita re-POSTear create-many y duplicar filas ya guardadas.
+  private valoresGuardados = false;
+  private ensayosGuardados = false;
 
   // ── Estado de carga ──────────────────────────────────────────────────────
   isGuardando = false;
@@ -413,8 +418,10 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     return !!this.form.get('entidad_id')?.value && !!this.form.get('tecnico_id')?.value;
   }
 
-  private async guardarValoresYAvanzar(): Promise<void> {
-    this.isGuardando = true;
+  // Guarda los valores del step2 (formulario dinámico). No navega ni maneja
+  // isGuardando/errores: eso lo hace el llamador (aceptarConfidencialidad),
+  // que encadena este guardado con el de ensayos y la finalización.
+  private async guardarValoresSolicitud(): Promise<void> {
     const raw = this.form.getRawValue();
 
     const camposNormales: ValorSolicitudItem[] = this.fields
@@ -452,32 +459,19 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     const valorSolicitud = [...camposNormales, ...camposSchedule];
     const payload = { valorSolicitud };
 
-    try {
-      if (this.modoEdicion && this.solicitudRegistradaId) {
-        await firstValueFrom(
-          this.service.actualizarValoresSolicitud(this.solicitudRegistradaId, payload),
-        );
-      } else {
-        await firstValueFrom(this.service.guardarValoresSolicitud(payload));
-      }
-      this.zone.run(() => {
-        this.isGuardando = false;
-        this.avanzarPaso();
-      });
-    } catch (err: any) {
-      this.isGuardando = false;
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo guardar los valores de la solicitud',
-        confirmButtonColor: this.COLOR_PRIMARIO,
-      });
+    if ((this.modoEdicion || this.valoresGuardados) && this.solicitudRegistradaId) {
+      await firstValueFrom(
+        this.service.actualizarValoresSolicitud(this.solicitudRegistradaId, payload),
+      );
+    } else {
+      await firstValueFrom(this.service.guardarValoresSolicitud(payload));
     }
+    this.valoresGuardados = true;
   }
 
-  // Finalizar solicitud: guardar ensayos y luego marcar solicitud como finalizada
-  private async guardarEnsayosYAvanzar(catalogos: MatrizConHijosUI[]): Promise<void> {
-    this.isGuardando = true;
+  // Guarda los ensayos seleccionados en el step3. Misma idea que
+  // guardarValoresSolicitud: sin navegación ni manejo de errores propio.
+  private async guardarEnsayosSolicitud(): Promise<void> {
     const todos = [
       ...this.ensayosResiduales,
       ...this.ensayosMuestreo,
@@ -494,25 +488,12 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
     const payload = { solicitudEnsayo };
 
-    try {
-      if (this.modoEdicion && this.solicitudRegistradaId) {
-        await firstValueFrom(this.service.actualizarEnsayosSolicitud(this.solicitudRegistradaId, payload));
-      } else {
-        await firstValueFrom(this.service.guardarEnsayosSolicitud(payload));
-      }
-      this.zone.run(() => {
-        this.isGuardando = false;
-        this.avanzarPaso();
-      });
-    } catch (err: any) {
-      this.isGuardando = false;
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo guardar los ensayos de la solicitud',
-        confirmButtonColor: this.COLOR_PRIMARIO,
-      });
+    if ((this.modoEdicion || this.ensayosGuardados) && this.solicitudRegistradaId) {
+      await firstValueFrom(this.service.actualizarEnsayosSolicitud(this.solicitudRegistradaId, payload));
+    } else {
+      await firstValueFrom(this.service.guardarEnsayosSolicitud(payload));
     }
+    this.ensayosGuardados = true;
   }
 
   private async crearSolicitudYAvanzar(): Promise<void> {
@@ -623,7 +604,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         });
         return;
       }
-      this.guardarValoresYAvanzar();
+      // Los valores del step2 quedan en this.form (ya son "temporales") y
+      // solo se envían al backend al confirmar en el step4.
+      this.avanzarPaso();
       return;
     }
   }
@@ -646,13 +629,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     this.manualSchedules = [];
     this.buscandoIntegracion = {};
     this.modoEdicion = false;
+    this.valoresGuardados = false;
+    this.ensayosGuardados = false;
     this.form.reset();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   onStep3Next(data: MatrizConHijosUI[]): void {
+    // Los ensayos seleccionados quedan en memoria (catalogosSeleccionados +
+    // ensayosMuestreo/Residuales/Aire/Ruido) y solo se envían al backend al
+    // confirmar en el step4.
     this.catalogosSeleccionados = data;
-    this.guardarEnsayosYAvanzar(data);
+    this.avanzarPaso();
   }
 
   onEnsayosAireCambiado(ensayos: EnsayoLaboratorio[]): void {
@@ -754,8 +742,43 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
+  // Confirmación final del step4: guarda valores (step2), luego ensayos
+  // (step3) y recién entonces finaliza la solicitud. Cada llamada espera a
+  // que la anterior termine con éxito — si una falla, las siguientes no se
+  // ejecutan y se muestra el error correspondiente a esa etapa.
   async aceptarConfidencialidad(): Promise<void> {
     this.isGuardando = true;
+
+    try {
+      await this.guardarValoresSolicitud();
+    } catch (err: any) {
+      this.zone.run(() => {
+        this.isGuardando = false;
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo guardar los valores de la solicitud',
+          confirmButtonColor: this.COLOR_PRIMARIO,
+        });
+      });
+      return;
+    }
+
+    try {
+      await this.guardarEnsayosSolicitud();
+    } catch (err: any) {
+      this.zone.run(() => {
+        this.isGuardando = false;
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo guardar los ensayos de la solicitud',
+          confirmButtonColor: this.COLOR_PRIMARIO,
+        });
+      });
+      return;
+    }
+
     try {
       const finRes = await firstValueFrom(
         this.service.finalizarSolicitud({

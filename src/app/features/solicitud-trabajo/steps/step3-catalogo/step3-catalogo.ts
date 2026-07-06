@@ -122,7 +122,10 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private getMatricesConHijos(): void {
-    this.catalogoService.getMatricesConHijos(this.CATALOGO_MATRICES_ID).subscribe({
+    this.catalogoService
+      .getMatricesConHijos(this.CATALOGO_MATRICES_ID)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
       next: (data) => {
         const previoHijos = this.estadoPrevio.flatMap((m) => m.hijos);
         const mapeo: { id: number; nombre: string; previoEncontrado: boolean; activo: boolean }[] = [];
@@ -144,6 +147,7 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
             hijos: g.hijos.map(h => ({ id: h.id, nombre: h.nombre, activo: h.activo })),
           })),
         })));
+        this.restaurarMatrizSeleccionada();
         this.loading = false;
         this.spinner.hide('catalogo-step3');
         this.cargarEnsayosActivos();
@@ -156,6 +160,16 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
         this.spinner.hide('catalogo-step3');
       },
     });
+  }
+
+  // El componente se destruye y recrea al cambiar de paso (@if en el padre
+  // solicitud-trabajo.html), así que matrizSeleccionada se pierde aunque los
+  // hijos.activo se restauren desde estadoPrevio. Sin esto, el <select>
+  // vuelve al placeholder y el panel de servicios queda oculto al volver.
+  private restaurarMatrizSeleccionada(): void {
+    if (this.matrizSeleccionada) return;
+    const grupoActivo = this.matricesConHijos.find((g) => g.hijos.some((h) => h.activo));
+    if (grupoActivo) this.matrizSeleccionada = grupoActivo.matriz.nombre;
   }
 
   private aplicarEstadoPrevio(): void {
@@ -177,6 +191,7 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
         hijos: g.hijos.map(h => ({ id: h.id, nombre: h.nombre, activo: h.activo })),
       })),
     })));
+    this.restaurarMatrizSeleccionada();
     this.cargarEnsayosActivos();
   }
 
@@ -390,6 +405,13 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Si el componente se destruye mientras el spinner sigue mostrado (fetch
+    // aún pendiente al cambiar de paso), hay que ocultarlo explícitamente:
+    // ngx-spinner identifica el overlay por nombre compartido entre
+    // instancias, y un show()/hide() desincronizado entre montajes rápidos
+    // lo deja "trabado" en fade-out (opacity 0 pero pointer-events: auto),
+    // bloqueando todos los clics de la página sin mostrar nada visible.
+    this.spinner.hide('catalogo-step3');
     this.destroy$.next();
     this.destroy$.complete();
   }
