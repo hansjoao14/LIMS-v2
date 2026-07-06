@@ -59,6 +59,7 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   loadingEnsayos = false;
 
   ensayosMuestreo: EnsayoMuestreo[] = [];
+  ensayosSuperficiales: EnsayoLaboratorio[] = [];
   ensayosResiduales: EnsayoLaboratorio[] = [];
   ensayosAireServer: EnsayoLaboratorio[] = [];
   ensayosRuidoServer: EnsayoLaboratorio[] = [];
@@ -106,7 +107,7 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     const hijo = grupo.hijos[hijoIdx];
     hijo.activo = !hijo.activo;
 
-    if (this.isMatriz(grupo, 'agua')) this.cargarEnsayosAgua(grupo, hijoIdx);
+    if (this.isMatriz(grupo, 'agua')) this.cargarEnsayosAgua(grupo);
     if (this.isMatriz(grupo, 'aire')) this.cargarEnsayosAire(grupo);
     if (this.isMatriz(grupo, 'ruido')) this.cargarEnsayosRuido(grupo);
     this.estadoCambiado.emit(this.matricesConHijos);
@@ -190,75 +191,92 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     if (ruidoGrupo?.hijos.some((h) => h.activo)) this.cargarEnsayosRuido(ruidoGrupo);
   }
 
-  private cargarEnsayosAgua(grupo: MatrizConHijosUI, hijoIdx?: number): void {
-    // Si se desactivó un hijo específico, limpiar solo su tabla correspondiente
-    if (hijoIdx !== undefined && !grupo.hijos[hijoIdx].activo) {
-      if (hijoIdx === 0) {
-        this.ensayosMuestreo = [];
-        Promise.resolve().then(() => this.ensayosMuestreoCambiado.emit([]));
-      } else if (hijoIdx === 1) {
-        this.ensayosResiduales = [];
-        Promise.resolve().then(() => this.ensayosResidualesCambiado.emit([]));
-      }
-      if (!grupo.hijos.some((h) => h.activo)) {
-        this.ensayosMuestreo = [];
-        this.ensayosResiduales = [];
-        Promise.resolve().then(() => {
-          this.ensayosMuestreoCambiado.emit([]);
-          this.ensayosResidualesCambiado.emit([]);
-        });
-      }
-      return;
-    }
+  private buscarPrevioLaboratorio(base: EnsayoLaboratorio): EnsayoLaboratorio | undefined {
+    return this.ensayosResidualesPrevio.find(
+      (p) => p.ensayo_id === base.ensayo_id && p.ctambiental_id === base.ctambiental_id,
+    );
+  }
 
-    const hijoActivo = grupo.hijos.find((h) => h.activo);
-    if (!hijoActivo) {
+  private emitEnsayosResidualesCombinado(): void {
+    this.ensayosResidualesCambiado.emit([...this.ensayosSuperficiales, ...this.ensayosResiduales]);
+  }
+
+  // hijos[0] = Aguas Superficiales, hijos[1] = Aguas Residuales: cada uno
+  // tiene su propio ctambiental_id y su propio conjunto de ensayo_item, por lo
+  // que ambos deben cargarse de forma independiente (no solo el primero
+  // activo) para poder mostrar sus 3 tablas de forma simultánea.
+  private cargarEnsayosAgua(grupo: MatrizConHijosUI): void {
+    const hijoSuperficial = grupo.hijos[0];
+    const hijoResidual = grupo.hijos[1];
+
+    if (hijoSuperficial?.activo) {
+      this.loadingEnsayos = true;
+      this.ensayoItemService
+        .getEnsayosByCtAmbiental(hijoSuperficial.id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (items) => {
+            this.ensayosMuestreo = items
+              .filter((i) => i.ensayo_id === this.ENSAYO_ID_MUESTREO)
+              .map((i) => {
+                const base = this.mapToMuestreo(i);
+                const previo = this.ensayosMuestreoPrevio.find((p) => p.parametro === base.parametro);
+                return { ...base, activo: previo?.activo ?? false };
+              });
+            this.ensayosSuperficiales = items
+              .filter((i) => i.ensayo_id !== this.ENSAYO_ID_MUESTREO)
+              .map((i) => {
+                const base = this.mapToLaboratorio(i);
+                const previo = this.buscarPrevioLaboratorio(base);
+                return { ...base, activo: previo?.activo ?? false };
+              });
+            console.log('[step3:cargarEnsayosAgua:superficial]', {
+              totalItemsServidor: items.length,
+              ensayosMuestreo: this.ensayosMuestreo.length,
+              ensayosSuperficiales: this.ensayosSuperficiales.length,
+            });
+            this.loadingEnsayos = false;
+            this.ensayosMuestreoCambiado.emit(this.ensayosMuestreo);
+            this.emitEnsayosResidualesCombinado();
+          },
+          error: () => (this.loadingEnsayos = false),
+        });
+    } else {
       this.ensayosMuestreo = [];
-      this.ensayosResiduales = [];
+      this.ensayosSuperficiales = [];
       Promise.resolve().then(() => {
         this.ensayosMuestreoCambiado.emit([]);
-        this.ensayosResidualesCambiado.emit([]);
+        this.emitEnsayosResidualesCombinado();
       });
-      return;
     }
 
-    this.loadingEnsayos = true;
-    this.ensayoItemService
-      .getEnsayosByCtAmbiental(hijoActivo.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (items) => {
-          const muestreoMapeo: { parametro: string; previoEncontrado: boolean; activo: boolean }[] = [];
-          const residualesMapeo: { identificacion: string; previoEncontrado: boolean; activo: boolean }[] = [];
-          this.ensayosMuestreo = items
-            .filter((i) => i.ensayo_id === this.ENSAYO_ID_MUESTREO)
-            .map((i) => {
-              const base = this.mapToMuestreo(i);
-              const previo = this.ensayosMuestreoPrevio.find((p) => p.parametro === base.parametro);
-              muestreoMapeo.push({ parametro: base.parametro, previoEncontrado: !!previo, activo: previo?.activo ?? false });
-              return { ...base, activo: previo?.activo ?? false };
+    if (hijoResidual?.activo) {
+      this.loadingEnsayos = true;
+      this.ensayoItemService
+        .getEnsayosByCtAmbiental(hijoResidual.id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (items) => {
+            this.ensayosResiduales = items
+              .filter((i) => i.ensayo_id !== this.ENSAYO_ID_MUESTREO)
+              .map((i) => {
+                const base = this.mapToLaboratorio(i);
+                const previo = this.buscarPrevioLaboratorio(base);
+                return { ...base, activo: previo?.activo ?? false };
+              });
+            console.log('[step3:cargarEnsayosAgua:residual]', {
+              totalItemsServidor: items.length,
+              ensayosResiduales: this.ensayosResiduales.length,
             });
-          this.ensayosResiduales = items
-            .filter((i) => i.ensayo_id !== this.ENSAYO_ID_MUESTREO)
-            .map((i) => {
-              const base = this.mapToLaboratorio(i);
-              const previo = this.ensayosResidualesPrevio.find((p) => p.identificacion === base.identificacion);
-              residualesMapeo.push({ identificacion: base.identificacion, previoEncontrado: !!previo, activo: previo?.activo ?? false });
-              return { ...base, activo: previo?.activo ?? false };
-            });
-          console.log('[step3:cargarEnsayosAgua]', JSON.parse(JSON.stringify({
-            totalItemsServidor: items.length,
-            ensayosMuestreoPrevio: this.ensayosMuestreoPrevio.map(p => ({ parametro: p.parametro, activo: p.activo })),
-            ensayosResidualesPrevio: this.ensayosResidualesPrevio.map(p => ({ identificacion: p.identificacion, activo: p.activo })),
-            muestreoMapeo,
-            residualesMapeo,
-          })));
-          this.loadingEnsayos = false;
-          this.ensayosMuestreoCambiado.emit(this.ensayosMuestreo);
-          this.ensayosResidualesCambiado.emit(this.ensayosResiduales);
-        },
-        error: () => (this.loadingEnsayos = false),
-      });
+            this.loadingEnsayos = false;
+            this.emitEnsayosResidualesCombinado();
+          },
+          error: () => (this.loadingEnsayos = false),
+        });
+    } else {
+      this.ensayosResiduales = [];
+      Promise.resolve().then(() => this.emitEnsayosResidualesCombinado());
+    }
   }
 
   private cargarEnsayosAire(grupo: MatrizConHijosUI): void {
@@ -354,9 +372,13 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     this.ensayosMuestreo[idx].activo = !this.ensayosMuestreo[idx].activo;
     this.ensayosMuestreoCambiado.emit(this.ensayosMuestreo);
   }
+  toggleEnsayoSuperficial(idx: number): void {
+    this.ensayosSuperficiales[idx].activo = !this.ensayosSuperficiales[idx].activo;
+    this.emitEnsayosResidualesCombinado();
+  }
   toggleEnsayoResidual(idx: number): void {
     this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo;
-    this.ensayosResidualesCambiado.emit(this.ensayosResiduales);
+    this.emitEnsayosResidualesCombinado();
   }
   toggleEnsayoAire(idx: number): void {
     this.ensayosAireServer[idx].activo = !this.ensayosAireServer[idx].activo;

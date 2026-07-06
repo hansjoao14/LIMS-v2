@@ -140,7 +140,7 @@
               @if (grupo.hijos[0]?.activo) {
                 <div class="bg-white rounded border shadow-sm">
                   <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">
-                    Tabla 2. Ensayos Físico-Químicos para Aguas de Muestreo
+                    Tabla 1. Ensayos de Muestreo para Aguas Superficiales
                     <span class="text-slate-500 text-xs font-normal capitalize"
                       >(Solo aguas superficiales)</span
                     >
@@ -214,10 +214,106 @@
                 </div>
               }
 
+              @if (grupo.hijos[0]?.activo) {
+              <div class="bg-white rounded border shadow-sm">
+                <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">
+                  Tabla 2. Ensayos Físico-Químico para Aguas Superficiales
+                </h5>
+                <div class="overflow-hidden overflow-x-auto custom-scroll">
+                  <div
+                    class="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr_1fr] bg-slate-50 border-y border-gray-200 min-w-[800px]"
+                  >
+                    <div
+                      class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r"
+                    >
+                      Requerido
+                    </div>
+                    <div class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase border-r">
+                      Ensayo
+                    </div>
+                    <div
+                      class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r"
+                    >
+                      Identificación
+                    </div>
+                    <div
+                      class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r"
+                    >
+                      Método Interno
+                    </div>
+                    <div
+                      class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r"
+                    >
+                      Método Referencia
+                    </div>
+                    <div
+                      class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center border-r"
+                    >
+                      Unidad
+                    </div>
+                    <div
+                      class="px-3 py-3 text-[10px] font-bold text-slate-700 uppercase text-center"
+                    >
+                      Naturaleza
+                    </div>
+                  </div>
+                  @for (fila of ensayosSuperficiales; track $index; let si = $index) {
+                    <div
+                      class="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr_1fr] border-b border-gray-100 items-center min-w-[800px] hover:bg-slate-50 transition-colors"
+                    >
+                      <div class="px-3 py-3 flex justify-center border-r">
+                        <button
+                          type="button"
+                          (click)="toggleEnsayoSuperficial(si)"
+                          class="relative inline-flex h-5 w-10 items-center rounded-full transition-colors"
+                          [class.bg-[#1e3a8a]]="fila.activo"
+                          [class.bg-gray-300]="!fila.activo"
+                        >
+                          <span
+                            class="inline-block h-3 w-3 transform rounded-full bg-white transition-transform"
+                            [class.translate-x-6]="fila.activo"
+                            [class.translate-x-1]="!fila.activo"
+                          ></span>
+                        </button>
+                      </div>
+                      <div class="px-3 py-3 text-[11px] text-slate-800 font-semibold border-r">
+                        {{ fila.ensayo }}
+                      </div>
+                      <div
+                        class="px-3 py-3 text-[11px] text-[#1e3a8a] font-mono text-center border-r"
+                      >
+                        {{ fila.identificacion }}
+                      </div>
+                      <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r">
+                        {{ fila.metodoInterno || 'N/A' }}
+                      </div>
+                      <div class="px-3 py-3 text-[11px] text-slate-500 text-center border-r">
+                        {{ fila.metodoReferencia }}
+                      </div>
+                      <div class="px-3 py-3 text-[11px] text-slate-600 text-center border-r">
+                        {{ fila.unidad }}
+                      </div>
+                      <div class="px-3 py-3 text-[11px] text-slate-600 text-center">
+                        <span
+                          class="px-2 py-0.5 rounded text-[9px] font-bold uppercase"
+                          [class.bg-purple-100]="fila.naturaleza === 'Laboratorio'"
+                          [class.text-purple-800]="fila.naturaleza === 'Laboratorio'"
+                          [class.bg-orange-100]="fila.naturaleza === 'In situ'"
+                          [class.text-orange-800]="fila.naturaleza === 'In situ'"
+                        >
+                          {{ fila.naturaleza }}
+                        </span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+              }
+
               @if (grupo.hijos[1]?.activo) {
               <div class="bg-white rounded border shadow-sm">
                 <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">
-                  Tabla 1. Ensayos Físico-Químico para Aguas Residuales y Superficiales
+                  Tabla 3. Ensayos Físico-Químico para Aguas Residuales
                 </h5>
                 <div class="overflow-hidden overflow-x-auto custom-scroll">
                   <div
