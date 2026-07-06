@@ -513,6 +513,31 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     this.ensayosGuardados = true;
   }
 
+  // IDs reales del catálogo de matrices (catalogo_id: 17, item_catalogo).
+  private readonly MATRIZ_ID_AGUA = 89;
+  private readonly MATRIZ_ID_AIRE = 90;
+  private readonly MATRIZ_ID_RUIDO = 91;
+
+  // Deriva el identificador secuencial según qué matriz ambiental quedó con
+  // servicios activos en el step3, en vez de usar un valor quemado. Compara
+  // por id de catálogo (no por nombre) para no depender de strings.
+  // Prioridad agua > aire > ruido si por alguna razón hubiera más de una
+  // matriz activa a la vez; si ninguna lo está, se mantiene el valor genérico.
+  private resolverIdentificadorSecuencial(): string {
+    const matrices: { id: number; identificador: string }[] = [
+      { id: this.MATRIZ_ID_AGUA, identificador: 'SOLI_AGUA' },
+      { id: this.MATRIZ_ID_AIRE, identificador: 'SOLI_AIRE' },
+      { id: this.MATRIZ_ID_RUIDO, identificador: 'SOLI_RUIDO' },
+    ];
+    for (const { id, identificador } of matrices) {
+      const grupo = this.catalogosSeleccionados.find(
+        (g) => g.matriz.id === id && g.hijos.some((h) => h.activo),
+      );
+      if (grupo) return identificador;
+    }
+    return 'SOLI_SECU_2025';
+  }
+
   private async crearSolicitudYAvanzar(): Promise<void> {
     this.isCreandoSolicitud = true;
     const anio = new Date().getFullYear();
@@ -800,7 +825,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       const finRes = await firstValueFrom(
         this.service.finalizarSolicitud({
           idSolicitud: this.solicitudRegistradaId ?? '',
-          identifcadorSecuecnial: 'SOLI_SECU_2025',
+          identifcadorSecuecnial: this.resolverIdentificadorSecuencial(),
           ctestado: 388,
         }),
       );
