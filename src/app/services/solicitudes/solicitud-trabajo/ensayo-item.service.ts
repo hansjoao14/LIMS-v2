@@ -12,7 +12,10 @@ const GET_ENSAYOS_BY_CT_AMBIENTAL = gql`
   query CollectionEnsayoItem($ctambientalId: Int!) {
     collectionEnsayoItem(
       query: {
-        where: { ctambiental_id: { equals: $ctambientalId } }
+        where: {
+          ctambiental_id: { equals: $ctambientalId }
+          ensayo: { estado: { equals: true } }
+        }
         pagination: { page: 1, take: 100 }
       }
     ) {
