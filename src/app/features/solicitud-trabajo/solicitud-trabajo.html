@@ -5,10 +5,10 @@
       breadcrumbSection="Solicitud de trabajo"
       [title]="formulario?.formulario_nombre ?? 'Solicitud de Trabajo'"
       subtitle="Gestión de requerimientos técnicos"
-      codigoFormulario="F-PG-09-01"
+      [codigoFormulario]="reportFormulario?.descripcion ?? null"
       [elaboradoPor]="selectedTecnicoNombre"
-      [fechaSolicitud]="fechaActual"
-      edicion="24"
+      [fechaSolicitud]="fechaEmision"
+      [edicion]="reportFormulario?.version ?? null"
     />
 
     <div class="mb-6">

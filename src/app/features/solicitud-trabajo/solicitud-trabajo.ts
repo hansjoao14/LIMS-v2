@@ -35,6 +35,8 @@ import { EnsayoService } from '../../services/solicitudes/solicitud-trabajo/ensa
 import { DocumentoLegalService } from '../../services/solicitudes/solicitud-trabajo/documento-legal.service';
 import { IntegracionService } from '../../services/solicitudes/solicitud-trabajo/integracion.service';
 import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/periodo.service';
+import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
+import { ReportFormulario } from '../../interfaces/admin-formularios/report-formulario.interface';
 
 import { Establecimiento } from '../../interfaces/solicitudes/solicitud-trabajo/establecimiento.interface';
 import { Tecnico } from '../../interfaces/solicitudes/solicitud-trabajo/tecnico.interface';
@@ -80,6 +82,8 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   // ── Formulario dinámico ──────────────────────────────────────────────────
   form: FormGroup;
   formulario: FormularioLaboratorio | null = null;
+  reportFormulario: ReportFormulario | null = null;
+  fechaEmision: Date | null = null;
   fields: FieldConfig[] = [];
   loading = true;
 
@@ -157,6 +161,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     private integracionService: IntegracionService,
     private periodoService: PeriodoService,
     private reportSolicitudService: ReportSolicitudService,
+    private reportFormularioService: ReportFormularioService,
     private zone: NgZone,
     private route: ActivatedRoute,
     private authService: AuthService,
@@ -202,6 +207,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   private cargarFormularioDinamico(): void {
     const idTipoFormulario = this.route.snapshot.paramMap.get('idTipoFrmulario') || '380';
     const { id } = this.authService.currentUser();
+
+    // Metadatos de cabecera (igual que en lista-solicitudes.ts): descripción,
+    // versión y fecha de emisión (epoch) del formulario.
+    this.reportFormularioService
+      .getFormularioByCTId(Number(idTipoFormulario))
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((reportFormulario) => {
+        this.reportFormulario = reportFormulario;
+        if (reportFormulario?.fecha_emision) {
+          this.fechaEmision = new Date(Number(reportFormulario.fecha_emision));
+        }
+      });
 
     this.service
       .getFormulario(idTipoFormulario, id)
