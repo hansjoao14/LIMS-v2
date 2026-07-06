@@ -124,7 +124,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   // ── Step 2: campos del formulario dinámico ───────────────────────────────
   buscandoIntegracion: { [key: string]: boolean } = {};
-  manualSchedules: { fecha_plan: string; inicio_bloque: string; fin_bloque: string }[] = [];
+  manualSchedules: { dias: string[]; inicio_bloque: string; fin_bloque: string }[] = [];
 
   // ── Step 3: catálogos y ensayos ──────────────────────────────────────────
   catalogosSeleccionados: MatrizConHijosUI[] = [];
@@ -261,9 +261,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
               if (catalogo && catalogo !== 0) selectPatch[key] = catalogo;
             } else if (v.ctipo_dato_nombre === 'Selección Mutiple' && v.valor_multiple) {
               try {
-                const guardados: { fecha_plan: string; inicio_bloque: string; fin_bloque: string }[] = JSON.parse(v.valor_multiple);
+                const guardados: { dias?: string[]; inicio_bloque: string; fin_bloque: string }[] = JSON.parse(v.valor_multiple);
                 this.manualSchedules = guardados.map((g) => ({
-                  fecha_plan: g.fecha_plan ?? '',
+                  dias: g.dias ?? [],
                   inicio_bloque: g.inicio_bloque ?? '',
                   fin_bloque: g.fin_bloque ?? '',
                 }));
@@ -750,7 +750,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  addManualScheduleItem(entry: { fecha_plan: string; inicio_bloque: string; fin_bloque: string }): void {
+  addManualScheduleItem(entry: { dias: string[]; inicio_bloque: string; fin_bloque: string }): void {
     this.manualSchedules = [...this.manualSchedules, entry];
   }
 

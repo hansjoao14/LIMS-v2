@@ -219,17 +219,21 @@
         </p>
 
         <!-- Fila de ingreso -->
-        <div class="flex flex-wrap gap-3 items-end">
+        <div class="flex flex-wrap gap-6 items-end">
           <div class="flex flex-col gap-1">
-            <label class="text-[10px] font-bold text-[#1e3a8a] uppercase">Fecha</label>
-            <input
-              type="date"
-              [value]="draftDate"
-              [min]="minDate"
-              [max]="maxDate"
-              (input)="draftDate = $any($event.target).value"
-              class="border border-slate-300 rounded p-2 text-sm outline-none focus:border-[#1e3a8a] bg-white"
-            />
+            @for (dia of DIAS_SEMANA; track dia) {
+              <label
+                class="flex items-center justify-between gap-3 border border-slate-300 rounded px-2 py-1 text-sm text-slate-700 bg-white cursor-pointer"
+              >
+                {{ dia }}
+                <input
+                  type="checkbox"
+                  [checked]="diasSeleccionados.includes(dia)"
+                  (change)="toggleDia(dia)"
+                  class="h-4 w-4 accent-[#1e3a8a]"
+                />
+              </label>
+            }
           </div>
           <app-time-picker label="Hora inicio" [value]="draftStart" (valueChange)="draftStart = $event" />
           <app-time-picker label="Hora fin" [value]="draftEnd" (valueChange)="draftEnd = $event" />
@@ -261,7 +265,7 @@
                   @for (item of manualSchedules; track $index; let i = $index) {
                     <tr class="border-b border-slate-200 last:border-0 hover:bg-slate-50 transition-colors">
                       <td class="p-3 text-slate-700">
-                        {{ formatFecha(item.fecha_plan) }}
+                        {{ item.dias.join(', ') }}
                       </td>
                       <td class="p-3 text-[#1e3a8a] font-mono font-bold">
                         {{ formatTime(item.inicio_bloque) }} – {{ formatTime(item.fin_bloque) }}

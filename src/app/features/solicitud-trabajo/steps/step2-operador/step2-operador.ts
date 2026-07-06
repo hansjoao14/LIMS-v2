@@ -7,7 +7,7 @@ import { TimePickerComponent } from '../../../../ui/time-picker/time-picker';
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
 export interface ManualScheduleEntry {
-  fecha_plan: string;
+  dias: string[];
   inicio_bloque: string;
   fin_bloque: string;
 }
@@ -33,7 +33,9 @@ export class Step2OperadorComponent {
   @Output() addManualSchedule = new EventEmitter<ManualScheduleEntry>();
   @Output() removeManualSchedule = new EventEmitter<number>();
 
-  draftDate = '';
+  readonly DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+  diasSeleccionados: string[] = [];
   draftStart = '08:00';
   draftEnd = '09:00';
   draftError = '';
@@ -84,33 +86,24 @@ export class Step2OperadorComponent {
     return 'text';
   }
 
-  get minDate(): string {
-    return new Date().toISOString().split('T')[0];
-  }
-
-  get maxDate(): string {
-    const d = new Date();
-    d.setDate(d.getDate() + 15);
-    return d.toISOString().split('T')[0];
+  toggleDia(dia: string): void {
+    this.diasSeleccionados = this.diasSeleccionados.includes(dia)
+      ? this.diasSeleccionados.filter((d) => d !== dia)
+      : [...this.diasSeleccionados, dia];
   }
 
   agregarHorario(): void {
     this.draftError = '';
-    if (!this.draftDate) { this.draftError = 'Seleccione una fecha.'; return; }
-    if (this.draftDate < this.minDate || this.draftDate > this.maxDate) {
-      this.draftError = 'La fecha debe estar entre hoy y los próximos 15 días.'; return;
-    }
+    if (this.diasSeleccionados.length === 0) { this.draftError = 'Seleccione al menos un día.'; return; }
     if (this.draftEnd <= this.draftStart) { this.draftError = 'La hora de fin debe ser posterior a la de inicio.'; return; }
-    this.addManualSchedule.emit({ fecha_plan: this.draftDate, inicio_bloque: this.draftStart, fin_bloque: this.draftEnd });
-    this.draftDate = '';
+    this.addManualSchedule.emit({
+      dias: [...this.diasSeleccionados],
+      inicio_bloque: this.draftStart,
+      fin_bloque: this.draftEnd,
+    });
+    this.diasSeleccionados = [];
     this.draftStart = '08:00';
     this.draftEnd = '09:00';
-  }
-
-  formatFecha(fecha: string): string {
-    if (!fecha) return '—';
-    const [y, m, d] = fecha.split('-');
-    return `${d}/${m}/${y}`;
   }
 
   formatTime(time: string): string {
