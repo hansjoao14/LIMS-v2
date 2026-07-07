@@ -129,6 +129,19 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     return grupo.hijos.filter((h) => h.activo).length;
   }
 
+  // No basta con activar el switch de una matriz (eso solo revela sus
+  // tablas): se exige al menos un ensayo/fila realmente marcado como activo,
+  // que es lo que efectivamente se guarda al confirmar la solicitud.
+  tieneAlgunaSeleccion(): boolean {
+    return (
+      this.ensayosMuestreo.some((e) => e.activo) ||
+      this.ensayosSuperficiales.some((e) => e.activo) ||
+      this.ensayosResiduales.some((e) => e.activo) ||
+      this.ensayosAireServer.some((e) => e.activo) ||
+      this.ensayosRuidoServer.some((e) => e.activo)
+    );
+  }
+
   private getMatricesConHijos(): void {
     this.catalogoService
       .getMatricesConHijos(this.CATALOGO_MATRICES_ID)
