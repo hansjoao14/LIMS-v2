@@ -53,6 +53,13 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   readonly CATALOGO_MATRICES_ID = 17;
   readonly ENSAYO_ID_MUESTREO = 19;
 
+  // IDs reales del catálogo de matrices (catalogo_id: 17). El nombre puede
+  // cambiar en el catálogo; el id no, así que la lógica de negocio debe
+  // comparar por id y no por grupo.matriz.nombre.
+  readonly MATRIZ_ID_AGUA = 89;
+  readonly MATRIZ_ID_AIRE = 90;
+  readonly MATRIZ_ID_RUIDO = 91;
+
   matricesConHijos: MatrizConHijosUI[] = [];
   matrizSeleccionada = '';
   loading = true;
@@ -115,9 +122,9 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     const hijo = grupo.hijos[hijoIdx];
     hijo.activo = !hijo.activo;
 
-    if (this.isMatriz(grupo, 'agua')) this.cargarEnsayosAgua(grupo);
-    if (this.isMatriz(grupo, 'aire')) this.cargarEnsayosAire(grupo);
-    if (this.isMatriz(grupo, 'ruido')) this.cargarEnsayosRuido(grupo);
+    if (this.esMatriz(grupo, this.MATRIZ_ID_AGUA)) this.cargarEnsayosAgua(grupo);
+    if (this.esMatriz(grupo, this.MATRIZ_ID_AIRE)) this.cargarEnsayosAire(grupo);
+    if (this.esMatriz(grupo, this.MATRIZ_ID_RUIDO)) this.cargarEnsayosRuido(grupo);
     this.estadoCambiado.emit(this.matricesConHijos);
   }
 
@@ -217,13 +224,13 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private cargarEnsayosActivos(): void {
-    const aguaGrupo = this.matricesConHijos.find((m) => this.isMatriz(m, 'agua'));
+    const aguaGrupo = this.matricesConHijos.find((m) => this.esMatriz(m, this.MATRIZ_ID_AGUA));
     if (aguaGrupo?.hijos.some((h) => h.activo)) this.cargarEnsayosAgua(aguaGrupo);
 
-    const aireGrupo = this.matricesConHijos.find((m) => this.isMatriz(m, 'aire'));
+    const aireGrupo = this.matricesConHijos.find((m) => this.esMatriz(m, this.MATRIZ_ID_AIRE));
     if (aireGrupo?.hijos.some((h) => h.activo)) this.cargarEnsayosAire(aireGrupo);
 
-    const ruidoGrupo = this.matricesConHijos.find((m) => this.isMatriz(m, 'ruido'));
+    const ruidoGrupo = this.matricesConHijos.find((m) => this.esMatriz(m, this.MATRIZ_ID_RUIDO));
     if (ruidoGrupo?.hijos.some((h) => h.activo)) this.cargarEnsayosRuido(ruidoGrupo);
   }
 
@@ -422,8 +429,15 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     };
   }
 
+  // Solo para comparar contra matrizSeleccionada (el <select> se liga por
+  // nombre). Para identificar agua/aire/ruido en lógica de negocio usar
+  // esMatriz(grupo, id), que compara por id y no se rompe si cambia el nombre.
   isMatriz(grupo: MatrizConHijosUI, nombre: string): boolean {
     return grupo.matriz.nombre.toLowerCase() === nombre.toLowerCase();
+  }
+
+  esMatriz(grupo: MatrizConHijosUI, id: number): boolean {
+    return grupo.matriz.id === id;
   }
 
   toggleEnsayoMuestreo(idx: number): void {

@@ -133,7 +133,7 @@
           }
 
           @if (
-            isMatriz(grupo, 'agua') &&
+            esMatriz(grupo, MATRIZ_ID_AGUA) &&
             !grupo.collapsed &&
             (grupo.hijos[0]?.activo || grupo.hijos[1]?.activo)
           ) {
@@ -420,7 +420,7 @@
             </div>
           }
 
-          @if (isMatriz(grupo, 'aire') && !grupo.collapsed && grupo.hijos[0]?.activo) {
+          @if (esMatriz(grupo, MATRIZ_ID_AIRE) && !grupo.collapsed && grupo.hijos[0]?.activo) {
             <div class="border-t border-gray-200 bg-white px-6 py-6 space-y-8 animate-in fade-in">
               <div class="bg-white rounded border shadow-sm">
                 <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">
@@ -512,7 +512,7 @@
             </div>
           }
 
-          @if (isMatriz(grupo, 'ruido') && !grupo.collapsed && grupo.hijos[0]?.activo) {
+          @if (esMatriz(grupo, MATRIZ_ID_RUIDO) && !grupo.collapsed && grupo.hijos[0]?.activo) {
             <div class="border-t border-gray-200 bg-white px-6 py-6 space-y-8 animate-in fade-in">
               <div class="bg-white rounded border shadow-sm">
                 <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">
