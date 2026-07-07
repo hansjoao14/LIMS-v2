@@ -311,7 +311,7 @@
               </div>
               }
 
-              @if (grupo.hijos[1]?.activo) {
+              @if (grupo.hijos[1]?.activo && !grupo.hijos[0]?.activo) {
               <div class="bg-white rounded border shadow-sm">
                 <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">
                   Tabla 3. Ensayos Físico-Químico para Aguas Residuales

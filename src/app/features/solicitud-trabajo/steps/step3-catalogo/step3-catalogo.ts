@@ -64,6 +64,14 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   ensayosAireServer: EnsayoLaboratorio[] = [];
   ensayosRuidoServer: EnsayoLaboratorio[] = [];
 
+  // Cuando ambos hijos de agua están activos, la Tabla 2 (Superficiales) es
+  // la única que se muestra, pero el guardado debe replicarse también para
+  // el ctambiental_id de Residuales — de ahí necesitamos su id y el estado
+  // activo de cada hijo disponibles al emitir, no solo al cargar.
+  private hijoSuperficialActivo = false;
+  private hijoResidualActivo = false;
+  private ctambientalResidualId: number | null = null;
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -212,17 +220,34 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     );
   }
 
+  // Cuando ambos hijos están activos, la Tabla 2 (Superficiales) es la única
+  // visible; el guardado debe replicar cada fila también con el
+  // ctambiental_id de Residuales (mismo ensayo_id, mismo estado activo), sin
+  // que exista una fila/tabla visible aparte para Residuales.
   private emitEnsayosResidualesCombinado(): void {
-    this.ensayosResidualesCambiado.emit([...this.ensayosSuperficiales, ...this.ensayosResiduales]);
+    const combinado = [...this.ensayosSuperficiales];
+    if (this.hijoSuperficialActivo && this.hijoResidualActivo && this.ctambientalResidualId != null) {
+      combinado.push(
+        ...this.ensayosSuperficiales.map((e) => ({ ...e, ctambiental_id: this.ctambientalResidualId! })),
+      );
+    }
+    combinado.push(...this.ensayosResiduales);
+    this.ensayosResidualesCambiado.emit(combinado);
   }
 
   // hijos[0] = Aguas Superficiales, hijos[1] = Aguas Residuales: cada uno
-  // tiene su propio ctambiental_id y su propio conjunto de ensayo_item, por lo
-  // que ambos deben cargarse de forma independiente (no solo el primero
-  // activo) para poder mostrar sus 3 tablas de forma simultánea.
+  // tiene su propio ctambiental_id y su propio conjunto de ensayo_item. Si
+  // ambos están activos, solo se muestra la tabla de Superficiales pero el
+  // guardado debe replicarse hacia el ctambiental_id de Residuales (ver
+  // emitEnsayosResidualesCombinado); si solo Residuales está activo, se
+  // carga y guarda de forma independiente con su propio ctambiental_id.
   private cargarEnsayosAgua(grupo: MatrizConHijosUI): void {
     const hijoSuperficial = grupo.hijos[0];
     const hijoResidual = grupo.hijos[1];
+
+    this.hijoSuperficialActivo = !!hijoSuperficial?.activo;
+    this.hijoResidualActivo = !!hijoResidual?.activo;
+    this.ctambientalResidualId = hijoResidual?.id ?? null;
 
     if (hijoSuperficial?.activo) {
       this.loadingEnsayos = true;
@@ -265,7 +290,12 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
       });
     }
 
-    if (hijoResidual?.activo) {
+    // La tabla independiente de Residuales (Tabla 3) solo se carga/muestra
+    // cuando Residuales está activo y Superficiales NO lo está: si ambos
+    // están activos, Tabla 2 (Superficiales) es la única visible y
+    // emitEnsayosResidualesCombinado ya replica el guardado hacia el
+    // ctambiental_id de Residuales.
+    if (hijoResidual?.activo && !hijoSuperficial?.activo) {
       this.loadingEnsayos = true;
       this.ensayoItemService
         .getEnsayosByCtAmbiental(hijoResidual.id)
