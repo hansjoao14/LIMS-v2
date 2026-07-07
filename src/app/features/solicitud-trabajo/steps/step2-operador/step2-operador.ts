@@ -96,6 +96,17 @@ export class Step2OperadorComponent {
     this.draftError = '';
     if (this.diasSeleccionados.length === 0) { this.draftError = 'Seleccione al menos un día.'; return; }
     if (this.draftEnd <= this.draftStart) { this.draftError = 'La hora de fin debe ser posterior a la de inicio.'; return; }
+
+    const diaDuplicado = this.diasSeleccionados.find((dia) =>
+      this.manualSchedules.some(
+        (h) => h.dias.includes(dia) && h.inicio_bloque === this.draftStart && h.fin_bloque === this.draftEnd,
+      ),
+    );
+    if (diaDuplicado) {
+      this.draftError = `Ya existe un horario de ${this.formatTime(this.draftStart)} – ${this.formatTime(this.draftEnd)} registrado para ${diaDuplicado}.`;
+      return;
+    }
+
     this.addManualSchedule.emit({
       dias: [...this.diasSeleccionados],
       inicio_bloque: this.draftStart,
