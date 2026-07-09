@@ -5,104 +5,24 @@
       <div class="animate-in fade-in">
 
         <app-page-header
-          breadcrumbSection="Administración de Formularios"
+          breadcrumbSection="Configuración"
           title="Administración de Formularios"
           subtitle="Gestione la configuración y atributos de los formularios dinámicos."
-        >
-          <button #pageAction pageAction type="button" (click)="abrirFormNuevo()"
-            class="bg-[#1e3a8a] text-white px-6 py-2.5 rounded text-xs font-bold uppercase shadow-md hover:bg-[#2541b2] transition-colors flex items-center gap-2">
-            <span class="text-lg leading-none">+</span> Nuevo Formulario
-          </button>
-        </app-page-header>
+        />
 
-        <!-- Buscador -->
-        @if (!loading) {
-          <div class="flex justify-between items-center mb-4">
-            <div class="relative w-80">
-              <input type="text" [(ngModel)]="busqueda" (ngModelChange)="filtrar()"
-                placeholder="Buscar por nombre, tipo o sigla..."
-                class="w-full border border-slate-300 rounded pl-10 pr-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a] transition-colors" />
-              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <span class="text-xs font-bold text-slate-500 uppercase">
-              {{ formulariosFiltrados.length }} de {{ formularios.length }} formularios
-            </span>
-          </div>
+        @if (vista === 'lista') {
+          <app-admin-formularios-lista
+            (nuevo)="irAFormulario()"
+            (verDetalle)="abrirDetalle($event)"
+          />
         }
 
-        <!-- Table-card: sin padding, overflow-hidden -->
-        <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-          <table class="w-full text-sm border-collapse table-fixed">
-            <colgroup>
-              <col>
-              <col class="w-[190px]">
-              <col class="w-[100px]">
-              <col class="w-[80px]">
-              <col class="w-[80px]">
-              <col class="w-[110px]">
-              <col class="w-[110px]">
-            </colgroup>
-            <thead>
-              <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
-                <th class="px-3 py-2.5 border-r border-slate-100 text-left">Nombre</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-left">Tipo de Formulario</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Sigla</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Versión</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
-                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Fecha Creación</th>
-                <th class="px-2 py-2.5 text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody appTableSkeleton [rows]="loading ? 8 : 0" [cols]="6" [actionButtons]="1"></tbody>
-            <tbody>
-              @if (!loading) {
-                @for (form of formulariosFiltrados; track form.id) {
-                  <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer" (click)="abrirDetalle(form)">
-                    <td class="px-3 py-2.5 border-r border-slate-100">
-                      <p class="font-bold text-slate-700 truncate">{{ form.nombre }}</p>
-                      <p class="text-[10px] text-slate-400 font-mono mt-0.5 truncate">{{ form.id }}</p>
-                    </td>
-                    <td class="px-3 py-2.5 border-r border-slate-100">
-                      <span class="inline-block bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase truncate max-w-full whitespace-nowrap" [title]="form.tipo_formulario">
-                        {{ form.tipo_formulario }}
-                      </span>
-                    </td>
-                    <td class="px-3 py-2.5 border-r border-slate-100 text-center font-mono font-bold text-slate-700 text-xs whitespace-nowrap">
-                      {{ form.sigla }}
-                    </td>
-                    <td class="px-3 py-2.5 border-r border-slate-100 text-center">
-                      <span class="inline-block bg-slate-100 text-slate-600 font-bold text-xs px-2 py-0.5 rounded">v{{ form.version }}</span>
-                    </td>
-                    <td class="px-3 py-2.5 border-r border-slate-100 text-center">
-                      @if (form.estado) {
-                        <span class="block w-full text-center py-0.5 border border-green-400 text-green-700 font-bold text-[10px] rounded bg-green-50 whitespace-nowrap">Activo</span>
-                      } @else {
-                        <span class="block w-full text-center py-0.5 border border-slate-300 text-slate-500 font-bold text-[10px] rounded bg-slate-50 whitespace-nowrap">Inactivo</span>
-                      }
-                    </td>
-                    <td class="px-3 py-2.5 border-r border-slate-100 text-center text-slate-500 text-xs whitespace-nowrap">
-                      {{ form.fecha_creacion | date: 'dd/MM/yyyy' }}
-                    </td>
-                    <td class="px-2 py-2.5 text-center" (click)="$event.stopPropagation()">
-                      <button type="button" (click)="abrirDetalle(form)"
-                        class="text-[#1e3a8a] hover:text-white font-bold text-[11px] uppercase px-3 py-1.5 border border-[#1e3a8a] hover:bg-[#1e3a8a] rounded transition-all">
-                        Configurar
-                      </button>
-                    </td>
-                  </tr>
-                } @empty {
-                  <tr>
-                    <td colspan="7" class="p-10 text-slate-400 italic text-center">
-                      No se encontraron formularios.
-                    </td>
-                  </tr>
-                }
-              }
-            </tbody>
-          </table>
-        </div>
+        @if (vista === 'formulario') {
+          <app-admin-formularios-formulario
+            (guardado)="onGuardado()"
+            (cancelado)="onCancelado()"
+          />
+        }
 
       </div>
     } @else {
@@ -115,139 +35,3 @@
 
   </div>
 </div>
-
-<!-- ── MODAL NUEVO FORMULARIO ────────────────────────────────────────────── -->
-@if (mostrarFormulario) {
-  <div
-    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in p-4"
-    (click)="cerrarFormulario()"
-  >
-    <div
-      class="bg-white rounded-lg shadow-2xl w-full max-w-lg flex flex-col max-h-[85vh]"
-      (click)="$event.stopPropagation()"
-    >
-      <!-- Header -->
-      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <div>
-          <h3 class="text-base font-bold text-[#1e3a8a] uppercase tracking-wide">
-            Nuevo Formulario
-          </h3>
-          <p class="text-xs text-slate-500 mt-0.5">
-            Completa los datos para registrar el formulario.
-          </p>
-        </div>
-        <button
-          type="button"
-          (click)="cerrarFormulario()"
-          class="text-slate-400 hover:text-red-500 text-xl leading-none"
-        >
-          &times;
-        </button>
-      </div>
-
-      <!-- Body -->
-      <div class="overflow-y-auto px-6 py-4 flex-1 custom-scroll space-y-4">
-        <div>
-          <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
-            Nombre <span class="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            [(ngModel)]="formData.nombre"
-            placeholder="ej. Formulario de Ingreso"
-            class="w-full border border-slate-300 rounded p-2.5 text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-          />
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
-              Sigla <span class="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              [(ngModel)]="formData.sigla"
-              placeholder="ej. FI-001"
-              class="w-full border border-slate-300 rounded p-2.5 text-sm outline-none focus:border-[#1e3a8a] transition-colors font-mono uppercase"
-            />
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
-              Versión <span class="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              [(ngModel)]="formData.version"
-              min="1"
-              class="w-full border border-slate-300 rounded p-2.5 text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
-            Descripción
-          </label>
-          <textarea
-            [(ngModel)]="formData.descripcion"
-            rows="2"
-            placeholder="Descripción opcional del formulario"
-            class="w-full border border-slate-300 rounded p-2.5 text-sm outline-none focus:border-[#1e3a8a] transition-colors resize-none"
-          ></textarea>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
-              Fecha Emisión <span class="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              [(ngModel)]="formData.fecha_emision"
-              class="w-full border border-slate-300 rounded p-2.5 text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-            />
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
-              Tipo Formulario <span class="text-red-500">*</span>
-            </label>
-            <select
-              [(ngModel)]="formData.ctformulario_id"
-              class="w-full border border-slate-300 rounded p-2.5 text-sm outline-none focus:border-[#1e3a8a] transition-colors bg-white"
-            >
-              <option [ngValue]="0" disabled>Seleccione un tipo...</option>
-              @for (tipo of tiposFormulario; track tipo.id) {
-                <option [ngValue]="tipo.id">{{ tipo.nombre }}</option>
-              }
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="px-6 py-3 border-t border-gray-200">
-        <div class="flex gap-3">
-          <button
-            type="button"
-            (click)="cerrarFormulario()"
-            [disabled]="guardando"
-            class="flex-1 border border-gray-300 text-slate-700 font-bold uppercase text-xs py-3 rounded hover:bg-gray-50 disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            (click)="guardarFormulario()"
-            [disabled]="guardando || !formData.nombre || !formData.sigla"
-            class="flex-1 bg-[#1e3a8a] text-white font-bold uppercase text-xs py-3 rounded hover:bg-[#2541b2] disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            @if (guardando) {
-              <span class="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full"></span>
-            }
-            Crear Formulario
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-}

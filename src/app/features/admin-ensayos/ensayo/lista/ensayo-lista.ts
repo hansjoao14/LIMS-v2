@@ -33,8 +33,6 @@ export class EnsayoLista implements OnInit, OnDestroy {
   busqueda = '';
 
   openMenuId: number | null = null;
-  menuItem: Ensayo | null = null;
-  menuPos: { top: number; right: number } | null = null;
   procesandoId: number | null = null;
 
   private readonly destroy$ = new Subject<void>();
@@ -99,25 +97,13 @@ export class EnsayoLista implements OnInit, OnDestroy {
       });
   }
 
-  toggleMenu(id: number, item: Ensayo, event: MouseEvent): void {
+  toggleMenu(id: number, event: MouseEvent): void {
     event.stopPropagation();
-    if (this.openMenuId === id) {
-      this.openMenuId = null;
-      this.menuItem = null;
-      this.menuPos = null;
-    } else {
-      const btn = event.currentTarget as HTMLElement;
-      const rect = btn.getBoundingClientRect();
-      this.openMenuId = id;
-      this.menuItem = item;
-      this.menuPos = { top: rect.bottom + 4, right: window.innerWidth - rect.right };
-    }
+    this.openMenuId = this.openMenuId === id ? null : id;
   }
 
   closeMenu(): void {
     this.openMenuId = null;
-    this.menuItem = null;
-    this.menuPos = null;
   }
 
   async toggleEstadoEnsayo(item: Ensayo): Promise<void> {

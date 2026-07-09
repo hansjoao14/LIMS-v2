@@ -615,7 +615,7 @@ closeMenu(): void {
 }
 ```
 
-> Este patrón de `fixed` + coordenadas calculadas aparece todavía en `catalogo-lista.ts/html`. Funciona ahí porque ese componente se usa embebido en un split-panel sin wrapper `animate-in` — no porque sea el patrón correcto. **No copiarlo como referencia** al construir una página nueva; usar siempre el patrón `relative`/`absolute` de esta sección (referencia real: `item-catalogo-lista.html`).
+> **Corrección (2026-07-09):** este documento decía antes que `catalogo-lista.ts/html` usaba `fixed` + coordenadas calculadas y "funcionaba" por estar embebido sin wrapper `animate-in`. Eso era incorrecto — `admin-catalogos.html` sí tiene `animate-in fade-in`, así que el menú también quedaba mal posicionado ahí. Se auditó y corrigió: `catalogo-lista.ts/html`, `ensayo-lista.ts/html` y `ensayo-item-lista.ts/html` (en `admin-ensayos`) usaban el patrón viejo y ya fueron migrados al patrón `relative`/`absolute` de esta sección. Si encuentras otro componente con `menuPos`/`getBoundingClientRect()`, es candidato a la misma corrección.
 
 ### Resumen de reglas
 
@@ -1237,3 +1237,4 @@ API /formulario-dinamico/:id
 | `calibracion-equipos` | — | Variante B (swap de vista lista/formulario) |
 | `admin-catalogos` | — | Variante B, split-panel embebido (catálogo + ítems) |
 | `secuencial` | 2026-07-09 | Variante B, `TableSkeleton` + `FieldSkeleton`, constructor visual del campo `formato` |
+| `admin-formularios` | 2026-07-09 | Migrado de componente monolítico + modal a variante B (`lista/`, `formulario/`). Conserva un tercer estado `formularioSeleccionado` para la vista de detalle (`formulario-detalle`), ortogonal a `vista`. Buscador ahora siempre visible (usa `TableSkeleton`). El combo de tipos de formulario pasó de `watchQuery`+`valueChanges` a `CatalogoService.getAllItemsAdmin(9)` (`.query` single-shot) + `FieldSkeleton` |

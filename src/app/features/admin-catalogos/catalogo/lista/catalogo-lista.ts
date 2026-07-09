@@ -31,8 +31,6 @@ export class CatalogoLista implements OnInit, OnDestroy {
   busqueda = '';
 
   openMenuId: number | null = null;
-  menuItem: Catalogo | null = null;
-  menuPos: { top: number; right: number } | null = null;
   procesandoId: number | null = null;
 
   private readonly destroy$ = new Subject<void>();
@@ -97,25 +95,13 @@ export class CatalogoLista implements OnInit, OnDestroy {
       });
   }
 
-  toggleMenu(id: number, item: Catalogo, event: MouseEvent): void {
+  toggleMenu(id: number, event: MouseEvent): void {
     event.stopPropagation();
-    if (this.openMenuId === id) {
-      this.openMenuId = null;
-      this.menuItem = null;
-      this.menuPos = null;
-    } else {
-      const btn = event.currentTarget as HTMLElement;
-      const rect = btn.getBoundingClientRect();
-      this.openMenuId = id;
-      this.menuItem = item;
-      this.menuPos = { top: rect.bottom + 4, right: window.innerWidth - rect.right };
-    }
+    this.openMenuId = this.openMenuId === id ? null : id;
   }
 
   closeMenu(): void {
     this.openMenuId = null;
-    this.menuItem = null;
-    this.menuPos = null;
   }
 
   async toggleEstadoCatalogo(item: Catalogo): Promise<void> {

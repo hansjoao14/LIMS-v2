@@ -31,8 +31,6 @@ export class EnsayoItemLista implements OnInit, OnDestroy, OnChanges {
   flatNodes: EnsayoItemNode[] = [];
 
   openMenuId: number | null = null; // ctambiental_id
-  menuItem: EnsayoItem | null = null;
-  menuPos: { top: number; right: number } | null = null;
   procesandoId: number | null = null; // ctambiental_id
 
   private readonly destroy$ = new Subject<void>();
@@ -111,21 +109,13 @@ export class EnsayoItemLista implements OnInit, OnDestroy, OnChanges {
       });
   }
 
-  toggleMenu(id: number, item: EnsayoItem, event: MouseEvent): void {
+  toggleMenu(id: number, event: MouseEvent): void {
     event.stopPropagation();
-    if (this.openMenuId === id) {
-      this.openMenuId = null; this.menuItem = null; this.menuPos = null;
-    } else {
-      const btn = event.currentTarget as HTMLElement;
-      const rect = btn.getBoundingClientRect();
-      this.openMenuId = id;
-      this.menuItem = item;
-      this.menuPos = { top: rect.bottom + 4, right: window.innerWidth - rect.right };
-    }
+    this.openMenuId = this.openMenuId === id ? null : id;
   }
 
   closeMenu(): void {
-    this.openMenuId = null; this.menuItem = null; this.menuPos = null;
+    this.openMenuId = null;
   }
 
   async toggleEstadoItem(item: EnsayoItem): Promise<void> {
