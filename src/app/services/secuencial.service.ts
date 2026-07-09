@@ -62,7 +62,7 @@ function normalizar(item: SecuencialGraphQL): Secuencial {
   providedIn: 'root',
 })
 export class SecuencialService {
-  private readonly base = `${environment.api_secuencial}/secuencial`;
+  private readonly base = `${environment.api_formulario}/secuencial`;
 
   constructor(private apollo: Apollo, private http: HttpClient) {}
 
