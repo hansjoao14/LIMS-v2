@@ -12,7 +12,7 @@ import { PaginationMeta } from '../interfaces/catalogos/catalogo.interface';
 import { META_FIELDS } from '../graphql/fragments';
 import { environment } from '../../environments/environment';
 
-const CLIENT_NAME = 'catalogo';
+const CLIENT_NAME = 'reportes';
 
 const GET_COLLECTION_SECUENCIAL_ADMIN = gql`
   query CollectionSecuencialAdmin($page: Int, $take: Int, $busqueda: String) {
@@ -62,7 +62,7 @@ function normalizar(item: SecuencialGraphQL): Secuencial {
   providedIn: 'root',
 })
 export class SecuencialService {
-  private readonly base = `${environment.api_catalogo}/secuencial`;
+  private readonly base = `${environment.api_secuencial}/secuencial`;
 
   constructor(private apollo: Apollo, private http: HttpClient) {}
 
