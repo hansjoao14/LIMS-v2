@@ -12,6 +12,7 @@ import { AccesoAutorizado } from '../../../ui/icons/acceso-autorizado/acceso-aut
 import { CalibracionEquiposIcon } from '../../../ui/icons/calibracion-equipos-icon/calibracion-equipos-icon';
 import { BookIcon } from '../../../ui/icons/book-icon/book-icon';
 import { FlaskIcon } from '../../../ui/icons/flask-icon/flask-icon';
+import { SecuencialIcon } from '../../../ui/icons/secuencial-icon/secuencial-icon';
 import { SettingsComponent } from '../../../ui/icons/settings/settings.component';
 import { RoleAccess } from '../../../core/utils/roles.constans';
 
@@ -126,6 +127,12 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
         label: 'Ensayos',
         icon: FlaskIcon,
         requiredRoles: RoleAccess.ADMIN_ENSAYOS,
+      },
+      {
+        path: '/secuencial',
+        label: 'Secuenciales',
+        icon: SecuencialIcon,
+        requiredRoles: RoleAccess.SECUENCIAL,
       },
     ],
   },

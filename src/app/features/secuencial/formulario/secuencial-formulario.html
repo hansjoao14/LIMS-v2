@@ -1,0 +1,174 @@
+<div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 max-w-3xl">
+
+  <div class="flex items-center gap-3 mb-6">
+    <button type="button" (click)="cancelado.emit()"
+      class="h-8 w-8 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:bg-slate-100 transition-colors">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    <h3 class="text-sm font-bold text-slate-700">
+      {{ modoEdicion ? 'Editar secuencial' : 'Nuevo secuencial' }}
+    </h3>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">
+        Identificador <span class="text-red-500">*</span>
+      </label>
+      <input type="text" [(ngModel)]="identificadorSecu" placeholder="Ej: SOLI_AGUA"
+        class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+        [disabled]="saving" />
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">
+        Sigla <span class="text-red-500">*</span>
+      </label>
+      <input type="text" [(ngModel)]="sigla" placeholder="Ej: OT"
+        class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+        [disabled]="saving" />
+    </div>
+
+    <div class="sm:col-span-2">
+      <label class="block text-xs font-semibold text-slate-600 mb-1">
+        Módulo - Establecimiento (UUID) <span class="text-red-500">*</span>
+      </label>
+      <input type="text" [(ngModel)]="moduloEstablecimientoId" placeholder="Ej: F4646AAD-DBF9-4143-84FE-8F477AAADAF6"
+        class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 font-mono focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+        [disabled]="saving" />
+      <p class="text-[11px] text-slate-400 mt-1">Identificador de la relación módulo-establecimiento.</p>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">
+        Formulario <span class="text-red-500">*</span>
+      </label>
+      @if (loadingFormularios) {
+        <app-field-skeleton height="h-10" />
+      } @else {
+        <select [(ngModel)]="ctformularioId"
+          class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+          [disabled]="saving">
+          <option [ngValue]="null">Selecciona un formulario...</option>
+          @for (f of formularios; track f.id) {
+            <option [ngValue]="f.id">{{ f.nombre }}</option>
+          }
+        </select>
+      }
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Año</label>
+      <input type="number" [(ngModel)]="anio"
+        class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+        [disabled]="saving" />
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Número inicial</label>
+      <input type="number" [(ngModel)]="numero" min="0"
+        class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+        [disabled]="saving" />
+    </div>
+
+    <div class="flex items-center gap-2 pt-6">
+      <input type="checkbox" id="secuencial-estado" [(ngModel)]="estado"
+        class="h-4 w-4 rounded border-slate-300 text-[#1e3a8a] focus:ring-blue-300"
+        [disabled]="saving" />
+      <label for="secuencial-estado" class="text-xs font-semibold text-slate-600">Secuencial activo</label>
+    </div>
+
+  </div>
+
+  <!-- Constructor visual del formato -->
+  <div class="mt-6 border-t border-slate-200 pt-5">
+    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Formato del secuencial</h4>
+    <p class="text-[11px] text-slate-400 mb-3">Define el orden de las partes y cómo se construye el número final.</p>
+
+    <div class="border border-slate-200 rounded divide-y divide-slate-100">
+      @for (parte of formatoPartes; track parte.tipo; let i = $index) {
+        <div class="flex items-center gap-3 px-3 py-2.5" [class.opacity-40]="!parte.activo">
+          <input type="checkbox" [checked]="parte.activo" (change)="toggleParte(parte)"
+            [disabled]="saving || parte.tipo === 'sigla'"
+            class="h-4 w-4 rounded border-slate-300 text-[#1e3a8a] focus:ring-blue-300 shrink-0" />
+
+          <span class="text-xs font-semibold text-slate-600 w-36 shrink-0">{{ parte.label }}</span>
+
+          @if (parte.tipo === 'sigla' || parte.tipo === 'alias') {
+            <input type="text" [(ngModel)]="parte.valor" [disabled]="saving || !parte.activo"
+              [placeholder]="parte.tipo === 'sigla' ? 'Prefijo, ej: OT' : 'Sufijo, ej: G'"
+              class="flex-1 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition" />
+          } @else {
+            <span class="flex-1 text-xs text-slate-400 italic">
+              {{ parte.tipo === 'numero' ? 'Contador con relleno de ceros' : 'Año actual (4 dígitos)' }}
+            </span>
+          }
+
+          @if (parte.activo) {
+            <span class="text-[10px] font-bold text-slate-400 shrink-0">#{{ i + 1 }}</span>
+          }
+
+          <div class="flex items-center gap-1 shrink-0">
+            <button type="button" title="Mover arriba" (click)="moverArriba(i)"
+              [disabled]="saving || i === 0"
+              class="h-7 w-7 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+              </svg>
+            </button>
+            <button type="button" title="Mover abajo" (click)="moverAbajo(i)"
+              [disabled]="saving || i === formatoPartes.length - 1"
+              class="h-7 w-7 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mt-4 max-w-xs">
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Separador</label>
+        <input type="text" [(ngModel)]="separador" maxlength="3"
+          class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+          [disabled]="saving" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Dígitos del número</label>
+        <input type="number" [(ngModel)]="digitos" min="1" max="10"
+          class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+          [disabled]="saving" />
+      </div>
+    </div>
+
+    <div class="mt-4 bg-slate-50 border border-slate-200 rounded px-4 py-3">
+      <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Vista previa</p>
+      <p class="text-sm font-mono font-bold text-[#1d2b64]">{{ preview }}</p>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3 mt-6">
+    <button type="button" (click)="guardar()" [disabled]="saving"
+      class="bg-[#1e3a8a] text-white px-5 py-2 rounded text-sm font-bold shadow-sm hover:bg-[#2541b2] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2">
+      @if (saving) {
+        <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        </svg>
+        Guardando...
+      } @else {
+        {{ modoEdicion ? 'Actualizar' : 'Crear secuencial' }}
+      }
+    </button>
+    <button type="button" (click)="cancelado.emit()" [disabled]="saving"
+      class="px-5 py-2 rounded text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all">
+      Cancelar
+    </button>
+  </div>
+
+</div>

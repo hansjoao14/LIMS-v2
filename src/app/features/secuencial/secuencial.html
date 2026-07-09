@@ -1,0 +1,28 @@
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
+    <div class="animate-in fade-in">
+
+      <app-page-header
+        breadcrumbSection="Configuración"
+        title="Administración de Secuenciales"
+        subtitle="Configura los secuenciales usados para generar los números de identificación de cada formulario."
+      />
+
+      @if (vista === 'lista') {
+        <app-secuencial-lista
+          (nuevoSecuencial)="irAFormulario()"
+          (editar)="onEditar($event)"
+        />
+      }
+
+      @if (vista === 'formulario') {
+        <app-secuencial-formulario
+          [editingRecord]="editingRecord"
+          (guardado)="volverALista()"
+          (cancelado)="volverALista()"
+        />
+      }
+
+    </div>
+  </div>
+</div>

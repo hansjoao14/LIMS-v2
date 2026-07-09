@@ -21,6 +21,7 @@ export enum MenuKey {
   CALIBRACION_EQUIPOS    = 'CALIBRACION_EQUIPOS',
   ADMIN_CATALOGOS        = 'ADMIN_CATALOGOS',
   ADMIN_ENSAYOS          = 'ADMIN_ENSAYOS',
+  SECUENCIAL             = 'SECUENCIAL',
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -115,6 +116,11 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
   [MenuKey.ADMIN_ENSAYOS]: {
     [AppRole.ADMIN]: ['ver', 'editar', 'crear', 'eliminar'],
   },
+
+  // Administración de secuenciales
+  [MenuKey.SECUENCIAL]: {
+    [AppRole.ADMIN]: ['ver', 'editar', 'crear', 'eliminar'],
+  },
 };
 
 // ─── Route-guard groups (who can access the route at all) ────────────────────
@@ -138,6 +144,7 @@ export const RoleAccess = {
   CALIBRACION_EQUIPOS:    rolesWithAccess(MenuKey.CALIBRACION_EQUIPOS),
   ADMIN_CATALOGOS:        rolesWithAccess(MenuKey.ADMIN_CATALOGOS),
   ADMIN_ENSAYOS:          rolesWithAccess(MenuKey.ADMIN_ENSAYOS),
+  SECUENCIAL:             rolesWithAccess(MenuKey.SECUENCIAL),
   ADMIN_ONLY:             [{ role: AppRole.ADMIN }],
 };
 

@@ -100,4 +100,11 @@ export const featuresRoutes: Routes = [
     canActivate: [canActivateWithRealmRoles],
     data: { title: 'Administración de Ensayos', requiredRoles: RoleAccess.ADMIN_ENSAYOS },
   },
+  {
+    path: 'secuencial',
+    loadComponent: () =>
+      import('./secuencial/secuencial').then((m) => m.Secuencial),
+    canActivate: [canActivateWithRealmRoles],
+    data: { title: 'Administración de Secuenciales', requiredRoles: RoleAccess.SECUENCIAL },
+  },
 ];
