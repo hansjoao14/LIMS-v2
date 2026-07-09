@@ -34,6 +34,15 @@ export class SecuencialLista implements OnInit, OnDestroy {
 
   private readonly destroy$ = new Subject<void>();
 
+
+  constructor(
+    private secuencialService: SecuencialService,
+    private authService: AuthService,
+    private zone: NgZone,
+    private toastrAlert: ToastrAlertService,
+  ) {}
+
+
   private userAppRole = computed<AppRole | null>(() => {
     const roles = this.authService.userProfile()?.roles ?? [];
     return (Object.values(AppRole) as AppRole[]).find(r => roles.includes(r)) ?? null;
@@ -57,13 +66,6 @@ export class SecuencialLista implements OnInit, OnDestroy {
   get hasAnyAction(): boolean {
     return this.canEdit() || this.canDelete();
   }
-
-  constructor(
-    private secuencialService: SecuencialService,
-    private authService: AuthService,
-    private zone: NgZone,
-    private toastrAlert: ToastrAlertService,
-  ) {}
 
   ngOnInit(): void {
     this.cargarPagina(1);

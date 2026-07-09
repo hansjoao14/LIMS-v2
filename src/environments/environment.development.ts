@@ -15,7 +15,6 @@ export const environment = {
   api_solicitud: `${LIMS_BASE}/api/solicitud`,
   api_formulario: `${LIMS_BASE}/api/parametro`,
   api_catalogo: `${LIMS_BASE}/api/catalogo`,
-  api_secuencial: `${LIMS_BASE}/api/secuencial`,
 
   keycloak_api: 'http://185.197.251.149:8080',
   graphql: `${SGIA_BASE}/api/graphql`,

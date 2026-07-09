@@ -6,7 +6,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { SecuencialService } from '../../../services/secuencial.service';
 import { CatalogoService } from '../../../services/catalogo.service';
 import { ToastrAlertService } from '../../../services/toastr.service';
-import { Secuencial, SecuencialPayload } from '../../../interfaces/secuencial/secuencial.interface';
+import { Secuencial, SecuencialPayload, FormatoSecuencial } from '../../../interfaces/secuencial/secuencial.interface';
 import { ItemCatalogo } from '../../../interfaces/catalogos/catalogo.interface';
 import { FieldSkeleton } from '../../../ui/field-skeleton/field-skeleton';
 
@@ -145,7 +145,7 @@ export class SecuencialFormulario implements OnInit, OnDestroy {
     }
   }
 
-  private buildFormatoJson(): string {
+  private buildFormato(): FormatoSecuencial {
     const activas = this.partesActivas;
     const formato: Record<string, unknown> = {
       separador: this.separador,
@@ -159,7 +159,7 @@ export class SecuencialFormulario implements OnInit, OnDestroy {
         formato[p.tipo] = { valor: p.valor.trim(), orden };
       }
     });
-    return JSON.stringify({ formato });
+    return { formato } as FormatoSecuencial;
   }
 
   toggleParte(parte: FormatoParteUI): void {
@@ -211,7 +211,7 @@ export class SecuencialFormulario implements OnInit, OnDestroy {
       numero_secuencial: this.preview,
       ctformulario_id: this.ctformularioId,
       identificador_secu: this.identificadorSecu.trim(),
-      formato: this.buildFormatoJson(),
+      formato: this.buildFormato(),
     };
 
     const op$ = this.modoEdicion

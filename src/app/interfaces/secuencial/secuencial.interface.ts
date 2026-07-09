@@ -54,18 +54,6 @@ export interface CollectionSecuencialResponse {
   meta: PaginationMeta;
 }
 
-export interface SecuencialPayload {
-  modulo_establecimiento_id: string;
-  sigla: string;
-  numero: number;
-  estado: boolean;
-  anio: number;
-  numero_secuencial: string;
-  ctformulario_id: number;
-  identificador_secu: string;
-  formato: string;
-}
-
 // ── Constructor visual del campo "formato" ────────────────────────────────────
 export type FormatoParteTipo = 'sigla' | 'numero' | 'anio' | 'alias';
 
@@ -84,4 +72,18 @@ export interface FormatoSecuencial {
     separador: string;
     digitos: number;
   };
+}
+
+// El backend espera "formato" como objeto anidado en el body (no como string
+// doblemente serializado) al crear/actualizar; al leer via GraphQL sí llega como string.
+export interface SecuencialPayload {
+  modulo_establecimiento_id: string;
+  sigla: string;
+  numero: number;
+  estado: boolean;
+  anio: number;
+  numero_secuencial: string;
+  ctformulario_id: number;
+  identificador_secu: string;
+  formato: FormatoSecuencial;
 }
