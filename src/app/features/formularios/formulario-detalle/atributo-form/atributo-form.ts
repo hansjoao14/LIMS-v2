@@ -10,11 +10,12 @@ import { ReportFormulario } from '../../../../interfaces/admin-formularios/repor
 import { ReportAtributoFormulario } from '../../../../interfaces/admin-formularios/report-atributo-formulario.interface';
 import { AtributoFormularioPayload } from '../../../../interfaces/admin-formularios/atributo-formulario-payload.interface';
 import { Catalogo, ItemCatalogo } from '../../../../interfaces/catalogos/catalogo.interface';
+import { FieldSkeleton } from '../../../../ui/field-skeleton/field-skeleton';
 
 @Component({
   selector: 'app-atributo-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FieldSkeleton],
   templateUrl: './atributo-form.html',
 })
 export class AtributoFormComponent implements OnInit, OnDestroy {
@@ -50,6 +51,12 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
   itemsCatalogo: ItemCatalogo[] = [];
   cargandoItems = false;
 
+  // ── Ítems del catálogo del atributo del que se depende (checkbox múltiple) ──
+  itemsCatalogoDependencia: ItemCatalogo[] = [];
+  cargandoItemsDependencia = false;
+  catalogoDependenciaId: number | null = null;
+  selectedItemIds = new Set<number>();
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -69,6 +76,14 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
     if (this.formData.catalogo_id) {
       this.cargarItemsCatalogo(this.formData.catalogo_id);
     }
+
+    if (this.formData.is_dependent && this.formData.atributo_id) {
+      const ids = this.formData.item_catalogo_id
+        ? this.formData.item_catalogo_id.split(',').map(Number)
+        : [];
+      this.selectedItemIds = new Set(ids);
+      this.cargarItemsDependencia();
+    }
   }
 
   onCatalogoChange(): void {
@@ -77,6 +92,64 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
     if (this.formData.catalogo_id) {
       this.cargarItemsCatalogo(this.formData.catalogo_id);
     }
+  }
+
+  // ── Atributo del que se depende: resuelve su catalogo_id y carga sus ítems ──
+  onAtributoDependeChange(): void {
+    this.selectedItemIds.clear();
+    this.formData.item_catalogo_id = null;
+    this.itemsCatalogoDependencia = [];
+    this.catalogoDependenciaId = null;
+    this.cargarItemsDependencia();
+  }
+
+  // Si el usuario marca "Es dependiente" después de haber elegido "Depende de"
+  onDependienteToggle(): void {
+    if (this.formData.is_dependent && this.formData.atributo_id && !this.catalogoDependenciaId) {
+      this.cargarItemsDependencia();
+    }
+  }
+
+  private cargarItemsDependencia(): void {
+    if (!this.formData.atributo_id) return;
+
+    const padre = this.atributos.find(
+      (a) => a.atributo_formulario_id === this.formData.atributo_id,
+    );
+    this.catalogoDependenciaId = padre?.catalogo_id ?? null;
+
+    if (!this.catalogoDependenciaId) return;
+
+    this.cargandoItemsDependencia = true;
+    this.cataloService
+      .getAllItemsAdmin(this.catalogoDependenciaId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (items) => {
+          this.zone.run(() => {
+            this.itemsCatalogoDependencia = items.filter((i) => i.estado);
+            this.cargandoItemsDependencia = false;
+          });
+        },
+        error: () => {
+          this.zone.run(() => (this.cargandoItemsDependencia = false));
+          this.toastr.showError('No se pudo cargar los ítems del catálogo dependiente.', 'Error');
+        },
+      });
+  }
+
+  toggleItemDependencia(id: number): void {
+    if (this.selectedItemIds.has(id)) {
+      this.selectedItemIds.delete(id);
+    } else {
+      this.selectedItemIds.add(id);
+    }
+    this.syncItemCatalogoId();
+  }
+
+  private syncItemCatalogoId(): void {
+    const ids = [...this.selectedItemIds].filter((id) => id !== null && id !== undefined);
+    this.formData.item_catalogo_id = ids.length ? ids.join(',') : null;
   }
 
   cargarItemsCatalogo(catalogoId: number): void {
@@ -100,7 +173,10 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
 
   get atributosDependibles(): ReportAtributoFormulario[] {
     return this.atributos.filter(
-      (a) => a.atributo_formulario_id !== this.atributo?.atributo_formulario_id,
+      (a) =>
+        a.atributo_formulario_id !== this.atributo?.atributo_formulario_id &&
+        Number(a.ctipo_respuesta_id) === 73 &&
+        String(a.is_list_empleado) !== 'true',
     );
   }
 
@@ -158,6 +234,14 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
   }
 
   guardar(): void {
+    if (this.formData.is_dependent && this.selectedItemIds.size === 0) {
+      this.toastr.showError(
+        'Selecciona al menos un ítem del catálogo dependiente.',
+        'Campo requerido',
+      );
+      return;
+    }
+
     this.guardando = true;
     const payload = {
       ...this.formData,

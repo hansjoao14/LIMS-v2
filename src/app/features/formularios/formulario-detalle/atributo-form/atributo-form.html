@@ -232,6 +232,7 @@
             >
             <select
               [(ngModel)]="formData.atributo_id"
+              (ngModelChange)="onAtributoDependeChange()"
               class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#1e3a8a] transition-colors bg-white"
             >
               <option [ngValue]="''">— Ninguno —</option>
@@ -243,6 +244,41 @@
             </select>
 
           </div>
+
+          @if (formData.is_dependent) {
+            <div class="col-span-2">
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">
+                Opciones que activan este atributo
+              </label>
+              @if (!formData.atributo_id) {
+                <p class="text-[11px] text-slate-400 italic py-2">
+                  Selecciona primero un atributo en "Depende de".
+                </p>
+              } @else if (cargandoItemsDependencia) {
+                <app-field-skeleton height="h-10" />
+              } @else if (!catalogoDependenciaId) {
+                <p class="text-[11px] text-amber-600 italic py-2">
+                  El atributo seleccionado no tiene un catálogo asociado.
+                </p>
+              } @else if (itemsCatalogoDependencia.length === 0) {
+                <p class="text-[11px] text-slate-400 italic py-2">
+                  Sin ítems activos disponibles para ese catálogo.
+                </p>
+              } @else {
+                <div class="border border-slate-200 rounded-md max-h-40 overflow-y-auto divide-y divide-slate-100">
+                  @for (item of itemsCatalogoDependencia; track item.id) {
+                    <label class="flex items-center gap-2.5 px-3 py-2 hover:bg-blue-50 transition-colors cursor-pointer">
+                      <input type="checkbox"
+                        [checked]="selectedItemIds.has(item.id)"
+                        (change)="toggleItemDependencia(item.id)"
+                        class="w-4 h-4 rounded accent-[#1e3a8a]" />
+                      <span class="text-xs text-slate-700">{{ item.nombre }}</span>
+                    </label>
+                  }
+                </div>
+              }
+            </div>
+          }
         </div>
       </div>
 
@@ -252,7 +288,9 @@
         <div class="grid grid-cols-2 gap-3">
           @for (opt of booleanOptions; track opt.field) {
             <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-              <input type="checkbox" [(ngModel)]="$any(formData)[opt.field]" class="w-4 h-4 rounded accent-[#1e3a8a]" />
+              <input type="checkbox" [(ngModel)]="$any(formData)[opt.field]"
+                (ngModelChange)="opt.field === 'is_dependent' ? onDependienteToggle() : null"
+                class="w-4 h-4 rounded accent-[#1e3a8a]" />
               <span class="text-sm font-medium text-slate-700">{{ opt.label }}</span>
             </label>
           }
@@ -271,7 +309,7 @@
       </button>
       <button
         (click)="guardar()"
-        [disabled]="guardando || !formData.nombre || !formData.pregunta"
+        [disabled]="guardando || !formData.nombre || !formData.pregunta || (formData.is_dependent && selectedItemIds.size === 0)"
         class="px-5 py-2.5 bg-[#1e3a8a] text-white text-xs font-bold uppercase rounded shadow-md hover:bg-blue-800 transition-colors disabled:opacity-50 flex items-center gap-2"
       >
         @if (guardando) {
