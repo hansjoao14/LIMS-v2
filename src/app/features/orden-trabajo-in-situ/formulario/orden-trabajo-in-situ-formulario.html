@@ -97,23 +97,14 @@
         }
       </div>
 
-      <!-- Tipo de Ensayo -->
+      <!-- Tipo de Ensayo (derivado automáticamente de la solicitud) -->
       <div class="flex flex-col">
-        <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
-          Tipo de Ensayo <span class="text-red-500">*</span>
-        </label>
-        <select
-          class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-opacity duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
-          [disabled]="loadingTipos || !solicitudSeleccionada || modoEdicion"
-          [class.opacity-50]="loadingTipos"
-          [ngModel]="tipoEnsayoId"
-          [ngModelOptions]="{standalone: true}"
-          (ngModelChange)="tipoEnsayoId = +$event; onTipoEnsayoChange()">
-          <option [ngValue]="null" disabled>Seleccione un tipo...</option>
-          @for (tipo of tiposEnsayo; track tipo.id) {
-            <option [ngValue]="tipo.id">{{ tipo.nombre }}</option>
-          }
-        </select>
+        <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Tipo de Ensayo</label>
+        <input
+          class="w-full border border-slate-200 bg-slate-50 text-slate-500 p-2.5 rounded text-sm outline-none cursor-not-allowed"
+          [value]="tipoEnsayoNombre || '—'"
+          readonly
+        />
       </div>
 
       <!-- Orden de trabajo No -->

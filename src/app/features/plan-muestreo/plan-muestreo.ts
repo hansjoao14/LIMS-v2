@@ -9,8 +9,7 @@ import { ReportSolicitudService } from '../../services/solicitudes/lista-solicit
 import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
 import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { ReportFormulario } from '../../interfaces/admin-formularios/report-formulario.interface';
-import { ItemCatalogo, PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
-import { CatalogoService } from '../../services/catalogo.service';
+import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 
@@ -46,12 +45,9 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   formulario: ReportFormulario | null = null;
   fechaEmision: Date | null = null;
 
-  // ── Tipo de agua (catálogo 18: Aguas Superficiales / Aguas Residuales) ───
-  private readonly CATALOGO_AGUA     = 18;
-  private readonly PERMITIDOS_AGUA   = [92, 93];
-  tipoAguaOpciones: ItemCatalogo[]   = [];
-  loadingTipoAgua                    = true;
+  // ── Tipo de matriz (Aguas Superficiales=92 / Aguas Residuales=93) ───────
   tipoAguaId: number | null          = null;
+  tipoAguaNombre = '';
 
   // ── Búsqueda de solicitudes finalizadas ──────────────────────────────────
   panelAbierto     = false;
@@ -98,7 +94,6 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     private reportSolicitudService: ReportSolicitudService,
     private reportFormularioService: ReportFormularioService,
     private solicitudDetalleService: SolicitudDetalleService,
-    private catalogoService: CatalogoService,
     private router: Router,
   ) {}
 
@@ -112,14 +107,6 @@ export class PlanMuestreo implements OnInit, OnDestroy {
           if (formulario?.fecha_emision) {
             this.fechaEmision = new Date(Number(formulario.fecha_emision));
           }
-        },
-      });
-    this.catalogoService.getItemsByCatalogoId(this.CATALOGO_AGUA)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res) => {
-          this.tipoAguaOpciones = res.data.filter(t => this.PERMITIDOS_AGUA.includes(t.id));
-          this.loadingTipoAgua  = false;
         },
       });
   }
@@ -177,14 +164,6 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.solicitudSeleccionada = sol;
     this.panelAbierto = false;
     this.detalleEnsayos = [];
-  }
-
-  get tipoAguaNombre(): string {
-    return this.tipoAguaOpciones.find(t => t.id === this.tipoAguaId)?.nombre ?? '';
-  }
-
-  onTipoAguaChange(): void {
-    if (!this.solicitudSeleccionada) return;
     this.cargarDetalle();
   }
 
@@ -208,6 +187,11 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   private poblarDetalle(detalle: import('../../services/solicitudes/solicitud-detalle/solicitud-detalle.service').SolicitudDetalle): void {
     const f = detalle.formularios?.[0];
     if (!f) return;
+
+    // El tipo de matriz ya no se selecciona manualmente: se deriva del
+    // propio detalle de la solicitud (posición 0 del arreglo de ensayos).
+    this.tipoAguaId = f.ensayos?.[0]?.ctambiental_id ?? null;
+    this.tipoAguaNombre = f.ensayos?.[0]?.nombre_ensayo ?? '';
 
     const attr = (nombre: string) =>
       f.atributos?.find(a => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
@@ -238,6 +222,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   limpiarSolicitud(): void {
     this.solicitudSeleccionada = null;
     this.tipoAguaId            = null;
+    this.tipoAguaNombre        = '';
     this.busqueda              = '';
     this.detalleFechaEmision   = '';
     this.detalleFechaMaxima    = '';

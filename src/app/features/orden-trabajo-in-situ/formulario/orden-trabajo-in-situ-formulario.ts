@@ -35,17 +35,14 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
 
   form: FormGroup;
 
-  private readonly CATALOGO_TIPO_ENSAYO     = 17;
   private readonly CATALOGO_USO_SUELO       = 1003;
   private readonly CATALOGO_CARACTERIZACION = 1005;
-  private readonly TIPOS_ENSAYO_PERMITIDOS  = [90, 91];
   private readonly OTROS_ID                 = 2015;
 
-  tiposEnsayo: ItemCatalogo[] = [];
   usoSueloOpciones: ItemCatalogo[] = [];
   caracterizacionOpciones: ItemCatalogo[] = [];
-  loadingTipos = true;
   tipoEnsayoId: number | null = null;
+  tipoEnsayoNombre = '';
 
   panelAbierto = false;
   loadingBusqueda = false;
@@ -125,13 +122,6 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   }
 
   ngOnInit(): void {
-    this.catalogoService.getItemsByCatalogoId(this.CATALOGO_TIPO_ENSAYO)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: (res) => {
-        this.tiposEnsayo  = res.data.filter(t => this.TIPOS_ENSAYO_PERMITIDOS.includes(t.id));
-        this.loadingTipos = false;
-      }});
-
     this.catalogoService.getItemsByCatalogoId(this.CATALOGO_USO_SUELO)
       .pipe(takeUntil(this.destroy$))
       .subscribe({ next: (res) => { this.usoSueloOpciones = res.data; }});
@@ -197,10 +187,6 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
     this.panelAbierto = false;
     this.ensayosArray.clear();
     this.operadorAtributos = [];
-  }
-
-  onTipoEnsayoChange(): void {
-    if (!this.solicitudSeleccionada) return;
     this.cargarDetalle();
   }
 
@@ -224,6 +210,11 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   private poblarFormulario(detalle: SolicitudDetalle): void {
     const f = detalle.formularios?.[0];
     if (!f) return;
+
+    // El tipo de ensayo (Físico-Químico=90 / Ruido=91) ya no se selecciona
+    // manualmente: se deriva del propio detalle de la solicitud.
+    this.tipoEnsayoId = f.ensayos?.[0]?.parent_ambiental ?? null;
+    this.tipoEnsayoNombre = f.ensayos?.[0]?.nombre_ensayo ?? '';
 
     const attr = (nombre: string) =>
       f.atributos?.find(a => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
@@ -276,6 +267,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   private cargarParaEditar(orden: ReportOrden): void {
     this.modoEdicion = true;
     this.tipoEnsayoId = orden.ctambiente_id;
+    this.tipoEnsayoNombre = orden.ctambiente_nombre ?? '';
 
     const fechaEmision = orden.creado_en
       ? new Date(+orden.creado_en).toISOString().split('T')[0]
@@ -325,6 +317,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   limpiarSolicitud(): void {
     this.solicitudSeleccionada = null;
     this.tipoEnsayoId = null;
+    this.tipoEnsayoNombre = '';
     this.busqueda = '';
     this.operadorAtributos = [];
     this.form.reset();
@@ -350,7 +343,10 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       return;
     }
     if (!this.tipoEnsayoId) {
-      this.toastrAlert.showWarning('Seleccione el tipo de ensayo antes de guardar.', 'Requerido');
+      this.toastrAlert.showWarning(
+        'No se pudo determinar el tipo de ensayo de la solicitud seleccionada.',
+        'Requerido',
+      );
       return;
     }
 
