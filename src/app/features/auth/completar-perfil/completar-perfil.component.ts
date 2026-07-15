@@ -2,16 +2,19 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import Swal from 'sweetalert2';
-
-import { CreateUsuarioRolPayload, KycloackBackendApiService, UsuarioSetup } from '../service/kycloack-backend-api.service';
+import {
+  CreateUsuarioRolPayload,
+  KycloackBackendApiService,
+  UsuarioSetup,
+} from '../service/kycloack-backend-api.service';
+import { AlertService } from '../../../services/alert.service';
 
 @Component({
   selector: 'app-completar-perfil',
   standalone: true,
   imports: [ReactiveFormsModule, CommonModule, RouterLink],
   templateUrl: './completar-perfil.component.html',
-  styleUrl: './completar-perfil.component.css'
+  styleUrl: './completar-perfil.component.css',
 })
 export class CompletarPerfilComponent implements OnInit {
   perfilForm!: FormGroup;
@@ -22,17 +25,24 @@ export class CompletarPerfilComponent implements OnInit {
   direccionesAmbiente = [
     { value: 'cambio-climatico', label: 'Dirección de Cambio Climático' },
     { value: 'regularizacion-control', label: 'Dirección de Regularización y Control Ambiental' },
-    { value: 'recursos-naturales', label: 'Dirección Metropolitana Regulación y Control Ambiental' },
-    { value: 'politicas-planeamiento', label: 'Dirección de Políticas y Planeamiento Ambiental' }
+    {
+      value: 'recursos-naturales',
+      label: 'Dirección Metropolitana Regulación y Control Ambiental',
+    },
+    { value: 'politicas-planeamiento', label: 'Dirección de Políticas y Planeamiento Ambiental' },
   ];
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private keycloakApi: KycloackBackendApiService,
+    private alertService: AlertService,
   ) {
     const navegacion = this.router.getCurrentNavigation();
-    const estado = navegacion?.extras.state as { usuarioData: UsuarioSetup, rolesDisponibles: string[] };
+    const estado = navegacion?.extras.state as {
+      usuarioData: UsuarioSetup;
+      rolesDisponibles: string[];
+    };
 
     if (estado) {
       this.datosUsuarioTemp = estado.usuarioData;
@@ -50,7 +60,7 @@ export class CompletarPerfilComponent implements OnInit {
   initForm(): void {
     // entidad_id ahora almacenará el string del value seleccionado
     this.perfilForm = this.fb.group({
-      entidad_id: ['', [Validators.required]]
+      entidad_id: ['', [Validators.required]],
     });
   }
 
@@ -65,40 +75,37 @@ export class CompletarPerfilComponent implements OnInit {
       // Nota: Si tu backend espera un ID numérico, deberás mapear estos strings a números.
       // Si el backend acepta el slug/string, se queda así:
       entidad_id: this.perfilForm.value.entidad_id,
-      is_completed: true
+      is_completed: true,
     };
 
-    const rolesPayload = this.rolesDisponibles.map(rol => ({
+    const rolesPayload = this.rolesDisponibles.map((rol) => ({
       nombre: rol,
-      descripcion: `Rol asignado desde Keycloak`
+      descripcion: `Rol asignado desde Keycloak`,
     }));
 
     const payloadFinal: CreateUsuarioRolPayload = {
       usuarioKeycloak: usuarioKeycloak,
-      rol: rolesPayload
+      rol: rolesPayload,
     };
 
     this.keycloakApi.completarPerfilUsuario(payloadFinal).subscribe({
-      next: () => {
-        Swal.fire({
-          title: '¡Datos Registrados!',
-          text: `Dirección asignada con éxito.`,
-          icon: 'success',
-          confirmButtonColor: '#28367F',
-          timer: 2000,
-          showConfirmButton: false
-        }).then(() => {
-          this.router.navigate(['/dashboard']);
-        });
+      next: async () => {
+        await this.alertService.successAutoClose(
+          'Dirección asignada con éxito.',
+          '¡Datos Registrados!',
+          2000,
+          '#28367F',
+        );
+        this.router.navigate(['/dashboard']);
       },
       error: (_err) => {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Hubo un problema al vincular la dirección con tus credenciales.',
-          confirmButtonColor: '#28367F'
-        });
-      }
+        this.alertService.error(
+          'Hubo un problema al vincular la dirección con tus credenciales.',
+          'Error',
+          undefined,
+          '#28367F',
+        );
+      },
     });
   }
 }

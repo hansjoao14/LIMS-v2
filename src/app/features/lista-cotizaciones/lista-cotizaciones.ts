@@ -15,6 +15,7 @@ import { AuthService } from '../auth/service/auth-service';
 import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { TableSkeleton } from '../../ui/table-skeleton/table-skeleton';
+import { AlertService } from '../../services/alert.service';
 
 const ESTADO_AUTORIZADO = 387;
 const ESTADO_RECHAZADO = 51;
@@ -63,6 +64,7 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
     private catalogoService: CatalogoService,
     private solicitudService: SolicitudService,
     private authService: AuthService,
+    private alertService: AlertService,
   ) {}
 
   ngOnInit(): void {
@@ -111,7 +113,7 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
         },
         error: () => {
           this.loading = false;
-          Swal.fire('Error', 'No se pudo cargar la lista de solicitudes', 'error');
+          this.alertService.error('No se pudo cargar la lista de solicitudes');
         },
       });
   }
@@ -158,7 +160,7 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
     const prioridadId = Number(prioridad);
 
     // Remove row immediately — UI must not wait for the server
-    this.solicitudes = this.solicitudes.filter(s => s.id_solicitud !== doc.id_solicitud);
+    this.solicitudes = this.solicitudes.filter((s) => s.id_solicitud !== doc.id_solicitud);
 
     this.solicitudService
       .actualizarSolicitud(doc.id_solicitud, {
@@ -177,38 +179,33 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.cargarPagina(this.currentPage);
-          Swal.fire({
-            title: '¡Autorizado!',
-            text: `La solicitud ${doc.num_secuencial ?? doc.id_solicitud} fue autorizada correctamente.`,
-            icon: 'success',
-            confirmButtonColor: '#1d2b64',
-            timer: 2000,
-            showConfirmButton: false,
-          });
+          this.alertService.successAutoClose(
+            `La solicitud ${doc.num_secuencial ?? doc.id_solicitud} fue autorizada correctamente.`,
+            '¡Autorizado!',
+            2000,
+            '#1d2b64',
+          );
         },
         error: () => {
           this.cargarPagina(this.currentPage);
-          Swal.fire('Error', 'No se pudo autorizar la solicitud', 'error');
+          this.alertService.error('No se pudo autorizar la solicitud');
         },
       });
   }
 
   async rechazarSolicitud(doc: ReportSolicitud): Promise<void> {
-    const { isConfirmed } = await Swal.fire({
+    const confirmado = await this.alertService.confirm({
       title: '¿Está seguro de rechazar?',
       text: `Se rechazará la solicitud ${doc.num_secuencial ?? doc.id_solicitud}. Esta acción no se puede deshacer.`,
-      icon: 'warning',
-      showCancelButton: true,
       confirmButtonColor: '#dc2626',
       cancelButtonColor: '#64748b',
       confirmButtonText: 'Sí, rechazar',
-      cancelButtonText: 'Cancelar',
     });
 
-    if (!isConfirmed) return;
+    if (!confirmado) return;
 
     // Remove row immediately — UI must not wait for the server
-    this.solicitudes = this.solicitudes.filter(s => s.id_solicitud !== doc.id_solicitud);
+    this.solicitudes = this.solicitudes.filter((s) => s.id_solicitud !== doc.id_solicitud);
 
     this.solicitudService
       .actualizarSolicitud(doc.id_solicitud, {
@@ -226,18 +223,16 @@ export class ListaCotizaciones implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.cargarPagina(this.currentPage);
-          Swal.fire({
-            title: '¡Rechazada!',
-            text: `La solicitud ${doc.num_secuencial ?? doc.id_solicitud} fue rechazada.`,
-            icon: 'success',
-            confirmButtonColor: '#1d2b64',
-            timer: 2000,
-            showConfirmButton: false,
-          });
+          this.alertService.successAutoClose(
+            `La solicitud ${doc.num_secuencial ?? doc.id_solicitud} fue rechazada.`,
+            '¡Rechazada!',
+            2000,
+            '#1d2b64',
+          );
         },
         error: () => {
           this.cargarPagina(this.currentPage);
-          Swal.fire('Error', 'No se pudo rechazar la solicitud', 'error');
+          this.alertService.error('No se pudo rechazar la solicitud');
         },
       });
   }

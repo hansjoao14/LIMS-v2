@@ -2,13 +2,13 @@ import { Component, inject } from '@angular/core';
 import { Router, ActivationEnd } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { filter, map } from 'rxjs';
-import Swal from 'sweetalert2';
 import { AuthService } from '../../../features/auth/service/auth-service';
 import { SidebarService } from '../../service/sidebar.service';
-import { SettingsComponent } from "../../../ui/icons/settings/settings.component";
-import { NotificationIconComponent } from "../../../ui/icons/notification-icon/notification-icon.component";
-import { HamburgerIconComponent } from "../../../ui/icons/hamburger-icon/hamburger-icon.component";
-import { UserComponent } from "../../../ui/icons/user/user.component";
+import { AlertService } from '../../../services/alert.service';
+import { SettingsComponent } from '../../../ui/icons/settings/settings.component';
+import { NotificationIconComponent } from '../../../ui/icons/notification-icon/notification-icon.component';
+import { HamburgerIconComponent } from '../../../ui/icons/hamburger-icon/hamburger-icon.component';
+import { UserComponent } from '../../../ui/icons/user/user.component';
 
 @Component({
   selector: 'app-header',
@@ -27,13 +27,14 @@ export class Header {
   constructor(
     private authService: AuthService,
     private toast: ToastrService,
-    private router: Router
+    private router: Router,
+    private alertService: AlertService,
   ) {
     this.router.events
       .pipe(
         filter((event) => event instanceof ActivationEnd),
         filter((event: ActivationEnd) => event.snapshot.firstChild === null),
-        map((event: ActivationEnd) => event.snapshot.data)
+        map((event: ActivationEnd) => event.snapshot.data),
       )
       .subscribe((data) => {
         this.Title = data['title'];
@@ -63,23 +64,18 @@ export class Header {
     this.sidebarService.toggleMobile();
   }
 
-  logout(): void {
-    Swal.fire({
+  async logout(): Promise<void> {
+    const confirmado = await this.alertService.confirm({
       title: '¿Estás seguro?',
       text: 'Estás a punto de cerrar sesión.',
-      icon: 'warning',
-      showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
       confirmButtonText: 'Sí, cerrar sesión',
-      cancelButtonText: 'Cancelar',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.authService.logout();
-        this.router.navigateByUrl('/login');
-        Swal.fire('¡Cerrado!', 'Has cerrado sesión correctamente.', 'success');
-      }
     });
+    if (!confirmado) return;
+    this.authService.logout();
+    this.router.navigateByUrl('/login');
+    this.alertService.success('Has cerrado sesión correctamente.', '¡Cerrado!');
   }
 
   notification() {

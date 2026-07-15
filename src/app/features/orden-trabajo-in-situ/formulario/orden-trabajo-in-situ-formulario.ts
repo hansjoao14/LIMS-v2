@@ -1,6 +1,22 @@
-import { Component, Input, OnInit, OnChanges, OnDestroy, Output, EventEmitter, SimpleChanges } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnInit,
+  OnChanges,
+  OnDestroy,
+  Output,
+  EventEmitter,
+  SimpleChanges,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, FormsModule, Validators } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  FormArray,
+  FormsModule,
+  Validators,
+} from '@angular/forms';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import Swal from 'sweetalert2';
 
@@ -10,15 +26,23 @@ import { ItemCatalogo, PaginationMeta } from '../../../interfaces/catalogos/cata
 import { CatalogoService } from '../../../services/catalogo.service';
 import { SolicitudDetalleService } from '../../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { SolicitudDetalle } from '../../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
-import { OrdenTrabajoService, OrdenTrabajoPayload } from '../../../services/solicitudes/orden-trabajo/orden-trabajo.service';
+import {
+  OrdenTrabajoService,
+  OrdenTrabajoPayload,
+} from '../../../services/solicitudes/orden-trabajo/orden-trabajo.service';
 import { ReportOrdenService } from '../../../services/solicitudes/orden-trabajo/report-orden.service';
 import { ReportOrden } from '../../../interfaces/solicitudes/orden-trabajo/report-orden.interface';
 import { AuthService } from '../../auth/service/auth-service';
 import { PeriodoService } from '../../../services/solicitudes/solicitud-trabajo/periodo.service';
 import { ToastrAlertService } from '../../../services/toastr.service';
+import { AlertService } from '../../../services/alert.service';
 
 const TECNICOS_HARDCODED = [
-  { id: 'jose-luis-montenegro', nombre: 'José Luis Montenegro', cargo: 'Técnico/a de Muestreo en Campo' },
+  {
+    id: 'jose-luis-montenegro',
+    nombre: 'José Luis Montenegro',
+    cargo: 'Técnico/a de Muestreo en Campo',
+  },
 ];
 
 @Component({
@@ -28,16 +52,16 @@ const TECNICOS_HARDCODED = [
 })
 export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestroy {
   @Input() editingRecord: ReportOrden | null = null;
-  @Output() guardado  = new EventEmitter<void>();
+  @Output() guardado = new EventEmitter<void>();
   @Output() cancelado = new EventEmitter<void>();
 
   modoEdicion = false;
 
   form: FormGroup;
 
-  private readonly CATALOGO_USO_SUELO       = 1003;
+  private readonly CATALOGO_USO_SUELO = 1003;
   private readonly CATALOGO_CARACTERIZACION = 1005;
-  private readonly OTROS_ID                 = 2015;
+  private readonly OTROS_ID = 2015;
 
   usoSueloOpciones: ItemCatalogo[] = [];
   caracterizacionOpciones: ItemCatalogo[] = [];
@@ -80,34 +104,35 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
     private authService: AuthService,
     private periodoService: PeriodoService,
     private toastrAlert: ToastrAlertService,
+    private alertService: AlertService,
   ) {
     this.form = this.fb.group({
       solicitudTrabajoNo: [''],
-      ordenTrabajoNo:     [''],
+      ordenTrabajoNo: [''],
       fechaMaximaEntrega: [''],
-      fechaEmision:       [''],
+      fechaEmision: [''],
       cliente: this.fb.group({
-        solicitadoPor:     [''],
-        direccion:         [''],
-        solicitudNo:       [''],
+        solicitadoPor: [''],
+        direccion: [''],
+        solicitudNo: [''],
         correoElectronico: [''],
       }),
       operador: this.fb.group({
-        razonSocial:    [''],
-        nombreComercial:[''],
-        ruc:            [''],
-        direccion:      [''],
+        razonSocial: [''],
+        nombreComercial: [''],
+        ruc: [''],
+        direccion: [''],
       }),
-      ensayos:      this.fb.array([]),
-      observaciones:[''],
+      ensayos: this.fb.array([]),
+      observaciones: [''],
       usoSuelo: this.fb.group({
-        usoSueloOperadorId:   [null, Validators.required],
+        usoSueloOperadorId: [null, Validators.required],
         usoSueloOperadorOtro: [''],
-        usoSueloPcaId:        [null, Validators.required],
-        usoSueloPcaOtro:      [''],
-        caracterizacionId:    [null, Validators.required],
-        direccionPca:         ['', Validators.required],
-        telefonoPca:          [''],
+        usoSueloPcaId: [null, Validators.required],
+        usoSueloPcaOtro: [''],
+        caracterizacionId: [null, Validators.required],
+        direccionPca: ['', Validators.required],
+        telefonoPca: [''],
       }),
     });
   }
@@ -122,13 +147,23 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   }
 
   ngOnInit(): void {
-    this.catalogoService.getItemsByCatalogoId(this.CATALOGO_USO_SUELO)
+    this.catalogoService
+      .getItemsByCatalogoId(this.CATALOGO_USO_SUELO)
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: (res) => { this.usoSueloOpciones = res.data; }});
+      .subscribe({
+        next: (res) => {
+          this.usoSueloOpciones = res.data;
+        },
+      });
 
-    this.catalogoService.getItemsByCatalogoId(this.CATALOGO_CARACTERIZACION)
+    this.catalogoService
+      .getItemsByCatalogoId(this.CATALOGO_CARACTERIZACION)
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: (res) => { this.caracterizacionOpciones = res.data; }});
+      .subscribe({
+        next: (res) => {
+          this.caracterizacionOpciones = res.data;
+        },
+      });
   }
 
   ngOnDestroy(): void {
@@ -168,7 +203,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
         },
         error: () => {
           this.loadingBusqueda = false;
-          Swal.fire('Error', 'No se pudo cargar la lista de solicitudes', 'error');
+          this.alertService.error('No se pudo cargar la lista de solicitudes');
         },
       });
   }
@@ -176,9 +211,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   private aplicarFiltro(): void {
     const q = this.busqueda.trim().toLowerCase();
     this.solicitudesFinalizadas = q
-      ? this.todasSolicitudes.filter(s =>
-          (s.num_secuencial ?? '').toLowerCase().includes(q)
-        )
+      ? this.todasSolicitudes.filter((s) => (s.num_secuencial ?? '').toLowerCase().includes(q))
       : this.todasSolicitudes;
   }
 
@@ -202,7 +235,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
         },
         error: () => {
           this.loadingDetalle = false;
-          Swal.fire('Error', 'No se pudo cargar el detalle de la solicitud', 'error');
+          this.alertService.error('No se pudo cargar el detalle de la solicitud');
         },
       });
   }
@@ -217,50 +250,51 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
     this.tipoEnsayoNombre = f.ensayos?.[0]?.nombre_ensayo ?? '';
 
     const attr = (nombre: string) =>
-      f.atributos?.find(a => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
+      f.atributos?.find((a) => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
 
-    const fechaEmision = f.fecha_emision_solicitud
-      ? new Date(f.fecha_emision_solicitud)
-      : null;
+    const fechaEmision = f.fecha_emision_solicitud ? new Date(f.fecha_emision_solicitud) : null;
     const fechaMaxima = fechaEmision
       ? new Date(new Date(fechaEmision).setDate(fechaEmision.getDate() + 15))
-          .toISOString().split('T')[0]
+          .toISOString()
+          .split('T')[0]
       : '';
 
     this.form.patchValue({
       solicitudTrabajoNo: f.num_secuencial_solicitud,
-      fechaEmision:       fechaEmision ? fechaEmision.toISOString().split('T')[0] : '',
+      fechaEmision: fechaEmision ? fechaEmision.toISOString().split('T')[0] : '',
       fechaMaximaEntrega: fechaMaxima,
       cliente: {
-        solicitadoPor:    f.nombre_completo,
+        solicitadoPor: f.nombre_completo,
         correoElectronico: attr('val_correo'),
       },
     });
 
     this.operadorAtributos = (f.atributos ?? [])
-      .filter(a => a.nombre_atributo_formulario.endsWith('_op'))
+      .filter((a) => a.nombre_atributo_formulario.endsWith('_op'))
       .sort((a, b) => a.orden - b.orden)
-      .map(a => ({
+      .map((a) => ({
         pregunta: a.pregunta_atributo_formulario,
         valor: a.nombre_valor_catalogo || a.valor_multiple_format || a.valor_texto || '',
       }));
 
     const ensayosFiltrados = (f.ensayos ?? []).filter(
-      e => this.tipoEnsayoId === null || e.parent_ambiental === this.tipoEnsayoId,
+      (e) => this.tipoEnsayoId === null || e.parent_ambiental === this.tipoEnsayoId,
     );
 
     this.ensayosArray.clear();
     for (const e of ensayosFiltrados) {
       const partes = (e.metodo ?? '').split(',');
-      this.ensayosArray.push(this.fb.group({
-        ensayoId:         [e.id ?? ''],
-        seleccionado:     [true],
-        ensayo:           [e.analisis ?? ''],
-        identificacion:   [e.identificacion ?? ''],
-        metodoInterno:    [partes[0]?.trim() ?? ''],
-        metodoReferencia: [partes.slice(1).join(',').trim()],
-        unidad:           [''],
-      }));
+      this.ensayosArray.push(
+        this.fb.group({
+          ensayoId: [e.id ?? ''],
+          seleccionado: [true],
+          ensayo: [e.analisis ?? ''],
+          identificacion: [e.identificacion ?? ''],
+          metodoInterno: [partes[0]?.trim() ?? ''],
+          metodoReferencia: [partes.slice(1).join(',').trim()],
+          unidad: [''],
+        }),
+      );
     }
   }
 
@@ -275,42 +309,47 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
 
     this.form.patchValue({
       solicitudTrabajoNo: orden.solicitud_num_secuencial,
-      ordenTrabajoNo:     orden.num_secuencial ?? '',
+      ordenTrabajoNo: orden.num_secuencial ?? '',
       fechaEmision,
       observaciones: orden.observacion ?? '',
       cliente: { solicitadoPor: orden.usuario_nombre_completo },
       usoSuelo: {
         usoSueloOperadorId: orden.ctuso_suelo_id,
-        usoSueloPcaId:      orden.ctpunto_critico_id,
-        caracterizacionId:  orden.ctcaracteristica_horaria_id,
-        direccionPca:       orden.direccion_pca ?? '',
-        telefonoPca:        orden.telefono_pca ?? '',
+        usoSueloPcaId: orden.ctpunto_critico_id,
+        caracterizacionId: orden.ctcaracteristica_horaria_id,
+        direccionPca: orden.direccion_pca ?? '',
+        telefonoPca: orden.telefono_pca ?? '',
       },
     });
 
     this.solicitudSeleccionada = { id_solicitud: orden.solicitud_id } as ReportSolicitud;
 
     this.loadingDetalle = true;
-    this.reportOrdenService.getDetallesByOrdenId(orden.id)
+    this.reportOrdenService
+      .getDetallesByOrdenId(orden.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (detalles) => {
           this.ensayosArray.clear();
           for (const d of detalles) {
             const partes = (d.metodo ?? '').split(',');
-            this.ensayosArray.push(this.fb.group({
-              ensayoId:         [d.solicitud_ensayo_id],
-              seleccionado:     [true],
-              ensayo:           [d.analisis ?? ''],
-              identificacion:   [d.identificacion ?? ''],
-              metodoInterno:    [partes[0]?.trim() ?? ''],
-              metodoReferencia: [partes.slice(1).join(',').trim()],
-              unidad:           [''],
-            }));
+            this.ensayosArray.push(
+              this.fb.group({
+                ensayoId: [d.solicitud_ensayo_id],
+                seleccionado: [true],
+                ensayo: [d.analisis ?? ''],
+                identificacion: [d.identificacion ?? ''],
+                metodoInterno: [partes[0]?.trim() ?? ''],
+                metodoReferencia: [partes.slice(1).join(',').trim()],
+                unidad: [''],
+              }),
+            );
           }
           this.loadingDetalle = false;
         },
-        error: () => { this.loadingDetalle = false; },
+        error: () => {
+          this.loadingDetalle = false;
+        },
       });
   }
 
@@ -339,7 +378,10 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
 
   async guardar(): Promise<void> {
     if (!this.solicitudSeleccionada) {
-      this.toastrAlert.showWarning('Seleccione una solicitud de trabajo antes de guardar.', 'Requerido');
+      this.toastrAlert.showWarning(
+        'Seleccione una solicitud de trabajo antes de guardar.',
+        'Requerido',
+      );
       return;
     }
     if (!this.tipoEnsayoId) {
@@ -353,10 +395,18 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
     if (this.tipoEnsayoId === 91) {
       const usoSuelo = this.form.get('usoSuelo') as FormGroup;
       usoSuelo.markAllAsTouched();
-      const camposRequeridos = ['usoSueloOperadorId', 'usoSueloPcaId', 'caracterizacionId', 'direccionPca'];
-      const hayInvalidos = camposRequeridos.some(c => usoSuelo.get(c)?.invalid);
+      const camposRequeridos = [
+        'usoSueloOperadorId',
+        'usoSueloPcaId',
+        'caracterizacionId',
+        'direccionPca',
+      ];
+      const hayInvalidos = camposRequeridos.some((c) => usoSuelo.get(c)?.invalid);
       if (hayInvalidos) {
-        this.toastrAlert.showWarning('Complete todos los campos obligatorios antes de guardar.', 'Requerido');
+        this.toastrAlert.showWarning(
+          'Complete todos los campos obligatorios antes de guardar.',
+          'Requerido',
+        );
         return;
       }
     }
@@ -368,26 +418,31 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
     try {
       if (this.modoEdicion) {
         const ordenPayload: OrdenTrabajoPayload = {
-          solicitud_id:                this.solicitudSeleccionada.id_solicitud,
-          usuario_id:                  userId,
-          entidad_id:                  this.editingRecord!.entidad_id,
-          ctambiente_id:               this.tipoEnsayoId,
-          periodo_id:                  this.editingRecord!.periodo_id,
-          secuencial_id:               this.editingRecord!.secuencial_id ?? null,
-          num_secuencial:              this.editingRecord!.num_secuencial ?? null,
-          ctuso_suelo_id:              raw.usoSuelo.usoSueloOperadorId ?? null,
+          solicitud_id: this.solicitudSeleccionada.id_solicitud,
+          usuario_id: userId,
+          entidad_id: this.editingRecord!.entidad_id,
+          ctambiente_id: this.tipoEnsayoId,
+          periodo_id: this.editingRecord!.periodo_id,
+          secuencial_id: this.editingRecord!.secuencial_id ?? null,
+          num_secuencial: this.editingRecord!.num_secuencial ?? null,
+          ctuso_suelo_id: raw.usoSuelo.usoSueloOperadorId ?? null,
           ctcaracteristica_horaria_id: raw.usoSuelo.caracterizacionId ?? null,
-          ctpunto_critico_id:          raw.usoSuelo.usoSueloPcaId ?? null,
-          direccion_pca:               raw.usoSuelo.direccionPca || null,
-          telefono_pca:                raw.usoSuelo.telefonoPca || null,
-          observacion:                 raw.observaciones || null,
-          ctestado_id:                 this.editingRecord!.ctestado_id,
-          estado:                      this.editingRecord!.estado,
-          ctformulario_id:             this.editingRecord!.ctformulario_id,
+          ctpunto_critico_id: raw.usoSuelo.usoSueloPcaId ?? null,
+          direccion_pca: raw.usoSuelo.direccionPca || null,
+          telefono_pca: raw.usoSuelo.telefonoPca || null,
+          observacion: raw.observaciones || null,
+          ctestado_id: this.editingRecord!.ctestado_id,
+          estado: this.editingRecord!.estado,
+          ctformulario_id: this.editingRecord!.ctformulario_id,
         };
 
-        await firstValueFrom(this.ordenTrabajoService.actualizarOrden(this.editingRecord!.id, ordenPayload));
-        this.toastrAlert.showSuccess('La orden de trabajo In Situ ha sido actualizada.', '¡Actualizado!');
+        await firstValueFrom(
+          this.ordenTrabajoService.actualizarOrden(this.editingRecord!.id, ordenPayload),
+        );
+        this.toastrAlert.showSuccess(
+          'La orden de trabajo In Situ ha sido actualizada.',
+          '¡Actualizado!',
+        );
         this.guardado.emit();
         return;
       }
@@ -429,7 +484,8 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
         return;
       }
 
-      const tecnicoSeleccionado = this.tecnicos.find(u => u.id === swalResult.value!.usuario) ?? null;
+      const tecnicoSeleccionado =
+        this.tecnicos.find((u) => u.id === swalResult.value!.usuario) ?? null;
       console.log('[orden-in-situ:tecnico]', JSON.parse(JSON.stringify({ tecnicoSeleccionado })));
 
       const now = new Date();
@@ -449,26 +505,26 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       //TODO: Cambiar el entidad_id
       const payload = {
         ordenTrabajo: {
-          solicitud_id:                this.solicitudSeleccionada.id_solicitud,
-          usuario_id:                  userId,
-          entidad_id:                  'F9687983-F6CF-4706-9004-A1B793E3A987',
-          ctambiente_id:               this.tipoEnsayoId,
-          periodo_id:                  periodo.id,
-          secuencial_id:               null,
-          num_secuencial:              null,
-          ctuso_suelo_id:              raw.usoSuelo.usoSueloOperadorId ?? null,
+          solicitud_id: this.solicitudSeleccionada.id_solicitud,
+          usuario_id: userId,
+          entidad_id: 'F9687983-F6CF-4706-9004-A1B793E3A987',
+          ctambiente_id: this.tipoEnsayoId,
+          periodo_id: periodo.id,
+          secuencial_id: null,
+          num_secuencial: null,
+          ctuso_suelo_id: raw.usoSuelo.usoSueloOperadorId ?? null,
           ctcaracteristica_horaria_id: raw.usoSuelo.caracterizacionId ?? null,
-          ctpunto_critico_id:          raw.usoSuelo.usoSueloPcaId ?? null,
-          direccion_pca:               raw.usoSuelo.direccionPca || null,
-          telefono_pca:                raw.usoSuelo.telefonoPca || null,
-          observacion:                 raw.observaciones || null,
-          ctestado_id:                 2,
-          estado:                      true,
-          ctformulario_id:             0,
+          ctpunto_critico_id: raw.usoSuelo.usoSueloPcaId ?? null,
+          direccion_pca: raw.usoSuelo.direccionPca || null,
+          telefono_pca: raw.usoSuelo.telefonoPca || null,
+          observacion: raw.observaciones || null,
+          ctestado_id: 2,
+          estado: true,
+          ctformulario_id: 0,
         },
         ordenTrabajoDetalle: ensayosSeleccionados.map((e: any) => ({
           solicitud_ensayo_id: e.ensayoId,
-          estado:              true,
+          estado: true,
         })),
       };
 

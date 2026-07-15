@@ -1,16 +1,28 @@
 import {
-  Component, OnInit, OnDestroy, OnChanges, SimpleChanges,
-  Output, EventEmitter, Input, NgZone, computed,
+  Component,
+  OnInit,
+  OnDestroy,
+  OnChanges,
+  SimpleChanges,
+  Output,
+  EventEmitter,
+  Input,
+  NgZone,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject, takeUntil, finalize, switchMap, of } from 'rxjs';
-import Swal from 'sweetalert2';
 
 import { CatalogoService } from '../../../../services/catalogo.service';
-import { Catalogo, ItemCatalogo, PaginationMeta } from '../../../../interfaces/catalogos/catalogo.interface';
+import {
+  Catalogo,
+  ItemCatalogo,
+  PaginationMeta,
+} from '../../../../interfaces/catalogos/catalogo.interface';
 import { PaginationComponent } from '../../../../shared/components/pagination/pagination';
 import { AuthService } from '../../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
+import { AlertService } from '../../../../services/alert.service';
 import { AppRole, MenuKey, hasPermission } from '../../../../core/utils/roles.constans';
 import { TableSkeleton } from '../../../../ui/table-skeleton/table-skeleton';
 
@@ -21,11 +33,16 @@ export interface ItemTree extends ItemCatalogo {
   isExternal: boolean; // padre de otro catálogo, solo como cabecera visual
 }
 
-function buildFlat(items: ItemCatalogo[], parentId: number | null, level: number, collapsed: Set<number>): ItemTree[] {
-  const knownIds = new Set(items.map(i => i.id));
+function buildFlat(
+  items: ItemCatalogo[],
+  parentId: number | null,
+  level: number,
+  collapsed: Set<number>,
+): ItemTree[] {
+  const knownIds = new Set(items.map((i) => i.id));
 
   const children = items
-    .filter(i => {
+    .filter((i) => {
       if (parentId === null) {
         return i.item_catalogo_id === null || !knownIds.has(i.item_catalogo_id!);
       }
@@ -35,7 +52,7 @@ function buildFlat(items: ItemCatalogo[], parentId: number | null, level: number
 
   const result: ItemTree[] = [];
   for (const item of children) {
-    const hasChildren = items.some(i => i.item_catalogo_id === item.id);
+    const hasChildren = items.some((i) => i.item_catalogo_id === item.id);
     const isExpanded = !collapsed.has(item.id);
     const isExternal = (item as any)['_isExternal'] === true;
     result.push({ ...item, level, hasChildren, expanded: isExpanded, isExternal });
@@ -90,7 +107,7 @@ export class ItemCatalogoLista implements OnInit, OnDestroy, OnChanges {
 
   private userAppRole = computed<AppRole | null>(() => {
     const roles = this.authService.userProfile()?.roles ?? [];
-    return (Object.values(AppRole) as AppRole[]).find(r => roles.includes(r)) ?? null;
+    return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
   });
 
   canEdit = computed(() => {
@@ -117,6 +134,7 @@ export class ItemCatalogoLista implements OnInit, OnDestroy, OnChanges {
     private authService: AuthService,
     private zone: NgZone,
     private toastrAlert: ToastrAlertService,
+    private alertService: AlertService,
   ) {}
 
   ngOnInit(): void {
@@ -142,17 +160,18 @@ export class ItemCatalogoLista implements OnInit, OnDestroy, OnChanges {
   cargarDatos(): void {
     this.loading = true;
 
-    this.catService.getAllItemsAdmin(this.catalogo.id)
+    this.catService
+      .getAllItemsAdmin(this.catalogo.id)
       .pipe(
         takeUntil(this.destroy$),
         switchMap((localItems) => {
           // Detectar IDs de padres que no están en la lista local
-          const localIds = new Set(localItems.map(i => i.id));
+          const localIds = new Set(localItems.map((i) => i.id));
           const externalParentIds = [
             ...new Set(
               localItems
-                .map(i => i.item_catalogo_id)
-                .filter((pid): pid is number => pid !== null && !localIds.has(pid))
+                .map((i) => i.item_catalogo_id)
+                .filter((pid): pid is number => pid !== null && !localIds.has(pid)),
             ),
           ];
 
@@ -160,20 +179,22 @@ export class ItemCatalogoLista implements OnInit, OnDestroy, OnChanges {
             return of({ localItems, externalParents: [] as ItemCatalogo[] });
           }
 
-          return this.catService.getItemsByIds(externalParentIds).pipe(
-            switchMap(externalParents => of({ localItems, externalParents }))
-          );
+          return this.catService
+            .getItemsByIds(externalParentIds)
+            .pipe(switchMap((externalParents) => of({ localItems, externalParents })));
         }),
       )
       .subscribe({
         next: ({ localItems, externalParents }) => {
           // Marcar padres externos con flag interno para buildFlat
-          const virtuales = externalParents.map(p => ({ ...p, _isExternal: true }));
+          const virtuales = externalParents.map((p) => ({ ...p, _isExternal: true }));
           this.allItems = [...virtuales, ...localItems];
           this.rebuildFlat();
           this.loading = false;
         },
-        error: () => { this.loading = false; },
+        error: () => {
+          this.loading = false;
+        },
       });
   }
 
@@ -222,29 +243,33 @@ export class ItemCatalogoLista implements OnInit, OnDestroy, OnChanges {
 
   async toggleEstadoItem(item: ItemCatalogo): Promise<void> {
     const accion = item.estado ? 'deshabilitar' : 'habilitar';
-    const confirm = await Swal.fire({
-      icon: 'warning',
+    const confirmado = await this.alertService.confirm({
       title: `¿${item.estado ? 'Deshabilitar' : 'Habilitar'} ítem?`,
       text: `Se ${accion}á "${item.nombre}".`,
-      showCancelButton: true,
       confirmButtonColor: item.estado ? '#d33' : '#16a34a',
-      cancelButtonColor: '#6b7280',
       confirmButtonText: `Sí, ${accion}`,
-      cancelButtonText: 'Cancelar',
     });
-    if (!confirm.isConfirmed) return;
+    if (!confirmado) return;
     this.procesandoId = item.id;
     const call$ = this.catService.toggleItemCatalogo(item.id, !item.estado);
     call$
-      .pipe(takeUntil(this.destroy$), finalize(() => { this.procesandoId = null; }))
-      .subscribe({
-        next: () => this.zone.run(() => {
-          this.toastrAlert.showSuccess(`Ítem ${item.estado ? 'deshabilitado' : 'habilitado'}.`, '¡Listo!');
-          this.cargarDatos();
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
         }),
-        error: () => this.zone.run(() =>
-          this.toastrAlert.showError(`No se pudo ${accion} el ítem.`, 'Error')
-        ),
+      )
+      .subscribe({
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess(
+              `Ítem ${item.estado ? 'deshabilitado' : 'habilitado'}.`,
+              '¡Listo!',
+            );
+            this.cargarDatos();
+          }),
+        error: () =>
+          this.zone.run(() => this.toastrAlert.showError(`No se pudo ${accion} el ítem.`, 'Error')),
       });
   }
 

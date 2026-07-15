@@ -1,17 +1,26 @@
 import {
-  Component, EventEmitter, Input, NgZone, OnChanges, OnDestroy, OnInit,
-  Output, SimpleChanges, computed,
+  Component,
+  EventEmitter,
+  Input,
+  NgZone,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  Output,
+  SimpleChanges,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject, takeUntil, firstValueFrom, forkJoin, finalize } from 'rxjs';
-import Swal from 'sweetalert2';
 import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
 import { ToastrAlertService } from '../../../services/toastr.service';
+import { AlertService } from '../../../services/alert.service';
 import { SolicitudService } from '../../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
 import { ReportSolicitudService } from '../../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import {
-  ReportSolicitud, ReportValorSolicitud,
+  ReportSolicitud,
+  ReportValorSolicitud,
 } from '../../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { FieldConfig } from '../../solicitud-trabajo/model/solicitud-trabajo.model';
 import { AuthService } from '../../auth/service/auth-service';
@@ -21,7 +30,7 @@ import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 
 const ESTADO_AUTORIZADO = 387;
-const ESTADO_RECHAZADO  = 51;
+const ESTADO_RECHAZADO = 51;
 
 type ContraloriaRecord = { id: string } & Record<string, unknown>;
 
@@ -43,8 +52,8 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
   loadingTabla = false;
   readonly PAGE_SIZE = 10;
 
-  showPdfModal    = false;
-  isPdfCargando   = false;
+  showPdfModal = false;
+  isPdfCargando = false;
   pdfPreviewUrl: SafeResourceUrl | null = null;
   private pdfBlobUrl: string | null = null;
 
@@ -54,7 +63,7 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
 
   private userAppRole = computed<AppRole | null>(() => {
     const roles = this.authService.userProfile()?.roles ?? [];
-    return (Object.values(AppRole) as AppRole[]).find(r => roles.includes(r)) ?? null;
+    return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
   });
 
   canEdit = computed(() => {
@@ -90,10 +99,13 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
     private zone: NgZone,
     private toastrAlert: ToastrAlertService,
     private sanitizer: DomSanitizer,
+    private alertService: AlertService,
   ) {}
 
   ngOnInit(): void {
-    if (this.formularioId) { this.cargarDatos(); }
+    if (this.formularioId) {
+      this.cargarDatos();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -103,7 +115,9 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.pdfBlobUrl) { URL.revokeObjectURL(this.pdfBlobUrl); }
+    if (this.pdfBlobUrl) {
+      URL.revokeObjectURL(this.pdfBlobUrl);
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -113,7 +127,9 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
     this.openMenuId = this.openMenuId === id ? null : id;
   }
 
-  closeMenu(): void { this.openMenuId = null; }
+  closeMenu(): void {
+    this.openMenuId = null;
+  }
 
   cargarDatos(): void {
     if (!this.formularioId) return;
@@ -126,14 +142,14 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
       .subscribe({
         next: ([valores, solicitudes]) => {
           this.zone.run(() => {
-            const estadoMap = new Map(solicitudes.map(s => [s.id_solicitud, s]));
-            const records   = this.agruparPorSolicitud(valores);
+            const estadoMap = new Map(solicitudes.map((s) => [s.id_solicitud, s]));
+            const records = this.agruparPorSolicitud(valores);
             for (const r of records) {
               const s = estadoMap.get(r.id);
               if (s) {
-                r['ctestado_id']      = s.ctestado_id;
+                r['ctestado_id'] = s.ctestado_id;
                 r['estado_solicitud'] = s.estado_solicitud;
-                r['_solicitud']       = s;
+                r['_solicitud'] = s;
               }
             }
             this.todasSolicitudes = records;
@@ -154,11 +170,16 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
     this.currentPage = page;
     const start = (page - 1) * this.PAGE_SIZE;
     this.solicitudes = this.todasSolicitudes.slice(start, start + this.PAGE_SIZE);
-    const total      = this.todasSolicitudes.length;
+    const total = this.todasSolicitudes.length;
     const totalPages = Math.ceil(total / this.PAGE_SIZE);
     this.metaTabla = {
-      page, total, totalPages, limit: this.PAGE_SIZE, skip: start,
-      hasNextPage: page < totalPages, hasPrevPage: page > 1,
+      page,
+      total,
+      totalPages,
+      limit: this.PAGE_SIZE,
+      skip: start,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
       nextPage: page < totalPages ? page + 1 : null,
       prevPage: page > 1 ? page - 1 : null,
     };
@@ -174,13 +195,15 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
           fecha_creacion: item.fecha_creacion,
         });
       }
-      const record      = grouped.get(item.id_solicitud)!;
+      const record = grouped.get(item.id_solicitud)!;
       const esSeleccion = item.ctipo_dato_nombre === 'Selección Simple';
       const valor =
         (esSeleccion && item.valor_catalogo != null ? Number(item.valor_catalogo) || null : null) ??
-        item.valor_texto ?? item.valor_fecha ??
-        (item.valor_numero  != null ? String(item.valor_numero)  : null) ??
-        (item.valor_booleano != null ? String(item.valor_booleano) : null) ?? '—';
+        item.valor_texto ??
+        item.valor_fecha ??
+        (item.valor_numero != null ? String(item.valor_numero) : null) ??
+        (item.valor_booleano != null ? String(item.valor_booleano) : null) ??
+        '—';
       record[item.atributo_formulario_nombre] = valor;
     }
     return Array.from(grouped.values());
@@ -198,17 +221,36 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
     return null;
   }
 
-  get solicitudesAgrupadas(): Array<{ groupKey: string; diaLabel: string; items: ContraloriaRecord[] }> {
-    const DIAS  = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
-    const MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
-                   'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+  get solicitudesAgrupadas(): Array<{
+    groupKey: string;
+    diaLabel: string;
+    items: ContraloriaRecord[];
+  }> {
+    const DIAS = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+    const MESES = [
+      'ENERO',
+      'FEBRERO',
+      'MARZO',
+      'ABRIL',
+      'MAYO',
+      'JUNIO',
+      'JULIO',
+      'AGOSTO',
+      'SEPTIEMBRE',
+      'OCTUBRE',
+      'NOVIEMBRE',
+      'DICIEMBRE',
+    ];
     let flatIdx = 0;
-    const groups = new Map<string, { diaLabel: string; sortKey: number; items: ContraloriaRecord[] }>();
+    const groups = new Map<
+      string,
+      { diaLabel: string; sortKey: number; items: ContraloriaRecord[] }
+    >();
     for (const sol of this.solicitudes) {
       const fechaStr = String(sol['val_fecha_movilizacion'] ?? '—');
-      const d        = this.parseFecha(fechaStr);
+      const d = this.parseFecha(fechaStr);
       const groupKey = d ? fechaStr : '—';
-      const sortKey  = d ? d.getTime() : 0;
+      const sortKey = d ? d.getTime() : 0;
       const diaLabel = d
         ? `${d.getDay() === 0 || d.getDay() === 6 ? 'FIN DE SEMANA' : DIAS[d.getDay()]}  ·  ${d.getDate()} DE ${MESES[d.getMonth()]} ${d.getFullYear()}`
         : 'SIN FECHA';
@@ -226,21 +268,21 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
 
   getEmployeeName(fieldKey: string, value: unknown): string {
     if (!value || value === '—') return '—';
-    const field = this.fields.find(f => f.key === fieldKey);
+    const field = this.fields.find((f) => f.key === fieldKey);
     if (!field?.employeeList?.length) return String(value);
     const uuid = String(value).toLowerCase();
-    const emp  = field.employeeList.find(e => e.empleado_id.toLowerCase() === uuid);
+    const emp = field.employeeList.find((e) => e.empleado_id.toLowerCase() === uuid);
     return emp?.nombre_empleado ?? String(value);
   }
 
   async eliminarRegistro(record: ContraloriaRecord): Promise<void> {
-    const confirm = await Swal.fire({
-      icon: 'warning', title: '¿Eliminar registro?',
+    const confirmado = await this.alertService.confirm({
+      title: '¿Eliminar registro?',
       text: 'Esta acción no se puede deshacer.',
-      showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar',
     });
-    if (!confirm.isConfirmed) return;
+    if (!confirmado) return;
     try {
       await firstValueFrom(this.reportSolicitudService.eliminarContraloria(record.id));
       this.zone.run(() => {
@@ -255,85 +297,127 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
   async autorizarRegistro(record: ContraloriaRecord): Promise<void> {
     const sol = record['_solicitud'] as ReportSolicitud | undefined;
     if (!sol) return;
-    const confirm = await Swal.fire({
-      icon: 'question', title: '¿Autorizar orden de movilización?',
+    const confirmado = await this.alertService.confirm({
+      icon: 'question',
+      title: '¿Autorizar orden de movilización?',
       text: 'Se aprobará la orden seleccionada.',
-      showCancelButton: true, confirmButtonColor: '#16a34a', cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Sí, autorizar', cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#16a34a',
+      confirmButtonText: 'Sí, autorizar',
     });
-    if (!confirm.isConfirmed) return;
+    if (!confirmado) return;
     this.procesandoId = record.id;
     this.solicitudService
       .actualizarSolicitud(sol.id_solicitud, {
-        ctestado_id:    ESTADO_AUTORIZADO, formulario_id:  sol.formulario_id,
-        usuario_id:     sol.usuario_id,    entidad_id:     sol.establecimiento_id,
-        secuencial_id:  sol.secuencial_id, periodo_id:     sol.periodo_id,
-        descripcion:    sol.descripcion_solicitud, estado: sol.estado_logico_solicitud,
+        ctestado_id: ESTADO_AUTORIZADO,
+        formulario_id: sol.formulario_id,
+        usuario_id: sol.usuario_id,
+        entidad_id: sol.establecimiento_id,
+        secuencial_id: sol.secuencial_id,
+        periodo_id: sol.periodo_id,
+        descripcion: sol.descripcion_solicitud,
+        estado: sol.estado_logico_solicitud,
         num_secuencial: sol.num_secuencial,
       })
-      .pipe(takeUntil(this.destroy$), finalize(() => { this.procesandoId = null; }))
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
+        }),
+      )
       .subscribe({
-        next:  () => this.zone.run(() => { this.toastrAlert.showSuccess('Orden autorizada correctamente.', '¡Autorizado!'); this.cargarDatos(); }),
-        error: () => this.zone.run(() => this.toastrAlert.showError('No se pudo autorizar el registro.', 'Error')),
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess('Orden autorizada correctamente.', '¡Autorizado!');
+            this.cargarDatos();
+          }),
+        error: () =>
+          this.zone.run(() =>
+            this.toastrAlert.showError('No se pudo autorizar el registro.', 'Error'),
+          ),
       });
   }
 
   async rechazarRegistro(record: ContraloriaRecord): Promise<void> {
     const sol = record['_solicitud'] as ReportSolicitud | undefined;
     if (!sol) return;
-    const { isConfirmed } = await Swal.fire({
-      icon: 'warning', title: 'Rechazar orden de movilización',
+    const confirmado = await this.alertService.confirm({
+      title: 'Rechazar orden de movilización',
       text: `Se rechazará la orden ${sol.num_secuencial ?? sol.id_solicitud}.`,
-      showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Sí, rechazar', cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      confirmButtonText: 'Sí, rechazar',
     });
-    if (!isConfirmed) return;
+    if (!confirmado) return;
     this.procesandoId = record.id;
     this.solicitudService
       .actualizarSolicitud(sol.id_solicitud, {
-        ctestado_id:    ESTADO_RECHAZADO, formulario_id:  sol.formulario_id,
-        usuario_id:     sol.usuario_id,   entidad_id:     sol.establecimiento_id,
-        secuencial_id:  sol.secuencial_id, periodo_id:    sol.periodo_id,
-        descripcion:    sol.descripcion_solicitud, estado: sol.estado_logico_solicitud,
+        ctestado_id: ESTADO_RECHAZADO,
+        formulario_id: sol.formulario_id,
+        usuario_id: sol.usuario_id,
+        entidad_id: sol.establecimiento_id,
+        secuencial_id: sol.secuencial_id,
+        periodo_id: sol.periodo_id,
+        descripcion: sol.descripcion_solicitud,
+        estado: sol.estado_logico_solicitud,
         num_secuencial: sol.num_secuencial,
       })
-      .pipe(takeUntil(this.destroy$), finalize(() => { this.procesandoId = null; }))
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
+        }),
+      )
       .subscribe({
-        next:  () => this.zone.run(() => { this.toastrAlert.showWarning('Orden rechazada.', 'Rechazado'); this.cargarDatos(); }),
-        error: () => this.zone.run(() => this.toastrAlert.showError('No se pudo rechazar el registro.', 'Error')),
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showWarning('Orden rechazada.', 'Rechazado');
+            this.cargarDatos();
+          }),
+        error: () =>
+          this.zone.run(() =>
+            this.toastrAlert.showError('No se pudo rechazar el registro.', 'Error'),
+          ),
       });
   }
 
   imprimirRegistro(record: ContraloriaRecord): void {
-    this.showPdfModal  = true;
+    this.showPdfModal = true;
     this.isPdfCargando = true;
     this.pdfPreviewUrl = null;
-    if (this.pdfBlobUrl) { URL.revokeObjectURL(this.pdfBlobUrl); this.pdfBlobUrl = null; }
-    this.solicitudService.getPdfVehiculo(record.id)
+    if (this.pdfBlobUrl) {
+      URL.revokeObjectURL(this.pdfBlobUrl);
+      this.pdfBlobUrl = null;
+    }
+    this.solicitudService
+      .getPdfVehiculo(record.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next:  (blob) => this.zone.run(() => {
-          this.pdfBlobUrl    = URL.createObjectURL(blob);
-          this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
-          this.isPdfCargando = false;
-        }),
-        error: () => this.zone.run(() => {
-          this.isPdfCargando = false;
-          this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
-        }),
+        next: (blob) =>
+          this.zone.run(() => {
+            this.pdfBlobUrl = URL.createObjectURL(blob);
+            this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
+            this.isPdfCargando = false;
+          }),
+        error: () =>
+          this.zone.run(() => {
+            this.isPdfCargando = false;
+            this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
+          }),
       });
   }
 
   cerrarPdf(): void {
-    this.showPdfModal  = false;
+    this.showPdfModal = false;
     this.pdfPreviewUrl = null;
-    if (this.pdfBlobUrl) { URL.revokeObjectURL(this.pdfBlobUrl); this.pdfBlobUrl = null; }
+    if (this.pdfBlobUrl) {
+      URL.revokeObjectURL(this.pdfBlobUrl);
+      this.pdfBlobUrl = null;
+    }
   }
 
   descargarPdf(): void {
     if (!this.pdfBlobUrl) return;
     const a = document.createElement('a');
-    a.href     = this.pdfBlobUrl;
+    a.href = this.pdfBlobUrl;
     a.download = 'orden-movilizacion.pdf';
     a.click();
   }

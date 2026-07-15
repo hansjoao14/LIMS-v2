@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
-import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
@@ -12,6 +11,7 @@ import { ReportFormulario } from '../../interfaces/admin-formularios/report-form
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
+import { AlertService } from '../../services/alert.service';
 
 export interface EnsayoRow {
   analisis: string;
@@ -41,20 +41,19 @@ export interface GrupoLaboratorio {
   styleUrl: './plan-muestreo.css',
 })
 export class PlanMuestreo implements OnInit, OnDestroy {
-
   formulario: ReportFormulario | null = null;
   fechaEmision: Date | null = null;
 
   // ── Tipo de matriz (Aguas Superficiales=92 / Aguas Residuales=93) ───────
-  tipoAguaId: number | null          = null;
+  tipoAguaId: number | null = null;
   tipoAguaNombre = '';
 
   // ── Búsqueda de solicitudes finalizadas ──────────────────────────────────
-  panelAbierto     = false;
-  loadingBusqueda  = false;
-  loadingDetalle   = false;
+  panelAbierto = false;
+  loadingBusqueda = false;
+  loadingDetalle = false;
   private todasSolicitudes: ReportSolicitud[] = [];
-  solicitudesFinalizadas: ReportSolicitud[]   = [];
+  solicitudesFinalizadas: ReportSolicitud[] = [];
   meta: PaginationMeta | null = null;
   currentPage = 1;
   readonly PAGE_SIZE = 8;
@@ -62,28 +61,63 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   solicitudSeleccionada: ReportSolicitud | null = null;
 
   // ── Detalle de la solicitud ───────────────────────────────────────────────
-  detalleFechaEmision  = '';
-  detalleFechaMaxima   = '';
-  detalleCliente       = '';
-  detalleLatitud       = '';
-  detalleLongitud      = '';
-  detalleDireccion     = '';
+  detalleFechaEmision = '';
+  detalleFechaMaxima = '';
+  detalleCliente = '';
+  detalleLatitud = '';
+  detalleLongitud = '';
+  detalleDireccion = '';
   detalleEnsayos: EnsayoRow[] = [];
 
   ensayosLaboratorio: GrupoLaboratorio[] = [
     {
       preservante: 'H2SO4',
       ensayos: [
-        { activo: false, ensayo: 'DEMANDA QUÍMICA DE OXÍGENO', identificacion: 'DQO', metodoInterno: 'PEE/IAM-Q/03', metodoReferencia: 'APHA 5220D', unidad: 'mg/L' },
-        { activo: false, ensayo: 'ACEITES Y GRASAS', identificacion: 'AyG', metodoInterno: 'PEE/IAM-Q/05', metodoReferencia: 'EPA 1664', unidad: 'mg/L' },
+        {
+          activo: false,
+          ensayo: 'DEMANDA QUÍMICA DE OXÍGENO',
+          identificacion: 'DQO',
+          metodoInterno: 'PEE/IAM-Q/03',
+          metodoReferencia: 'APHA 5220D',
+          unidad: 'mg/L',
+        },
+        {
+          activo: false,
+          ensayo: 'ACEITES Y GRASAS',
+          identificacion: 'AyG',
+          metodoInterno: 'PEE/IAM-Q/05',
+          metodoReferencia: 'EPA 1664',
+          unidad: 'mg/L',
+        },
       ],
     },
     {
       preservante: 'TEMPERATURA',
       ensayos: [
-        { activo: false, ensayo: 'DEMANDA BIOQUÍMICA DE OXÍGENO', identificacion: 'DBO5', metodoInterno: 'PEE/IAM-Q/27', metodoReferencia: 'APHA 5210B', unidad: 'mg/L' },
-        { activo: false, ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES', identificacion: 'SST', metodoInterno: 'PEE/IAM-Q/02', metodoReferencia: 'APHA 2540D', unidad: 'mg/L' },
-        { activo: false, ensayo: 'TURBIDEZ', identificacion: '-', metodoInterno: 'PEE/IAM-Q/31', metodoReferencia: 'SM 2130 B', unidad: 'NTU' },
+        {
+          activo: false,
+          ensayo: 'DEMANDA BIOQUÍMICA DE OXÍGENO',
+          identificacion: 'DBO5',
+          metodoInterno: 'PEE/IAM-Q/27',
+          metodoReferencia: 'APHA 5210B',
+          unidad: 'mg/L',
+        },
+        {
+          activo: false,
+          ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES',
+          identificacion: 'SST',
+          metodoInterno: 'PEE/IAM-Q/02',
+          metodoReferencia: 'APHA 2540D',
+          unidad: 'mg/L',
+        },
+        {
+          activo: false,
+          ensayo: 'TURBIDEZ',
+          identificacion: '-',
+          metodoInterno: 'PEE/IAM-Q/31',
+          metodoReferencia: 'SM 2130 B',
+          unidad: 'NTU',
+        },
       ],
     },
   ];
@@ -95,6 +129,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     private reportFormularioService: ReportFormularioService,
     private solicitudDetalleService: SolicitudDetalleService,
     private router: Router,
+    private alertService: AlertService,
   ) {}
 
   ngOnInit(): void {
@@ -148,7 +183,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
         },
         error: () => {
           this.loadingBusqueda = false;
-          Swal.fire('Error', 'No se pudo cargar la lista de solicitudes', 'error');
+          this.alertService.error('No se pudo cargar la lista de solicitudes');
         },
       });
   }
@@ -156,7 +191,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   private aplicarFiltro(): void {
     const q = this.busqueda.trim().toLowerCase();
     this.solicitudesFinalizadas = q
-      ? this.todasSolicitudes.filter(s => (s.num_secuencial ?? '').toLowerCase().includes(q))
+      ? this.todasSolicitudes.filter((s) => (s.num_secuencial ?? '').toLowerCase().includes(q))
       : this.todasSolicitudes;
   }
 
@@ -179,12 +214,14 @@ export class PlanMuestreo implements OnInit, OnDestroy {
         },
         error: () => {
           this.loadingDetalle = false;
-          Swal.fire('Error', 'No se pudo cargar el detalle de la solicitud', 'error');
+          this.alertService.error('No se pudo cargar el detalle de la solicitud');
         },
       });
   }
 
-  private poblarDetalle(detalle: import('../../services/solicitudes/solicitud-detalle/solicitud-detalle.service').SolicitudDetalle): void {
+  private poblarDetalle(
+    detalle: import('../../services/solicitudes/solicitud-detalle/solicitud-detalle.service').SolicitudDetalle,
+  ): void {
     const f = detalle.formularios?.[0];
     if (!f) return;
 
@@ -194,26 +231,28 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.tipoAguaNombre = f.ensayos?.[0]?.nombre_ensayo ?? '';
 
     const attr = (nombre: string) =>
-      f.atributos?.find(a => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
+      f.atributos?.find((a) => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
 
     const fechaEmision = f.fecha_emision_solicitud ? new Date(f.fecha_emision_solicitud) : null;
     this.detalleFechaEmision = fechaEmision ? fechaEmision.toLocaleDateString('es-EC') : '';
-    this.detalleFechaMaxima  = fechaEmision
-      ? new Date(new Date(fechaEmision).setDate(fechaEmision.getDate() + 10)).toLocaleDateString('es-EC')
+    this.detalleFechaMaxima = fechaEmision
+      ? new Date(new Date(fechaEmision).setDate(fechaEmision.getDate() + 10)).toLocaleDateString(
+          'es-EC',
+        )
       : '';
-    this.detalleCliente   = f.nombre_completo;
-    this.detalleLatitud   = attr('val_lati');
-    this.detalleLongitud  = attr('val_long');
+    this.detalleCliente = f.nombre_completo;
+    this.detalleLatitud = attr('val_lati');
+    this.detalleLongitud = attr('val_long');
     this.detalleDireccion = attr('val_dir_op');
 
     this.detalleEnsayos = (f.ensayos ?? [])
-      .filter(e => this.tipoAguaId === null || e.ctambiental_id === this.tipoAguaId)
-      .map(e => {
+      .filter((e) => this.tipoAguaId === null || e.ctambiental_id === this.tipoAguaId)
+      .map((e) => {
         const parts = (e.metodo ?? '').split(', ');
         return {
-          analisis:         e.analisis ?? '',
-          identificacion:   e.identificacion ?? '',
-          metodoInterno:    parts[0] ?? '',
+          analisis: e.analisis ?? '',
+          identificacion: e.identificacion ?? '',
+          metodoInterno: parts[0] ?? '',
           metodoReferencia: parts[1] ?? '',
         };
       });
@@ -221,16 +260,16 @@ export class PlanMuestreo implements OnInit, OnDestroy {
 
   limpiarSolicitud(): void {
     this.solicitudSeleccionada = null;
-    this.tipoAguaId            = null;
-    this.tipoAguaNombre        = '';
-    this.busqueda              = '';
-    this.detalleFechaEmision   = '';
-    this.detalleFechaMaxima    = '';
-    this.detalleCliente        = '';
-    this.detalleLatitud        = '';
-    this.detalleLongitud       = '';
-    this.detalleDireccion      = '';
-    this.detalleEnsayos        = [];
+    this.tipoAguaId = null;
+    this.tipoAguaNombre = '';
+    this.busqueda = '';
+    this.detalleFechaEmision = '';
+    this.detalleFechaMaxima = '';
+    this.detalleCliente = '';
+    this.detalleLatitud = '';
+    this.detalleLongitud = '';
+    this.detalleDireccion = '';
+    this.detalleEnsayos = [];
   }
 
   siguiente(): void {

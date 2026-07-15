@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
-import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
@@ -16,6 +15,7 @@ import { AuthService } from '../auth/service/auth-service';
 import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { TableSkeleton } from '../../ui/table-skeleton/table-skeleton';
+import { AlertService } from '../../services/alert.service';
 
 @Component({
   selector: 'app-lista-solicitudes',
@@ -72,6 +72,7 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
     private reportFormularioService: ReportFormularioService,
     private router: Router,
     public authService: AuthService,
+    private alertService: AlertService,
   ) {}
 
   ngOnInit(): void {
@@ -112,7 +113,7 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
         },
         error: () => {
           this.loading = false;
-          Swal.fire('Error', 'No se pudo cargar la lista de solicitudes', 'error');
+          this.alertService.error('No se pudo cargar la lista de solicitudes');
         },
       });
   }
@@ -128,38 +129,40 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
         next: (solicitud) => {
           this.cargandoEdicionId = null;
           if (!solicitud) {
-            Swal.fire('Error', 'No se encontró la solicitud', 'error');
+            this.alertService.error('No se encontró la solicitud');
             return;
           }
           this.router.navigate(['/solicitud-trabajo'], { state: { solicitud } });
         },
         error: () => {
           this.cargandoEdicionId = null;
-          Swal.fire('Error', 'No se pudo cargar la solicitud', 'error');
+          this.alertService.error('No se pudo cargar la solicitud');
         },
       });
   }
 
   async eliminarSolicitud(doc: ReportSolicitud): Promise<void> {
-    const confirm = await Swal.fire({
+    const confirmado = await this.alertService.confirm({
       title: '¿Eliminar solicitud?',
       text: `Se eliminará la solicitud${doc.num_secuencial ? ' ' + doc.num_secuencial : ''}. Esta acción no se puede deshacer.`,
-      icon: 'warning',
-      showCancelButton: true,
       confirmButtonColor: '#dc2626',
       cancelButtonColor: '#64748b',
       confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
     });
 
-    if (!confirm.isConfirmed) return;
+    if (!confirmado) return;
 
     try {
       await firstValueFrom(this.solicitudService.eliminarSolicitudById(doc.id_solicitud));
-      Swal.fire({ title: '¡Eliminado!', text: 'La solicitud fue eliminada.', icon: 'success', confirmButtonColor: this.COLOR_PRIMARIO, timer: 2000 });
+      this.alertService.successAutoClose(
+        'La solicitud fue eliminada.',
+        '¡Eliminado!',
+        2000,
+        this.COLOR_PRIMARIO,
+      );
       this.cargarPagina(this.currentPage);
     } catch {
-      Swal.fire('Error', 'No se pudo eliminar la solicitud.', 'error');
+      this.alertService.error('No se pudo eliminar la solicitud.');
     }
   }
 
@@ -183,12 +186,12 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
     if (file.name.toLowerCase().endsWith('.p12')) {
       this.archivoFirma = file;
     } else {
-      Swal.fire({
-        title: 'Archivo no válido',
-        text: 'Solo se aceptan certificados digitales en formato .p12',
-        icon: 'warning',
-        confirmButtonColor: this.COLOR_PRIMARIO,
-      });
+      this.alertService.warning(
+        'Solo se aceptan certificados digitales en formato .p12',
+        'Archivo no válido',
+        undefined,
+        this.COLOR_PRIMARIO,
+      );
       input.value = '';
       this.archivoFirma = null;
     }
@@ -196,25 +199,25 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
 
   ejecutarFirma(): void {
     if (!this.archivoFirma || !this.claveFirma) {
-      Swal.fire({
-        title: 'Datos Incompletos',
-        text: 'Por favor cargue su certificado .p12 e ingrese la contraseña para firmar.',
-        icon: 'warning',
-        confirmButtonColor: this.COLOR_PRIMARIO,
-      });
+      this.alertService.warning(
+        'Por favor cargue su certificado .p12 e ingrese la contraseña para firmar.',
+        'Datos Incompletos',
+        undefined,
+        this.COLOR_PRIMARIO,
+      );
       return;
     }
 
     this.isFirmando = true;
-    setTimeout(() => {
+    setTimeout(async () => {
       this.isFirmando = false;
-      Swal.fire({
-        title: '¡Documento Firmado!',
-        text: `El documento ${this.selectedDoc?.num_secuencial ?? this.selectedDoc?.id_solicitud} ha sido firmado electrónicamente con éxito.`,
-        icon: 'success',
-        confirmButtonColor: this.COLOR_PRIMARIO,
-        timer: 3000,
-      }).then(() => this.regresarLista());
+      await this.alertService.successAutoClose(
+        `El documento ${this.selectedDoc?.num_secuencial ?? this.selectedDoc?.id_solicitud} ha sido firmado electrónicamente con éxito.`,
+        '¡Documento Firmado!',
+        3000,
+        this.COLOR_PRIMARIO,
+      );
+      this.regresarLista();
     }, 1500);
   }
 }

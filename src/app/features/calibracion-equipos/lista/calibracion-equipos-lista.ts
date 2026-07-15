@@ -1,12 +1,20 @@
-import { Component, OnInit, OnDestroy, Output, EventEmitter, NgZone, computed } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  Output,
+  EventEmitter,
+  NgZone,
+  computed,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject, takeUntil, finalize } from 'rxjs';
-import Swal from 'sweetalert2';
 
 import { CalibracionEquiposService } from '../../../services/calibracion-equipos/calibracion-equipos.service';
 import { CalibracionEquipo } from '../../../interfaces/calibracion-equipos/calibracion-equipos.interface';
 import { AuthService } from '../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../services/toastr.service';
+import { AlertService } from '../../../services/alert.service';
 import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 
@@ -29,7 +37,7 @@ export class CalibracionEquiposLista implements OnInit, OnDestroy {
 
   private userAppRole = computed<AppRole | null>(() => {
     const roles = this.authService.userProfile()?.roles ?? [];
-    return (Object.values(AppRole) as AppRole[]).find(r => roles.includes(r)) ?? null;
+    return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
   });
 
   canEdit = computed(() => {
@@ -56,6 +64,7 @@ export class CalibracionEquiposLista implements OnInit, OnDestroy {
     private authService: AuthService,
     private zone: NgZone,
     private toastrAlert: ToastrAlertService,
+    private alertService: AlertService,
   ) {}
 
   ngOnInit(): void {
@@ -69,7 +78,8 @@ export class CalibracionEquiposLista implements OnInit, OnDestroy {
 
   cargarDatos(): void {
     this.loading = true;
-    this.calibracionService.getCalibraciones()
+    this.calibracionService
+      .getCalibraciones()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
@@ -96,29 +106,32 @@ export class CalibracionEquiposLista implements OnInit, OnDestroy {
   }
 
   async eliminarCalibracion(item: CalibracionEquipo): Promise<void> {
-    const confirm = await Swal.fire({
-      icon: 'warning',
+    const confirmado = await this.alertService.confirm({
       title: '¿Eliminar registro?',
       text: `Se eliminará el registro ${item.num_secuencial ?? item.id}. Esta acción no se puede deshacer.`,
-      showCancelButton: true,
       confirmButtonColor: '#d33',
-      cancelButtonColor: '#6b7280',
       confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
     });
-    if (!confirm.isConfirmed) return;
+    if (!confirmado) return;
     this.procesandoId = item.id;
     this.calibracionService
       .deshabilitarCalibracion(item.id)
-      .pipe(takeUntil(this.destroy$), finalize(() => { this.procesandoId = null; }))
-      .subscribe({
-        next: () => this.zone.run(() => {
-          this.toastrAlert.showSuccess('Registro eliminado correctamente.', '¡Eliminado!');
-          this.cargarDatos();
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
         }),
-        error: () => this.zone.run(() =>
-          this.toastrAlert.showError('No se pudo eliminar el registro.', 'Error')
-        ),
+      )
+      .subscribe({
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess('Registro eliminado correctamente.', '¡Eliminado!');
+            this.cargarDatos();
+          }),
+        error: () =>
+          this.zone.run(() =>
+            this.toastrAlert.showError('No se pudo eliminar el registro.', 'Error'),
+          ),
       });
   }
 }

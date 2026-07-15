@@ -1,8 +1,8 @@
 import { Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import Swal from 'sweetalert2';
 import { SpinnerComponent } from '../../../ui/spinner/spinner.component';
 import { AuthService } from '../service/auth-service';
+import { AlertService } from '../../../services/alert.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -28,6 +28,7 @@ export class Login implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private router: Router,
+    private alertService: AlertService,
   ) {}
 
   ngOnInit(): void {
@@ -74,7 +75,7 @@ export class Login implements OnInit, OnDestroy {
 
   login(): void {
     if (!this.user || !this.password) {
-      Swal.fire('Atención', 'Por favor, ingrese sus credenciales', 'warning');
+      this.alertService.warning('Por favor, ingrese sus credenciales', 'Atención');
       return;
     }
 
@@ -92,13 +93,12 @@ export class Login implements OnInit, OnDestroy {
       })
       .catch((err) => {
         this.spinnerComponent.hideSpinner();
-        Swal.fire({
-          icon: 'error',
-          title: 'Error de autenticación',
-          text: 'Credenciales incorrectas o error de conexión.',
-          confirmButtonColor: '#28367F',
-          confirmButtonText: 'Aceptar',
-        });
+        this.alertService.error(
+          'Credenciales incorrectas o error de conexión.',
+          'Error de autenticación',
+          'Aceptar',
+          '#28367F',
+        );
       });
   }
 }

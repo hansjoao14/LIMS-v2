@@ -1,10 +1,17 @@
 import {
-  Component, OnInit, OnDestroy, OnChanges, SimpleChanges,
-  Output, EventEmitter, Input, NgZone, computed,
+  Component,
+  OnInit,
+  OnDestroy,
+  OnChanges,
+  SimpleChanges,
+  Output,
+  EventEmitter,
+  Input,
+  NgZone,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject, takeUntil, finalize, switchMap, of, map } from 'rxjs';
-import Swal from 'sweetalert2';
 
 import { EnsayoService } from '../../../../services/ensayo.service';
 import { CatalogoService } from '../../../../services/catalogo.service';
@@ -13,6 +20,7 @@ import { ItemCatalogo } from '../../../../interfaces/catalogos/catalogo.interfac
 import { buildFlatNodes } from '../../../../core/utils/ensayo-tree.utils';
 import { AuthService } from '../../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
+import { AlertService } from '../../../../services/alert.service';
 import { AppRole, MenuKey, hasPermission } from '../../../../core/utils/roles.constans';
 import { TableSkeleton } from '../../../../ui/table-skeleton/table-skeleton';
 
@@ -37,14 +45,25 @@ export class EnsayoItemLista implements OnInit, OnDestroy, OnChanges {
 
   private userAppRole = computed<AppRole | null>(() => {
     const roles = this.authService.userProfile()?.roles ?? [];
-    return (Object.values(AppRole) as AppRole[]).find(r => roles.includes(r)) ?? null;
+    return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
   });
 
-  canEdit   = computed(() => { const r = this.userAppRole(); return r ? hasPermission(MenuKey.ADMIN_ENSAYOS, r, 'editar')   : false; });
-  canDelete = computed(() => { const r = this.userAppRole(); return r ? hasPermission(MenuKey.ADMIN_ENSAYOS, r, 'eliminar') : false; });
-  canCrear  = computed(() => { const r = this.userAppRole(); return r ? hasPermission(MenuKey.ADMIN_ENSAYOS, r, 'crear')    : false; });
+  canEdit = computed(() => {
+    const r = this.userAppRole();
+    return r ? hasPermission(MenuKey.ADMIN_ENSAYOS, r, 'editar') : false;
+  });
+  canDelete = computed(() => {
+    const r = this.userAppRole();
+    return r ? hasPermission(MenuKey.ADMIN_ENSAYOS, r, 'eliminar') : false;
+  });
+  canCrear = computed(() => {
+    const r = this.userAppRole();
+    return r ? hasPermission(MenuKey.ADMIN_ENSAYOS, r, 'crear') : false;
+  });
 
-  get hasAnyAction(): boolean { return this.canEdit() || this.canDelete(); }
+  get hasAnyAction(): boolean {
+    return this.canEdit() || this.canDelete();
+  }
 
   constructor(
     private ensayoService: EnsayoService,
@@ -52,6 +71,7 @@ export class EnsayoItemLista implements OnInit, OnDestroy, OnChanges {
     private authService: AuthService,
     private zone: NgZone,
     private toastrAlert: ToastrAlertService,
+    private alertService: AlertService,
   ) {}
 
   ngOnInit(): void {
@@ -77,35 +97,40 @@ export class EnsayoItemLista implements OnInit, OnDestroy, OnChanges {
     if (this.ensayoId === null) return;
     this.loading = true;
 
-    this.ensayoService.getEnsayoItems(this.ensayoId)
+    this.ensayoService
+      .getEnsayoItems(this.ensayoId)
       .pipe(
         switchMap((items) => {
-          const knownIds = new Set(items.map(ei => ei.ctambiental_id));
+          const knownIds = new Set(items.map((ei) => ei.ctambiental_id));
 
-          const externalIds = [...new Set(
-            items
-              .map(ei => ei.item_catalogo?.item_catalogo_id)
-              .filter((id): id is number => id !== null && id !== undefined && !knownIds.has(id)),
-          )];
+          const externalIds = [
+            ...new Set(
+              items
+                .map((ei) => ei.item_catalogo?.item_catalogo_id)
+                .filter((id): id is number => id !== null && id !== undefined && !knownIds.has(id)),
+            ),
+          ];
 
           if (externalIds.length === 0) {
             return of({ items, externalParents: [] as ItemCatalogo[] });
           }
 
-          return this.catService.getItemsByIds(externalIds).pipe(
-            map(parents => ({ items, externalParents: parents })),
-          );
+          return this.catService
+            .getItemsByIds(externalIds)
+            .pipe(map((parents) => ({ items, externalParents: parents })));
         }),
         takeUntil(this.destroy$),
       )
       .subscribe({
         next: ({ items, externalParents }) => {
-          const knownIds = new Set(items.map(ei => ei.ctambiental_id));
-          const extMap = new Map(externalParents.map(p => [p.id, p]));
+          const knownIds = new Set(items.map((ei) => ei.ctambiental_id));
+          const extMap = new Map(externalParents.map((p) => [p.id, p]));
           this.flatNodes = buildFlatNodes(items, extMap, knownIds, null, 0);
           this.loading = false;
         },
-        error: () => { this.loading = false; },
+        error: () => {
+          this.loading = false;
+        },
       });
   }
 
@@ -121,28 +146,33 @@ export class EnsayoItemLista implements OnInit, OnDestroy, OnChanges {
   async toggleEstadoItem(item: EnsayoItem): Promise<void> {
     const accion = item.estado ? 'deshabilitar' : 'habilitar';
     const nombre = item.item_catalogo?.nombre ?? `ítem #${item.ctambiental_id}`;
-    const confirm = await Swal.fire({
-      icon: 'warning',
+    const confirmado = await this.alertService.confirm({
       title: `¿${item.estado ? 'Deshabilitar' : 'Habilitar'} ítem?`,
       text: `Se ${accion}á "${nombre}".`,
-      showCancelButton: true,
       confirmButtonColor: item.estado ? '#d33' : '#16a34a',
-      cancelButtonColor: '#6b7280',
       confirmButtonText: `Sí, ${accion}`,
-      cancelButtonText: 'Cancelar',
     });
-    if (!confirm.isConfirmed) return;
+    if (!confirmado) return;
     this.procesandoId = item.ctambiental_id;
-    this.ensayoService.toggleEnsayoItem(item.ctambiental_id, item.ensayo_id, !item.estado)
-      .pipe(takeUntil(this.destroy$), finalize(() => { this.procesandoId = null; }))
-      .subscribe({
-        next: () => this.zone.run(() => {
-          this.toastrAlert.showSuccess(`Ítem ${item.estado ? 'deshabilitado' : 'habilitado'}.`, '¡Listo!');
-          this.cargarDatos();
+    this.ensayoService
+      .toggleEnsayoItem(item.ctambiental_id, item.ensayo_id, !item.estado)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
         }),
-        error: () => this.zone.run(() =>
-          this.toastrAlert.showError(`No se pudo ${accion} el ítem.`, 'Error'),
-        ),
+      )
+      .subscribe({
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess(
+              `Ítem ${item.estado ? 'deshabilitado' : 'habilitado'}.`,
+              '¡Listo!',
+            );
+            this.cargarDatos();
+          }),
+        error: () =>
+          this.zone.run(() => this.toastrAlert.showError(`No se pudo ${accion} el ítem.`, 'Error')),
       });
   }
 }

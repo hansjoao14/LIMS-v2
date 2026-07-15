@@ -12,7 +12,6 @@ import { cedulaEcuatoriana, rucEcuatoriano } from '../../core/utils/ecuador-id.v
 import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import * as L from 'leaflet';
-import Swal from 'sweetalert2';
 
 import {
   FieldConfig,
@@ -25,26 +24,24 @@ import {
   SolicitudPayload,
   ValorSolicitudItem,
   SolicitudEnsayoItem,
-} from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
-import { EstablecimientoUsuarioService } from '../../services/solicitudes/solicitud-trabajo/establecimiento-usuario.service';
-import { EstablecimientoService } from '../../services/solicitudes/solicitud-trabajo/establecimiento.service';
-import { EnsayoService } from '../../services/solicitudes/solicitud-trabajo/ensayo.service';
-import { DocumentoLegalService } from '../../services/solicitudes/solicitud-trabajo/documento-legal.service';
-import { IntegracionService } from '../../services/solicitudes/solicitud-trabajo/integracion.service';
-import { PeriodoService } from '../../services/solicitudes/solicitud-trabajo/periodo.service';
+  EstablecimientoUsuarioService,
+  EstablecimientoService,
+  EnsayoService,
+  DocumentoLegalService,
+  IntegracionService,
+  PeriodoService,
+} from '../../services/solicitudes/solicitud-trabajo';
 import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
 import { ReportFormulario } from '../../interfaces/admin-formularios/report-formulario.interface';
 
-import { Establecimiento } from '../../interfaces/solicitudes/solicitud-trabajo/establecimiento.interface';
-import { Tecnico } from '../../interfaces/solicitudes/solicitud-trabajo/tecnico.interface';
 import {
+  Establecimiento,
+  Tecnico,
   EnsayoLaboratorio,
   EnsayoMuestreo,
-} from '../../interfaces/solicitudes/solicitud-trabajo/ensayo.interface';
-import {
   DatosSRI,
   DatosRegistroCivil,
-} from '../../interfaces/solicitudes/solicitud-trabajo/integracion.interface';
+} from '../../interfaces/solicitudes/solicitud-trabajo';
 import { Step1SolicitudComponent } from './steps/step1-solicitud/step1-solicitud';
 import { Step2OperadorComponent } from './steps/step2-operador/step2-operador';
 import { Step3CatalogoComponent, MatrizConHijosUI } from './steps/step3-catalogo/step3-catalogo';
@@ -52,10 +49,11 @@ import { Step4ConfirmacionComponent } from './steps/step4-confirmacion/step4-con
 import {
   ReportSolicitud,
   ReportValorSolicitud,
-} from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
+} from '../../interfaces/solicitudes/lista-solicitudes';
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { AuthService } from '../auth/service/auth-service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
+import { AlertService } from '../../services/alert.service';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
@@ -142,7 +140,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   private marker: L.Marker | null = null;
 
   // ── Constantes ───────────────────────────────────────────────────────────
-  private readonly COLOR_PRIMARIO = '#1e3a8a';
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -160,6 +157,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     private route: ActivatedRoute,
     private authService: AuthService,
     private sanitizer: DomSanitizer,
+    private alertService: AlertService,
   ) {
     this.form = this.fb.group({
       entidad_id: ['', Validators.required],
@@ -232,7 +230,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         },
         error: () => {
           this.loading = false;
-          Swal.fire('Error', 'No se pudo cargar el formulario dinámico', 'error');
+          this.alertService.error('No se pudo cargar el formulario dinámico');
         },
       });
   }
@@ -255,7 +253,8 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
               if (catalogo && catalogo !== 0) selectPatch[key] = catalogo;
             } else if (v.ctipo_dato_nombre === 'Selección Mutiple' && v.valor_multiple) {
               try {
-                const guardados: { dias?: string[]; inicio_bloque: string; fin_bloque: string }[] = JSON.parse(v.valor_multiple);
+                const guardados: { dias?: string[]; inicio_bloque: string; fin_bloque: string }[] =
+                  JSON.parse(v.valor_multiple);
                 this.manualSchedules = guardados.map((g) => ({
                   dias: g.dias ?? [],
                   inicio_bloque: g.inicio_bloque ?? '',
@@ -371,7 +370,17 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
           this.catalogosSeleccionados = [
             {
               collapsed: false,
-              matriz: { id: 0, nombre: '', catalogo_id: 0, estado: true, grupo: null, item_catalogo_id: null, orden: null, sigla: null, valor: null },
+              matriz: {
+                id: 0,
+                nombre: '',
+                catalogo_id: 0,
+                estado: true,
+                grupo: null,
+                item_catalogo_id: null,
+                orden: null,
+                sigla: null,
+                valor: null,
+              },
               hijos: uniqueIds.map((id) => ({
                 id,
                 activo: true,
@@ -462,7 +471,8 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         valor_numero: null,
         valor_fecha: null,
         valor_booleano: null,
-        valor_multiple: this.manualSchedules.length > 0 ? JSON.stringify(this.manualSchedules) : null,
+        valor_multiple:
+          this.manualSchedules.length > 0 ? JSON.stringify(this.manualSchedules) : null,
         valor_catalogo: 0,
         valor_uuid: raw.tecnico_id ?? null,
       }));
@@ -500,7 +510,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     const payload = { solicitudEnsayo };
 
     if ((this.modoEdicion || this.ensayosGuardados) && this.solicitudRegistradaId) {
-      await firstValueFrom(this.service.actualizarEnsayosSolicitud(this.solicitudRegistradaId, payload));
+      await firstValueFrom(
+        this.service.actualizarEnsayosSolicitud(this.solicitudRegistradaId, payload),
+      );
     } else {
       await firstValueFrom(this.service.guardarEnsayosSolicitud(payload));
     }
@@ -567,12 +579,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     } catch (err: any) {
       this.zone.run(() => {
         this.isCreandoSolicitud = false;
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo registrar la solicitud',
-          confirmButtonColor: this.COLOR_PRIMARIO,
-        });
+        this.alertService.error('No se pudo registrar la solicitud');
       });
     }
   }
@@ -586,22 +593,9 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       this.alertCamposObligatorios();
       return;
     }
-    if (step >= 3 && this.currentStep === 2 && this.form.invalid) {
-      this.form.markAllAsTouched();
-      const invalidos = Object.entries(this.form.controls)
-        .filter(([, ctrl]) => ctrl.invalid)
-        .map(([name]) => this.fields.find((f) => f.key === name && !f.hidden)?.label || name)
-        .filter(Boolean);
-      Swal.fire({
-        icon: 'warning',
-        title: 'Complete los campos obligatorios',
-        text: invalidos.length ? 'Faltan: ' + invalidos.join(', ') : 'Revise los campos marcados en rojo.',
-        confirmButtonColor: this.COLOR_PRIMARIO,
-      });
-      return;
-    }
+    if (step >= 3 && this.currentStep === 2 && !this.validarCamposStep2()) return;
     if (step === 4 && !this.solicitudRegistradaId) {
-      this.alertToast('warning', 'Debe completar el paso 3 antes de continuar');
+      this.alertService.toast('warning', 'Debe completar el paso 3 antes de continuar');
       return;
     }
     if (step > this.currentStep + 1) return;
@@ -624,27 +618,29 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     if (this.currentStep === 2) {
-      if (this.form.invalid) {
-        this.form.markAllAsTouched();
-        const invalidos = Object.entries(this.form.controls)
-          .filter(([, ctrl]) => ctrl.invalid)
-          .map(([name]) => this.fields.find((f) => f.key === name && !f.hidden)?.label || name)
-          .filter(Boolean);
-        Swal.fire({
-          icon: 'warning',
-          title: 'Complete los campos obligatorios',
-          text: invalidos.length
-            ? 'Faltan: ' + invalidos.join(', ')
-            : 'Revise los campos marcados en rojo.',
-          confirmButtonColor: this.COLOR_PRIMARIO,
-        });
-        return;
-      }
+      if (!this.validarCamposStep2()) return;
       // Los valores del step2 quedan en this.form (ya son "temporales") y
       // solo se envían al backend al confirmar en el step4.
       this.avanzarPaso();
       return;
     }
+  }
+
+  // Valida el formulario dinámico del step2 y, si hay campos inválidos,
+  // marca los controles como tocados y muestra cuáles faltan. Compartido
+  // por goToStep (navegación directa por el stepper) y goNextStep.
+  private validarCamposStep2(): boolean {
+    if (this.form.valid) return true;
+    this.form.markAllAsTouched();
+    const invalidos = Object.entries(this.form.controls)
+      .filter(([, ctrl]) => ctrl.invalid)
+      .map(([name]) => this.fields.find((f) => f.key === name && !f.hidden)?.label || name)
+      .filter(Boolean);
+    this.alertService.warning(
+      invalidos.length ? 'Faltan: ' + invalidos.join(', ') : 'Revise los campos marcados en rojo.',
+      'Complete los campos obligatorios',
+    );
+    return false;
   }
 
   goPrevStep(): void {
@@ -696,12 +692,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   private alertCamposObligatorios(): void {
     this.form.markAllAsTouched();
-    Swal.fire({
-      icon: 'warning',
-      title: 'Atención',
-      text: 'Complete los campos obligatorios de la cabecera',
-      confirmButtonColor: this.COLOR_PRIMARIO,
-    });
+    this.alertService.warning('Complete los campos obligatorios de la cabecera');
   }
 
   // ── Step 2: integración SRI / Civil ──────────────────────────────────────
@@ -709,7 +700,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   buscarDatosIntegracion(field: FieldConfig): void {
     const control = this.getFieldControl(field.key);
     if (!control.value) {
-      this.alertToast('warning', 'Ingrese un documento válido para buscar');
+      this.alertService.toast('warning', 'Ingrese un documento válido para buscar');
       return;
     }
 
@@ -725,7 +716,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
           next: (datos: DatosSRI) => {
             resetBuscando();
             this.form.patchValue(datos);
-            this.alertToast('success', 'Datos SRI recuperados');
+            this.alertService.toast('success', 'Datos SRI recuperados');
           },
           error: resetBuscando,
         });
@@ -737,14 +728,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
           next: (datos: DatosRegistroCivil) => {
             resetBuscando();
             this.form.patchValue(datos);
-            this.alertToast('success', 'Datos Registro Civil recuperados');
+            this.alertService.toast('success', 'Datos Registro Civil recuperados');
           },
           error: resetBuscando,
         });
     }
   }
 
-  addManualScheduleItem(entry: { dias: string[]; inicio_bloque: string; fin_bloque: string }): void {
+  addManualScheduleItem(entry: {
+    dias: string[];
+    inicio_bloque: string;
+    fin_bloque: string;
+  }): void {
     this.manualSchedules = [...this.manualSchedules, entry];
   }
 
@@ -778,42 +773,44 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
+  // Ejecuta un paso de guardado del flujo de confirmación (step2, step3,
+  // finalización). Si falla, apaga isGuardando y muestra errorMsg; devuelve
+  // false para que el llamador corte la cadena sin ejecutar los pasos
+  // siguientes.
+  private async ejecutarPasoGuardado(
+    paso: () => Promise<void>,
+    errorMsg: string,
+  ): Promise<boolean> {
+    try {
+      await paso();
+      return true;
+    } catch {
+      this.zone.run(() => {
+        this.isGuardando = false;
+        this.alertService.error(errorMsg);
+      });
+      return false;
+    }
+  }
+
   // Confirmación final del step4: guarda valores (step2), luego ensayos
-  // (step3) y recién entonces finaliza la solicitud. Cada llamada espera a
-  // que la anterior termine con éxito — si una falla, las siguientes no se
+  // (step3) y recién entonces finaliza la solicitud. Cada paso espera a que
+  // el anterior termine con éxito — si uno falla, los siguientes no se
   // ejecutan y se muestra el error correspondiente a esa etapa.
   async aceptarConfidencialidad(): Promise<void> {
     this.isGuardando = true;
 
-    try {
-      await this.guardarValoresSolicitud();
-    } catch (err: any) {
-      this.zone.run(() => {
-        this.isGuardando = false;
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo guardar los valores de la solicitud',
-          confirmButtonColor: this.COLOR_PRIMARIO,
-        });
-      });
-      return;
-    }
+    const valoresOk = await this.ejecutarPasoGuardado(
+      () => this.guardarValoresSolicitud(),
+      'No se pudo guardar los valores de la solicitud',
+    );
+    if (!valoresOk) return;
 
-    try {
-      await this.guardarEnsayosSolicitud();
-    } catch (err: any) {
-      this.zone.run(() => {
-        this.isGuardando = false;
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo guardar los ensayos de la solicitud',
-          confirmButtonColor: this.COLOR_PRIMARIO,
-        });
-      });
-      return;
-    }
+    const ensayosOk = await this.ejecutarPasoGuardado(
+      () => this.guardarEnsayosSolicitud(),
+      'No se pudo guardar los ensayos de la solicitud',
+    );
+    if (!ensayosOk) return;
 
     try {
       const finRes = await firstValueFrom(
@@ -829,15 +826,10 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
         this.isGuardando = false;
         this.abrirPdfFinal();
       });
-    } catch (err: any) {
+    } catch {
       this.zone.run(() => {
         this.isGuardando = false;
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo finalizar la solicitud',
-          confirmButtonColor: this.COLOR_PRIMARIO,
-        });
+        this.alertService.error('No se pudo finalizar la solicitud');
       });
     }
   }
@@ -1060,19 +1052,5 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     return (
       field.key?.toLowerCase().includes('motivo') || field.label?.toLowerCase().includes('motivo')
     );
-  }
-
-  // ── Helpers UI ───────────────────────────────────────────────────────────
-
-  private alertToast(icon: 'success' | 'warning' | 'error', text: string): void {
-    Swal.fire({
-      icon,
-      text,
-      confirmButtonColor: this.COLOR_PRIMARIO,
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 3000,
-    });
   }
 }

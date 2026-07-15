@@ -1,20 +1,21 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../../features/auth/service/auth-service';
-import Swal from 'sweetalert2'; // 👈 Importamos Swal
+import { AlertService } from '../../services/alert.service';
 
 export const canActivateWithRealmRoles: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
+  const alertService = inject(AlertService);
 
   // 1. Validar si hay Token
   if (!authService.rawAccessToken || authService.isTokenExpired()) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Sesión expirada',
-      text: 'Por favor, inicia sesión nuevamente.',
-      confirmButtonColor: '#28367F',
-    });
+    alertService.warning(
+      'Por favor, inicia sesión nuevamente.',
+      'Sesión expirada',
+      undefined,
+      '#28367F',
+    );
     return router.createUrlTree(['/login']);
   }
 
@@ -43,13 +44,12 @@ export const canActivateWithRealmRoles: CanActivateFn = (route, state) => {
   // 2. DISPARAR ALERTA SI NO TIENE ROLES
   console.error('Acceso Denegado: Roles insuficientes.');
 
-  Swal.fire({
-    icon: 'error',
-    title: 'Acceso Denegado',
-    text: `No tienes los permisos necesarios para acceder a esta sección. Se requieren roles: ${requiredRolesList.join(', ')}`,
-    confirmButtonColor: '#28367F',
-    confirmButtonText: 'Entendido',
-  });
+  alertService.error(
+    `No tienes los permisos necesarios para acceder a esta sección. Se requieren roles: ${requiredRolesList.join(', ')}`,
+    'Acceso Denegado',
+    'Entendido',
+    '#28367F',
+  );
 
   return router.createUrlTree(['/login']);
 };

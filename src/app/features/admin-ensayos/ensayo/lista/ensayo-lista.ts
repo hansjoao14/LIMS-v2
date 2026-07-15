@@ -1,8 +1,16 @@
-import { Component, OnInit, OnDestroy, Output, EventEmitter, Input, NgZone, computed } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  Output,
+  EventEmitter,
+  Input,
+  NgZone,
+  computed,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, finalize } from 'rxjs';
-import Swal from 'sweetalert2';
 
 import { EnsayoService } from '../../../../services/ensayo.service';
 import { Ensayo } from '../../../../interfaces/ensayos/ensayo.interface';
@@ -10,6 +18,7 @@ import { PaginationMeta } from '../../../../interfaces/catalogos/catalogo.interf
 import { PaginationComponent } from '../../../../shared/components/pagination/pagination';
 import { AuthService } from '../../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
+import { AlertService } from '../../../../services/alert.service';
 import { AppRole, MenuKey, hasPermission } from '../../../../core/utils/roles.constans';
 import { TableSkeleton } from '../../../../ui/table-skeleton/table-skeleton';
 
@@ -39,7 +48,7 @@ export class EnsayoLista implements OnInit, OnDestroy {
 
   private userAppRole = computed<AppRole | null>(() => {
     const roles = this.authService.userProfile()?.roles ?? [];
-    return (Object.values(AppRole) as AppRole[]).find(r => roles.includes(r)) ?? null;
+    return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
   });
 
   canEdit = computed(() => {
@@ -66,6 +75,7 @@ export class EnsayoLista implements OnInit, OnDestroy {
     private authService: AuthService,
     private zone: NgZone,
     private toastrAlert: ToastrAlertService,
+    private alertService: AlertService,
   ) {}
 
   ngOnInit(): void {
@@ -85,7 +95,8 @@ export class EnsayoLista implements OnInit, OnDestroy {
     this.loading = true;
     this.currentPage = page;
     const analisis = this.busqueda.trim();
-    this.ensayoService.getCollectionEnsayo(page, this.PAGE_SIZE, analisis)
+    this.ensayoService
+      .getCollectionEnsayo(page, this.PAGE_SIZE, analisis)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ data, meta }) => {
@@ -93,7 +104,9 @@ export class EnsayoLista implements OnInit, OnDestroy {
           this.meta = meta;
           this.loading = false;
         },
-        error: () => { this.loading = false; },
+        error: () => {
+          this.loading = false;
+        },
       });
   }
 
@@ -108,29 +121,35 @@ export class EnsayoLista implements OnInit, OnDestroy {
 
   async toggleEstadoEnsayo(item: Ensayo): Promise<void> {
     const accion = item.estado ? 'deshabilitar' : 'habilitar';
-    const confirm = await Swal.fire({
-      icon: 'warning',
+    const confirmado = await this.alertService.confirm({
       title: `¿${item.estado ? 'Deshabilitar' : 'Habilitar'} ensayo?`,
       text: `Se ${accion}á "${item.analisis}".`,
-      showCancelButton: true,
       confirmButtonColor: item.estado ? '#d33' : '#16a34a',
-      cancelButtonColor: '#6b7280',
       confirmButtonText: `Sí, ${accion}`,
-      cancelButtonText: 'Cancelar',
     });
-    if (!confirm.isConfirmed) return;
+    if (!confirmado) return;
     this.procesandoId = item.id;
     const call$ = this.ensayoService.toggleEnsayo(item.id, !item.estado);
     call$
-      .pipe(takeUntil(this.destroy$), finalize(() => { this.procesandoId = null; }))
-      .subscribe({
-        next: () => this.zone.run(() => {
-          this.toastrAlert.showSuccess(`Ensayo ${item.estado ? 'deshabilitado' : 'habilitado'}.`, '¡Listo!');
-          this.cargarPagina(this.currentPage);
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
         }),
-        error: () => this.zone.run(() =>
-          this.toastrAlert.showError(`No se pudo ${accion} el ensayo.`, 'Error')
-        ),
+      )
+      .subscribe({
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess(
+              `Ensayo ${item.estado ? 'deshabilitado' : 'habilitado'}.`,
+              '¡Listo!',
+            );
+            this.cargarPagina(this.currentPage);
+          }),
+        error: () =>
+          this.zone.run(() =>
+            this.toastrAlert.showError(`No se pudo ${accion} el ensayo.`, 'Error'),
+          ),
       });
   }
 }
