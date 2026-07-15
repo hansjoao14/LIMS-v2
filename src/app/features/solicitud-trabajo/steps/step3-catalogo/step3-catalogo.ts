@@ -278,11 +278,6 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
                 const previo = this.buscarPrevioLaboratorio(base);
                 return { ...base, activo: previo?.activo ?? false };
               });
-            console.log('[step3:cargarEnsayosAgua:superficial]', {
-              totalItemsServidor: items.length,
-              ensayosMuestreo: this.ensayosMuestreo.length,
-              ensayosSuperficiales: this.ensayosSuperficiales.length,
-            });
             this.ensayosMuestreoCambiado.emit(this.ensayosMuestreo);
             this.emitEnsayosResidualesCombinado();
           },
