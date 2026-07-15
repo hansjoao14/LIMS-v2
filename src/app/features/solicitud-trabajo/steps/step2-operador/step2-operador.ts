@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ControlContainer, FormControl, FormGroup, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, FormGroup, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 import { FieldConfig, FieldSectionId } from '../../model/solicitud-trabajo.model';
 import { TimePickerComponent } from '../../../../ui/time-picker/time-picker';
 
@@ -51,21 +51,12 @@ export class Step2OperadorComponent {
     return control ? control.invalid && (control.touched || control.dirty) : false;
   }
 
-  getFieldControl(key: string): FormControl {
-    return this.form.get(key) as FormControl;
-  }
-
   getSectionFields(sectionId: FieldSectionId): FieldConfig[] {
     return this.fields.filter((f) => f.section === sectionId && !f.hidden && !this.isMotivoField(f));
   }
 
   getMotivoBaseFields(): FieldConfig[] {
     return this.fields.filter((f) => !f.hidden && this.isMotivoField(f) && !this.isMotivoSpecificField(f));
-  }
-
-  getMotivoSpecificFields(flow: MotivoFlujo): FieldConfig[] {
-    if (!flow) return [];
-    return this.fields.filter((f) => !f.hidden && this.matchesMotivoFlow(f, flow));
   }
 
   getFieldRows(field: FieldConfig): number {
@@ -133,9 +124,5 @@ export class Step2OperadorComponent {
   private isMotivoSpecificField(field: FieldConfig): boolean {
     const text = `${field.key} ${field.label}`.toLowerCase();
     return text.includes('seguimiento') || text.includes('denuncia') || text.includes('licenciamiento');
-  }
-
-  private matchesMotivoFlow(field: FieldConfig, flow: MotivoFlujo): boolean {
-    return `${field.key} ${field.label}`.toLowerCase().includes(flow);
   }
 }

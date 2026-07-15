@@ -12,26 +12,12 @@
   z-index: 400 !important;
 }
 
-input[readonly] {
-  cursor: default;
-  background-color: #f9fafb;
-  color: #1e3a8a;
-}
-
 .animate-in {
   animation: animateIn 0.3s ease-out forwards;
 }
 
 .fade-in {
   opacity: 0;
-}
-
-.slide-in-from-bottom-4 {
-  transform: translateY(1rem);
-}
-
-.slide-in-from-right-4 {
-  transform: translateX(1rem);
 }
 
 @keyframes animateIn {
@@ -58,25 +44,4 @@ input[readonly] {
 
 .custom-scroll::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
-}
-
-.max-h-\[300px\]::-webkit-scrollbar {
-  width: 6px;
-}
-
-.max-h-\[300px\]::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-}
-
-.max-h-\[300px\]::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  border-color: #1e3a8a;
-  box-shadow: 0 0 0 1px #1e3a8a;
 }

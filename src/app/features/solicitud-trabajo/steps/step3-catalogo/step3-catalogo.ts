@@ -1,4 +1,13 @@
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
@@ -63,7 +72,6 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   matricesConHijos: MatrizConHijosUI[] = [];
   matrizSeleccionada = '';
   loading = true;
-  loadingEnsayos = false;
 
   ensayosMuestreo: EnsayoMuestreo[] = [];
   ensayosSuperficiales: EnsayoLaboratorio[] = [];
@@ -98,15 +106,8 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
 
     const actual = (cambio.currentValue as MatrizConHijosUI[]) ?? [];
 
-    const hayActivosEnPrevio  = actual.flatMap(m => m.hijos).some(h => h.activo);
-    const yaHayActivosEnLocal = this.matricesConHijos.flatMap(m => m.hijos).some(h => h.activo);
-
-    console.log('[step3:ngOnChanges]', JSON.parse(JSON.stringify({
-      hayActivosEnPrevio,
-      yaHayActivosEnLocal,
-      accion: (hayActivosEnPrevio && !yaHayActivosEnLocal) ? 'aplicarEstadoPrevio' : 'omitido',
-      previoHijos: actual.flatMap(m => m.hijos).map(h => ({ id: h.id, nombre: (h as any).nombre, activo: h.activo })),
-    })));
+    const hayActivosEnPrevio = actual.flatMap((m) => m.hijos).some((h) => h.activo);
+    const yaHayActivosEnLocal = this.matricesConHijos.flatMap((m) => m.hijos).some((h) => h.activo);
 
     if (hayActivosEnPrevio && !yaHayActivosEnLocal) {
       this.aplicarEstadoPrevio();
@@ -154,40 +155,29 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
       .getMatricesConHijos(this.CATALOGO_MATRICES_ID)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-      next: (data) => {
-        const previoHijos = this.estadoPrevio.flatMap((m) => m.hijos);
-        const mapeo: { id: number; nombre: string; previoEncontrado: boolean; activo: boolean }[] = [];
-        this.matricesConHijos = data.map((item) => ({
-          collapsed: false,
-          matriz: item.matriz,
-          hijos: item.hijos.map((h) => {
-            const previo = previoHijos.find((ph) => ph.id === h.id);
-            mapeo.push({ id: h.id, nombre: h.nombre, previoEncontrado: !!previo, activo: previo?.activo ?? false });
-            return { ...h, activo: previo?.activo ?? false };
-          }),
-        }));
-        console.log('[step3:getMatricesConHijos]', JSON.parse(JSON.stringify({
-          estadoPrevio: this.estadoPrevio,
-          previoHijos: previoHijos.map(h => ({ id: h.id, nombre: (h as any).nombre, activo: h.activo })),
-          mapeoHijos: mapeo,
-          matricesConHijosFinal: this.matricesConHijos.map(g => ({
-            matriz: g.matriz.nombre,
-            hijos: g.hijos.map(h => ({ id: h.id, nombre: h.nombre, activo: h.activo })),
-          })),
-        })));
-        this.restaurarMatrizSeleccionada();
-        this.loading = false;
-        this.spinner.hide('catalogo-step3');
-        this.cargarEnsayosActivos();
-        // Defer to avoid NG0100: parent already read catalogosSeleccionados
-        // in this CD cycle — emitting synchronously changes it mid-check.
-        Promise.resolve().then(() => this.estadoCambiado.emit(this.matricesConHijos));
-      },
-      error: () => {
-        this.loading = false;
-        this.spinner.hide('catalogo-step3');
-      },
-    });
+        next: (data) => {
+          const previoHijos = this.estadoPrevio.flatMap((m) => m.hijos);
+          this.matricesConHijos = data.map((item) => ({
+            collapsed: false,
+            matriz: item.matriz,
+            hijos: item.hijos.map((h) => {
+              const previo = previoHijos.find((ph) => ph.id === h.id);
+              return { ...h, activo: previo?.activo ?? false };
+            }),
+          }));
+          this.restaurarMatrizSeleccionada();
+          this.loading = false;
+          this.spinner.hide('catalogo-step3');
+          this.cargarEnsayosActivos();
+          // Defer to avoid NG0100: parent already read catalogosSeleccionados
+          // in this CD cycle — emitting synchronously changes it mid-check.
+          Promise.resolve().then(() => this.estadoCambiado.emit(this.matricesConHijos));
+        },
+        error: () => {
+          this.loading = false;
+          this.spinner.hide('catalogo-step3');
+        },
+      });
   }
 
   // El componente se destruye y recrea al cambiar de paso (@if en el padre
@@ -202,23 +192,13 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
 
   private aplicarEstadoPrevio(): void {
     const previoHijos = this.estadoPrevio.flatMap((m) => m.hijos);
-    const mapeo: { id: number; nombre: string; previoEncontrado: boolean; activo: boolean }[] = [];
     this.matricesConHijos = this.matricesConHijos.map((grupo) => ({
       ...grupo,
       hijos: grupo.hijos.map((h) => {
         const previo = previoHijos.find((ph) => ph.id === h.id);
-        mapeo.push({ id: h.id, nombre: h.nombre, previoEncontrado: !!previo, activo: previo?.activo ?? h.activo });
         return { ...h, activo: previo?.activo ?? h.activo };
       }),
     }));
-    console.log('[step3:aplicarEstadoPrevio]', JSON.parse(JSON.stringify({
-      previoHijos: previoHijos.map(h => ({ id: h.id, nombre: (h as any).nombre, activo: h.activo })),
-      mapeoHijos: mapeo,
-      matricesConHijosFinal: this.matricesConHijos.map(g => ({
-        matriz: g.matriz.nombre,
-        hijos: g.hijos.map(h => ({ id: h.id, nombre: h.nombre, activo: h.activo })),
-      })),
-    })));
     this.restaurarMatrizSeleccionada();
     this.cargarEnsayosActivos();
   }
@@ -246,9 +226,16 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   // que exista una fila/tabla visible aparte para Residuales.
   private emitEnsayosResidualesCombinado(): void {
     const combinado = [...this.ensayosSuperficiales];
-    if (this.hijoSuperficialActivo && this.hijoResidualActivo && this.ctambientalResidualId != null) {
+    if (
+      this.hijoSuperficialActivo &&
+      this.hijoResidualActivo &&
+      this.ctambientalResidualId != null
+    ) {
       combinado.push(
-        ...this.ensayosSuperficiales.map((e) => ({ ...e, ctambiental_id: this.ctambientalResidualId! })),
+        ...this.ensayosSuperficiales.map((e) => ({
+          ...e,
+          ctambiental_id: this.ctambientalResidualId!,
+        })),
       );
     }
     combinado.push(...this.ensayosResiduales);
@@ -270,7 +257,6 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     this.ctambientalResidualId = hijoResidual?.id ?? null;
 
     if (hijoSuperficial?.activo) {
-      this.loadingEnsayos = true;
       this.ensayoItemService
         .getEnsayosByCtAmbiental(hijoSuperficial.id)
         .pipe(takeUntil(this.destroy$))
@@ -280,7 +266,9 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
               .filter((i) => i.ensayo_id === this.ENSAYO_ID_MUESTREO)
               .map((i) => {
                 const base = this.mapToMuestreo(i);
-                const previo = this.ensayosMuestreoPrevio.find((p) => p.parametro === base.parametro);
+                const previo = this.ensayosMuestreoPrevio.find(
+                  (p) => p.parametro === base.parametro,
+                );
                 return { ...base, activo: previo?.activo ?? false };
               });
             this.ensayosSuperficiales = items
@@ -295,11 +283,9 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
               ensayosMuestreo: this.ensayosMuestreo.length,
               ensayosSuperficiales: this.ensayosSuperficiales.length,
             });
-            this.loadingEnsayos = false;
             this.ensayosMuestreoCambiado.emit(this.ensayosMuestreo);
             this.emitEnsayosResidualesCombinado();
           },
-          error: () => (this.loadingEnsayos = false),
         });
     } else {
       this.ensayosMuestreo = [];
@@ -316,7 +302,6 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     // emitEnsayosResidualesCombinado ya replica el guardado hacia el
     // ctambiental_id de Residuales.
     if (hijoResidual?.activo && !hijoSuperficial?.activo) {
-      this.loadingEnsayos = true;
       this.ensayoItemService
         .getEnsayosByCtAmbiental(hijoResidual.id)
         .pipe(takeUntil(this.destroy$))
@@ -333,10 +318,8 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
               totalItemsServidor: items.length,
               ensayosResiduales: this.ensayosResiduales.length,
             });
-            this.loadingEnsayos = false;
             this.emitEnsayosResidualesCombinado();
           },
-          error: () => (this.loadingEnsayos = false),
         });
     } else {
       this.ensayosResiduales = [];
@@ -356,18 +339,33 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (items) => {
-          const mapeo: { identificacion: string; previoEncontrado: boolean; activo: boolean }[] = [];
+          const mapeo: { identificacion: string; previoEncontrado: boolean; activo: boolean }[] =
+            [];
           this.ensayosAireServer = items.map((i) => {
             const base = this.mapToLaboratorio(i);
-            const previo = this.ensayosAirePrevio.find((p) => p.identificacion === base.identificacion);
-            mapeo.push({ identificacion: base.identificacion, previoEncontrado: !!previo, activo: previo?.activo ?? false });
+            const previo = this.ensayosAirePrevio.find(
+              (p) => p.identificacion === base.identificacion,
+            );
+            mapeo.push({
+              identificacion: base.identificacion,
+              previoEncontrado: !!previo,
+              activo: previo?.activo ?? false,
+            });
             return { ...base, activo: previo?.activo ?? false };
           });
-          console.log('[step3:cargarEnsayosAire]', JSON.parse(JSON.stringify({
-            totalItemsServidor: items.length,
-            ensayosAirePrevio: this.ensayosAirePrevio.map(p => ({ identificacion: p.identificacion, activo: p.activo })),
-            mapeo,
-          })));
+          console.log(
+            '[step3:cargarEnsayosAire]',
+            JSON.parse(
+              JSON.stringify({
+                totalItemsServidor: items.length,
+                ensayosAirePrevio: this.ensayosAirePrevio.map((p) => ({
+                  identificacion: p.identificacion,
+                  activo: p.activo,
+                })),
+                mapeo,
+              }),
+            ),
+          );
           this.ensayosAireCambiado.emit(this.ensayosAireServer);
         },
       });
@@ -385,18 +383,33 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (items) => {
-          const mapeo: { identificacion: string; previoEncontrado: boolean; activo: boolean }[] = [];
+          const mapeo: { identificacion: string; previoEncontrado: boolean; activo: boolean }[] =
+            [];
           this.ensayosRuidoServer = items.map((i) => {
             const base = this.mapToLaboratorio(i);
-            const previo = this.ensayosRuidoPrevio.find((p) => p.identificacion === base.identificacion);
-            mapeo.push({ identificacion: base.identificacion, previoEncontrado: !!previo, activo: previo?.activo ?? false });
+            const previo = this.ensayosRuidoPrevio.find(
+              (p) => p.identificacion === base.identificacion,
+            );
+            mapeo.push({
+              identificacion: base.identificacion,
+              previoEncontrado: !!previo,
+              activo: previo?.activo ?? false,
+            });
             return { ...base, activo: previo?.activo ?? false };
           });
-          console.log('[step3:cargarEnsayosRuido]', JSON.parse(JSON.stringify({
-            totalItemsServidor: items.length,
-            ensayosRuidoPrevio: this.ensayosRuidoPrevio.map(p => ({ identificacion: p.identificacion, activo: p.activo })),
-            mapeo,
-          })));
+          console.log(
+            '[step3:cargarEnsayosRuido]',
+            JSON.parse(
+              JSON.stringify({
+                totalItemsServidor: items.length,
+                ensayosRuidoPrevio: this.ensayosRuidoPrevio.map((p) => ({
+                  identificacion: p.identificacion,
+                  activo: p.activo,
+                })),
+                mapeo,
+              }),
+            ),
+          );
           this.ensayosRuidoCambiado.emit(this.ensayosRuidoServer);
         },
       });

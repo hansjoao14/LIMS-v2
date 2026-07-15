@@ -1,10 +1,8 @@
-import { CommonModule } from '@angular/common';
 import { Component, NgZone, OnDestroy, OnInit, AfterViewChecked } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
   FormBuilder,
   FormGroup,
-  FormsModule,
   ReactiveFormsModule,
   ValidatorFn,
   Validators,
@@ -20,7 +18,6 @@ import {
   FieldConfig,
   FieldSectionId,
   FormularioLaboratorio,
-  JornadaItem,
   Pregunta,
 } from './model/solicitud-trabajo.model';
 import {
@@ -66,9 +63,7 @@ type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
   selector: 'app-solicitud-trabajo',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
-    FormsModule,
     Step1SolicitudComponent,
     Step2OperadorComponent,
     Step3CatalogoComponent,
@@ -147,7 +142,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   private marker: L.Marker | null = null;
 
   // ── Constantes ───────────────────────────────────────────────────────────
-  readonly fechaActual = new Date();
   private readonly COLOR_PRIMARIO = '#1e3a8a';
   private readonly destroy$ = new Subject<void>();
 

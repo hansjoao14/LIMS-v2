@@ -93,17 +93,3 @@ export interface FieldConfig {
   };
   source: Pregunta;
 }
-
-export interface FieldSectionConfig {
-  id: FieldSectionId;
-  title: string;
-  description: string;
-}
-
-export interface UserSession {
-  nombreCompleto: string;
-  cargo: string;
-  jefatura: string;
-  idJefatura: number;
-  // Otros datos del login...
-}
