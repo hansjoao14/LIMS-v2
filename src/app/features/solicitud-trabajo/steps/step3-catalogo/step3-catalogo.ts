@@ -330,33 +330,13 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (items) => {
-          const mapeo: { identificacion: string; previoEncontrado: boolean; activo: boolean }[] =
-            [];
           this.ensayosAireServer = items.map((i) => {
             const base = this.mapToLaboratorio(i);
             const previo = this.ensayosAirePrevio.find(
               (p) => p.identificacion === base.identificacion,
             );
-            mapeo.push({
-              identificacion: base.identificacion,
-              previoEncontrado: !!previo,
-              activo: previo?.activo ?? false,
-            });
             return { ...base, activo: previo?.activo ?? false };
           });
-          console.log(
-            '[step3:cargarEnsayosAire]',
-            JSON.parse(
-              JSON.stringify({
-                totalItemsServidor: items.length,
-                ensayosAirePrevio: this.ensayosAirePrevio.map((p) => ({
-                  identificacion: p.identificacion,
-                  activo: p.activo,
-                })),
-                mapeo,
-              }),
-            ),
-          );
           this.ensayosAireCambiado.emit(this.ensayosAireServer);
         },
       });
@@ -374,33 +354,13 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (items) => {
-          const mapeo: { identificacion: string; previoEncontrado: boolean; activo: boolean }[] =
-            [];
           this.ensayosRuidoServer = items.map((i) => {
             const base = this.mapToLaboratorio(i);
             const previo = this.ensayosRuidoPrevio.find(
               (p) => p.identificacion === base.identificacion,
             );
-            mapeo.push({
-              identificacion: base.identificacion,
-              previoEncontrado: !!previo,
-              activo: previo?.activo ?? false,
-            });
             return { ...base, activo: previo?.activo ?? false };
           });
-          console.log(
-            '[step3:cargarEnsayosRuido]',
-            JSON.parse(
-              JSON.stringify({
-                totalItemsServidor: items.length,
-                ensayosRuidoPrevio: this.ensayosRuidoPrevio.map((p) => ({
-                  identificacion: p.identificacion,
-                  activo: p.activo,
-                })),
-                mapeo,
-              }),
-            ),
-          );
           this.ensayosRuidoCambiado.emit(this.ensayosRuidoServer);
         },
       });
