@@ -238,7 +238,7 @@
                   @if (grupo.hijos[0]?.activo) {
                     <div class="bg-white rounded border shadow-sm">
                       <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">
-                        Tabla 2. {{ tituloAgua }}
+                        Tabla 2. {{ tituloAguaSuperficial }}
                       </h5>
                       <div class="overflow-hidden overflow-x-auto custom-scroll">
                         <div
@@ -333,12 +333,26 @@
                         }
                       </div>
                     </div>
+                    @if (notasAguaSuperficial.length > 0) {
+                      <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                        <p class="text-[11px] font-bold text-slate-800 mb-2">
+                          ⓘ Notas Importantes:
+                        </p>
+                        <ul class="list-decimal pl-4 space-y-1">
+                          @for (nota of notasAguaSuperficial; track nota.header) {
+                            <li class="text-[11px] text-slate-600 leading-tight">
+                              <strong>{{ nota.header }}:</strong> {{ nota.detail }}
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
                   }
 
-                  @if (grupo.hijos[1]?.activo && !grupo.hijos[0]?.activo) {
+                  @if (grupo.hijos[1]?.activo) {
                     <div class="bg-white rounded border shadow-sm">
                       <h5 class="font-bold text-[#1e3a8a] text-sm mb-3 uppercase p-3 pb-0">
-                        Tabla 3. {{ tituloAgua }}
+                        Tabla 3. {{ tituloAguaResidual }}
                       </h5>
                       <div class="overflow-hidden overflow-x-auto custom-scroll">
                         <div
@@ -433,19 +447,20 @@
                         }
                       </div>
                     </div>
-                  }
-
-                  @if (notasAgua.length > 0) {
-                    <div class="bg-slate-50 border border-slate-200 rounded p-4">
-                      <p class="text-[11px] font-bold text-slate-800 mb-2">ⓘ Notas Importantes:</p>
-                      <ul class="list-decimal pl-4 space-y-1">
-                        @for (nota of notasAgua; track nota.header) {
-                          <li class="text-[11px] text-slate-600 leading-tight">
-                            <strong>{{ nota.header }}:</strong> {{ nota.detail }}
-                          </li>
-                        }
-                      </ul>
-                    </div>
+                    @if (notasAguaResidual.length > 0) {
+                      <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                        <p class="text-[11px] font-bold text-slate-800 mb-2">
+                          ⓘ Notas Importantes:
+                        </p>
+                        <ul class="list-decimal pl-4 space-y-1">
+                          @for (nota of notasAguaResidual; track nota.header) {
+                            <li class="text-[11px] text-slate-600 leading-tight">
+                              <strong>{{ nota.header }}:</strong> {{ nota.detail }}
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
                   }
                 </div>
               }

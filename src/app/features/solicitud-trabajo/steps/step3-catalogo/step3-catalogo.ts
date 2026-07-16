@@ -82,20 +82,14 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   // una con su propio título/notas.
   tituloMuestreo = '';
   notasMuestreo: ReportCatalogoNota[] = [];
-  tituloAgua = '';
-  notasAgua: ReportCatalogoNota[] = [];
+  tituloAguaSuperficial = '';
+  notasAguaSuperficial: ReportCatalogoNota[] = [];
+  tituloAguaResidual = '';
+  notasAguaResidual: ReportCatalogoNota[] = [];
   tituloAire = '';
   notasAire: ReportCatalogoNota[] = [];
   tituloRuido = '';
   notasRuido: ReportCatalogoNota[] = [];
-
-  // Cuando ambos hijos de agua están activos, la Tabla 2 (Superficiales) es
-  // la única que se muestra, pero el guardado debe replicarse también para
-  // el ctambiental_id de Residuales — de ahí necesitamos su id y el estado
-  // activo de cada hijo disponibles al emitir, no solo al cargar.
-  private hijoSuperficialActivo = false;
-  private hijoResidualActivo = false;
-  private ctambientalResidualId: number | null = null;
 
   private destroy$ = new Subject<void>();
 
@@ -230,41 +224,21 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     );
   }
 
-  // Cuando ambos hijos están activos, la Tabla 2 (Superficiales) es la única
-  // visible; el guardado debe replicar cada fila también con el
-  // ctambiental_id de Residuales (mismo ensayo_id, mismo estado activo), sin
-  // que exista una fila/tabla visible aparte para Residuales.
-  private emitEnsayosResidualesCombinado(): void {
-    const combinado = [...this.ensayosSuperficiales];
-    if (
-      this.hijoSuperficialActivo &&
-      this.hijoResidualActivo &&
-      this.ctambientalResidualId != null
-    ) {
-      combinado.push(
-        ...this.ensayosSuperficiales.map((e) => ({
-          ...e,
-          ctambiental_id: this.ctambientalResidualId!,
-        })),
-      );
-    }
-    combinado.push(...this.ensayosResiduales);
-    this.ensayosResidualesCambiado.emit(combinado);
+  // Superficiales y Residuales son tablas independientes, cada una con su
+  // propio ctambiental_id: cuando ambas están activas se muestran y guardan
+  // las dos a la vez, sin duplicar filas ni reemplazar el ctambiental_id de
+  // ninguna — solo se concatenan para el único @Output de guardado que
+  // existe para "ensayos de agua".
+  private emitEnsayosAgua(): void {
+    this.ensayosResidualesCambiado.emit([...this.ensayosSuperficiales, ...this.ensayosResiduales]);
   }
 
   // hijos[0] = Aguas Superficiales, hijos[1] = Aguas Residuales: cada uno
-  // tiene su propio ctambiental_id y su propio conjunto de ensayo_item. Si
-  // ambos están activos, solo se muestra la tabla de Superficiales pero el
-  // guardado debe replicarse hacia el ctambiental_id de Residuales (ver
-  // emitEnsayosResidualesCombinado); si solo Residuales está activo, se
-  // carga y guarda de forma independiente con su propio ctambiental_id.
+  // tiene su propio ctambiental_id, su propio conjunto de ensayo_item y se
+  // carga/muestra de forma completamente independiente del otro.
   private cargarEnsayosAgua(grupo: MatrizConHijosUI): void {
     const hijoSuperficial = grupo.hijos[0];
     const hijoResidual = grupo.hijos[1];
-
-    this.hijoSuperficialActivo = !!hijoSuperficial?.activo;
-    this.hijoResidualActivo = !!hijoResidual?.activo;
-    this.ctambientalResidualId = hijoResidual?.id ?? null;
 
     if (hijoSuperficial?.activo) {
       this.ensayoItemService
@@ -289,8 +263,8 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
               return { ...base, activo: previo?.activo ?? false };
             });
 
-            this.tituloAgua = labEntry?.ensayo_nombre ?? '';
-            this.notasAgua = labEntry?.notas ?? [];
+            this.tituloAguaSuperficial = labEntry?.ensayo_nombre ?? '';
+            this.notasAguaSuperficial = labEntry?.notas ?? [];
             this.ensayosSuperficiales = (labEntry?.Ensayos ?? [])
               .filter((i) => i.id !== this.ENSAYO_ID_MUESTREO)
               .map((i) => {
@@ -300,7 +274,7 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
               });
 
             this.ensayosMuestreoCambiado.emit(this.ensayosMuestreo);
-            this.emitEnsayosResidualesCombinado();
+            this.emitEnsayosAgua();
           },
         });
     } else {
@@ -308,18 +282,15 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
       this.ensayosSuperficiales = [];
       this.tituloMuestreo = '';
       this.notasMuestreo = [];
+      this.tituloAguaSuperficial = '';
+      this.notasAguaSuperficial = [];
       Promise.resolve().then(() => {
         this.ensayosMuestreoCambiado.emit([]);
-        this.emitEnsayosResidualesCombinado();
+        this.emitEnsayosAgua();
       });
     }
 
-    // La tabla independiente de Residuales (Tabla 3) solo se carga/muestra
-    // cuando Residuales está activo y Superficiales NO lo está: si ambos
-    // están activos, Tabla 2 (Superficiales) es la única visible y
-    // emitEnsayosResidualesCombinado ya replica el guardado hacia el
-    // ctambiental_id de Residuales.
-    if (hijoResidual?.activo && !hijoSuperficial?.activo) {
+    if (hijoResidual?.activo) {
       this.ensayoItemService
         .getReportCatalogoEnsayoItem(hijoResidual.id)
         .pipe(takeUntil(this.destroy$))
@@ -327,8 +298,8 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
           next: (data) => {
             const labEntry =
               data.find((d) => !d.Ensayos.some((e) => e.id === this.ENSAYO_ID_MUESTREO)) ?? data[0];
-            this.tituloAgua = labEntry?.ensayo_nombre ?? '';
-            this.notasAgua = labEntry?.notas ?? [];
+            this.tituloAguaResidual = labEntry?.ensayo_nombre ?? '';
+            this.notasAguaResidual = labEntry?.notas ?? [];
             this.ensayosResiduales = (labEntry?.Ensayos ?? [])
               .filter((i) => i.id !== this.ENSAYO_ID_MUESTREO)
               .map((i) => {
@@ -336,16 +307,14 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
                 const previo = this.buscarPrevioLaboratorio(base);
                 return { ...base, activo: previo?.activo ?? false };
               });
-            this.emitEnsayosResidualesCombinado();
+            this.emitEnsayosAgua();
           },
         });
     } else {
       this.ensayosResiduales = [];
-      if (!hijoSuperficial?.activo) {
-        this.tituloAgua = '';
-        this.notasAgua = [];
-      }
-      Promise.resolve().then(() => this.emitEnsayosResidualesCombinado());
+      this.tituloAguaResidual = '';
+      this.notasAguaResidual = [];
+      Promise.resolve().then(() => this.emitEnsayosAgua());
     }
   }
 
@@ -457,11 +426,11 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   }
   toggleEnsayoSuperficial(idx: number): void {
     this.ensayosSuperficiales[idx].activo = !this.ensayosSuperficiales[idx].activo;
-    this.emitEnsayosResidualesCombinado();
+    this.emitEnsayosAgua();
   }
   toggleEnsayoResidual(idx: number): void {
     this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo;
-    this.emitEnsayosResidualesCombinado();
+    this.emitEnsayosAgua();
   }
   toggleEnsayoAire(idx: number): void {
     this.ensayosAireServer[idx].activo = !this.ensayosAireServer[idx].activo;
