@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Apollo, gql } from 'apollo-angular';
+import { Apollo } from 'apollo-angular';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
@@ -11,151 +11,14 @@ import {
   ReportAtributoFormularioCollectionResponse,
 } from '../../interfaces/admin-formularios/report-atributo-formulario.interface';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
-import { META_FIELDS } from '../../graphql/fragments';
+import {
+  GET_ATRIBUTOS_BY_FORMULARIO,
+  GET_ATRIBUTOS_DEPENDIENTES,
+  GET_COLLECTION_REPORT_FORMULARIO,
+  GET_FORMULARIO_BY_CT_ID,
+} from '../../graphql/admin-formularios/report-formulario.queries';
 
 const CLIENT_NAME = 'reportes';
-
-const GET_COLLECTION_REPORT_FORMULARIO = gql`
-  query CollectionReportFormulario {
-    collectionReportFormulario {
-      count
-      data {
-        ctformulario_id
-        descripcion
-        estado
-        fecha_actualizacion
-        fecha_creacion
-        fecha_emision
-        id
-        nombre
-        sigla
-        tipo_formulario
-        usuario_actualizacion
-        usuario_creacion
-        version
-      }
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
-
-const GET_FORMULARIO_BY_CT_ID = gql`
-  query CollectionReportFormularioByCTId($ctformularioId: Int!) {
-    collectionReportFormulario(
-      query: { where: { ctformulario_id: { equals: $ctformularioId } } }
-    ) {
-      count
-      data {
-        ctformulario_id
-        descripcion
-        estado
-        fecha_actualizacion
-        fecha_creacion
-        fecha_emision
-        id
-        nombre
-        sigla
-        tipo_formulario
-        usuario_actualizacion
-        usuario_creacion
-        version
-      }
-    }
-  }
-`;
-
-const GET_ATRIBUTOS_DEPENDIENTES = gql`
-  query CollectionReportAtributoFormularioDependientes($formularioId: String!) {
-    collectionReportAtributoFormulario(
-      query: { where: { formulario_id: { equals: $formularioId }, is_dependent: { equals: true } } }
-    ) {
-      count
-      data {
-        atributo_formulario_id
-        atributo_formulario_nombre
-        atributo_formulario_pregunta
-        formulario_id
-        is_dependent
-        orden
-        ctipo_dato_id
-        ctipo_dato_nombre
-        ctipo_respuesta_id
-        ctipo_respuesta_nombre
-        catalogo_id
-        item_catalogo_id
-        jornada_id
-        atributo_id
-        num_caracter
-        num_rango
-        num_atras
-        num_adelante
-        is_dependent_catalogo
-        estado_atributo_formulario
-        formulario_nombre
-        formulario_sigla
-        formulario_version
-        atributo_formulario_ayuda
-        hidden
-        is_ws_civil
-        is_ws_iess
-        is_ws_sri
-        jornada_nombre
-        multivaluado
-        obligatorio
-        readonly
-        tipo_formulario
-        is_list_empleado
-      }
-    }
-  }
-`;
-
-const GET_ATRIBUTOS_BY_FORMULARIO = gql`
-  query CollectionReportAtributoFormulario($formularioId: String!, $page: Int, $take: Int) {
-    collectionReportAtributoFormulario(
-      query: {
-        where: { formulario_id: { equals: $formularioId } }
-        pagination: { page: $page, take: $take }
-      }
-    ) {
-      count
-      data {
-        atributo_formulario_id
-        atributo_formulario_nombre
-        atributo_formulario_pregunta
-        atributo_formulario_ayuda
-        atributo_id
-        catalogo_id
-        ctipo_dato_id
-        ctipo_dato_nombre
-        ctipo_respuesta_id
-        ctipo_respuesta_nombre
-        estado_atributo_formulario
-        formulario_id
-        formulario_nombre
-        formulario_sigla
-        formulario_version
-        hidden
-        is_dependent
-        is_dependent_catalogo
-        is_ws_civil
-        is_ws_iess
-        is_ws_sri
-        item_catalogo_id
-        jornada_id
-        jornada_nombre
-        multivaluado
-        num_caracter
-        obligatorio
-        orden
-        readonly
-        tipo_formulario
-        is_list_empleado
-      }
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
 
 export interface FormulariosResult {
   data: ReportFormulario[];

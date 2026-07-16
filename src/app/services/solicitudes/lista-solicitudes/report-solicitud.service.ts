@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Apollo, gql } from 'apollo-angular';
+import { Apollo } from 'apollo-angular';
 import { Observable, expand, reduce, EMPTY, of } from 'rxjs';
 import { map, delay } from 'rxjs/operators';
 import {
@@ -11,139 +11,18 @@ import {
   ReportValorSolicitudCollectionResponse,
 } from '../../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
-import { META_FIELDS, REPORT_SOLICITUD_FIELDS, REPORT_VALOR_SOLICITUD_FIELDS } from '../../../graphql/fragments';
+import {
+  GET_COLLECTION_REPORT_SOLICITUD,
+  GET_ENSAYOS_SOLICITUD,
+  GET_SOLICITUDES_BY_FORMULARIO,
+  GET_SOLICITUDES_ESTADO_388,
+  GET_SOLICITUDES_FINALIZADAS,
+  GET_SOLICITUD_BY_ID,
+  GET_VALORES_BY_TIPO_FORMULARIO,
+  GET_VALORES_SOLICITUD,
+} from '../../../graphql/solicitudes/lista-solicitudes/report-solicitud.queries';
 
 const CLIENT_NAME = 'reportes';
-
-//agregar el id del formulario, el tema de los roles acceso
-const GET_COLLECTION_REPORT_SOLICITUD = gql`
-  query CollectionReportSolicitud($page: Int, $take: Int) {
-    collectionReportSolicitud(
-      query: {
-        orderBy: { fecha_creacion: DESC }
-        where: { ctestado_id: { in: [2, 51, 387, 388] } }
-        pagination: { page: $page, take: $take }
-      }
-    ) {
-      data { ${REPORT_SOLICITUD_FIELDS} }
-      count
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
-
-const GET_VALORES_SOLICITUD = gql`
-  query CollectionReportValorSolicitud($id: String!) {
-    collectionReportValorSolicitud(
-      query: {
-        where: { id_solicitud: { equals: $id } estado: { equals: true } }
-        pagination: { page: 1, take: 100 }
-      }
-    ) {
-      count
-      data { ${REPORT_VALOR_SOLICITUD_FIELDS} }
-    }
-  }
-`;
-
-const GET_VALORES_BY_TIPO_FORMULARIO = gql`
-  query CollectionReportValorSolicitud($tipoFormularioId: Int!, $page: Int, $take: Int) {
-    collectionReportValorSolicitud(
-      query: {
-        orderBy: { tipo_formulario_id: ASC }
-        where: { tipo_formulario_id: { equals: $tipoFormularioId } estado: { equals: true } }
-        pagination: { page: $page, take: $take }
-      }
-    ) {
-      count
-      data { ${REPORT_VALOR_SOLICITUD_FIELDS} }
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
-
-const GET_SOLICITUDES_FINALIZADAS = gql`
-  query CollectionReportSolicitudesFinalizadas($page: Int, $take: Int) {
-    collectionReportSolicitud(
-      query: {
-        orderBy: { fecha_creacion: DESC }
-        where: { ctestado_id: { equals: 387 } }
-        pagination: { page: $page, take: $take }
-      }
-    ) {
-      data { ${REPORT_SOLICITUD_FIELDS} }
-      count
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
-
-const GET_SOLICITUDES_ESTADO_388 = gql`
-  query CollectionReportSolicitudesEstado388($page: Int, $take: Int) {
-    collectionReportSolicitud(
-      query: {
-        orderBy: { fecha_creacion: DESC }
-        where: { ctestado_id: { equals: 388 } }
-        pagination: { page: $page, take: $take }
-      }
-    ) {
-      data { ${REPORT_SOLICITUD_FIELDS} }
-      count
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
-
-const GET_SOLICITUDES_BY_FORMULARIO = gql`
-  query CollectionReportSolicitudByFormulario($formularioId: String!, $page: Int, $take: Int) {
-    collectionReportSolicitud(
-      query: {
-        orderBy: { fecha_creacion: DESC }
-        where: { formulario_id: { equals: $formularioId } }
-        pagination: { page: $page, take: $take }
-      }
-    ) {
-      data { ${REPORT_SOLICITUD_FIELDS} }
-      count
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
-
-const GET_SOLICITUD_BY_ID = gql`
-  query CollectionReportSolicitudById($id: String!) {
-    collectionReportSolicitud(
-      query: { where: { id_solicitud: { equals: $id } } }
-    ) {
-      data { ${REPORT_SOLICITUD_FIELDS} }
-    }
-  }
-`;
-
-const GET_ENSAYOS_SOLICITUD = gql`
-  query CollectionReportSolicitudEnsayo($solicitudId: String!, $page: Int, $take: Int) {
-    collectionReportSolicitudEnsayo(
-      query: {
-        where: { solicitud_id: { equals: $solicitudId } estado: { equals: true } }
-        pagination: { page: $page, take: $take }
-      }
-    ) {
-      count
-      data {
-        analisis
-        ctambiental_id
-        ctipo_ambiental_nombre
-        ensayo_id
-        estado
-        id
-        identificacion
-        metodo
-        solicitud_id
-      }
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
 
 export interface SolicitudesPage {
   data: ReportSolicitud[];
