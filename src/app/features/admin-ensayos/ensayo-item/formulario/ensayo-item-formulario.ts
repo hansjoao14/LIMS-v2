@@ -11,10 +11,11 @@ import {
   EnsayoItemPayload,
 } from '../../../../interfaces/ensayos/ensayo.interface';
 import { ItemCatalogoSelect } from '../../../../shared/components/item-catalogo-select/item-catalogo-select';
+import { EnsayoSelect } from '../../../../shared/components/ensayo-select/ensayo-select';
 
 @Component({
   selector: 'app-ensayo-item-formulario',
-  imports: [CommonModule, FormsModule, ItemCatalogoSelect],
+  imports: [CommonModule, FormsModule, ItemCatalogoSelect, EnsayoSelect],
   templateUrl: './ensayo-item-formulario.html',
 })
 export class EnsayoItemFormulario implements OnInit, OnDestroy {
@@ -34,6 +35,7 @@ export class EnsayoItemFormulario implements OnInit, OnDestroy {
 
   ctambiental_id: number | null = null;
   cttipo_ensayo_id: number | null = null;
+  ensayo_id: number | null = null;
 
   get modoEdicion(): boolean {
     return !!this.editingRecord;
@@ -48,6 +50,9 @@ export class EnsayoItemFormulario implements OnInit, OnDestroy {
     if (this.editingRecord) {
       this.ctambiental_id = this.editingRecord.ctambiental_id;
       this.cttipo_ensayo_id = this.editingRecord.cttipo_ensayo_id;
+      this.ensayo_id = this.editingRecord.ensayo_id;
+    } else {
+      this.ensayo_id = this.ensayo?.id ?? null;
     }
   }
 
@@ -65,12 +70,16 @@ export class EnsayoItemFormulario implements OnInit, OnDestroy {
       this.toastrAlert.showError('El tipo de ensayo es obligatorio.', 'Campo requerido');
       return;
     }
+    if (!this.ensayo_id) {
+      this.toastrAlert.showError('El ensayo es obligatorio.', 'Campo requerido');
+      return;
+    }
 
     this.saving = true;
     const payload: EnsayoItemPayload = {
       ctambiental_id: this.ctambiental_id,
       cttipo_ensayo_id: this.cttipo_ensayo_id,
-      ensayo_id: this.ensayo.id,
+      ensayo_id: this.ensayo_id,
     };
 
     const op$ = this.modoEdicion
