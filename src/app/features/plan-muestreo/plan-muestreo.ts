@@ -57,6 +57,9 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   meta: PaginationMeta | null = null;
   currentPage = 1;
   readonly PAGE_SIZE = 8;
+  // Solo se listan solicitudes de este formulario_ct_id (formulario válido
+  // para generar un plan de muestreo).
+  readonly FORMULARIO_CT_IDS = [2030];
   busqueda = '';
   solicitudSeleccionada: ReportSolicitud | null = null;
 
@@ -172,7 +175,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.loadingBusqueda = true;
     this.currentPage = page;
     this.reportSolicitudService
-      .getSolicitudesFinalizadas(page, this.PAGE_SIZE)
+      .getSolicitudesFinalizadas(page, this.PAGE_SIZE, this.FORMULARIO_CT_IDS)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ data, meta }) => {

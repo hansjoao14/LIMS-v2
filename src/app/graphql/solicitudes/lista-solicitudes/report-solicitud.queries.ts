@@ -68,6 +68,29 @@ export const GET_SOLICITUDES_FINALIZADAS = gql`
   }
 `;
 
+// Igual que GET_SOLICITUDES_FINALIZADAS pero acotada a un conjunto de
+// formulario_ct_id (p. ej. orden-trabajo-in-situ solo admite solicitudes de
+// los formularios 2029/380), en vez de todas las finalizadas.
+export const GET_SOLICITUDES_FINALIZADAS_BY_FORMULARIO_CT = gql`
+  query CollectionReportSolicitudesFinalizadasByFormularioCt(
+    $page: Int
+    $take: Int
+    $formularioCtIds: [Int!]
+  ) {
+    collectionReportSolicitud(
+      query: {
+        orderBy: { fecha_creacion: DESC }
+        where: { ctestado_id: { equals: 387 } formulario_ct_id: { in: $formularioCtIds } }
+        pagination: { page: $page, take: $take }
+      }
+    ) {
+      data { ${REPORT_SOLICITUD_FIELDS} }
+      count
+      meta { ${META_FIELDS} }
+    }
+  }
+`;
+
 export const GET_SOLICITUDES_ESTADO_388 = gql`
   query CollectionReportSolicitudesEstado388($page: Int, $take: Int) {
     collectionReportSolicitud(

@@ -38,6 +38,7 @@ export const REPORT_SOLICITUD_FIELDS = `
   estado_solicitud
   fecha_actualizacion
   fecha_creacion
+  formulario_ct_id
   formulario_id
   formulario_nombre
   id_solicitud
@@ -48,6 +49,7 @@ export const REPORT_SOLICITUD_FIELDS = `
   prioridad_id
   prioridad_nombre
   secuencial_id
+  tecnico_id
   usuario_actualizacion
   usuario_creacion
   usuario_id

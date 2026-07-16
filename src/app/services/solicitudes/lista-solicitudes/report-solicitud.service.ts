@@ -17,6 +17,7 @@ import {
   GET_SOLICITUDES_BY_FORMULARIO,
   GET_SOLICITUDES_ESTADO_388,
   GET_SOLICITUDES_FINALIZADAS,
+  GET_SOLICITUDES_FINALIZADAS_BY_FORMULARIO_CT,
   GET_SOLICITUD_BY_ID,
   GET_VALORES_BY_TIPO_FORMULARIO,
   GET_VALORES_SOLICITUD,
@@ -116,12 +117,25 @@ export class ReportSolicitudService {
     );
   }
 
-  getSolicitudesFinalizadas(page: number, limit: number): Observable<SolicitudesPage> {
+  // formularioCtIds acota el listado a ciertos tipos de formulario (p. ej.
+  // orden-trabajo-in-situ solo admite solicitudes de los formularios
+  // 2029/380); si se omite, trae todas las finalizadas sin ese filtro.
+  getSolicitudesFinalizadas(
+    page: number,
+    limit: number,
+    formularioCtIds?: number[],
+  ): Observable<SolicitudesPage> {
+    const query =
+      formularioCtIds != null
+        ? GET_SOLICITUDES_FINALIZADAS_BY_FORMULARIO_CT
+        : GET_SOLICITUDES_FINALIZADAS;
+    const variables =
+      formularioCtIds != null ? { page, take: limit, formularioCtIds } : { page, take: limit };
     return this.apollo
       .use(CLIENT_NAME)
       .query<{ collectionReportSolicitud: ReportSolicitudCollectionResponse }>({
-        query: GET_SOLICITUDES_FINALIZADAS,
-        variables: { page, take: limit },
+        query,
+        variables,
         fetchPolicy: 'network-only',
       })
       .pipe(

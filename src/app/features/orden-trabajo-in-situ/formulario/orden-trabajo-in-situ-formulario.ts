@@ -77,6 +77,9 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   meta: PaginationMeta | null = null;
   currentPage = 1;
   readonly PAGE_SIZE = 8;
+  // Solo se listan solicitudes de estos formulario_ct_id (formularios
+  // válidos para generar una orden de trabajo in situ).
+  readonly FORMULARIO_CT_IDS = [2029, 380];
   busqueda = '';
   solicitudSeleccionada: ReportSolicitud | null = null;
   loadingDetalle = false;
@@ -313,7 +316,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
     this.loadingBusqueda = true;
     this.currentPage = page;
     this.reportSolicitudService
-      .getSolicitudesFinalizadas(page, this.PAGE_SIZE)
+      .getSolicitudesFinalizadas(page, this.PAGE_SIZE, this.FORMULARIO_CT_IDS)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ data, meta }) => {

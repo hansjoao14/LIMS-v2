@@ -9,6 +9,7 @@ export interface ReportSolicitud {
   estado_solicitud: string;
   fecha_actualizacion: string | null;
   fecha_creacion: string;
+  formulario_ct_id: number | null;
   formulario_id: string;
   formulario_nombre: string;
   id_solicitud: string;
@@ -19,6 +20,7 @@ export interface ReportSolicitud {
   prioridad_id: number | null;
   prioridad_nombre: string | null;
   secuencial_id: string | null;
+  tecnico_id: string;
   usuario_actualizacion: string | null;
   usuario_creacion: string;
   usuario_id: string;
