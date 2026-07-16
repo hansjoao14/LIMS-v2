@@ -27,10 +27,13 @@ export class EnsayoItemFormulario implements OnInit, OnDestroy {
 
   // catalogo_id 18 = Tipo Ambiental (los ítems seleccionables son sus hijos).
   readonly CATALOGO_TIPO_AMBIENTAL = 18;
+  // catalogo_id 1006 = Tipo de Ensayo (los ítems seleccionables son sus hijos).
+  readonly CATALOGO_TIPO_ENSAYO = 1006;
 
   saving = false;
 
   ctambiental_id: number | null = null;
+  cttipo_ensayo_id: number | null = null;
 
   get modoEdicion(): boolean {
     return !!this.editingRecord;
@@ -44,6 +47,7 @@ export class EnsayoItemFormulario implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (this.editingRecord) {
       this.ctambiental_id = this.editingRecord.ctambiental_id;
+      this.cttipo_ensayo_id = this.editingRecord.cttipo_ensayo_id;
     }
   }
 
@@ -57,10 +61,15 @@ export class EnsayoItemFormulario implements OnInit, OnDestroy {
       this.toastrAlert.showError('El tipo ambiental es obligatorio.', 'Campo requerido');
       return;
     }
+    if (!this.cttipo_ensayo_id) {
+      this.toastrAlert.showError('El tipo de ensayo es obligatorio.', 'Campo requerido');
+      return;
+    }
 
     this.saving = true;
     const payload: EnsayoItemPayload = {
       ctambiental_id: this.ctambiental_id,
+      cttipo_ensayo_id: this.cttipo_ensayo_id,
       ensayo_id: this.ensayo.id,
     };
 

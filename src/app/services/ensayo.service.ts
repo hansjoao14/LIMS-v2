@@ -38,6 +38,7 @@ const GET_ENSAYO_ITEMS = gql`
       count
       data {
         ctambiental_id
+        cttipo_ensayo_id
         ensayo_id
         estado
         item_catalogo {

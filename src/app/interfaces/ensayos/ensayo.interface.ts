@@ -28,6 +28,7 @@ export interface EnsayoItemNode {
 
 export interface EnsayoItem {
   ctambiental_id: number;
+  cttipo_ensayo_id: number | null;
   ensayo_id: number;
   estado: boolean;
   item_catalogo?: EnsayoItemCatalogo;
@@ -47,6 +48,7 @@ export interface EnsayoPayload {
 
 export interface EnsayoItemPayload {
   ctambiental_id: number;
+  cttipo_ensayo_id: number;
   ensayo_id: number;
 }
 
