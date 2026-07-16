@@ -32,28 +32,63 @@ const GET_COLLECTION_ENSAYO_ADMIN = gql`
 
 const GET_ENSAYO_ITEMS = gql`
   query GetEnsayoItems($ensayoId: Int) {
-    collectionEnsayoItem(query: {
-      where: { ensayo_id: { equals: $ensayoId } }
-      pagination: { take: 100, page: null }
-    }) {
+    collectionEnsayoItem(
+      query: { where: { ensayo_id: { equals: $ensayoId } }, pagination: { take: 100, page: null } }
+    ) {
       count
       data {
         ctambiental_id
         ensayo_id
         estado
-        item_catalogo { id nombre catalogo_id item_catalogo_id }
+        item_catalogo {
+          id
+          nombre
+          catalogo_id
+          item_catalogo_id
+        }
       }
     }
   }
 `;
 
-const GET_ITEM_CATALOGO_OPTIONS = gql`
-  query GetItemCatalogoOptions {
+const GET_ITEM_CATALOGO_OPTIONS_PAGINADO = gql`
+  query GetItemCatalogoOptionsPaginado($page: Int, $take: Int, $nombre: String) {
     collectionItemCatalogo(query: {
-      where: { estado: { equals: true } }
-      pagination: { take: 200, page: null }
+      where: { estado: { equals: true }, nombre: { contains: $nombre } }
+      pagination: { page: $page, take: $take }
     }) {
+      count
       data { id nombre catalogo_id }
+      meta { ${META_FIELDS} }
+    }
+  }
+`;
+
+// Igual que GET_ITEM_CATALOGO_OPTIONS_PAGINADO pero acotada a los hijos de un
+// catalogo_id específico (p. ej. 18 = Tipo Ambiental), en vez de todo item_catalogo.
+const GET_ITEM_CATALOGO_OPTIONS_BY_CATALOGO_PAGINADO = gql`
+  query GetItemCatalogoOptionsByCatalogoPaginado($page: Int, $take: Int, $nombre: String, $catalogoId: Int) {
+    collectionItemCatalogo(query: {
+      where: { estado: { equals: true }, nombre: { contains: $nombre }, catalogo_id: { equals: $catalogoId } }
+      pagination: { page: $page, take: $take }
+    }) {
+      count
+      data { id nombre catalogo_id }
+      meta { ${META_FIELDS} }
+    }
+  }
+`;
+
+const GET_ITEM_CATALOGO_BY_ID = gql`
+  query GetItemCatalogoById($id: Int!) {
+    collectionItemCatalogo(
+      query: { where: { id: { equals: $id } }, pagination: { take: 1, page: null } }
+    ) {
+      data {
+        id
+        nombre
+        catalogo_id
+      }
     }
   }
 `;
@@ -63,9 +98,16 @@ export class EnsayoService {
   private readonly baseEnsayo = `${environment.api_catalogo}/ensayo`;
   private readonly baseEnsayoItem = `${environment.api_catalogo}/ensayo-item`;
 
-  constructor(private apollo: Apollo, private http: HttpClient) {}
+  constructor(
+    private apollo: Apollo,
+    private http: HttpClient,
+  ) {}
 
-  getCollectionEnsayo(page: number, take: number, analisis = ''): Observable<{ data: Ensayo[]; meta: PaginationMeta }> {
+  getCollectionEnsayo(
+    page: number,
+    take: number,
+    analisis = '',
+  ): Observable<{ data: Ensayo[]; meta: PaginationMeta }> {
     return this.apollo
       .use(CLIENT_NAME)
       .query<{ collectionEnsayo: CollectionEnsayoResponse }>({
@@ -92,14 +134,42 @@ export class EnsayoService {
       .pipe(map((result) => result.data?.collectionEnsayoItem?.data ?? []));
   }
 
-  getItemCatalogoOptions(): Observable<ItemCatalogoOption[]> {
+  getItemCatalogoOptionsPaginado(
+    page: number,
+    take: number,
+    nombre = '',
+    catalogoId: number | null = null,
+  ): Observable<{ data: ItemCatalogoOption[]; meta: PaginationMeta }> {
+    const query =
+      catalogoId != null
+        ? GET_ITEM_CATALOGO_OPTIONS_BY_CATALOGO_PAGINADO
+        : GET_ITEM_CATALOGO_OPTIONS_PAGINADO;
+    const variables =
+      catalogoId != null ? { page, take, nombre, catalogoId } : { page, take, nombre };
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionItemCatalogo: { data: ItemCatalogoOption[]; meta: PaginationMeta } }>({
+        query,
+        variables,
+        fetchPolicy: 'network-only',
+      })
+      .pipe(
+        map((result) => ({
+          data: result.data?.collectionItemCatalogo?.data ?? [],
+          meta: result.data?.collectionItemCatalogo?.meta as PaginationMeta,
+        })),
+      );
+  }
+
+  getItemCatalogoById(id: number): Observable<ItemCatalogoOption | null> {
     return this.apollo
       .use(CLIENT_NAME)
       .query<{ collectionItemCatalogo: { data: ItemCatalogoOption[] } }>({
-        query: GET_ITEM_CATALOGO_OPTIONS,
+        query: GET_ITEM_CATALOGO_BY_ID,
+        variables: { id },
         fetchPolicy: 'network-only',
       })
-      .pipe(map((result) => result.data?.collectionItemCatalogo?.data ?? []));
+      .pipe(map((result) => result.data?.collectionItemCatalogo?.data?.[0] ?? null));
   }
 
   // ── Ensayo mutations ──────────────────────────────────────────────────────
@@ -122,7 +192,11 @@ export class EnsayoService {
     return this.http.post<EnsayoItem>(this.baseEnsayoItem, payload);
   }
 
-  updateEnsayoItem(ctambientalId: number, ensayoId: number, payload: EnsayoItemPayload): Observable<EnsayoItem> {
+  updateEnsayoItem(
+    ctambientalId: number,
+    ensayoId: number,
+    payload: EnsayoItemPayload,
+  ): Observable<EnsayoItem> {
     return this.http.put<EnsayoItem>(`${this.baseEnsayoItem}/${ctambientalId}`, payload);
   }
 

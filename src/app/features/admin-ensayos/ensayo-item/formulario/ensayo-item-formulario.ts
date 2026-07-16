@@ -5,12 +5,16 @@ import { Subject, takeUntil } from 'rxjs';
 
 import { EnsayoService } from '../../../../services/ensayo.service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
-import { Ensayo, EnsayoItem, EnsayoItemPayload, ItemCatalogoOption } from '../../../../interfaces/ensayos/ensayo.interface';
-import { FieldSkeleton } from '../../../../ui/field-skeleton/field-skeleton';
+import {
+  Ensayo,
+  EnsayoItem,
+  EnsayoItemPayload,
+} from '../../../../interfaces/ensayos/ensayo.interface';
+import { ItemCatalogoSelect } from '../../../../shared/components/item-catalogo-select/item-catalogo-select';
 
 @Component({
   selector: 'app-ensayo-item-formulario',
-  imports: [CommonModule, FormsModule, FieldSkeleton],
+  imports: [CommonModule, FormsModule, ItemCatalogoSelect],
   templateUrl: './ensayo-item-formulario.html',
 })
 export class EnsayoItemFormulario implements OnInit, OnDestroy {
@@ -21,9 +25,10 @@ export class EnsayoItemFormulario implements OnInit, OnDestroy {
 
   private readonly destroy$ = new Subject<void>();
 
+  // catalogo_id 18 = Tipo Ambiental (los ítems seleccionables son sus hijos).
+  readonly CATALOGO_TIPO_AMBIENTAL = 18;
+
   saving = false;
-  loadingOptions = true;
-  itemOptions: ItemCatalogoOption[] = [];
 
   ctambiental_id: number | null = null;
 
@@ -40,30 +45,11 @@ export class EnsayoItemFormulario implements OnInit, OnDestroy {
     if (this.editingRecord) {
       this.ctambiental_id = this.editingRecord.ctambiental_id;
     }
-    this.cargarOpciones();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  cargarOpciones(): void {
-    this.loadingOptions = true;
-    this.ensayoService.getItemCatalogoOptions()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (data) => {
-          this.itemOptions = data;
-          this.loadingOptions = false;
-        },
-        error: () => { this.loadingOptions = false; },
-      });
-  }
-
-  onAmbientalChange(val: string): void {
-    const n = parseInt(val, 10);
-    this.ctambiental_id = isNaN(n) ? null : n;
   }
 
   guardar(): void {
@@ -79,7 +65,11 @@ export class EnsayoItemFormulario implements OnInit, OnDestroy {
     };
 
     const op$ = this.modoEdicion
-      ? this.ensayoService.updateEnsayoItem(this.editingRecord!.ctambiental_id, this.editingRecord!.ensayo_id, payload)
+      ? this.ensayoService.updateEnsayoItem(
+          this.editingRecord!.ctambiental_id,
+          this.editingRecord!.ensayo_id,
+          payload,
+        )
       : this.ensayoService.createEnsayoItem(payload);
 
     op$.pipe(takeUntil(this.destroy$)).subscribe({

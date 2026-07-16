@@ -5,12 +5,12 @@ import { Subject, takeUntil } from 'rxjs';
 
 import { EnsayoService } from '../../../../services/ensayo.service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
-import { Ensayo, EnsayoPayload, ItemCatalogoOption } from '../../../../interfaces/ensayos/ensayo.interface';
-import { FieldSkeleton } from '../../../../ui/field-skeleton/field-skeleton';
+import { Ensayo, EnsayoPayload } from '../../../../interfaces/ensayos/ensayo.interface';
+import { ItemCatalogoSelect } from '../../../../shared/components/item-catalogo-select/item-catalogo-select';
 
 @Component({
   selector: 'app-ensayo-formulario',
-  imports: [CommonModule, FormsModule, FieldSkeleton],
+  imports: [CommonModule, FormsModule, ItemCatalogoSelect],
   templateUrl: './ensayo-formulario.html',
 })
 export class EnsayoFormulario implements OnInit, OnDestroy {
@@ -21,8 +21,6 @@ export class EnsayoFormulario implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   saving = false;
-  loadingOptions = true;
-  itemOptions: ItemCatalogoOption[] = [];
 
   analisis = '';
   identificacion = '';
@@ -45,30 +43,11 @@ export class EnsayoFormulario implements OnInit, OnDestroy {
       this.metodo = this.editingRecord.metodo;
       this.ctunidad_id = this.editingRecord.ctunidad_id;
     }
-    this.cargarOpciones();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  cargarOpciones(): void {
-    this.loadingOptions = true;
-    this.ensayoService.getItemCatalogoOptions()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (data) => {
-          this.itemOptions = data;
-          this.loadingOptions = false;
-        },
-        error: () => { this.loadingOptions = false; },
-      });
-  }
-
-  onUnidadChange(val: string): void {
-    const n = parseInt(val, 10);
-    this.ctunidad_id = isNaN(n) ? null : n;
   }
 
   guardar(): void {
