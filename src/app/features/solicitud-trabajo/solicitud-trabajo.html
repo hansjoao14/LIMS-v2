@@ -1,103 +1,99 @@
 <div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
   <div class="max-w-7xl mx-auto">
     <div class="animate-in fade-in">
-    <app-page-header
-      breadcrumbSection="Solicitud de trabajo"
-      [title]="formulario?.formulario_nombre ?? 'Solicitud de Trabajo'"
-      subtitle="Gestión de requerimientos técnicos"
-      [codigoFormulario]="reportFormulario?.descripcion ?? null"
-      [elaboradoPor]="selectedTecnicoNombre"
-      [fechaSolicitud]="fechaEmision"
-      [edicion]="reportFormulario?.version ?? null"
-    />
+      <app-page-header
+        breadcrumbSection="Solicitud de trabajo"
+        [title]="formulario?.formulario_nombre ?? 'Solicitud de Trabajo'"
+        subtitle="Gestión de requerimientos técnicos"
+        [codigoFormulario]="reportFormulario?.descripcion ?? null"
+        [elaboradoPor]="selectedTecnicoNombre"
+        [fechaSolicitud]="fechaEmision"
+        [edicion]="reportFormulario?.version ?? null"
+      />
 
-    <div class="mb-6">
-      <div class="flex justify-between items-center mb-3">
-        <p class="text-xl font-bold text-[#1e3a8a] uppercase tracking-tight">
-          RF02 - SOLICITUD DE ORDEN DE TRABAJO
-        </p>
-        <span
-          class="text-[10px] font-bold text-[#1e3a8a] bg-blue-100 px-3 py-1 rounded-full uppercase tracking-widest"
-          >PASO {{ currentStep }} DE 4</span
-        >
+      <div class="mb-6">
+        <div class="flex justify-between items-center mb-3">
+          <p class="text-xl font-bold text-[#1e3a8a] uppercase tracking-tight">
+            RF02 - SOLICITUD DE ORDEN DE TRABAJO
+          </p>
+          <span
+            class="text-[10px] font-bold text-[#1e3a8a] bg-blue-100 px-3 py-1 rounded-full uppercase tracking-widest"
+            >PASO {{ currentStep }} DE 4</span
+          >
+        </div>
+        <div class="flex items-center gap-2">
+          @for (s of [1, 2, 3, 4]; track $index) {
+            <div
+              class="flex-1 h-2.5 rounded-full transition-all duration-500"
+              [class.cursor-pointer]="!secuencialAsignado"
+              [class.cursor-default]="secuencialAsignado"
+              (click)="goToStep(s)"
+              [class.bg-[#2541b2]]="currentStep >= s"
+              [class.bg-slate-200]="currentStep < s"
+            ></div>
+          }
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        @for (s of [1, 2, 3, 4]; track $index) {
-          <div
-            class="flex-1 h-2.5 rounded-full transition-all duration-500"
-            [class.cursor-pointer]="!secuencialAsignado"
-            [class.cursor-default]="secuencialAsignado"
-            (click)="goToStep(s)"
-            [class.bg-[#2541b2]]="currentStep >= s"
-            [class.bg-slate-200]="currentStep < s"
-          ></div>
+
+      <form [formGroup]="form">
+        @if (currentStep === 1) {
+          <app-step1-solicitud
+            [titulo]="formularioTitulo"
+            [entidadesMock]="establecimientos"
+            [tecnicosFiltrados]="tecnicosFiltrados"
+            [cargando]="isCreandoSolicitud"
+            (next)="goNextStep()"
+          >
+          </app-step1-solicitud>
         }
-      </div>
-    </div>
 
-    <form [formGroup]="form">
-      @if (currentStep === 1) {
-        <app-step1-solicitud
-          [titulo]="formularioTitulo"
-          [entidadesMock]="establecimientos"
-          [tecnicosFiltrados]="tecnicosFiltrados"
-          [cargando]="isCreandoSolicitud"
-          (next)="goNextStep()"
-        >
-        </app-step1-solicitud>
-      }
+        @if (currentStep === 2) {
+          <app-step2-operador
+            [fields]="fields"
+            [buscandoIntegracion]="buscandoIntegracion"
+            [manualSchedules]="manualSchedules"
+            [motivoFlujo]="motivoFlujo"
+            [isPasaporteSelected]="isPasaporteSelected"
+            [cargando]="isGuardando"
+            (next)="goNextStep()"
+            (prev)="goPrevStep()"
+            (openMap)="openMap()"
+            (buscarIntegracion)="buscarDatosIntegracion($event)"
+            (addManualSchedule)="addManualScheduleItem($event)"
+            (removeManualSchedule)="removeManualScheduleItem($event)"
+          >
+          </app-step2-operador>
+        }
 
-      @if (currentStep === 2) {
-        <app-step2-operador
-          [fields]="fields"
-          [buscandoIntegracion]="buscandoIntegracion"
-          [manualSchedules]="manualSchedules"
-          [motivoFlujo]="motivoFlujo"
-          [isPasaporteSelected]="isPasaporteSelected"
-          [cargando]="isGuardando"
-          (next)="goNextStep()"
-          (prev)="goPrevStep()"
-          (openMap)="openMap()"
-          (buscarIntegracion)="buscarDatosIntegracion($event)"
-          (addManualSchedule)="addManualScheduleItem($event)"
-          (removeManualSchedule)="removeManualScheduleItem($event)"
-        >
-        </app-step2-operador>
-      }
+        @if (currentStep === 3) {
+          <app-step3-catalogo
+            [cargando]="isGuardando"
+            [estadoPrevio]="catalogosSeleccionados"
+            [ensayosMuestreoPrevio]="ensayosMuestreo"
+            [ensayosResidualesPrevio]="ensayosResiduales"
+            [ensayosAirePrevio]="ensayosAirePrevio"
+            [ensayosRuidoPrevio]="ensayosRuidoPrevio"
+            (estadoCambiado)="catalogosSeleccionados = $event"
+            (ensayosMuestreoCambiado)="ensayosMuestreo = $event"
+            (ensayosResidualesCambiado)="ensayosResiduales = $event"
+            (ensayosAireCambiado)="onEnsayosAireCambiado($event)"
+            (ensayosRuidoCambiado)="onEnsayosRuidoCambiado($event)"
+            (next)="onStep3Next($event)"
+            (prev)="goPrevStep()"
+          >
+          </app-step3-catalogo>
+        }
 
-      @if (currentStep === 3) {
-        <app-step3-catalogo
-          [cargando]="isGuardando"
-          [ensayosAire]="ensayosAire"
-          [ensayosRuido]="ensayosRuido"
-          [notasAgua]="notasAgua"
-          [notasAire]="notasAire"
-          [notasRuido]="notasRuido"
-          [estadoPrevio]="catalogosSeleccionados"
-          [ensayosMuestreoPrevio]="ensayosMuestreo"
-          [ensayosResidualesPrevio]="ensayosResiduales"
-          [ensayosAirePrevio]="ensayosAirePrevio"
-          [ensayosRuidoPrevio]="ensayosRuidoPrevio"
-          (estadoCambiado)="catalogosSeleccionados = $event"
-          (ensayosMuestreoCambiado)="ensayosMuestreo = $event"
-          (ensayosResidualesCambiado)="ensayosResiduales = $event"
-          (ensayosAireCambiado)="onEnsayosAireCambiado($event)"
-          (ensayosRuidoCambiado)="onEnsayosRuidoCambiado($event)"
-          (next)="onStep3Next($event)"
-          (prev)="goPrevStep()"
-        >
-        </app-step3-catalogo>
-      }
-
-      @if (currentStep === 4) {
-        <app-step4-confirmacion
-          [secuencialAsignado]="secuencialAsignado"
-          (prev)="goPrevStep()"
-          (iniciarAcuerdos)="iniciarAcuerdos()"
-          (nuevaSolicitud)="nuevaSolicitud()">
-        </app-step4-confirmacion>
-      }
-    </form>
+        @if (currentStep === 4) {
+          <app-step4-confirmacion
+            [secuencialAsignado]="secuencialAsignado"
+            (prev)="goPrevStep()"
+            (iniciarAcuerdos)="iniciarAcuerdos()"
+            (nuevaSolicitud)="nuevaSolicitud()"
+          >
+          </app-step4-confirmacion>
+        }
+      </form>
     </div>
   </div>
 </div>
@@ -215,15 +211,29 @@
 }
 
 @if (showPdfFinal) {
-  <div class="fixed inset-0 z-[110] flex flex-col bg-slate-900/95 backdrop-blur-sm animate-in fade-in">
-
+  <div
+    class="fixed inset-0 z-[110] flex flex-col bg-slate-900/95 backdrop-blur-sm animate-in fade-in"
+  >
     <!-- Toolbar -->
     <div class="flex items-center justify-between px-6 py-3 bg-[#1e3a8a] shadow-lg flex-shrink-0">
       <div class="flex items-center gap-3">
         <!-- Badge de éxito -->
-        <div class="flex items-center gap-2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+        <div
+          class="flex items-center gap-2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-3.5 w-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2.5"
+              d="M5 13l4 4L19 7"
+            />
           </svg>
           Solicitud Generada
         </div>
@@ -241,8 +251,19 @@
           [disabled]="!pdfPreviewUrl"
           class="flex items-center gap-2 bg-white text-[#1e3a8a] font-bold text-xs px-4 py-2 rounded-lg shadow hover:bg-slate-100 disabled:opacity-40 transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
           </svg>
           Descargar PDF
         </button>
@@ -251,8 +272,19 @@
           (click)="showPdfFinal = false"
           class="flex items-center gap-1.5 border border-white/40 text-white font-bold text-xs px-4 py-2 rounded-lg hover:bg-white/10 transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
           Cerrar
         </button>
@@ -263,8 +295,12 @@
     <div class="flex-1 relative">
       @if (isPdfCargando) {
         <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-800">
-          <span class="animate-spin h-12 w-12 border-4 border-[#3b82f6] border-t-transparent rounded-full"></span>
-          <p class="text-sm font-medium text-slate-300 uppercase tracking-widest">Generando documento...</p>
+          <span
+            class="animate-spin h-12 w-12 border-4 border-[#3b82f6] border-t-transparent rounded-full"
+          ></span>
+          <p class="text-sm font-medium text-slate-300 uppercase tracking-widest">
+            Generando documento...
+          </p>
         </div>
       } @else if (pdfPreviewUrl) {
         <iframe
@@ -274,8 +310,19 @@
         ></iframe>
       } @else {
         <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-800">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-16 w-16 text-slate-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
           <p class="text-slate-400 text-sm">No se pudo cargar el documento</p>
           <button
@@ -288,7 +335,6 @@
         </div>
       }
     </div>
-
   </div>
 }
 
@@ -299,7 +345,11 @@
     <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
       <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <h3 class="text-base font-bold text-[#1e3a8a] uppercase tracking-wide">Ubicación Exacta</h3>
-        <button type="button" (click)="closeMap()" class="text-slate-400 hover:text-red-500 text-xl leading-none">
+        <button
+          type="button"
+          (click)="closeMap()"
+          class="text-slate-400 hover:text-red-500 text-xl leading-none"
+        >
           &times;
         </button>
       </div>

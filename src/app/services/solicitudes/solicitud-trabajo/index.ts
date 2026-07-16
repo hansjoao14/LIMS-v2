@@ -1,6 +1,5 @@
 export * from './documento-legal.service';
 export * from './ensayo-item.service';
-export * from './ensayo.service';
 export * from './entidad.service';
 export * from './establecimiento-usuario.service';
 export * from './establecimiento.service';

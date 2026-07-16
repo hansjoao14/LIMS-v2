@@ -26,7 +26,6 @@ import {
   SolicitudEnsayoItem,
   EstablecimientoUsuarioService,
   EstablecimientoService,
-  EnsayoService,
   DocumentoLegalService,
   IntegracionService,
   PeriodoService,
@@ -127,9 +126,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   ensayosResiduales: EnsayoLaboratorio[] = [];
   ensayosAirePrevio: EnsayoLaboratorio[] = [];
   ensayosRuidoPrevio: EnsayoLaboratorio[] = [];
-  notasAgua: string[] = [];
-  notasAire: string[] = [];
-  notasRuido: string[] = [];
 
   // ── Step 4: acuerdos ────────────────────────────────────────────────────
   terminosCondiciones: string[] = [];
@@ -147,7 +143,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     private service: SolicitudService,
     private establecimientoService: EstablecimientoService,
     private establecimientoUsuarioService: EstablecimientoUsuarioService,
-    private ensayoService: EnsayoService,
     private documentoLegalService: DocumentoLegalService,
     private integracionService: IntegracionService,
     private periodoService: PeriodoService,
@@ -281,27 +276,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       .getEstablecimientos()
       .pipe(takeUntil(this.destroy$))
       .subscribe((e) => (this.establecimientos = e));
-
-    this.ensayoService
-      .getEnsayosAire()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((e) => (this.ensayosAire = e));
-    this.ensayoService
-      .getEnsayosRuido()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((e) => (this.ensayosRuido = e));
-    this.ensayoService
-      .getNotasAgua()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((n) => (this.notasAgua = n));
-    this.ensayoService
-      .getNotasAire()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((n) => (this.notasAire = n));
-    this.ensayoService
-      .getNotasRuido()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((n) => (this.notasRuido = n));
 
     this.documentoLegalService
       .getTerminosCondiciones()

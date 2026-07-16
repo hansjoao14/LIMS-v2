@@ -18,9 +18,10 @@ import { EnsayoItemService } from '../../../../services/solicitudes/solicitud-tr
 
 import {
   ItemCatalogo,
-  EnsayoItem,
   EnsayoLaboratorio,
   EnsayoMuestreo,
+  ReportCatalogoEnsayoDetalle,
+  ReportCatalogoNota,
 } from '../../../../interfaces';
 
 export interface ItemCatalogoUI extends ItemCatalogo {
@@ -40,11 +41,6 @@ export interface MatrizConHijosUI {
   templateUrl: './step3-catalogo.html',
 })
 export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() ensayosAire: EnsayoLaboratorio[] = [];
-  @Input() ensayosRuido: EnsayoLaboratorio[] = [];
-  @Input() notasAgua: string[] = [];
-  @Input() notasAire: string[] = [];
-  @Input() notasRuido: string[] = [];
   @Input() estadoPrevio: MatrizConHijosUI[] = [];
   @Input() ensayosMuestreoPrevio: EnsayoMuestreo[] = [];
   @Input() ensayosResidualesPrevio: EnsayoLaboratorio[] = [];
@@ -78,6 +74,20 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   ensayosResiduales: EnsayoLaboratorio[] = [];
   ensayosAireServer: EnsayoLaboratorio[] = [];
   ensayosRuidoServer: EnsayoLaboratorio[] = [];
+
+  // Título y notas de cada tabla, provistos por el backend
+  // (report-catalogo/ensayo-item/:id) — nada queda hardcodeado en el
+  // frontend. Un mismo servicio puede traer varias tablas (p. ej. Aguas
+  // Superficiales trae "Muestreo" y "Físico-Químico" por separado), cada
+  // una con su propio título/notas.
+  tituloMuestreo = '';
+  notasMuestreo: ReportCatalogoNota[] = [];
+  tituloAgua = '';
+  notasAgua: ReportCatalogoNota[] = [];
+  tituloAire = '';
+  notasAire: ReportCatalogoNota[] = [];
+  tituloRuido = '';
+  notasRuido: ReportCatalogoNota[] = [];
 
   // Cuando ambos hijos de agua están activos, la Tabla 2 (Superficiales) es
   // la única que se muestra, pero el guardado debe replicarse también para
@@ -258,26 +268,37 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
 
     if (hijoSuperficial?.activo) {
       this.ensayoItemService
-        .getEnsayosByCtAmbiental(hijoSuperficial.id)
+        .getReportCatalogoEnsayoItem(hijoSuperficial.id)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: (items) => {
-            this.ensayosMuestreo = items
-              .filter((i) => i.ensayo_id === this.ENSAYO_ID_MUESTREO)
+          next: (data) => {
+            // El backend devuelve una entrada por tabla: "Muestreo" (sus
+            // Ensayos incluyen el id ENSAYO_ID_MUESTREO) y "Físico-Químico"
+            // — cada una con su propio título y notas.
+            const muestreoEntry = data.find((d) =>
+              d.Ensayos.some((e) => e.id === this.ENSAYO_ID_MUESTREO),
+            );
+            const labEntry =
+              data.find((d) => !d.Ensayos.some((e) => e.id === this.ENSAYO_ID_MUESTREO)) ?? data[0];
+
+            this.tituloMuestreo = muestreoEntry?.ensayo_nombre ?? '';
+            this.notasMuestreo = muestreoEntry?.notas ?? [];
+            this.ensayosMuestreo = (muestreoEntry?.Ensayos ?? []).map((i) => {
+              const base = this.mapDetalleToMuestreo(i, hijoSuperficial.id);
+              const previo = this.ensayosMuestreoPrevio.find((p) => p.parametro === base.parametro);
+              return { ...base, activo: previo?.activo ?? false };
+            });
+
+            this.tituloAgua = labEntry?.ensayo_nombre ?? '';
+            this.notasAgua = labEntry?.notas ?? [];
+            this.ensayosSuperficiales = (labEntry?.Ensayos ?? [])
+              .filter((i) => i.id !== this.ENSAYO_ID_MUESTREO)
               .map((i) => {
-                const base = this.mapToMuestreo(i);
-                const previo = this.ensayosMuestreoPrevio.find(
-                  (p) => p.parametro === base.parametro,
-                );
-                return { ...base, activo: previo?.activo ?? false };
-              });
-            this.ensayosSuperficiales = items
-              .filter((i) => i.ensayo_id !== this.ENSAYO_ID_MUESTREO)
-              .map((i) => {
-                const base = this.mapToLaboratorio(i);
+                const base = this.mapDetalleToLaboratorio(i, hijoSuperficial.id);
                 const previo = this.buscarPrevioLaboratorio(base);
                 return { ...base, activo: previo?.activo ?? false };
               });
+
             this.ensayosMuestreoCambiado.emit(this.ensayosMuestreo);
             this.emitEnsayosResidualesCombinado();
           },
@@ -285,6 +306,8 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     } else {
       this.ensayosMuestreo = [];
       this.ensayosSuperficiales = [];
+      this.tituloMuestreo = '';
+      this.notasMuestreo = [];
       Promise.resolve().then(() => {
         this.ensayosMuestreoCambiado.emit([]);
         this.emitEnsayosResidualesCombinado();
@@ -298,14 +321,18 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     // ctambiental_id de Residuales.
     if (hijoResidual?.activo && !hijoSuperficial?.activo) {
       this.ensayoItemService
-        .getEnsayosByCtAmbiental(hijoResidual.id)
+        .getReportCatalogoEnsayoItem(hijoResidual.id)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: (items) => {
-            this.ensayosResiduales = items
-              .filter((i) => i.ensayo_id !== this.ENSAYO_ID_MUESTREO)
+          next: (data) => {
+            const labEntry =
+              data.find((d) => !d.Ensayos.some((e) => e.id === this.ENSAYO_ID_MUESTREO)) ?? data[0];
+            this.tituloAgua = labEntry?.ensayo_nombre ?? '';
+            this.notasAgua = labEntry?.notas ?? [];
+            this.ensayosResiduales = (labEntry?.Ensayos ?? [])
+              .filter((i) => i.id !== this.ENSAYO_ID_MUESTREO)
               .map((i) => {
-                const base = this.mapToLaboratorio(i);
+                const base = this.mapDetalleToLaboratorio(i, hijoResidual.id);
                 const previo = this.buscarPrevioLaboratorio(base);
                 return { ...base, activo: previo?.activo ?? false };
               });
@@ -314,6 +341,10 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
         });
     } else {
       this.ensayosResiduales = [];
+      if (!hijoSuperficial?.activo) {
+        this.tituloAgua = '';
+        this.notasAgua = [];
+      }
       Promise.resolve().then(() => this.emitEnsayosResidualesCombinado());
     }
   }
@@ -322,16 +353,21 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     const hijoActivo = grupo.hijos.find((h) => h.activo);
     if (!hijoActivo) {
       this.ensayosAireServer = [];
+      this.tituloAire = '';
+      this.notasAire = [];
       Promise.resolve().then(() => this.ensayosAireCambiado.emit([]));
       return;
     }
     this.ensayoItemService
-      .getEnsayosByCtAmbiental(hijoActivo.id)
+      .getReportCatalogoEnsayoItem(hijoActivo.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (items) => {
-          this.ensayosAireServer = items.map((i) => {
-            const base = this.mapToLaboratorio(i);
+        next: (data) => {
+          const entry = data[0] ?? null;
+          this.tituloAire = entry?.ensayo_nombre ?? '';
+          this.notasAire = entry?.notas ?? [];
+          this.ensayosAireServer = (entry?.Ensayos ?? []).map((i) => {
+            const base = this.mapDetalleToLaboratorio(i, hijoActivo.id);
             const previo = this.ensayosAirePrevio.find(
               (p) => p.identificacion === base.identificacion,
             );
@@ -346,16 +382,21 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     const hijoActivo = grupo.hijos.find((h) => h.activo);
     if (!hijoActivo) {
       this.ensayosRuidoServer = [];
+      this.tituloRuido = '';
+      this.notasRuido = [];
       Promise.resolve().then(() => this.ensayosRuidoCambiado.emit([]));
       return;
     }
     this.ensayoItemService
-      .getEnsayosByCtAmbiental(hijoActivo.id)
+      .getReportCatalogoEnsayoItem(hijoActivo.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (items) => {
-          this.ensayosRuidoServer = items.map((i) => {
-            const base = this.mapToLaboratorio(i);
+        next: (data) => {
+          const entry = data[0] ?? null;
+          this.tituloRuido = entry?.ensayo_nombre ?? '';
+          this.notasRuido = entry?.notas ?? [];
+          this.ensayosRuidoServer = (entry?.Ensayos ?? []).map((i) => {
+            const base = this.mapDetalleToLaboratorio(i, hijoActivo.id);
             const previo = this.ensayosRuidoPrevio.find(
               (p) => p.identificacion === base.identificacion,
             );
@@ -366,30 +407,36 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
       });
   }
 
-  private mapToMuestreo(item: EnsayoItem): EnsayoMuestreo {
-    const partes = item.ensayo.metodo.split(',');
+  private mapDetalleToMuestreo(
+    item: ReportCatalogoEnsayoDetalle,
+    ctambientalId: number,
+  ): EnsayoMuestreo {
+    const partes = item.metodo.split(',');
     return {
       activo: false,
-      ensayo_id: item.ensayo_id,
-      ctambiental_id: item.ctambiental_id,
-      producto: item.ensayo.analisis,
-      parametro: item.ensayo.identificacion,
+      ensayo_id: item.id,
+      ctambiental_id: ctambientalId,
+      producto: item.analisis,
+      parametro: item.identificacion,
       metodoInterno: partes[0]?.trim() ?? '',
       metodoReferencia: partes.slice(1).join(',').trim(),
     };
   }
 
-  private mapToLaboratorio(item: EnsayoItem): EnsayoLaboratorio {
-    const partes = item.ensayo.metodo.split(',');
+  private mapDetalleToLaboratorio(
+    item: ReportCatalogoEnsayoDetalle,
+    ctambientalId: number,
+  ): EnsayoLaboratorio {
+    const partes = item.metodo.split(',');
     return {
       activo: false,
-      ensayo_id: item.ensayo_id,
-      ctambiental_id: item.ctambiental_id,
-      ensayo: item.ensayo.analisis,
-      identificacion: item.ensayo.identificacion,
+      ensayo_id: item.id,
+      ctambiental_id: ctambientalId,
+      ensayo: item.analisis,
+      identificacion: item.identificacion,
       metodoInterno: partes[0]?.trim() ?? '',
       metodoReferencia: partes.slice(1).join(',').trim(),
-      unidad: item.ensayo.item_catalogo?.sigla ?? item.ensayo.item_catalogo?.nombre ?? '',
+      unidad: item.unidad_medida,
     };
   }
 
