@@ -20,6 +20,9 @@ export class EnsayoFormulario implements OnInit, OnDestroy {
 
   private readonly destroy$ = new Subject<void>();
 
+  // catalogo_id 2 = Unidad (los ítems seleccionables son sus hijos).
+  readonly CATALOGO_UNIDAD = 2;
+
   saving = false;
 
   analisis = '';
