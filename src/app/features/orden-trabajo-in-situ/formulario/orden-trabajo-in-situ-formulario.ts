@@ -370,8 +370,8 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
 
     // El tipo de ensayo (Físico-Químico=90 / Ruido=91) ya no se selecciona
     // manualmente: se deriva del propio detalle de la solicitud.
-    this.tipoEnsayoId = f.ensayos?.[0]?.parent_ambiental ?? null;
-    this.tipoEnsayoNombre = f.ensayos?.[0]?.nombre_ensayo ?? '';
+    this.tipoEnsayoId = f.tabla_ensayos?.[0]?.id_ambiental ?? null;
+    this.tipoEnsayoNombre = f.tabla_ensayos?.[0]?.ensayo_nombre ?? '';
 
     const attr = (nombre: string) =>
       f.atributos?.find((a) => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
@@ -401,9 +401,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
         valor: a.nombre_valor_catalogo || a.valor_multiple_format || a.valor_texto || '',
       }));
 
-    const ensayosFiltrados = (f.ensayos ?? []).filter(
-      (e) => this.tipoEnsayoId === null || e.parent_ambiental === this.tipoEnsayoId,
-    );
+    const ensayosFiltrados = (f.tabla_ensayos ?? []).flatMap((t) => t.detalle_ensayo ?? []);
 
     this.ensayosArray.clear();
     for (const e of ensayosFiltrados) {

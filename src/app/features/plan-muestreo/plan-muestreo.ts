@@ -229,9 +229,9 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     if (!f) return;
 
     // El tipo de matriz ya no se selecciona manualmente: se deriva del
-    // propio detalle de la solicitud (posición 0 del arreglo de ensayos).
-    this.tipoAguaId = f.ensayos?.[0]?.ctambiental_id ?? null;
-    this.tipoAguaNombre = f.ensayos?.[0]?.nombre_ensayo ?? '';
+    // propio detalle de la solicitud (posición 0 del arreglo de tabla_ensayos).
+    this.tipoAguaId = f.tabla_ensayos?.[0]?.id_ambiental ?? null;
+    this.tipoAguaNombre = f.tabla_ensayos?.[0]?.ensayo_nombre ?? '';
 
     const attr = (nombre: string) =>
       f.atributos?.find((a) => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
@@ -248,8 +248,8 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.detalleLongitud = attr('val_long');
     this.detalleDireccion = attr('val_dir_op');
 
-    this.detalleEnsayos = (f.ensayos ?? [])
-      .filter((e) => this.tipoAguaId === null || e.ctambiental_id === this.tipoAguaId)
+    this.detalleEnsayos = (f.tabla_ensayos ?? [])
+      .flatMap((t) => t.detalle_ensayo ?? [])
       .map((e) => {
         const parts = (e.metodo ?? '').split(', ');
         return {

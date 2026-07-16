@@ -17,8 +17,12 @@ export interface FormularioDetalle {
   nombre_cargo: string;
   fecha_emision_solicitud: string;
   num_secuencial_solicitud: string;
+  establecimiento_solicitud: string;
+  nombre_completo_tecnico: string;
+  nombre_cargo_tecnico: string;
+  descripcion_formulario: string;
   atributos: AtributoDetalle[];
-  ensayos: EnsayoDetalle[];
+  tabla_ensayos: TablaEnsayoDetalle[];
 }
 
 export interface AtributoDetalle {
@@ -33,16 +37,26 @@ export interface AtributoDetalle {
   valor_multiple_format?: string;
 }
 
+export interface TablaEnsayoDetalle {
+  id_ambiental: number;
+  nombre_ambiental: string;
+  ensayo_id: number;
+  ensayo_nombre: string;
+  notas: NotaEnsayoDetalle[];
+  detalle_ensayo: EnsayoDetalle[];
+}
+
+export interface NotaEnsayoDetalle {
+  header: string;
+  detail: string;
+}
+
 export interface EnsayoDetalle {
   id: string;
   ensayo_id: number;
-  nombre_ensayo: string;
-  parent_ambiental: number;
   metodo: string;
   identificacion: string;
   analisis: string;
-  ctambiental_id: number;
-  nombre: string;
 }
 
 @Injectable({ providedIn: 'root' })
