@@ -14,16 +14,19 @@ import {
   FormBuilder,
   FormGroup,
   FormArray,
+  FormControl,
   FormsModule,
   Validators,
+  ValidatorFn,
 } from '@angular/forms';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
-import Swal from 'sweetalert2';
 
 import { ReportSolicitudService } from '../../../services/solicitudes/lista-solicitudes/report-solicitud.service';
-import { ReportSolicitud } from '../../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
-import { ItemCatalogo, PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
-import { CatalogoService } from '../../../services/catalogo.service';
+import {
+  ReportSolicitud,
+  ReportValorSolicitud,
+} from '../../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
+import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import { SolicitudDetalleService } from '../../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { SolicitudDetalle } from '../../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import {
@@ -36,14 +39,19 @@ import { AuthService } from '../../auth/service/auth-service';
 import { PeriodoService } from '../../../services/solicitudes/solicitud-trabajo/periodo.service';
 import { ToastrAlertService } from '../../../services/toastr.service';
 import { AlertService } from '../../../services/alert.service';
+import {
+  SolicitudService,
+  ValorSolicitudItem,
+} from '../../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { FieldConfig, Pregunta } from '../../solicitud-trabajo/model/solicitud-trabajo.model';
 
-const TECNICOS_HARDCODED = [
-  {
-    id: 'jose-luis-montenegro',
-    nombre: 'José Luis Montenegro',
-    cargo: 'Técnico/a de Muestreo en Campo',
-  },
-];
+/**
+ * Formulario dinámico propio de "Orden de Trabajo In Situ" (observaciones,
+ * caracterización horaria, uso de suelo del operador y del PCA a la fecha).
+ * Sus preguntas se renderizan 100% desde la API — si el backend agrega o
+ * quita preguntas, este componente no necesita cambios.
+ */
+const FORMULARIO_OPERATIVO_ID = '2018';
 
 @Component({
   selector: 'app-orden-trabajo-in-situ-formulario',
@@ -59,12 +67,6 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
 
   form: FormGroup;
 
-  private readonly CATALOGO_USO_SUELO = 1003;
-  private readonly CATALOGO_CARACTERIZACION = 1005;
-  private readonly OTROS_ID = 2015;
-
-  usoSueloOpciones: ItemCatalogo[] = [];
-  caracterizacionOpciones: ItemCatalogo[] = [];
   tipoEnsayoId: number | null = null;
   tipoEnsayoNombre = '';
 
@@ -79,32 +81,39 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   solicitudSeleccionada: ReportSolicitud | null = null;
   loadingDetalle = false;
   saving = false;
-  readonly tecnicos = TECNICOS_HARDCODED;
   operadorAtributos: { pregunta: string; valor: string }[] = [];
+
+  // Campos del formulario dinámico "Orden de Trabajo In Situ" (ver
+  // FORMULARIO_OPERATIVO_ID). Se renderizan y validan igual que en
+  // solicitud-trabajo.ts (docs/formularios-dinamicos-estandar.md).
+  camposOperativos: FieldConfig[] = [];
+  loadingCamposOperativos = true;
 
   private readonly destroy$ = new Subject<void>();
 
-  get esOtrosOperador(): boolean {
-    return this.form.get('usoSuelo.usoSueloOperadorId')?.value === this.OTROS_ID;
-  }
-  get esOtrosPca(): boolean {
-    return this.form.get('usoSuelo.usoSueloPcaId')?.value === this.OTROS_ID;
-  }
   get ensayosArray(): FormArray {
     return this.form.get('ensayos') as FormArray;
+  }
+
+  get visibleCamposOperativos(): FieldConfig[] {
+    return this.camposOperativos.filter((f) => !f.hidden);
+  }
+
+  getOperativoControl(key: string): FormControl {
+    return this.form.get(key) as FormControl;
   }
 
   constructor(
     private fb: FormBuilder,
     private reportSolicitudService: ReportSolicitudService,
     private solicitudDetalleService: SolicitudDetalleService,
-    private catalogoService: CatalogoService,
     private ordenTrabajoService: OrdenTrabajoService,
     private reportOrdenService: ReportOrdenService,
     private authService: AuthService,
     private periodoService: PeriodoService,
     private toastrAlert: ToastrAlertService,
     private alertService: AlertService,
+    private solicitudService: SolicitudService,
   ) {
     this.form = this.fb.group({
       solicitudTrabajoNo: [''],
@@ -124,13 +133,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
         direccion: [''],
       }),
       ensayos: this.fb.array([]),
-      observaciones: [''],
       usoSuelo: this.fb.group({
-        usoSueloOperadorId: [null, Validators.required],
-        usoSueloOperadorOtro: [''],
-        usoSueloPcaId: [null, Validators.required],
-        usoSueloPcaOtro: [''],
-        caracterizacionId: [null, Validators.required],
         direccionPca: ['', Validators.required],
         telefonoPca: [''],
       }),
@@ -147,21 +150,139 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   }
 
   ngOnInit(): void {
-    this.catalogoService
-      .getItemsByCatalogoId(this.CATALOGO_USO_SUELO)
+    this.cargarFormularioOperativo();
+  }
+
+  // Carga el formulario dinámico propio de la orden (FORMULARIO_OPERATIVO_ID),
+  // genera sus controles y, si se está editando, precarga los valores ya
+  // guardados para la solicitud asociada.
+  private cargarFormularioOperativo(): void {
+    const { id } = this.authService.currentUser();
+    this.solicitudService
+      .getFormulario(FORMULARIO_OPERATIVO_ID, id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res) => {
-          this.usoSueloOpciones = res.data;
+        next: (formulario) => {
+          this.camposOperativos = formulario.preguntas
+            .filter((p) => p.estado !== false)
+            .map((p) => this.toFieldConfigOperativo(p))
+            .sort((a, b) => a.order - b.order);
+          this.generateOperativoControls();
+          this.applyOperativoDependencyLogic();
+          this.loadingCamposOperativos = false;
+          if (this.modoEdicion && this.editingRecord) {
+            this.precargarValoresOperativos(this.editingRecord.solicitud_id);
+          }
+        },
+        error: () => {
+          this.loadingCamposOperativos = false;
+          this.alertService.error('No se pudo cargar el formulario dinámico de la orden');
         },
       });
+  }
 
-    this.catalogoService
-      .getItemsByCatalogoId(this.CATALOGO_CARACTERIZACION)
+  private toFieldConfigOperativo(pregunta: Pregunta): FieldConfig {
+    return {
+      id: pregunta.id,
+      key: pregunta.nombre,
+      label: pregunta.pregunta,
+      order: pregunta.orden,
+      controlType: this.resolveControlTypeOperativo(pregunta),
+      section: 'operador',
+      placeholder: typeof pregunta.ayuda === 'string' ? pregunta.ayuda : '',
+      required: pregunta.obligatorio,
+      readonly: pregunta.readonly,
+      hidden: pregunta.hidden,
+      maxLength: typeof pregunta.num_caracter === 'number' ? pregunta.num_caracter : null,
+      options: pregunta.catalogos ?? [],
+      employeeList: pregunta.listado_empleado ?? [],
+      scheduleItems: pregunta.jornada_laboral_item ?? [],
+      dependsOn: pregunta.atributo_id
+        ? {
+            fieldId: String(pregunta.atributo_id),
+            triggerValue: String(pregunta.item_catalogo_id ?? ''),
+          }
+        : undefined,
+      integrations: { sri: false, civil: false, iess: false },
+      source: pregunta,
+    };
+  }
+
+  private resolveControlTypeOperativo(pregunta: Pregunta): FieldConfig['controlType'] {
+    if (pregunta.is_list_empleado) return 'employee-list';
+    if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
+    if (pregunta.tipo_respuesta === 'Selección Mutiple') return 'schedule';
+    if (pregunta.is_text_area) return 'textarea';
+    return 'text';
+  }
+
+  private generateOperativoControls(): void {
+    for (const field of this.camposOperativos) {
+      if (this.form.contains(field.key)) continue;
+      this.form.addControl(
+        field.key,
+        this.fb.control(
+          { value: '', disabled: field.hidden },
+          this.buildOperativoValidators(field, field.hidden),
+        ),
+      );
+    }
+  }
+
+  private buildOperativoValidators(field: FieldConfig, isHidden: boolean): ValidatorFn[] {
+    if (isHidden) return [];
+    const validators: ValidatorFn[] = [];
+    if (field.required) validators.push(Validators.required);
+    if (field.maxLength) validators.push(Validators.maxLength(field.maxLength));
+    return validators;
+  }
+
+  private applyOperativoDependencyLogic(): void {
+    this.updateOperativoDependentFields();
+    this.form.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.updateOperativoDependentFields());
+  }
+
+  private updateOperativoDependentFields(): void {
+    for (const field of this.camposOperativos) {
+      if (!field.dependsOn) continue;
+      const parentField = this.camposOperativos.find((c) => c.id === field.dependsOn?.fieldId);
+      const parentValue = parentField ? this.form.get(parentField.key)?.value : null;
+      const hidden = String(parentValue ?? '') !== field.dependsOn.triggerValue;
+      field.hidden = hidden;
+      const control = this.form.get(field.key);
+      if (!control) continue;
+      if (hidden) {
+        control.disable({ emitEvent: false });
+        control.reset('', { emitEvent: false });
+      } else {
+        control.enable({ emitEvent: false });
+      }
+      control.setValidators(this.buildOperativoValidators(field, hidden));
+      control.updateValueAndValidity({ emitEvent: false });
+    }
+  }
+
+  // Precarga los valores previamente guardados (ValorSolicitudItem) del
+  // formulario operativo para la solicitud asociada a la orden en edición.
+  private precargarValoresOperativos(solicitudId: string): void {
+    this.reportSolicitudService
+      .getValoresSolicitud(solicitudId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res) => {
-          this.caracterizacionOpciones = res.data;
+        next: (valores: ReportValorSolicitud[]) => {
+          const patch: Record<string, unknown> = {};
+          for (const v of valores) {
+            const key = v.atributo_formulario_nombre;
+            if (!this.form.get(key)) continue;
+            const catalogo = Number(v.valor_catalogo);
+            patch[key] =
+              catalogo && catalogo !== 0
+                ? catalogo
+                : (v.valor_texto ?? v.valor_numero ?? v.valor_fecha ?? '');
+          }
+          this.form.patchValue(patch);
         },
       });
   }
@@ -311,16 +432,20 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       solicitudTrabajoNo: orden.solicitud_num_secuencial,
       ordenTrabajoNo: orden.num_secuencial ?? '',
       fechaEmision,
-      observaciones: orden.observacion ?? '',
       cliente: { solicitadoPor: orden.usuario_nombre_completo },
       usoSuelo: {
-        usoSueloOperadorId: orden.ctuso_suelo_id,
-        usoSueloPcaId: orden.ctpunto_critico_id,
-        caracterizacionId: orden.ctcaracteristica_horaria_id,
         direccionPca: orden.direccion_pca ?? '',
         telefonoPca: orden.telefono_pca ?? '',
       },
     });
+
+    // Si el formulario dinámico ya cargó sus campos (p. ej. el usuario venía
+    // en modo creación y cambia a editar otro registro), precargamos los
+    // valores ya guardados de una vez; si aún no cargó, cargarFormularioOperativo()
+    // lo hará al terminar (ver ngOnInit / cargarFormularioOperativo).
+    if (this.camposOperativos.length > 0) {
+      this.precargarValoresOperativos(orden.solicitud_id);
+    }
 
     this.solicitudSeleccionada = { id_solicitud: orden.solicitud_id } as ReportSolicitud;
 
@@ -376,6 +501,40 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
 
   // ── Guardar ──────────────────────────────────────────────────────────────
 
+  // Persiste las respuestas del formulario dinámico operativo como
+  // ValorSolicitudItem, igual que solicitud-trabajo.ts — no dependen de
+  // columnas fijas en OrdenTrabajoPayload, por lo que el backend puede
+  // agregar o quitar preguntas sin requerir cambios aquí.
+  private async guardarValoresOperativos(solicitudId: string): Promise<void> {
+    const raw = this.form.getRawValue();
+    const valorSolicitud: ValorSolicitudItem[] = this.camposOperativos
+      .filter((f) => !f.hidden)
+      .map((f) => {
+        const value = raw[f.key];
+        const esSelect = f.controlType === 'select';
+        return {
+          solicitud_id: solicitudId,
+          atributo_formulario_id: String(f.id),
+          valor_texto: !esSelect ? (value ?? null) : null,
+          valor_numero: null,
+          valor_fecha: null,
+          valor_booleano: null,
+          valor_multiple: null,
+          valor_catalogo: esSelect ? Number(value) || 0 : 0,
+          valor_uuid: null,
+        };
+      });
+
+    if (valorSolicitud.length === 0) return;
+    const payload = { valorSolicitud };
+
+    if (this.modoEdicion) {
+      await firstValueFrom(this.solicitudService.actualizarValoresSolicitud(solicitudId, payload));
+    } else {
+      await firstValueFrom(this.solicitudService.guardarValoresSolicitud(payload));
+    }
+  }
+
   async guardar(): Promise<void> {
     if (!this.solicitudSeleccionada) {
       this.toastrAlert.showWarning(
@@ -392,17 +551,25 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       return;
     }
 
+    // Los campos del formulario dinámico son siempre visibles (su
+    // obligatoriedad la define la API), sin importar el tipo de ensayo.
+    this.camposOperativos.forEach((f) => this.form.get(f.key)?.markAsTouched());
+    const dinamicosInvalidos = this.camposOperativos.some(
+      (f) => !f.hidden && this.form.get(f.key)?.invalid,
+    );
+    if (dinamicosInvalidos) {
+      this.toastrAlert.showWarning(
+        'Complete todos los campos obligatorios antes de guardar.',
+        'Requerido',
+      );
+      return;
+    }
+
+    // Dirección PCA solo aplica (y es obligatoria) para ensayos de Ruido.
     if (this.tipoEnsayoId === 91) {
       const usoSuelo = this.form.get('usoSuelo') as FormGroup;
       usoSuelo.markAllAsTouched();
-      const camposRequeridos = [
-        'usoSueloOperadorId',
-        'usoSueloPcaId',
-        'caracterizacionId',
-        'direccionPca',
-      ];
-      const hayInvalidos = camposRequeridos.some((c) => usoSuelo.get(c)?.invalid);
-      if (hayInvalidos) {
+      if (usoSuelo.get('direccionPca')?.invalid) {
         this.toastrAlert.showWarning(
           'Complete todos los campos obligatorios antes de guardar.',
           'Requerido',
@@ -425,12 +592,12 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
           periodo_id: this.editingRecord!.periodo_id,
           secuencial_id: this.editingRecord!.secuencial_id ?? null,
           num_secuencial: this.editingRecord!.num_secuencial ?? null,
-          ctuso_suelo_id: raw.usoSuelo.usoSueloOperadorId ?? null,
-          ctcaracteristica_horaria_id: raw.usoSuelo.caracterizacionId ?? null,
-          ctpunto_critico_id: raw.usoSuelo.usoSueloPcaId ?? null,
+          ctuso_suelo_id: null,
+          ctcaracteristica_horaria_id: null,
+          ctpunto_critico_id: null,
           direccion_pca: raw.usoSuelo.direccionPca || null,
           telefono_pca: raw.usoSuelo.telefonoPca || null,
-          observacion: raw.observaciones || null,
+          observacion: null,
           ctestado_id: this.editingRecord!.ctestado_id,
           estado: this.editingRecord!.estado,
           ctformulario_id: this.editingRecord!.ctformulario_id,
@@ -439,6 +606,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
         await firstValueFrom(
           this.ordenTrabajoService.actualizarOrden(this.editingRecord!.id, ordenPayload),
         );
+        await this.guardarValoresOperativos(this.solicitudSeleccionada.id_solicitud);
         this.toastrAlert.showSuccess(
           'La orden de trabajo In Situ ha sido actualizada.',
           '¡Actualizado!',
@@ -446,47 +614,6 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
         this.guardado.emit();
         return;
       }
-
-      const opcionesUsuario = this.tecnicos
-        .map((u) => `<option value="${u.id}">${u.nombre} — ${u.cargo}</option>`)
-        .join('');
-
-      const swalResult = await Swal.fire<{ usuario: string }>({
-        title: 'Técnico asignado',
-        html: `
-          <label style="font-size:11px;font-weight:700;color:#1e3a8a;text-transform:uppercase;display:block;text-align:left;margin-bottom:4px;">
-            Técnico asignado *
-          </label>
-          <select id="swal-usuario" class="swal2-input" style="margin:0;width:100%;">
-            <option value="">Seleccione...</option>
-            ${opcionesUsuario}
-          </select>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#1e3a8a',
-        cancelButtonColor: '#64748b',
-        confirmButtonText: 'Continuar',
-        cancelButtonText: 'Cancelar',
-        focusConfirm: false,
-        preConfirm: () => {
-          const sel = document.getElementById('swal-usuario') as HTMLSelectElement;
-          if (!sel?.value) {
-            Swal.showValidationMessage('Debe seleccionar un técnico asignado');
-            return false;
-          }
-          return { usuario: sel.value };
-        },
-      });
-
-      if (!swalResult.isConfirmed || !swalResult.value) {
-        this.saving = false;
-        return;
-      }
-
-      const tecnicoSeleccionado =
-        this.tecnicos.find((u) => u.id === swalResult.value!.usuario) ?? null;
-      console.log('[orden-in-situ:tecnico]', JSON.parse(JSON.stringify({ tecnicoSeleccionado })));
 
       const now = new Date();
       const ejercicio = await this.periodoService.getEjercicioByAnio(now.getFullYear());
@@ -512,12 +639,12 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
           periodo_id: periodo.id,
           secuencial_id: null,
           num_secuencial: null,
-          ctuso_suelo_id: raw.usoSuelo.usoSueloOperadorId ?? null,
-          ctcaracteristica_horaria_id: raw.usoSuelo.caracterizacionId ?? null,
-          ctpunto_critico_id: raw.usoSuelo.usoSueloPcaId ?? null,
+          ctuso_suelo_id: null,
+          ctcaracteristica_horaria_id: null,
+          ctpunto_critico_id: null,
           direccion_pca: raw.usoSuelo.direccionPca || null,
           telefono_pca: raw.usoSuelo.telefonoPca || null,
-          observacion: raw.observaciones || null,
+          observacion: null,
           ctestado_id: 2,
           estado: true,
           ctformulario_id: 0,
@@ -528,9 +655,8 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
         })),
       };
 
-      console.log('[orden-in-situ:guardar]', JSON.parse(JSON.stringify(payload)));
-
       await firstValueFrom(this.ordenTrabajoService.crearOrdenTrabajoConDetalle(payload));
+      await this.guardarValoresOperativos(this.solicitudSeleccionada.id_solicitud);
 
       this.toastrAlert.showSuccess('La orden de trabajo In Situ ha sido guardada.', '¡Guardado!');
       this.guardado.emit();
