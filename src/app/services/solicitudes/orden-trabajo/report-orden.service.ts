@@ -1,78 +1,18 @@
 import { Injectable } from '@angular/core';
-import { Apollo, gql } from 'apollo-angular';
+import { Apollo } from 'apollo-angular';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
-  ReportOrden, ReportOrdenCollectionResponse, ReportOrdenDetalle,
+  ReportOrden,
+  ReportOrdenCollectionResponse,
+  ReportOrdenDetalle,
 } from '../../../interfaces/solicitudes/orden-trabajo/report-orden.interface';
-import { META_FIELDS } from '../../../graphql/fragments';
+import {
+  GET_COLLECTION_REPORT_ORDEN,
+  GET_COLLECTION_REPORT_ORDEN_DETALLE,
+} from '../../../graphql/solicitudes/orden-trabajo/report-orden.queries';
 
 const CLIENT_NAME = 'reportes';
-
-const GET_COLLECTION_REPORT_ORDEN_DETALLE = gql`
-  query CollectionReportOrdenDetalle {
-    collectionReportOrdenDetalle(query: { where: { estado: { equals: true } } }) {
-      data {
-        id
-        orden_trabajo_id
-        solicitud_ensayo_id
-        analisis
-        identificacion
-        metodo
-        ctambiente_id
-        ctambiente_nombre
-        ctambiente_id_padre
-        ctambiente_nombre_padre
-        ensayo_id_ensayo
-        estado
-      }
-    }
-  }
-`;
-
-const GET_COLLECTION_REPORT_ORDEN = gql`
-  query CollectionReportOrden {
-    collectionReportOrden(query: { where: { estado: { equals: true } } }) {
-
-      count
-      data {
-        actualizado_en
-        actualizado_por
-        creado_en
-        creado_por
-        ctambiente_id
-        ctambiente_nombre
-        ctcaracteristica_horaria_id
-        ctcaracteristica_horaria_nombre
-        ctestado_id
-        ctestado_nombre
-        ctformulario_id
-        ctformulario_nombre
-        ctpunto_critico_id
-        ctpunto_critico_nombre
-        ctuso_suelo_id
-        ctuso_suelo_nombre
-        direccion_pca
-        entidad_id
-        entidad_nombre
-        estado
-        id
-        num_secuencial
-        observacion
-        periodo_anio
-        periodo_id
-        periodo_nombre_mes
-        secuencial_id
-        solicitud_id
-        solicitud_num_secuencial
-        telefono_pca
-        usuario_id
-        usuario_nombre_completo
-      }
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
 
 @Injectable({ providedIn: 'root' })
 export class ReportOrdenService {
@@ -85,10 +25,13 @@ export class ReportOrdenService {
         query: GET_COLLECTION_REPORT_ORDEN_DETALLE,
         fetchPolicy: 'network-only',
       })
-      .pipe(map(r =>
-        (r.data?.collectionReportOrdenDetalle?.data ?? [])
-          .filter(d => d.orden_trabajo_id === ordenId)
-      ));
+      .pipe(
+        map((r) =>
+          (r.data?.collectionReportOrdenDetalle?.data ?? []).filter(
+            (d) => d.orden_trabajo_id === ordenId,
+          ),
+        ),
+      );
   }
 
   getOrdenes(): Observable<ReportOrden[]> {
@@ -98,6 +41,6 @@ export class ReportOrdenService {
         query: GET_COLLECTION_REPORT_ORDEN,
         fetchPolicy: 'network-only',
       })
-      .pipe(map((result) => (result.data?.collectionReportOrden?.data ?? [])));
+      .pipe(map((result) => result.data?.collectionReportOrden?.data ?? []));
   }
 }

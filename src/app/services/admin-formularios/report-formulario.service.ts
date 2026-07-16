@@ -35,7 +35,11 @@ export interface AtributosPageResult {
 export class ReportFormularioService {
   constructor(private apollo: Apollo) {}
 
-  getAtributosByFormulario(formularioId: string, page = 1, take = 10): Observable<AtributosPageResult> {
+  getAtributosByFormulario(
+    formularioId: string,
+    page = 1,
+    take = 10,
+  ): Observable<AtributosPageResult> {
     return this.apollo
       .use(CLIENT_NAME)
       .query<{ collectionReportAtributoFormulario: ReportAtributoFormularioCollectionResponse }>({

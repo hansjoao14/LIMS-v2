@@ -1,47 +1,13 @@
 import { Injectable } from '@angular/core';
-import { Apollo, gql } from 'apollo-angular';
+import { Apollo } from 'apollo-angular';
 import { Observable, map } from 'rxjs';
 import {
   EnsayoItem,
   EnsayoItemCollectionResponse,
 } from '../../../interfaces/solicitudes/solicitud-trabajo';
+import { GET_ENSAYOS_BY_CT_AMBIENTAL } from '../../../graphql/solicitudes/solicitud-trabajo/ensayo-item.queries';
 
 const CLIENT_NAME = 'catalogo';
-
-const GET_ENSAYOS_BY_CT_AMBIENTAL = gql`
-  query CollectionEnsayoItem($ctambientalId: Int!) {
-    collectionEnsayoItem(
-      query: {
-        where: {
-          ctambiental_id: { equals: $ctambientalId }
-          ensayo: { estado: { equals: true } }
-        }
-        pagination: { page: 1, take: 100 }
-      }
-    ) {
-      count
-      data {
-        ctambiental_id
-        ensayo_id
-        estado
-        ensayo {
-          analisis
-          ctunidad_id
-          estado
-          id
-          identificacion
-          metodo
-          item_catalogo {
-            id
-            nombre
-            sigla
-            valor
-          }
-        }
-      }
-    }
-  }
-`;
 
 @Injectable({
   providedIn: 'root',

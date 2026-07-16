@@ -30,7 +30,10 @@ function normalizar(item: SecuencialGraphQL): Secuencial {
 export class SecuencialService {
   private readonly base = `${environment.api_formulario}/secuencial`;
 
-  constructor(private apollo: Apollo, private http: HttpClient) {}
+  constructor(
+    private apollo: Apollo,
+    private http: HttpClient,
+  ) {}
 
   getCollectionSecuencialAdmin(
     page: number,

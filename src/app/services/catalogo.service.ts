@@ -31,7 +31,10 @@ export class CatalogoService {
   private readonly baseCatalogo = `${environment.api_catalogo}/catalogo`;
   private readonly baseItemCatalogo = `${environment.api_catalogo}/item-catalogo`;
 
-  constructor(private apollo: Apollo, private http: HttpClient) {}
+  constructor(
+    private apollo: Apollo,
+    private http: HttpClient,
+  ) {}
 
   getCatalogo(): Observable<any[]> {
     return this.apollo
@@ -51,7 +54,11 @@ export class CatalogoService {
       );
   }
 
-  getCollectionCatalogoAdmin(page: number, limit: number, nombre = ''): Observable<{ data: Catalogo[]; meta: PaginationMeta }> {
+  getCollectionCatalogoAdmin(
+    page: number,
+    limit: number,
+    nombre = '',
+  ): Observable<{ data: Catalogo[]; meta: PaginationMeta }> {
     return this.apollo
       .use(CLIENT_NAME)
       .query<{ collectionCatalogo: CollectionCatalogoResponse }>({
@@ -93,9 +100,7 @@ export class CatalogoService {
         variables: { catalogoId, page: null, take: 200 },
         fetchPolicy: 'network-only',
       })
-      .pipe(
-        map((result) => result.data?.collectionItemCatalogo?.data ?? []),
-      );
+      .pipe(map((result) => result.data?.collectionItemCatalogo?.data ?? []));
   }
 
   getItemsByIds(ids: number[]): Observable<ItemCatalogo[]> {
@@ -131,7 +136,7 @@ export class CatalogoService {
     catalogoId: number,
   ): Observable<{ matriz: ItemCatalogo; hijos: ItemCatalogo[] }[]> {
     return this.getItemsByCatalogoId(catalogoId).pipe(
-      filter(response => response.data.length > 0),
+      filter((response) => response.data.length > 0),
       take(1),
       switchMap((response) => {
         const matrices = response.data;
@@ -162,7 +167,6 @@ export class CatalogoService {
     return this.http.patch<void>(`${this.baseCatalogo}/${id}/disable`, { estado });
   }
 
-
   // ── ItemCatálogo mutations ────────────────────────────────────────────────
 
   createItemCatalogo(payload: ItemCatalogoPayload): Observable<ItemCatalogo> {
@@ -176,5 +180,4 @@ export class CatalogoService {
   toggleItemCatalogo(id: number, estado: boolean): Observable<void> {
     return this.http.patch<void>(`${this.baseItemCatalogo}/${id}/disable`, { estado });
   }
-
 }

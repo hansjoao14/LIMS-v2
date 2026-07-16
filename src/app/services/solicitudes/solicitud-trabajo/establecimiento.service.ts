@@ -1,30 +1,13 @@
 import { Injectable } from '@angular/core';
-import { Apollo, gql } from 'apollo-angular';
+import { Apollo } from 'apollo-angular';
 import { Observable, map } from 'rxjs';
 import {
   Establecimiento,
   EstablecimientoCollectionResponse,
 } from '../../../interfaces/solicitudes/solicitud-trabajo/establecimiento.interface';
+import { GET_ESTABLECIMIENTOS } from '../../../graphql/solicitudes/solicitud-trabajo/establecimiento.queries';
 
 const CLIENT_NAME = 'establecimiento';
-
-const GET_ESTABLECIMIENTOS = gql`
-  query CollectionEstablecimientos {
-    collectionEstablecimientos {
-      data {
-        id
-        nombre
-        descripcion
-        direccion
-        dpa_id
-        establecimiento_id
-        estado
-        nui
-        representante_legal
-      }
-    }
-  }
-`;
 
 @Injectable({
   providedIn: 'root',
@@ -39,10 +22,7 @@ export class EstablecimientoService {
         query: GET_ESTABLECIMIENTOS,
       })
       .valueChanges.pipe(
-        map(
-          (result) =>
-            (result.data?.collectionEstablecimientos?.data ?? []) as Establecimiento[],
-        ),
+        map((result) => (result.data?.collectionEstablecimientos?.data ?? []) as Establecimiento[]),
       );
   }
 }

@@ -64,9 +64,7 @@ export const GET_ALL_ITEMS_ADMIN = gql`
 
 export const GET_ITEMS_BY_IDS = gql`
   query GetItemsByIds($ids: [Int!]!) {
-    collectionItemCatalogo(
-      query: { where: { id: { in: $ids } } }
-    ) {
+    collectionItemCatalogo(query: { where: { id: { in: $ids } } }) {
       data {
         id
         nombre
