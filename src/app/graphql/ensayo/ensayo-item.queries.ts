@@ -1,18 +1,6 @@
 import { gql } from 'apollo-angular';
-import { META_FIELDS } from './fragments';
-
-export const GET_COLLECTION_ENSAYO_ADMIN = gql`
-  query CollectionEnsayoAdmin($page: Int, $take: Int, $analisis: String) {
-    collectionEnsayo(query: {
-      where: { analisis: { contains: $analisis } }
-      pagination: { page: $page, take: $take }
-    }) {
-      count
-      data { id analisis identificacion metodo ctunidad_id estado }
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
+import { META_FIELDS } from '../fragments';
+import { ITEM_CATALOGO_OPTION_FIELDS } from './ensayo.fragments';
 
 export const GET_ENSAYO_ITEMS = gql`
   query GetEnsayoItems($ensayoId: Int) {
@@ -43,7 +31,7 @@ export const GET_ITEM_CATALOGO_OPTIONS_PAGINADO = gql`
       pagination: { page: $page, take: $take }
     }) {
       count
-      data { id nombre catalogo_id }
+      data { ${ITEM_CATALOGO_OPTION_FIELDS} }
       meta { ${META_FIELDS} }
     }
   }
@@ -58,25 +46,8 @@ export const GET_ITEM_CATALOGO_OPTIONS_BY_CATALOGO_PAGINADO = gql`
       pagination: { page: $page, take: $take }
     }) {
       count
-      data { id nombre catalogo_id }
+      data { ${ITEM_CATALOGO_OPTION_FIELDS} }
       meta { ${META_FIELDS} }
-    }
-  }
-`;
-
-export const GET_ENSAYO_BY_ID = gql`
-  query GetEnsayoById($id: Int!) {
-    collectionEnsayo(
-      query: { where: { id: { equals: $id } }, pagination: { take: 1, page: null } }
-    ) {
-      data {
-        id
-        analisis
-        identificacion
-        metodo
-        ctunidad_id
-        estado
-      }
     }
   }
 `;
@@ -86,11 +57,7 @@ export const GET_ITEM_CATALOGO_BY_ID = gql`
     collectionItemCatalogo(
       query: { where: { id: { equals: $id } }, pagination: { take: 1, page: null } }
     ) {
-      data {
-        id
-        nombre
-        catalogo_id
-      }
+      data { ${ITEM_CATALOGO_OPTION_FIELDS} }
     }
   }
 `;

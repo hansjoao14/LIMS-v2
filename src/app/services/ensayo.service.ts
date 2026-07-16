@@ -3,14 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Apollo } from 'apollo-angular';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { GET_COLLECTION_ENSAYO_ADMIN, GET_ENSAYO_BY_ID } from '../graphql/ensayo/ensayo.queries';
 import {
-  GET_COLLECTION_ENSAYO_ADMIN,
-  GET_ENSAYO_BY_ID,
   GET_ENSAYO_ITEMS,
   GET_ITEM_CATALOGO_BY_ID,
   GET_ITEM_CATALOGO_OPTIONS_BY_CATALOGO_PAGINADO,
   GET_ITEM_CATALOGO_OPTIONS_PAGINADO,
-} from '../graphql/ensayo.queries';
+} from '../graphql/ensayo/ensayo-item.queries';
 import {
   Ensayo,
   EnsayoItem,
