@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Apollo, gql } from 'apollo-angular';
+import { Apollo } from 'apollo-angular';
 import { Observable, filter, map, switchMap, take } from 'rxjs';
 import {
   Catalogo,
@@ -11,137 +11,18 @@ import {
   ItemCatalogoPayload,
   PaginationMeta,
 } from '../interfaces/catalogos/catalogo.interface';
-import { META_FIELDS } from '../graphql/fragments';
+import {
+  GET_ALL_ITEMS_ADMIN,
+  GET_CATALOGO,
+  GET_CHILDREN_BY_PARENT_IDS,
+  GET_COLLECTION_CATALOGO,
+  GET_COLLECTION_CATALOGO_ADMIN,
+  GET_ITEMS_BY_CATALOGO_ID,
+  GET_ITEMS_BY_IDS,
+} from '../graphql/catalogo/catalogo.queries';
 import { environment } from '../../environments/environment';
 
 const CLIENT_NAME = 'catalogo';
-
-const GET_CATALOGO = gql`
-  query GetCatalogo {
-    catalogo {
-      id
-      nombre
-      descripcion
-    }
-  }
-`;
-
-const GET_COLLECTION_CATALOGO = gql`
-  query CollectionCatalogo {
-    collectionCatalogo(query: { pagination: { page: null, take: 100 } }) {
-      count
-      data {
-        descripcion
-        estado
-        id
-        nombre
-      }
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
-
-const GET_COLLECTION_CATALOGO_ADMIN = gql`
-  query CollectionCatalogoAdmin($page: Int, $take: Int, $nombre: String) {
-    collectionCatalogo(query: {
-      where: { nombre: { contains: $nombre } }
-      pagination: { page: $page, take: $take }
-    }) {
-      count
-      data {
-        descripcion
-        estado
-        id
-        nombre
-      }
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
-
-const GET_ITEMS_BY_CATALOGO_ID = gql`
-  query CollectionItemCatalogo($catalogoId: Int!) {
-    collectionItemCatalogo(
-      query: { where: { catalogo_id: { equals: $catalogoId }, estado: { equals: true } } }
-    ) {
-      count
-      data {
-        catalogo_id
-        estado
-        grupo
-        id
-        item_catalogo_id
-        nombre
-        orden
-        sigla
-        valor
-      }
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
-
-const GET_ALL_ITEMS_ADMIN = gql`
-  query GetAllItemsAdmin($catalogoId: Int!, $page: Int, $take: Int) {
-    collectionItemCatalogo(
-      query: {
-        where: { catalogo_id: { equals: $catalogoId } },
-        pagination: { page: $page, take: $take }
-      }
-    ) {
-      count
-      data {
-        catalogo_id
-        estado
-        grupo
-        id
-        item_catalogo_id
-        nombre
-        orden
-        sigla
-        valor
-      }
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
-
-const GET_ITEMS_BY_IDS = gql`
-  query GetItemsByIds($ids: [Int!]!) {
-    collectionItemCatalogo(
-      query: { where: { id: { in: $ids } } }
-    ) {
-      data {
-        id
-        nombre
-        catalogo_id
-        item_catalogo_id
-      }
-    }
-  }
-`;
-
-const GET_CHILDREN_BY_PARENT_IDS = gql`
-  query CollectionItemCatalogoChildren($parentIds: [Int!]!) {
-    collectionItemCatalogo(
-      query: { where: { estado: { equals: true }, item_catalogo_id: { in: $parentIds } } }
-    ) {
-      count
-      data {
-        catalogo_id
-        estado
-        grupo
-        id
-        item_catalogo_id
-        nombre
-        orden
-        sigla
-        valor
-      }
-      meta { ${META_FIELDS} }
-    }
-  }
-`;
 
 @Injectable({
   providedIn: 'root',
