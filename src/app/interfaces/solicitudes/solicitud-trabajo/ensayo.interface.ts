@@ -2,6 +2,7 @@ export interface EnsayoMuestreo {
   activo: boolean;
   ensayo_id?: number;
   ctambiental_id?: number;
+  cttipo_ensayo_id?: number;
   producto: string;
   parametro: string;
   metodoInterno: string;
@@ -12,6 +13,7 @@ export interface EnsayoLaboratorio {
   activo: boolean;
   ensayo_id?: number;
   ctambiental_id?: number;
+  cttipo_ensayo_id?: number;
   ensayo: string;
   identificacion: string;
   metodoInterno: string;

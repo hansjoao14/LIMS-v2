@@ -16,6 +16,7 @@ export interface SolicitudEnsayoItem {
   ensayo_id: number;
   ctambiental_id: number;
   estado?: boolean;
+  cttipo_ensayo_id: number;
 }
 
 export interface FinalizarSolicitudPayload {

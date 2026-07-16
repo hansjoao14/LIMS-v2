@@ -258,7 +258,11 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
             this.tituloMuestreo = muestreoEntry?.ensayo_nombre ?? '';
             this.notasMuestreo = muestreoEntry?.notas ?? [];
             this.ensayosMuestreo = (muestreoEntry?.Ensayos ?? []).map((i) => {
-              const base = this.mapDetalleToMuestreo(i, hijoSuperficial.id);
+              const base = this.mapDetalleToMuestreo(
+                i,
+                hijoSuperficial.id,
+                muestreoEntry?.ensayo_catalogo,
+              );
               const previo = this.ensayosMuestreoPrevio.find((p) => p.parametro === base.parametro);
               return { ...base, activo: previo?.activo ?? false };
             });
@@ -268,7 +272,11 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
             this.ensayosSuperficiales = (labEntry?.Ensayos ?? [])
               .filter((i) => i.id !== this.ENSAYO_ID_MUESTREO)
               .map((i) => {
-                const base = this.mapDetalleToLaboratorio(i, hijoSuperficial.id);
+                const base = this.mapDetalleToLaboratorio(
+                  i,
+                  hijoSuperficial.id,
+                  labEntry?.ensayo_catalogo,
+                );
                 const previo = this.buscarPrevioLaboratorio(base);
                 return { ...base, activo: previo?.activo ?? false };
               });
@@ -303,7 +311,11 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
             this.ensayosResiduales = (labEntry?.Ensayos ?? [])
               .filter((i) => i.id !== this.ENSAYO_ID_MUESTREO)
               .map((i) => {
-                const base = this.mapDetalleToLaboratorio(i, hijoResidual.id);
+                const base = this.mapDetalleToLaboratorio(
+                  i,
+                  hijoResidual.id,
+                  labEntry?.ensayo_catalogo,
+                );
                 const previo = this.buscarPrevioLaboratorio(base);
                 return { ...base, activo: previo?.activo ?? false };
               });
@@ -336,7 +348,7 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
           this.tituloAire = entry?.ensayo_nombre ?? '';
           this.notasAire = entry?.notas ?? [];
           this.ensayosAireServer = (entry?.Ensayos ?? []).map((i) => {
-            const base = this.mapDetalleToLaboratorio(i, hijoActivo.id);
+            const base = this.mapDetalleToLaboratorio(i, hijoActivo.id, entry?.ensayo_catalogo);
             const previo = this.ensayosAirePrevio.find(
               (p) => p.identificacion === base.identificacion,
             );
@@ -365,7 +377,7 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
           this.tituloRuido = entry?.ensayo_nombre ?? '';
           this.notasRuido = entry?.notas ?? [];
           this.ensayosRuidoServer = (entry?.Ensayos ?? []).map((i) => {
-            const base = this.mapDetalleToLaboratorio(i, hijoActivo.id);
+            const base = this.mapDetalleToLaboratorio(i, hijoActivo.id, entry?.ensayo_catalogo);
             const previo = this.ensayosRuidoPrevio.find(
               (p) => p.identificacion === base.identificacion,
             );
@@ -379,12 +391,14 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   private mapDetalleToMuestreo(
     item: ReportCatalogoEnsayoDetalle,
     ctambientalId: number,
+    cttipoEnsayoId?: number,
   ): EnsayoMuestreo {
     const partes = item.metodo.split(',');
     return {
       activo: false,
       ensayo_id: item.id,
       ctambiental_id: ctambientalId,
+      cttipo_ensayo_id: cttipoEnsayoId,
       producto: item.analisis,
       parametro: item.identificacion,
       metodoInterno: partes[0]?.trim() ?? '',
@@ -395,12 +409,14 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   private mapDetalleToLaboratorio(
     item: ReportCatalogoEnsayoDetalle,
     ctambientalId: number,
+    cttipoEnsayoId?: number,
   ): EnsayoLaboratorio {
     const partes = item.metodo.split(',');
     return {
       activo: false,
       ensayo_id: item.id,
       ctambiental_id: ctambientalId,
+      cttipo_ensayo_id: cttipoEnsayoId,
       ensayo: item.analisis,
       identificacion: item.identificacion,
       metodoInterno: partes[0]?.trim() ?? '',

@@ -479,6 +479,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       ensayo_id: e.ensayo_id!,
       ctambiental_id: e.ctambiental_id!,
       estado: true,
+      cttipo_ensayo_id: e.cttipo_ensayo_id!,
     }));
 
     const payload = { solicitudEnsayo };
