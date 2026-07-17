@@ -77,9 +77,11 @@ export class ItemCatalogoFormulario implements OnInit, OnDestroy {
             items.map(i => i.item_catalogo_id).filter((id): id is number => id !== null),
           );
 
-          // Items in this catalog that have at least one child (exclude editing item to avoid cycles)
+          // Todos los ítems de este catálogo pueden ser padre (no solo los
+          // que ya tienen un hijo) — excluye el que se está editando para
+          // evitar ciclos.
           const internalParents = items.filter(
-            i => parentIdsInUse.has(i.id) && i.id !== this.editingRecord?.id,
+            i => i.id !== this.editingRecord?.id,
           );
 
           // External parent IDs: referenced by items in this catalog but not belonging to it
