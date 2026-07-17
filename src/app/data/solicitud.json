@@ -1,15 +1,3 @@
 {
-  "id_solicitud": "11D820F7-8219-4C9D-B377-0ACA08C695F8",
-  "formularios": [
-    {
-      "id_formulario": "A53B9431-646A-4991-B813-E500771FBD13",
-      "nombre_formulario": "INVESTIGACIÓN, ANÁLISIS Y MONITOREO",
-      "sigla_formulario": "IAM - Q",
-      "version_formulario": 1,
-      "nombre_completo": "Juan Ledesma",
-      "nombre_cargo": "Técnico/a de Muestreo en Campo",
-      "fecha_emision_solicitud": "2026-04-28T14:29:25.6801199Z",
-      "num_secuencial_solicitud": "ST-2025-000000032"
-    }
-  ]
+
 }

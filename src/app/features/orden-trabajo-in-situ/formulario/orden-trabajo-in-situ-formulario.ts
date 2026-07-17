@@ -32,6 +32,8 @@ import { SolicitudDetalle } from '../../../services/solicitudes/solicitud-detall
 import {
   OrdenTrabajoService,
   OrdenTrabajoPayload,
+  CrearOrdenTrabajoConDetallePayload,
+  ValorOrdenTrabajoPayload,
 } from '../../../services/solicitudes/orden-trabajo/orden-trabajo.service';
 import { ReportOrdenService } from '../../../services/solicitudes/orden-trabajo/report-orden.service';
 import { ReportOrden } from '../../../interfaces/solicitudes/orden-trabajo/report-orden.interface';
@@ -52,6 +54,11 @@ import { FieldConfig, Pregunta } from '../../solicitud-trabajo/model/solicitud-t
  * quita preguntas, este componente no necesita cambios.
  */
 const FORMULARIO_OPERATIVO_ID = '2018';
+
+// TODO: valor quemado temporal — el backend exige orden_trabajo_id (UUID) en
+// ordenTrabajoDetalle/valorOrdenTrabajo incluso en el POST de creación, donde
+// la orden aún no existe y no hay un id real disponible. Quitar en cuanto
+// backend defina cómo debe viajar ese id en la creación.
 
 @Component({
   selector: 'app-orden-trabajo-in-situ-formulario',
@@ -401,7 +408,16 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
         valor: a.nombre_valor_catalogo || a.valor_multiple_format || a.valor_texto || '',
       }));
 
-    const ensayosFiltrados = (f.tabla_ensayos ?? []).flatMap((t) => t.detalle_ensayo ?? []);
+    // cttipoEnsayoId sale del "ensayo_id" a nivel de GRUPO en tabla_ensayos
+    // (ej. 2026), distinto del ensayo_id de cada fila en detalle_ensayo
+    // (ej. 21/20/24) — el grupo representa el tipo de ensayo, no un ensayo puntual.
+    const ensayosFiltrados = (f.tabla_ensayos ?? []).flatMap((t) =>
+      (t.detalle_ensayo ?? []).map((e) => ({
+        ...e,
+        ctambientalId: t.id_ambiental,
+        cttipoEnsayoId: t.ensayo_id,
+      })),
+    );
 
     this.ensayosArray.clear();
     for (const e of ensayosFiltrados) {
@@ -409,6 +425,9 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       this.ensayosArray.push(
         this.fb.group({
           ensayoId: [e.id ?? ''],
+          ensayoIdNumerico: [e.ensayo_id ?? null],
+          ctambientalId: [e.ctambientalId ?? null],
+          cttipoEnsayoId: [e.cttipoEnsayoId ?? null],
           seleccionado: [true],
           ensayo: [e.analisis ?? ''],
           identificacion: [e.identificacion ?? ''],
@@ -536,6 +555,29 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
     }
   }
 
+  // Igual que guardarValoresOperativos, pero para el alta (POST
+  // create-detalle): las respuestas del formulario dinámico operativo van
+  // dentro del mismo payload como valorOrdenTrabajo, no en una llamada aparte.
+  private buildValorOrdenTrabajo(raw: Record<string, any>): ValorOrdenTrabajoPayload[] {
+    return this.camposOperativos
+      .filter((f) => !f.hidden)
+      .map((f) => {
+        const value = raw[f.key];
+        const esSelect = f.controlType === 'select';
+        return {
+          atributo_formulario_id: String(f.id),
+          valor_texto: !esSelect ? (value ?? null) : null,
+          valor_numero: null,
+          valor_fecha: null,
+          valor_booleano: null,
+          valor_multiple: null,
+          estado: true,
+          valor_catalogo: esSelect ? Number(value) || 0 : 0,
+          valor_uuid: null,
+        };
+      });
+  }
+
   async guardar(): Promise<void> {
     if (!this.solicitudSeleccionada) {
       this.toastrAlert.showWarning(
@@ -630,8 +672,11 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
         (e: any) => e.seleccionado && e.ensayoId,
       );
 
+      // Dirección/Teléfono PCA (Ruido) quedan fuera del payload por ahora:
+      // ya no tienen campo propio en ordenTrabajo y todavía no tenemos el
+      // atributo_formulario_id para mandarlos como valorOrdenTrabajo.
       //TODO: Cambiar el entidad_id
-      const payload = {
+      const payload: CrearOrdenTrabajoConDetallePayload = {
         ordenTrabajo: {
           solicitud_id: this.solicitudSeleccionada.id_solicitud,
           usuario_id: userId,
@@ -640,24 +685,20 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
           periodo_id: periodo.id,
           secuencial_id: null,
           num_secuencial: null,
-          ctuso_suelo_id: null,
-          ctcaracteristica_horaria_id: null,
-          ctpunto_critico_id: null,
-          direccion_pca: raw.usoSuelo.direccionPca || null,
-          telefono_pca: raw.usoSuelo.telefonoPca || null,
-          observacion: null,
           ctestado_id: 2,
           estado: true,
-          ctformulario_id: 0,
+          ctformulario_id: this.solicitudSeleccionada.tipo_formulario_id,
         },
         ordenTrabajoDetalle: ensayosSeleccionados.map((e: any) => ({
-          solicitud_ensayo_id: e.ensayoId,
           estado: true,
+          ctambiental_id: e.ctambientalId,
+          ensayo_id: e.ensayoIdNumerico,
+          cttipo_ensayo_id: e.cttipoEnsayoId,
         })),
+        valorOrdenTrabajo: this.buildValorOrdenTrabajo(raw),
       };
 
       await firstValueFrom(this.ordenTrabajoService.crearOrdenTrabajoConDetalle(payload));
-      await this.guardarValoresOperativos(this.solicitudSeleccionada.id_solicitud);
 
       this.toastrAlert.showSuccess('La orden de trabajo In Situ ha sido guardada.', '¡Guardado!');
       this.guardado.emit();
