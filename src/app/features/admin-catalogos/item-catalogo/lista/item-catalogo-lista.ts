@@ -25,6 +25,7 @@ import { ToastrAlertService } from '../../../../services/toastr.service';
 import { AlertService } from '../../../../services/alert.service';
 import { AppRole, MenuKey, hasPermission } from '../../../../core/utils/roles.constans';
 import { abrirMenuHaciaArriba } from '../../../../core/utils/dropdown-position.utils';
+import { parsearNotasValor } from '../../../../core/utils/valor-notas.utils';
 import { TableSkeleton } from '../../../../ui/table-skeleton/table-skeleton';
 
 export interface ItemTree extends ItemCatalogo {
@@ -266,5 +267,20 @@ export class ItemCatalogoLista implements OnInit, OnDestroy, OnChanges {
 
   trackByFn(_: number, item: ItemTree): number {
     return item.id;
+  }
+
+  esListaDeNotas(valor: string | null | undefined): boolean {
+    return parsearNotasValor(valor) !== null;
+  }
+
+  contarNotas(valor: string | null | undefined): number {
+    return parsearNotasValor(valor)?.length ?? 0;
+  }
+
+  // Resumen legible para el tooltip (title) de la columna Valor cuando es
+  // una lista de notas — evita volcar el JSON crudo en la celda.
+  resumenNotas(valor: string | null | undefined): string {
+    const notas = parsearNotasValor(valor) ?? [];
+    return notas.map((n) => `${n.header}: ${n.detail}`).join('\n');
   }
 }
