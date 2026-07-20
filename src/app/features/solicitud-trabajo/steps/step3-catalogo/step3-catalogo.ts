@@ -12,7 +12,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
 
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, forkJoin, map } from 'rxjs';
 import { CatalogoService } from '../../../../services/catalogo.service';
 import { EnsayoItemService } from '../../../../services/solicitudes/solicitud-trabajo/ensayo-item.service';
 
@@ -32,6 +32,18 @@ export interface MatrizConHijosUI {
   matriz: ItemCatalogo;
   hijos: ItemCatalogoUI[];
   collapsed: boolean;
+}
+
+// Una tabla de laboratorio por cada hijo activo del grupo Agua (Superficiales,
+// Residuales, o cualquier otro hijo que se agregue al catálogo) — el backend
+// puede devolver más de una tabla por hijo (ver ENSAYO_ID_MUESTREO), pero el
+// muestreo se maneja aparte porque no depende de qué hijo lo originó.
+export interface TablaAguaUI {
+  hijoId: number;
+  hijoNombre: string;
+  titulo: string;
+  notas: ReportCatalogoNota[];
+  ensayos: EnsayoLaboratorio[];
 }
 
 @Component({
@@ -70,8 +82,10 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   loading = true;
 
   ensayosMuestreo: EnsayoMuestreo[] = [];
-  ensayosSuperficiales: EnsayoLaboratorio[] = [];
-  ensayosResiduales: EnsayoLaboratorio[] = [];
+  // Una tabla de laboratorio por cada hijo activo del grupo Agua (ver
+  // TablaAguaUI) — reemplaza los antiguos ensayosSuperficiales/ensayosResiduales
+  // fijos, que solo contemplaban los dos primeros hijos del grupo.
+  tablasAgua: TablaAguaUI[] = [];
   ensayosAireServer: EnsayoLaboratorio[] = [];
   ensayosRuidoServer: EnsayoLaboratorio[] = [];
 
@@ -82,10 +96,6 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   // una con su propio título/notas.
   tituloMuestreo = '';
   notasMuestreo: ReportCatalogoNota[] = [];
-  tituloAguaSuperficial = '';
-  notasAguaSuperficial: ReportCatalogoNota[] = [];
-  tituloAguaResidual = '';
-  notasAguaResidual: ReportCatalogoNota[] = [];
   tituloAire = '';
   notasAire: ReportCatalogoNota[] = [];
   tituloRuido = '';
@@ -147,8 +157,7 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   tieneAlgunaSeleccion(): boolean {
     return (
       this.ensayosMuestreo.some((e) => e.activo) ||
-      this.ensayosSuperficiales.some((e) => e.activo) ||
-      this.ensayosResiduales.some((e) => e.activo) ||
+      this.tablasAgua.some((t) => t.ensayos.some((e) => e.activo)) ||
       this.ensayosAireServer.some((e) => e.activo) ||
       this.ensayosRuidoServer.some((e) => e.activo)
     );
@@ -224,110 +233,98 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     );
   }
 
-  // Superficiales y Residuales son tablas independientes, cada una con su
-  // propio ctambiental_id: cuando ambas están activas se muestran y guardan
-  // las dos a la vez, sin duplicar filas ni reemplazar el ctambiental_id de
-  // ninguna — solo se concatenan para el único @Output de guardado que
+  // Cada hijo activo del grupo Agua (Superficiales, Residuales, o cualquier
+  // otro que se agregue al catálogo) aporta su propia tabla, independiente
+  // de las demás: solo se concatenan para el único @Output de guardado que
   // existe para "ensayos de agua".
   private emitEnsayosAgua(): void {
-    this.ensayosResidualesCambiado.emit([...this.ensayosSuperficiales, ...this.ensayosResiduales]);
+    this.ensayosResidualesCambiado.emit(this.tablasAgua.flatMap((t) => t.ensayos));
   }
 
-  // hijos[0] = Aguas Superficiales, hijos[1] = Aguas Residuales: cada uno
-  // tiene su propio ctambiental_id, su propio conjunto de ensayo_item y se
-  // carga/muestra de forma completamente independiente del otro.
+  // Recorre TODOS los hijos activos del grupo Agua (no solo los dos
+  // primeros) — cada uno llama a report-catalogo/ensayo-item/:id de forma
+  // independiente y puede devolver más de una tabla (p. ej. "Muestreo" y
+  // "Físico-Químico" por separado, distinguibles por ENSAYO_ID_MUESTREO).
   private cargarEnsayosAgua(grupo: MatrizConHijosUI): void {
-    const hijoSuperficial = grupo.hijos[0];
-    const hijoResidual = grupo.hijos[1];
+    const hijosActivos = grupo.hijos.filter((h) => h.activo);
 
-    if (hijoSuperficial?.activo) {
-      this.ensayoItemService
-        .getReportCatalogoEnsayoItem(hijoSuperficial.id)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (data) => {
-            // El backend devuelve una entrada por tabla: "Muestreo" (sus
-            // Ensayos incluyen el id ENSAYO_ID_MUESTREO) y "Físico-Químico"
-            // — cada una con su propio título y notas.
-            const muestreoEntry = data.find((d) =>
-              d.Ensayos.some((e) => e.id === this.ENSAYO_ID_MUESTREO),
-            );
-            const labEntry =
-              data.find((d) => !d.Ensayos.some((e) => e.id === this.ENSAYO_ID_MUESTREO)) ?? data[0];
-
-            this.tituloMuestreo = muestreoEntry?.ensayo_nombre ?? '';
-            this.notasMuestreo = muestreoEntry?.notas ?? [];
-            this.ensayosMuestreo = (muestreoEntry?.Ensayos ?? []).map((i) => {
-              const base = this.mapDetalleToMuestreo(
-                i,
-                hijoSuperficial.id,
-                muestreoEntry?.ensayo_catalogo,
-              );
-              const previo = this.ensayosMuestreoPrevio.find((p) => p.parametro === base.parametro);
-              return { ...base, activo: previo?.activo ?? false };
-            });
-
-            this.tituloAguaSuperficial = labEntry?.ensayo_nombre ?? '';
-            this.notasAguaSuperficial = labEntry?.notas ?? [];
-            this.ensayosSuperficiales = (labEntry?.Ensayos ?? [])
-              .filter((i) => i.id !== this.ENSAYO_ID_MUESTREO)
-              .map((i) => {
-                const base = this.mapDetalleToLaboratorio(
-                  i,
-                  hijoSuperficial.id,
-                  labEntry?.ensayo_catalogo,
-                );
-                const previo = this.buscarPrevioLaboratorio(base);
-                return { ...base, activo: previo?.activo ?? false };
-              });
-
-            this.ensayosMuestreoCambiado.emit(this.ensayosMuestreo);
-            this.emitEnsayosAgua();
-          },
-        });
-    } else {
+    if (hijosActivos.length === 0) {
       this.ensayosMuestreo = [];
-      this.ensayosSuperficiales = [];
       this.tituloMuestreo = '';
       this.notasMuestreo = [];
-      this.tituloAguaSuperficial = '';
-      this.notasAguaSuperficial = [];
+      this.tablasAgua = [];
       Promise.resolve().then(() => {
         this.ensayosMuestreoCambiado.emit([]);
         this.emitEnsayosAgua();
       });
+      return;
     }
 
-    if (hijoResidual?.activo) {
-      this.ensayoItemService
-        .getReportCatalogoEnsayoItem(hijoResidual.id)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (data) => {
-            const labEntry =
-              data.find((d) => !d.Ensayos.some((e) => e.id === this.ENSAYO_ID_MUESTREO)) ?? data[0];
-            this.tituloAguaResidual = labEntry?.ensayo_nombre ?? '';
-            this.notasAguaResidual = labEntry?.notas ?? [];
-            this.ensayosResiduales = (labEntry?.Ensayos ?? [])
-              .filter((i) => i.id !== this.ENSAYO_ID_MUESTREO)
-              .map((i) => {
-                const base = this.mapDetalleToLaboratorio(
-                  i,
-                  hijoResidual.id,
-                  labEntry?.ensayo_catalogo,
-                );
-                const previo = this.buscarPrevioLaboratorio(base);
-                return { ...base, activo: previo?.activo ?? false };
+    forkJoin(
+      hijosActivos.map((hijo) =>
+        this.ensayoItemService
+          .getReportCatalogoEnsayoItem(hijo.id)
+          .pipe(map((data) => ({ hijo, data }))),
+      ),
+    )
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resultados) => {
+          let muestreoEntry: (typeof resultados)[number]['data'][number] | null = null;
+          let muestreoHijo: ItemCatalogoUI | null = null;
+          const tablas: TablaAguaUI[] = [];
+
+          for (const { hijo, data } of resultados) {
+            for (const entry of data) {
+              const esMuestreo = entry.Ensayos.some((e) => e.id === this.ENSAYO_ID_MUESTREO);
+              if (esMuestreo) {
+                muestreoEntry = entry;
+                muestreoHijo = hijo;
+                continue;
+              }
+              tablas.push({
+                hijoId: hijo.id,
+                hijoNombre: hijo.nombre,
+                titulo: entry.ensayo_nombre,
+                notas: entry.notas ?? [],
+                ensayos: entry.Ensayos.filter((i) => i.id !== this.ENSAYO_ID_MUESTREO).map((i) => {
+                  const base = this.mapDetalleToLaboratorio(i, hijo.id, entry.ensayo_catalogo);
+                  const previo = this.buscarPrevioLaboratorio(base);
+                  return { ...base, activo: previo?.activo ?? false };
+                }),
               });
-            this.emitEnsayosAgua();
-          },
-        });
-    } else {
-      this.ensayosResiduales = [];
-      this.tituloAguaResidual = '';
-      this.notasAguaResidual = [];
-      Promise.resolve().then(() => this.emitEnsayosAgua());
-    }
+            }
+          }
+
+          if (muestreoEntry && muestreoHijo) {
+            this.tituloMuestreo = muestreoEntry.ensayo_nombre;
+            this.notasMuestreo = muestreoEntry.notas ?? [];
+            this.ensayosMuestreo = muestreoEntry.Ensayos.map((i) => {
+              const base = this.mapDetalleToMuestreo(
+                i,
+                muestreoHijo!.id,
+                muestreoEntry!.ensayo_catalogo,
+              );
+              const previo = this.ensayosMuestreoPrevio.find((p) => p.parametro === base.parametro);
+              return { ...base, activo: previo?.activo ?? false };
+            });
+          } else {
+            this.tituloMuestreo = '';
+            this.notasMuestreo = [];
+            this.ensayosMuestreo = [];
+          }
+
+          this.tablasAgua = tablas;
+          this.ensayosMuestreoCambiado.emit(this.ensayosMuestreo);
+          this.emitEnsayosAgua();
+        },
+      });
+  }
+
+  toggleEnsayoTablaAgua(tablaIdx: number, filaIdx: number): void {
+    const fila = this.tablasAgua[tablaIdx].ensayos[filaIdx];
+    fila.activo = !fila.activo;
+    this.emitEnsayosAgua();
   }
 
   private cargarEnsayosAire(grupo: MatrizConHijosUI): void {
@@ -439,14 +436,6 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   toggleEnsayoMuestreo(idx: number): void {
     this.ensayosMuestreo[idx].activo = !this.ensayosMuestreo[idx].activo;
     this.ensayosMuestreoCambiado.emit(this.ensayosMuestreo);
-  }
-  toggleEnsayoSuperficial(idx: number): void {
-    this.ensayosSuperficiales[idx].activo = !this.ensayosSuperficiales[idx].activo;
-    this.emitEnsayosAgua();
-  }
-  toggleEnsayoResidual(idx: number): void {
-    this.ensayosResiduales[idx].activo = !this.ensayosResiduales[idx].activo;
-    this.emitEnsayosAgua();
   }
   toggleEnsayoAire(idx: number): void {
     this.ensayosAireServer[idx].activo = !this.ensayosAireServer[idx].activo;
