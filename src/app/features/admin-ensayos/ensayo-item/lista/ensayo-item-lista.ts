@@ -22,6 +22,7 @@ import { AuthService } from '../../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
 import { AlertService } from '../../../../services/alert.service';
 import { AppRole, MenuKey, hasPermission } from '../../../../core/utils/roles.constans';
+import { abrirMenuHaciaArriba } from '../../../../core/utils/dropdown-position.utils';
 import { TableSkeleton } from '../../../../ui/table-skeleton/table-skeleton';
 
 @Component({
@@ -38,8 +39,12 @@ export class EnsayoItemLista implements OnInit, OnDestroy, OnChanges {
   loading = true;
   flatNodes: EnsayoItemNode[] = [];
 
-  openMenuId: number | null = null; // ctambiental_id
-  procesandoId: number | null = null; // ctambiental_id
+  // La clave real de un EnsayoItem es compuesta (ctambiental_id +
+  // cttipo_ensayo_id + ensayo_id) — un mismo ctambiental_id puede repetirse
+  // con distinto cttipo_ensayo_id, así que ctambiental_id solo no identifica
+  // la fila de forma única (ver itemKey()).
+  openMenuId: string | null = null;
+  procesandoId: string | null = null;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -134,9 +139,17 @@ export class EnsayoItemLista implements OnInit, OnDestroy, OnChanges {
       });
   }
 
-  toggleMenu(id: number, event: MouseEvent): void {
+  itemKey(item: EnsayoItem): string {
+    return `${item.ctambiental_id}-${item.cttipo_ensayo_id}-${item.ensayo_id}`;
+  }
+
+  toggleMenu(id: string, event: MouseEvent): void {
     event.stopPropagation();
     this.openMenuId = this.openMenuId === id ? null : id;
+  }
+
+  abrirHaciaArriba(index: number): boolean {
+    return abrirMenuHaciaArriba(index, this.flatNodes.length);
   }
 
   closeMenu(): void {
@@ -153,7 +166,7 @@ export class EnsayoItemLista implements OnInit, OnDestroy, OnChanges {
       confirmButtonText: `Sí, ${accion}`,
     });
     if (!confirmado) return;
-    this.procesandoId = item.ctambiental_id;
+    this.procesandoId = this.itemKey(item);
     this.ensayoService
       .toggleEnsayoItem(item.ctambiental_id, item.ensayo_id, !item.estado)
       .pipe(

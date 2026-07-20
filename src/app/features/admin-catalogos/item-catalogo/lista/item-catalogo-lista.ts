@@ -24,6 +24,7 @@ import { AuthService } from '../../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
 import { AlertService } from '../../../../services/alert.service';
 import { AppRole, MenuKey, hasPermission } from '../../../../core/utils/roles.constans';
+import { abrirMenuHaciaArriba } from '../../../../core/utils/dropdown-position.utils';
 import { TableSkeleton } from '../../../../ui/table-skeleton/table-skeleton';
 
 export interface ItemTree extends ItemCatalogo {
@@ -99,8 +100,6 @@ export class ItemCatalogoLista implements OnInit, OnDestroy, OnChanges {
 
   collapsedIds = new Set<number>();
   openMenuId: number | null = null;
-  menuItem: ItemTree | null = null;
-  menuPos: { top: number; right: number } | null = null;
   procesandoId: number | null = null;
 
   private readonly destroy$ = new Subject<void>();
@@ -220,25 +219,17 @@ export class ItemCatalogoLista implements OnInit, OnDestroy, OnChanges {
     this.rebuildFlat();
   }
 
-  toggleMenu(id: number, item: ItemTree, event: MouseEvent): void {
+  toggleMenu(id: number, event: MouseEvent): void {
     event.stopPropagation();
-    if (this.openMenuId === id) {
-      this.openMenuId = null;
-      this.menuItem = null;
-      this.menuPos = null;
-    } else {
-      const btn = event.currentTarget as HTMLElement;
-      const rect = btn.getBoundingClientRect();
-      this.openMenuId = id;
-      this.menuItem = item;
-      this.menuPos = { top: rect.bottom + 4, right: window.innerWidth - rect.right };
-    }
+    this.openMenuId = this.openMenuId === id ? null : id;
   }
 
   closeMenu(): void {
     this.openMenuId = null;
-    this.menuItem = null;
-    this.menuPos = null;
+  }
+
+  abrirHaciaArriba(index: number): boolean {
+    return abrirMenuHaciaArriba(index, this.pagedItems.length);
   }
 
   async toggleEstadoItem(item: ItemCatalogo): Promise<void> {

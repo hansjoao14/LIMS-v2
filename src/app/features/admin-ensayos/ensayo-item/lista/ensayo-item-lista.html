@@ -1,15 +1,22 @@
 <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-
   <div class="flex items-center justify-between mb-4">
     <div>
       <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Tipos Ambientales</h3>
       <p class="text-[11px] text-slate-400 mt-0.5">Ítems del ensayo seleccionado</p>
     </div>
     @if (canCrear()) {
-      <button type="button" (click)="nuevo.emit()"
-        class="bg-[#1e3a8a] text-white px-3 py-1.5 rounded text-xs font-bold shadow-sm hover:bg-[#2541b2] transition-all flex items-center gap-1.5">
+      <button
+        type="button"
+        (click)="nuevo.emit()"
+        class="bg-[#1e3a8a] text-white px-3 py-1.5 rounded text-xs font-bold shadow-sm hover:bg-[#2541b2] transition-all flex items-center gap-1.5"
+      >
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
         </svg>
         Nuevo ítem
       </button>
@@ -20,14 +27,16 @@
     <div class="overflow-x-auto">
       <table class="w-full text-sm border-collapse table-fixed">
         <colgroup>
-          <col class="w-full">
-          <col class="w-[76px]">
+          <col class="w-full" />
+          <col class="w-[76px]" />
           @if (hasAnyAction) {
-            <col class="w-[50px]">
+            <col class="w-[50px]" />
           }
         </colgroup>
         <thead>
-          <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
+          <tr
+            class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
+          >
             <th class="px-3 py-2.5 border-r border-slate-100 text-left">Tipo Ambiental</th>
             <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
             @if (hasAnyAction) {
@@ -35,26 +44,43 @@
             }
           </tr>
         </thead>
-        <tbody appTableSkeleton [rows]="loading ? 8 : 0" [cols]="2" [actionButtons]="hasAnyAction ? 1 : 0"></tbody>
+        <tbody
+          appTableSkeleton
+          [rows]="loading ? 8 : 0"
+          [cols]="2"
+          [actionButtons]="hasAnyAction ? 1 : 0"
+        ></tbody>
         <tbody>
           @if (!loading) {
-            @for (node of flatNodes; track $index) {
-
+            @for (node of flatNodes; track $index; let i = $index) {
               @if (node.isExternal) {
                 <!-- Fila cabecera: padre de otro catálogo -->
                 <tr class="border-b border-slate-100 bg-slate-50">
                   <td [attr.colspan]="hasAnyAction ? 3 : 2" class="px-3 py-2">
                     <div class="flex items-center gap-2" [style.padding-left.px]="node.nivel * 16">
-                      <svg class="h-3.5 w-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+                      <svg
+                        class="h-3.5 w-3.5 text-slate-400 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+                        />
                       </svg>
-                      <span class="text-[11px] font-semibold text-slate-500">{{ node.catNombre }}</span>
-                      <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-500 uppercase tracking-wide">catálogo externo</span>
+                      <span class="text-[11px] font-semibold text-slate-500">{{
+                        node.catNombre
+                      }}</span>
+                      <span
+                        class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-500 uppercase tracking-wide"
+                        >catálogo externo</span
+                      >
                     </div>
                   </td>
                 </tr>
-
               } @else {
                 <!-- Fila normal: ensayo-item real -->
                 <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
@@ -70,54 +96,120 @@
                   </td>
                   <td class="px-3 py-2.5 border-r border-slate-100 text-center">
                     @if (node.ensayoItem!.estado) {
-                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-700">Activo</span>
+                      <span
+                        class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-700"
+                        >Activo</span
+                      >
                     } @else {
-                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">Inactivo</span>
+                      <span
+                        class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500"
+                        >Inactivo</span
+                      >
                     }
                   </td>
                   @if (hasAnyAction) {
                     <td class="px-2 py-2.5 text-center" (click)="$event.stopPropagation()">
                       <div class="flex items-center justify-center">
                         <div class="relative">
-                          <button type="button" title="Más acciones"
-                            (click)="toggleMenu(node.ensayoItem!.ctambiental_id, $event)"
-                            [disabled]="procesandoId === node.ensayoItem!.ctambiental_id"
-                            class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 disabled:opacity-40 transition-colors shrink-0">
-                            @if (procesandoId === node.ensayoItem!.ctambiental_id) {
+                          <button
+                            type="button"
+                            title="Más acciones"
+                            (click)="toggleMenu(itemKey(node.ensayoItem!), $event)"
+                            [disabled]="procesandoId === itemKey(node.ensayoItem!)"
+                            class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 disabled:opacity-40 transition-colors shrink-0"
+                          >
+                            @if (procesandoId === itemKey(node.ensayoItem!)) {
                               <svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                <circle
+                                  class="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  stroke-width="4"
+                                />
+                                <path
+                                  class="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                />
                               </svg>
                             } @else {
                               <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                                <path
+                                  d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"
+                                />
                               </svg>
                             }
                           </button>
-                          @if (openMenuId === node.ensayoItem!.ctambiental_id) {
-                            <div class="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40">
+                          @if (openMenuId === itemKey(node.ensayoItem!)) {
+                            <div
+                              class="absolute right-0 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40"
+                              [class.top-full]="!abrirHaciaArriba(i)"
+                              [class.mt-1]="!abrirHaciaArriba(i)"
+                              [class.bottom-full]="abrirHaciaArriba(i)"
+                              [class.mb-1]="abrirHaciaArriba(i)"
+                            >
                               @if (canEdit()) {
-                                <button type="button" (click)="editar.emit(node.ensayoItem!); closeMenu()"
-                                  class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50">
-                                  <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                <button
+                                  type="button"
+                                  (click)="editar.emit(node.ensayoItem!); closeMenu()"
+                                  class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50"
+                                >
+                                  <svg
+                                    class="h-3.5 w-3.5 shrink-0"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                    />
                                   </svg>
                                   Editar
                                 </button>
                               }
                               @if (canDelete()) {
-                                <button type="button" (click)="toggleEstadoItem(node.ensayoItem!); closeMenu()"
-                                  [class]="node.ensayoItem!.estado
-                                    ? 'w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50'
-                                    : 'w-full flex items-center gap-2.5 px-3 py-2 text-xs text-green-700 hover:bg-green-50'">
+                                <button
+                                  type="button"
+                                  (click)="toggleEstadoItem(node.ensayoItem!); closeMenu()"
+                                  [class]="
+                                    node.ensayoItem!.estado
+                                      ? 'w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50'
+                                      : 'w-full flex items-center gap-2.5 px-3 py-2 text-xs text-green-700 hover:bg-green-50'
+                                  "
+                                >
                                   @if (node.ensayoItem!.estado) {
-                                    <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                                    <svg
+                                      class="h-3.5 w-3.5 shrink-0"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                                      />
                                     </svg>
                                     Deshabilitar
                                   } @else {
-                                    <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    <svg
+                                      class="h-3.5 w-3.5 shrink-0"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                      />
                                     </svg>
                                     Habilitar
                                   }
@@ -131,10 +223,12 @@
                   }
                 </tr>
               }
-
             } @empty {
               <tr>
-                <td [attr.colspan]="hasAnyAction ? 3 : 2" class="p-10 text-slate-400 italic text-center text-xs">
+                <td
+                  [attr.colspan]="hasAnyAction ? 3 : 2"
+                  class="p-10 text-slate-400 italic text-center text-xs"
+                >
                   No hay ítems para este ensayo.
                 </td>
               </tr>
@@ -144,7 +238,6 @@
       </table>
     </div>
   </div>
-
 </div>
 
 @if (openMenuId !== null) {

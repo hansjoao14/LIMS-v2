@@ -64,10 +64,15 @@
             }
           </tr>
         </thead>
-        <tbody appTableSkeleton [rows]="loading ? 8 : 0" [cols]="2" [actionButtons]="hasAnyAction ? 1 : 0"></tbody>
+        <tbody
+          appTableSkeleton
+          [rows]="loading ? 8 : 0"
+          [cols]="2"
+          [actionButtons]="hasAnyAction ? 1 : 0"
+        ></tbody>
         <tbody>
           @if (!loading) {
-            @for (item of ensayos; track item.id) {
+            @for (item of ensayos; track item.id; let i = $index) {
               <tr
                 class="border-b border-slate-100 transition-colors cursor-pointer"
                 [class.bg-blue-50]="selectedId === item.id"
@@ -139,14 +144,25 @@
                           }
                         </button>
                         @if (openMenuId === item.id) {
-                          <div class="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40">
+                          <div
+                            class="absolute right-0 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40"
+                            [class.top-full]="!abrirHaciaArriba(i)"
+                            [class.mt-1]="!abrirHaciaArriba(i)"
+                            [class.bottom-full]="abrirHaciaArriba(i)"
+                            [class.mb-1]="abrirHaciaArriba(i)"
+                          >
                             @if (canEdit()) {
                               <button
                                 type="button"
                                 (click)="editar.emit(item); closeMenu()"
                                 class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50"
                               >
-                                <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg
+                                  class="h-3.5 w-3.5 shrink-0"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
                                   <path
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
@@ -168,7 +184,12 @@
                                 "
                               >
                                 @if (item.estado) {
-                                  <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <svg
+                                    class="h-3.5 w-3.5 shrink-0"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
                                     <path
                                       stroke-linecap="round"
                                       stroke-linejoin="round"
@@ -178,7 +199,12 @@
                                   </svg>
                                   Deshabilitar
                                 } @else {
-                                  <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <svg
+                                    class="h-3.5 w-3.5 shrink-0"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
                                     <path
                                       stroke-linecap="round"
                                       stroke-linejoin="round"

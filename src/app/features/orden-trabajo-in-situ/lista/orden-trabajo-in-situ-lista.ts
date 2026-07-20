@@ -19,6 +19,7 @@ import { AuthService } from '../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../services/toastr.service';
 import { AlertService } from '../../../services/alert.service';
 import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
+import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.utils';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 
 const ESTADO_FINALIZADO = 3;
@@ -107,6 +108,10 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
 
   closeMenu(): void {
     this.openMenuId = null;
+  }
+
+  abrirHaciaArriba(index: number): boolean {
+    return abrirMenuHaciaArriba(index, this.ordenes.length);
   }
 
   private getIdentificadorSecuencial(orden: ReportOrden): string {

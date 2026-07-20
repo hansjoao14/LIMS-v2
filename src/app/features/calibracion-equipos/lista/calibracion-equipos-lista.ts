@@ -16,6 +16,7 @@ import { AuthService } from '../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../services/toastr.service';
 import { AlertService } from '../../../services/alert.service';
 import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
+import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.utils';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 
 @Component({
@@ -99,6 +100,10 @@ export class CalibracionEquiposLista implements OnInit, OnDestroy {
 
   closeMenu(): void {
     this.openMenuId = null;
+  }
+
+  abrirHaciaArriba(index: number): boolean {
+    return abrirMenuHaciaArriba(index, this.calibraciones.length);
   }
 
   editarCalibracion(item: CalibracionEquipo): void {

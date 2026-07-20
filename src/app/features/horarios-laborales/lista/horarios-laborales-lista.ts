@@ -14,6 +14,7 @@ import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject, takeUntil, firstValueFrom, forkJoin, finalize } from 'rxjs';
 import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
+import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.utils';
 import { ToastrAlertService } from '../../../services/toastr.service';
 import { AlertService } from '../../../services/alert.service';
 import { SolicitudService } from '../../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
@@ -129,6 +130,12 @@ export class HorariosLaboralesLista implements OnInit, OnChanges, OnDestroy {
 
   closeMenu(): void {
     this.openMenuId = null;
+  }
+
+  // Usa _flatIdx (índice plano ya calculado en agruparPorDia) en vez del
+  // índice del @for anidado por grupo.
+  abrirHaciaArriba(flatIdx: number): boolean {
+    return abrirMenuHaciaArriba(flatIdx, this.solicitudes.length);
   }
 
   cargarDatos(): void {
