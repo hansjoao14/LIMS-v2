@@ -1,0 +1,108 @@
+<div class="relative">
+  @if (selectedLabel) {
+    <div
+      (click)="abrirPanel()"
+      class="w-full flex items-center justify-between bg-blue-50 border border-blue-300 rounded px-3 py-2 gap-2 text-sm cursor-pointer"
+      [class.opacity-60]="disabled"
+      [class.cursor-not-allowed]="disabled"
+    >
+      <span class="font-medium text-[#1e3a8a] truncate">{{ selectedLabel }}</span>
+      @if (!disabled) {
+        <button
+          type="button"
+          (click)="limpiar($event)"
+          title="Quitar selección"
+          class="shrink-0 text-slate-400 hover:text-red-500 text-sm leading-none transition-colors"
+        >
+          ✕
+        </button>
+      }
+    </div>
+  } @else {
+    <button
+      type="button"
+      (click)="abrirPanel()"
+      [disabled]="disabled"
+      class="w-full flex items-center gap-2 bg-white border border-dashed border-slate-300 text-slate-500 px-3 py-2 rounded text-sm hover:border-[#1e3a8a] hover:text-[#1e3a8a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+    >
+      <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        />
+      </svg>
+      {{ placeholder }}
+    </button>
+  }
+
+  @if (panelAbierto) {
+    <div
+      class="relative mt-1.5 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden"
+    >
+      <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-200 bg-slate-50">
+        <input
+          type="text"
+          class="flex-1 border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-[#1e3a8a]"
+          placeholder="Buscar por nombre..."
+          [ngModel]="busqueda"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="onBusquedaChange($event)"
+          autofocus
+        />
+        <button
+          type="button"
+          (click)="cerrarPanel()"
+          class="text-slate-400 hover:text-red-500 text-xl leading-none"
+        >
+          ✕
+        </button>
+      </div>
+
+      @if (loading) {
+        <p class="py-5 text-center text-sm text-slate-400 italic">Buscando...</p>
+      } @else if (opciones.length === 0) {
+        <p class="py-5 text-center text-sm text-slate-400 italic">Sin resultados.</p>
+      } @else {
+        <ul class="max-h-64 overflow-y-auto custom-scroll">
+          @for (item of opciones; track item.id) {
+            <li
+              (click)="seleccionar(item)"
+              class="px-3.5 py-2.5 border-b border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors"
+            >
+              <span class="text-slate-700 text-sm truncate">{{ item.nombre }}</span>
+            </li>
+          }
+        </ul>
+        @if (meta && meta.totalPages > 1) {
+          <div
+            class="flex items-center justify-between px-3.5 py-2 border-t border-slate-200 bg-slate-50"
+          >
+            <span class="text-[11px] text-slate-400">
+              Página {{ meta.page }} de {{ meta.totalPages }} · {{ meta.total }} resultados
+            </span>
+            <div class="flex gap-1">
+              <button
+                type="button"
+                [disabled]="!meta.hasPrevPage"
+                (click)="cargarPagina(currentPage - 1)"
+                class="w-7 h-7 flex items-center justify-center border border-slate-200 rounded bg-white text-[#1e3a8a] hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                [disabled]="!meta.hasNextPage"
+                (click)="cargarPagina(currentPage + 1)"
+                class="w-7 h-7 flex items-center justify-center border border-slate-200 rounded bg-white text-[#1e3a8a] hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

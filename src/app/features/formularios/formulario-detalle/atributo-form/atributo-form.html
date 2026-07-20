@@ -64,7 +64,7 @@
       </div>
 
       <!-- Tipos y orden -->
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-4 gap-4">
         <div>
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1"
             >Tipo Respuesta <span class="text-red-500">*</span></label
@@ -102,6 +102,19 @@
             type="number"
             [(ngModel)]="formData.orden"
             min="1"
+            class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+          />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1"
+            >Sección</label
+          >
+          <input
+            type="number"
+            [ngModel]="formData.seccion ?? ''"
+            (ngModelChange)="onSeccionChange($event)"
+            min="0"
+            placeholder="—"
             class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#1e3a8a] transition-colors"
           />
         </div>
@@ -173,16 +186,11 @@
               <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1"
                 >Catálogo</label
               >
-              <select
-                [(ngModel)]="formData.catalogo_id"
-                (ngModelChange)="onCatalogoChange()"
-                class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#1e3a8a] transition-colors bg-white"
-              >
-                <option [ngValue]="null">— Ninguno —</option>
-                @for (c of catalogos; track c.id) {
-                  <option [ngValue]="c.id">{{ c.nombre }}</option>
-                }
-              </select>
+              <app-catalogo-select
+                [value]="formData.catalogo_id"
+                (valueChange)="onCatalogoChange($event)"
+                placeholder="— Ninguno —"
+              />
             </div>
             <div>
               <label
@@ -203,7 +211,9 @@
                   class="border border-slate-200 rounded-md max-h-40 overflow-y-auto divide-y divide-slate-100"
                 >
                   @for (item of itemsCatalogo; track item.id) {
-                    <div class="flex items-center gap-2.5 px-3 py-2 hover:bg-blue-50 transition-colors">
+                    <div
+                      class="flex items-center gap-2.5 px-3 py-2 hover:bg-blue-50 transition-colors"
+                    >
                       <span class="w-1.5 h-1.5 rounded-full bg-[#1e3a8a] shrink-0"></span>
                       <span class="text-xs text-slate-700">{{ item.nombre }}</span>
                     </div>
@@ -242,12 +252,13 @@
                 </option>
               }
             </select>
-
           </div>
 
           @if (formData.is_dependent) {
             <div class="col-span-2">
-              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">
+              <label
+                class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1"
+              >
                 Opciones que activan este atributo
               </label>
               @if (!formData.atributo_id) {
@@ -265,13 +276,19 @@
                   Sin ítems activos disponibles para ese catálogo.
                 </p>
               } @else {
-                <div class="border border-slate-200 rounded-md max-h-40 overflow-y-auto divide-y divide-slate-100">
+                <div
+                  class="border border-slate-200 rounded-md max-h-40 overflow-y-auto divide-y divide-slate-100"
+                >
                   @for (item of itemsCatalogoDependencia; track item.id) {
-                    <label class="flex items-center gap-2.5 px-3 py-2 hover:bg-blue-50 transition-colors cursor-pointer">
-                      <input type="checkbox"
+                    <label
+                      class="flex items-center gap-2.5 px-3 py-2 hover:bg-blue-50 transition-colors cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
                         [checked]="selectedItemIds.has(item.id)"
                         (change)="toggleItemDependencia(item.id)"
-                        class="w-4 h-4 rounded accent-[#1e3a8a]" />
+                        class="w-4 h-4 rounded accent-[#1e3a8a]"
+                      />
                       <span class="text-xs text-slate-700">{{ item.nombre }}</span>
                     </label>
                   }
@@ -287,10 +304,15 @@
         <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-3">Opciones</p>
         <div class="grid grid-cols-2 gap-3">
           @for (opt of booleanOptions; track opt.field) {
-            <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-              <input type="checkbox" [(ngModel)]="$any(formData)[opt.field]"
+            <label
+              class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+            >
+              <input
+                type="checkbox"
+                [(ngModel)]="$any(formData)[opt.field]"
                 (ngModelChange)="opt.field === 'is_dependent' ? onDependienteToggle() : null"
-                class="w-4 h-4 rounded accent-[#1e3a8a]" />
+                class="w-4 h-4 rounded accent-[#1e3a8a]"
+              />
               <span class="text-sm font-medium text-slate-700">{{ opt.label }}</span>
             </label>
           }
@@ -309,7 +331,12 @@
       </button>
       <button
         (click)="guardar()"
-        [disabled]="guardando || !formData.nombre || !formData.pregunta || (formData.is_dependent && selectedItemIds.size === 0)"
+        [disabled]="
+          guardando ||
+          !formData.nombre ||
+          !formData.pregunta ||
+          (formData.is_dependent && selectedItemIds.size === 0)
+        "
         class="px-5 py-2.5 bg-[#1e3a8a] text-white text-xs font-bold uppercase rounded shadow-md hover:bg-blue-800 transition-colors disabled:opacity-50 flex items-center gap-2"
       >
         @if (guardando) {

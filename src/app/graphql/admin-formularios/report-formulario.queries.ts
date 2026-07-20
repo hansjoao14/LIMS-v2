@@ -64,6 +64,7 @@ export const GET_ATRIBUTOS_DEPENDIENTES = gql`
         multivaluado
         obligatorio
         readonly
+        seccion
         tipo_formulario
         is_list_empleado
       }
@@ -110,6 +111,7 @@ export const GET_ATRIBUTOS_BY_FORMULARIO = gql`
         obligatorio
         orden
         readonly
+        seccion
         tipo_formulario
         is_list_empleado
       }

@@ -9,13 +9,14 @@ import { ToastrAlertService } from '../../../../services/toastr.service';
 import { ReportFormulario } from '../../../../interfaces/admin-formularios/report-formulario.interface';
 import { ReportAtributoFormulario } from '../../../../interfaces/admin-formularios/report-atributo-formulario.interface';
 import { AtributoFormularioPayload } from '../../../../interfaces/admin-formularios/atributo-formulario-payload.interface';
-import { Catalogo, ItemCatalogo } from '../../../../interfaces/catalogos/catalogo.interface';
+import { ItemCatalogo } from '../../../../interfaces/catalogos/catalogo.interface';
 import { FieldSkeleton } from '../../../../ui/field-skeleton/field-skeleton';
+import { CatalogoSelect } from '../../../../shared/components/catalogo-select/catalogo-select';
 
 @Component({
   selector: 'app-atributo-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, FieldSkeleton],
+  imports: [CommonModule, FormsModule, FieldSkeleton, CatalogoSelect],
   templateUrl: './atributo-form.html',
 })
 export class AtributoFormComponent implements OnInit, OnDestroy {
@@ -29,24 +30,23 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
   guardando = false;
 
   readonly booleanOptions: { field: keyof AtributoFormularioPayload; label: string }[] = [
-    { field: 'obligatorio',          label: 'Obligatorio'             },
-    { field: 'estado',               label: 'Activo'                  },
-    { field: 'hidden',               label: 'Oculto'                  },
-    { field: 'readonly',             label: 'Solo lectura'            },
-    { field: 'multivaluado',         label: 'Multivaluado'            },
-    { field: 'is_ws_sri',            label: 'Integración SRI'         },
-    { field: 'is_ws_civil',          label: 'Integración Civil'       },
-    { field: 'is_ws_iess',           label: 'Integración IESS'        },
-    { field: 'is_dependent',         label: 'Es dependiente'          },
-    { field: 'is_dependent_catalogo',label: 'Dependiente de catálogo' },
-    { field: 'is_list_empleado',     label: 'Lista de empleados'      },
-    { field: 'is_text_area',         label: 'Es área de texto'        },
+    { field: 'obligatorio', label: 'Obligatorio' },
+    { field: 'estado', label: 'Activo' },
+    { field: 'hidden', label: 'Oculto' },
+    { field: 'readonly', label: 'Solo lectura' },
+    { field: 'multivaluado', label: 'Multivaluado' },
+    { field: 'is_ws_sri', label: 'Integración SRI' },
+    { field: 'is_ws_civil', label: 'Integración Civil' },
+    { field: 'is_ws_iess', label: 'Integración IESS' },
+    { field: 'is_dependent', label: 'Es dependiente' },
+    { field: 'is_dependent_catalogo', label: 'Dependiente de catálogo' },
+    { field: 'is_list_empleado', label: 'Lista de empleados' },
+    { field: 'is_text_area', label: 'Es área de texto' },
   ];
 
   tiposDato: ItemCatalogo[] = [];
   tiposRespuesta: ItemCatalogo[] = [];
   jornadas: ItemCatalogo[] = [];
-  catalogos: Catalogo[] = [];
 
   itemsCatalogo: ItemCatalogo[] = [];
   cargandoItems = false;
@@ -86,12 +86,18 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
     }
   }
 
-  onCatalogoChange(): void {
+  onCatalogoChange(catalogoId: number | null): void {
+    this.formData.catalogo_id = catalogoId;
     this.formData.item_catalogo_id = '';
     this.itemsCatalogo = [];
     if (this.formData.catalogo_id) {
       this.cargarItemsCatalogo(this.formData.catalogo_id);
     }
+  }
+
+  onSeccionChange(val: string): void {
+    const n = parseInt(val, 10);
+    this.formData.seccion = isNaN(n) ? null : n;
   }
 
   // ── Atributo del que se depende: resuelve su catalogo_id y carga sus ítems ──
@@ -195,8 +201,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ data }) => (this.tiposDato = data),
-        error: (err) =>
-          this.toastr.showError('No se pudo cargar los tipos de dato', 'Error'),
+        error: (err) => this.toastr.showError('No se pudo cargar los tipos de dato', 'Error'),
       });
   }
 
@@ -210,8 +215,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ data }) => (this.tiposRespuesta = data),
-        error: (err) =>
-          this.toastr.showError('No se pudo cargar los tipos de respuesta', 'Error'),
+        error: (err) => this.toastr.showError('No se pudo cargar los tipos de respuesta', 'Error'),
       });
 
     this.cataloService
@@ -219,17 +223,7 @@ export class AtributoFormComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ data }) => (this.jornadas = data),
-        error: (err) =>
-          this.toastr.showError('No se pudo cargar las jornadas', 'Error'),
-      });
-
-    this.cataloService
-      .getCollectionCatalogo()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (data) => (this.catalogos = data),
-        error: (err) =>
-          this.toastr.showError('No se pudo cargar los catálogos', 'Error'),
+        error: (err) => this.toastr.showError('No se pudo cargar las jornadas', 'Error'),
       });
   }
 

@@ -40,6 +40,7 @@ export interface ReportAtributoFormulario {
   obligatorio: boolean;
   orden: number;
   readonly: string;
+  seccion: number | null;
   tipo_formulario: string;
 }
 
