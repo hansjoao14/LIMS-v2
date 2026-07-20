@@ -8,6 +8,16 @@ import { ToastrAlertService } from '../../../../services/toastr.service';
 import { Catalogo, ItemCatalogo } from '../../../../interfaces/catalogos/catalogo.interface';
 import { ItemCatalogoSelect } from '../../../../shared/components/item-catalogo-select/item-catalogo-select';
 
+// Algunos ítems usan "Valor" para guardar texto simple (p. ej. "m3"), otros
+// para guardar una lista de notas en JSON (ver report-catalogo/ensayo-item).
+// Pedirle al usuario que edite ese JSON a mano es propenso a error — este
+// formulario detecta el formato y ofrece un editor de filas header/detail
+// en vez de un textarea con JSON crudo.
+export interface NotaValorUI {
+  header: string;
+  detail: string;
+}
+
 @Component({
   selector: 'app-item-catalogo-formulario',
   imports: [CommonModule, FormsModule, ItemCatalogoSelect],
@@ -30,6 +40,11 @@ export class ItemCatalogoFormulario implements OnInit, OnDestroy {
   orden: number | null = null;
   itemCatalogoId: number | null = null;
 
+  // "texto" = Valor es un string simple (comportamiento de siempre).
+  // "notas" = Valor es la lista de notas en JSON, editada fila por fila.
+  modoValor: 'texto' | 'notas' = 'texto';
+  notas: NotaValorUI[] = [];
+
   get modoEdicion(): boolean {
     return !!this.editingRecord;
   }
@@ -47,7 +62,55 @@ export class ItemCatalogoFormulario implements OnInit, OnDestroy {
       this.grupo = this.editingRecord.grupo ?? '';
       this.orden = this.editingRecord.orden;
       this.itemCatalogoId = this.editingRecord.item_catalogo_id;
+
+      const notasDetectadas = this.parsearNotas(this.valor);
+      if (notasDetectadas) {
+        this.modoValor = 'notas';
+        this.notas = notasDetectadas;
+      }
     }
+  }
+
+  // Solo reconoce el formato como "lista de notas" si TODO el contenido es
+  // un array de objetos {header, detail} — cualquier otra forma de JSON o
+  // texto plano se deja como está (modo "texto"), para no romper valores
+  // existentes que no tienen nada que ver con notas.
+  private parsearNotas(raw: string): NotaValorUI[] | null {
+    const texto = raw.trim();
+    if (!texto.startsWith('[')) return null;
+    try {
+      const parsed = JSON.parse(texto);
+      if (
+        Array.isArray(parsed) &&
+        parsed.length > 0 &&
+        parsed.every((n) => n && typeof n === 'object' && 'header' in n && 'detail' in n)
+      ) {
+        return parsed.map((n) => ({
+          header: String(n.header ?? ''),
+          detail: String(n.detail ?? ''),
+        }));
+      }
+    } catch {
+      // No era JSON válido — se trata como texto simple.
+    }
+    return null;
+  }
+
+  activarModoNotas(): void {
+    this.modoValor = 'notas';
+    if (this.notas.length === 0) this.agregarNota();
+  }
+
+  activarModoTexto(): void {
+    this.modoValor = 'texto';
+  }
+
+  agregarNota(): void {
+    this.notas.push({ header: '', detail: '' });
+  }
+
+  eliminarNota(idx: number): void {
+    this.notas.splice(idx, 1);
   }
 
   ngOnDestroy(): void {
@@ -60,12 +123,24 @@ export class ItemCatalogoFormulario implements OnInit, OnDestroy {
       this.toastrAlert.showError('El nombre es obligatorio.', 'Campo requerido');
       return;
     }
+    if (
+      this.modoValor === 'notas' &&
+      this.notas.some((n) => !n.header.trim() || !n.detail.trim())
+    ) {
+      this.toastrAlert.showError(
+        'Completa el título y el detalle de cada nota, o elimina las filas vacías.',
+        'Campo requerido',
+      );
+      return;
+    }
     this.saving = true;
+    const valorFinal =
+      this.modoValor === 'notas' ? JSON.stringify(this.notas, null, 3) : this.valor.trim() || null;
     const payload = {
       catalogo_id: this.catalogo.id,
       nombre: this.nombre.trim(),
       sigla: this.sigla.trim() || null,
-      valor: this.valor.trim() || null,
+      valor: valorFinal,
       grupo: this.grupo.trim() || null,
       orden: this.orden,
       item_catalogo_id: this.itemCatalogoId,

@@ -47,20 +47,51 @@
       </p>
     </div>
 
-    <!-- Sigla y Valor en fila -->
-    <div class="grid grid-cols-2 gap-3">
-      <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">Sigla</label>
-        <input
-          type="text"
-          [(ngModel)]="sigla"
-          placeholder="Ej. m3"
-          class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
-          [disabled]="saving"
-        />
+    <!-- Sigla -->
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Sigla</label>
+      <input
+        type="text"
+        [(ngModel)]="sigla"
+        placeholder="Ej. m3"
+        class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+        [disabled]="saving"
+      />
+    </div>
+
+    <!-- Valor: texto simple o lista de notas (JSON) -->
+    <div>
+      <div class="flex items-center justify-between mb-1">
+        <label class="block text-xs font-semibold text-slate-600">Valor</label>
+        <div class="flex rounded border border-slate-300 overflow-hidden text-[10px] font-semibold">
+          <button
+            type="button"
+            (click)="activarModoTexto()"
+            [disabled]="saving"
+            class="px-2.5 py-1 transition-colors"
+            [class.bg-[#1e3a8a]]="modoValor === 'texto'"
+            [class.text-white]="modoValor === 'texto'"
+            [class.text-slate-500]="modoValor !== 'texto'"
+            [class.hover:bg-slate-100]="modoValor !== 'texto'"
+          >
+            Texto simple
+          </button>
+          <button
+            type="button"
+            (click)="activarModoNotas()"
+            [disabled]="saving"
+            class="px-2.5 py-1 border-l border-slate-300 transition-colors"
+            [class.bg-[#1e3a8a]]="modoValor === 'notas'"
+            [class.text-white]="modoValor === 'notas'"
+            [class.text-slate-500]="modoValor !== 'notas'"
+            [class.hover:bg-slate-100]="modoValor !== 'notas'"
+          >
+            Lista de notas
+          </button>
+        </div>
       </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">Valor</label>
+
+      @if (modoValor === 'texto') {
         <input
           type="text"
           [(ngModel)]="valor"
@@ -68,7 +99,62 @@
           class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
           [disabled]="saving"
         />
-      </div>
+      } @else {
+        <div class="space-y-2 border border-slate-200 rounded p-3 bg-slate-50">
+          @for (nota of notas; track $index; let ni = $index) {
+            <div class="flex gap-2 items-start bg-white border border-slate-200 rounded p-2">
+              <div class="flex-1 space-y-1.5">
+                <input
+                  type="text"
+                  [(ngModel)]="nota.header"
+                  placeholder="Título (ej. Nota 1)"
+                  class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+                  [disabled]="saving"
+                />
+                <textarea
+                  [(ngModel)]="nota.detail"
+                  rows="2"
+                  placeholder="Detalle de la nota..."
+                  class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition resize-y"
+                  [disabled]="saving"
+                ></textarea>
+              </div>
+              <button
+                type="button"
+                (click)="eliminarNota(ni)"
+                [disabled]="saving"
+                title="Eliminar nota"
+                class="shrink-0 h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+              >
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          }
+          <button
+            type="button"
+            (click)="agregarNota()"
+            [disabled]="saving"
+            class="w-full flex items-center justify-center gap-1.5 border border-dashed border-slate-300 text-slate-500 rounded px-3 py-2 text-xs font-semibold hover:border-[#1e3a8a] hover:text-[#1e3a8a] transition-colors"
+          >
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Agregar nota
+          </button>
+        </div>
+      }
     </div>
 
     <!-- Grupo y Orden en fila -->
