@@ -52,6 +52,26 @@ export const GET_ITEM_CATALOGO_OPTIONS_BY_CATALOGO_PAGINADO = gql`
   }
 `;
 
+// Igual que GET_ITEM_CATALOGO_OPTIONS_PAGINADO pero excluyendo un id puntual
+// (p. ej. el ítem que se está editando, para evitar que se seleccione a sí
+// mismo como padre). Busca en TODO item_catalogo, sin acotar por catalogo_id,
+// porque el "ítem padre" de un catálogo puede pertenecer a cualquier otro
+// catálogo (no hay una relación catálogo→catálogo padre almacenada) y en
+// cualquier profundidad (ver ejemplo real: catálogo 1006 con padre en
+// catálogo 18, que a su vez tiene su propio padre).
+export const GET_ITEM_CATALOGO_OPTIONS_EXCLUDING_PAGINADO = gql`
+  query GetItemCatalogoOptionsExcludingPaginado($page: Int, $take: Int, $nombre: String, $excludeId: Int!) {
+    collectionItemCatalogo(query: {
+      where: { estado: { equals: true }, nombre: { contains: $nombre }, id: { notIn: [$excludeId] } }
+      pagination: { page: $page, take: $take }
+    }) {
+      count
+      data { ${ITEM_CATALOGO_OPTION_FIELDS} }
+      meta { ${META_FIELDS} }
+    }
+  }
+`;
+
 export const GET_ITEM_CATALOGO_BY_ID = gql`
   query GetItemCatalogoById($id: Int!) {
     collectionItemCatalogo(

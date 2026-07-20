@@ -1,10 +1,12 @@
 <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 max-w-lg">
-
   <div class="flex items-center gap-3 mb-6">
-    <button type="button" (click)="cancelado.emit()"
-      class="h-8 w-8 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:bg-slate-100 transition-colors">
+    <button
+      type="button"
+      (click)="cancelado.emit()"
+      class="h-8 w-8 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:bg-slate-100 transition-colors"
+    >
       <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
       </svg>
     </button>
     <div>
@@ -16,36 +18,30 @@
   </div>
 
   <div class="space-y-4">
-
     <!-- Nombre -->
     <div>
       <label class="block text-xs font-semibold text-slate-600 mb-1">
         Nombre <span class="text-red-500">*</span>
       </label>
-      <input type="text" [(ngModel)]="nombre" placeholder="Nombre del ítem"
+      <input
+        type="text"
+        [(ngModel)]="nombre"
+        placeholder="Nombre del ítem"
         class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
-        [disabled]="saving" />
+        [disabled]="saving"
+      />
     </div>
 
-    <!-- Ítem padre (recursivo) -->
+    <!-- Ítem padre (recursivo, puede pertenecer a cualquier catálogo) -->
     <div>
       <label class="block text-xs font-semibold text-slate-600 mb-1">Ítem padre</label>
-      @if (loadingPadres) {
-        <app-field-skeleton />
-      } @else {
-        <select
-          [ngModel]="itemCatalogoId ?? ''"
-          (ngModelChange)="onPadreChange($event)"
-          class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition bg-white"
-          [disabled]="saving">
-          <option value="">— Raíz (sin padre) —</option>
-          @for (op of opcionesPadre; track op.id) {
-            <option [value]="op.id">
-              {{ indentLabel(op) }}
-            </option>
-          }
-        </select>
-      }
+      <app-item-catalogo-select
+        [value]="itemCatalogoId"
+        (valueChange)="onPadreChange($event)"
+        [excludeId]="editingRecord?.id ?? null"
+        [disabled]="saving"
+        placeholder="— Raíz (sin padre) —"
+      />
       <p class="text-[10px] text-slate-400 mt-1">
         Selecciona un ítem padre para crear una estructura jerárquica, o déjalo en raíz.
       </p>
@@ -55,15 +51,23 @@
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Sigla</label>
-        <input type="text" [(ngModel)]="sigla" placeholder="Ej. m3"
+        <input
+          type="text"
+          [(ngModel)]="sigla"
+          placeholder="Ej. m3"
           class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
-          [disabled]="saving" />
+          [disabled]="saving"
+        />
       </div>
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Valor</label>
-        <input type="text" [(ngModel)]="valor" placeholder="Ej. m3"
+        <input
+          type="text"
+          [(ngModel)]="valor"
+          placeholder="Ej. m3"
           class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
-          [disabled]="saving" />
+          [disabled]="saving"
+        />
       </div>
     </div>
 
@@ -71,40 +75,64 @@
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Grupo</label>
-        <input type="text" [(ngModel)]="grupo" placeholder="Grupo opcional"
+        <input
+          type="text"
+          [(ngModel)]="grupo"
+          placeholder="Grupo opcional"
           class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
-          [disabled]="saving" />
+          [disabled]="saving"
+        />
       </div>
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Orden</label>
-        <input type="number" min="1"
+        <input
+          type="number"
+          min="1"
           [ngModel]="orden ?? ''"
           (ngModelChange)="onOrdenChange($event)"
           placeholder="1"
           class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
-          [disabled]="saving" />
+          [disabled]="saving"
+        />
       </div>
     </div>
-
   </div>
 
   <div class="flex items-center gap-3 mt-6">
-    <button type="button" (click)="guardar()" [disabled]="saving || loadingPadres"
-      class="bg-[#1e3a8a] text-white px-5 py-2 rounded text-sm font-bold shadow-sm hover:bg-[#2541b2] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2">
+    <button
+      type="button"
+      (click)="guardar()"
+      [disabled]="saving"
+      class="bg-[#1e3a8a] text-white px-5 py-2 rounded text-sm font-bold shadow-sm hover:bg-[#2541b2] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+    >
       @if (saving) {
         <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
         </svg>
         Guardando...
       } @else {
         {{ modoEdicion ? 'Actualizar' : 'Crear ítem' }}
       }
     </button>
-    <button type="button" (click)="cancelado.emit()" [disabled]="saving"
-      class="px-5 py-2 rounded text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all">
+    <button
+      type="button"
+      (click)="cancelado.emit()"
+      [disabled]="saving"
+      class="px-5 py-2 rounded text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all"
+    >
       Cancelar
     </button>
   </div>
-
 </div>

@@ -31,6 +31,8 @@ export class ItemCatalogoSelect implements OnInit, OnChanges, OnDestroy {
   @Input() placeholder = 'Buscar...';
   /** Si se indica, solo trae los hijos (item_catalogo) de este catalogo_id. */
   @Input() catalogoId: number | null = null;
+  /** Si se indica, excluye este id de las opciones (p. ej. el registro en edición). */
+  @Input() excludeId: number | null = null;
   @Output() valueChange = new EventEmitter<number | null>();
 
   readonly PAGE_SIZE = 8;
@@ -85,7 +87,13 @@ export class ItemCatalogoSelect implements OnInit, OnChanges, OnDestroy {
     this.loading = true;
     this.currentPage = page;
     this.ensayoService
-      .getItemCatalogoOptionsPaginado(page, this.PAGE_SIZE, this.busqueda.trim(), this.catalogoId)
+      .getItemCatalogoOptionsPaginado(
+        page,
+        this.PAGE_SIZE,
+        this.busqueda.trim(),
+        this.catalogoId,
+        this.excludeId,
+      )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ data, meta }) => {

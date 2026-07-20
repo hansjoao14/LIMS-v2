@@ -1,22 +1,16 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil, switchMap, of, map } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 
 import { CatalogoService } from '../../../../services/catalogo.service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
 import { Catalogo, ItemCatalogo } from '../../../../interfaces/catalogos/catalogo.interface';
-import { FieldSkeleton } from '../../../../ui/field-skeleton/field-skeleton';
-
-export interface ItemPadreOpcion {
-  id: number;
-  label: string;
-  level: number;
-}
+import { ItemCatalogoSelect } from '../../../../shared/components/item-catalogo-select/item-catalogo-select';
 
 @Component({
   selector: 'app-item-catalogo-formulario',
-  imports: [CommonModule, FormsModule, FieldSkeleton],
+  imports: [CommonModule, FormsModule, ItemCatalogoSelect],
   templateUrl: './item-catalogo-formulario.html',
 })
 export class ItemCatalogoFormulario implements OnInit, OnDestroy {
@@ -28,8 +22,6 @@ export class ItemCatalogoFormulario implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   saving = false;
-  loadingPadres = true;
-  opcionesPadre: ItemPadreOpcion[] = [];
 
   nombre = '';
   sigla = '';
@@ -56,61 +48,11 @@ export class ItemCatalogoFormulario implements OnInit, OnDestroy {
       this.orden = this.editingRecord.orden;
       this.itemCatalogoId = this.editingRecord.item_catalogo_id;
     }
-    this.cargarPadres();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  cargarPadres(): void {
-    this.loadingPadres = true;
-    this.catService.getAllItemsAdmin(this.catalogo.id)
-      .pipe(
-        takeUntil(this.destroy$),
-        switchMap((items) => {
-          const knownIds = new Set(items.map(i => i.id));
-
-          // IDs that appear as a parent reference in this catalog
-          const parentIdsInUse = new Set(
-            items.map(i => i.item_catalogo_id).filter((id): id is number => id !== null),
-          );
-
-          // Todos los ítems de este catálogo pueden ser padre (no solo los
-          // que ya tienen un hijo) — excluye el que se está editando para
-          // evitar ciclos.
-          const internalParents = items.filter(
-            i => i.id !== this.editingRecord?.id,
-          );
-
-          // External parent IDs: referenced by items in this catalog but not belonging to it
-          const externalParentIds = [...new Set(
-            [...parentIdsInUse].filter(id => !knownIds.has(id)),
-          )];
-
-          if (externalParentIds.length === 0) {
-            return of({ internalParents, externalParents: [] as ItemCatalogo[] });
-          }
-          return this.catService.getItemsByIds(externalParentIds).pipe(
-            map(ext => ({ internalParents, externalParents: ext })),
-          );
-        }),
-      )
-      .subscribe({
-        next: ({ internalParents, externalParents }) => {
-          this.opcionesPadre = [
-            ...externalParents.map(p => ({ id: p.id, label: p.nombre, level: 0 })),
-            ...internalParents.map(p => ({ id: p.id, label: p.nombre, level: 0 })),
-          ];
-          this.loadingPadres = false;
-        },
-        error: () => { this.loadingPadres = false; },
-      });
-  }
-
-  get indentLabel(): (op: ItemPadreOpcion) => string {
-    return (op) => ' '.repeat(op.level * 4) + (op.level > 0 ? '└ ' : '') + op.label;
   }
 
   guardar(): void {
@@ -154,8 +96,7 @@ export class ItemCatalogoFormulario implements OnInit, OnDestroy {
     this.orden = isNaN(n) ? null : n;
   }
 
-  onPadreChange(val: string): void {
-    const n = parseInt(val, 10);
-    this.itemCatalogoId = isNaN(n) ? null : n;
+  onPadreChange(id: number | null): void {
+    this.itemCatalogoId = id;
   }
 }

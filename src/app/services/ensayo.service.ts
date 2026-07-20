@@ -8,6 +8,7 @@ import {
   GET_ENSAYO_ITEMS,
   GET_ITEM_CATALOGO_BY_ID,
   GET_ITEM_CATALOGO_OPTIONS_BY_CATALOGO_PAGINADO,
+  GET_ITEM_CATALOGO_OPTIONS_EXCLUDING_PAGINADO,
   GET_ITEM_CATALOGO_OPTIONS_PAGINADO,
 } from '../graphql/ensayo/ensayo-item.queries';
 import {
@@ -69,13 +70,15 @@ export class EnsayoService {
     take: number,
     nombre = '',
     catalogoId: number | null = null,
+    excludeId: number | null = null,
   ): Observable<{ data: ItemCatalogoOption[]; meta: PaginationMeta }> {
-    const query =
-      catalogoId != null
-        ? GET_ITEM_CATALOGO_OPTIONS_BY_CATALOGO_PAGINADO
-        : GET_ITEM_CATALOGO_OPTIONS_PAGINADO;
-    const variables =
-      catalogoId != null ? { page, take, nombre, catalogoId } : { page, take, nombre };
+    let query = GET_ITEM_CATALOGO_OPTIONS_PAGINADO;
+    if (catalogoId != null) {
+      query = GET_ITEM_CATALOGO_OPTIONS_BY_CATALOGO_PAGINADO;
+    } else if (excludeId != null) {
+      query = GET_ITEM_CATALOGO_OPTIONS_EXCLUDING_PAGINADO;
+    }
+    const variables = { page, take, nombre, catalogoId, excludeId };
     return this.apollo
       .use(CLIENT_NAME)
       .query<{ collectionItemCatalogo: { data: ItemCatalogoOption[]; meta: PaginationMeta } }>({
