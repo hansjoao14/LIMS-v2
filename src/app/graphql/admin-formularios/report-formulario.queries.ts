@@ -73,10 +73,13 @@ export const GET_ATRIBUTOS_DEPENDIENTES = gql`
 `;
 
 export const GET_ATRIBUTOS_BY_FORMULARIO = gql`
-  query CollectionReportAtributoFormulario($formularioId: String!, $page: Int, $take: Int) {
+  query CollectionReportAtributoFormulario($formularioId: String!, $page: Int, $take: Int, $pregunta: String) {
     collectionReportAtributoFormulario(
       query: {
-        where: { formulario_id: { equals: $formularioId } }
+        where: {
+          formulario_id: { equals: $formularioId }
+          atributo_formulario_pregunta: { contains: $pregunta }
+        }
         pagination: { page: $page, take: $take }
       }
     ) {

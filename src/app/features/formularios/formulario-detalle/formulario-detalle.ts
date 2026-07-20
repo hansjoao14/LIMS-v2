@@ -1,5 +1,14 @@
-import { Component, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  NgZone,
+  OnChanges,
+  OnDestroy,
+  Output,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 
 import { ReportFormularioService } from '../../../services/admin-formularios/report-formulario.service';
@@ -14,7 +23,13 @@ import { LoadingComponent } from '../../../shared/components/loading/loading';
 @Component({
   selector: 'app-formulario-detalle',
   standalone: true,
-  imports: [CommonModule, AtributoFormComponent, PaginationComponent, LoadingComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    AtributoFormComponent,
+    PaginationComponent,
+    LoadingComponent,
+  ],
   templateUrl: './formulario-detalle.html',
 })
 export class FormularioDetalle implements OnChanges, OnDestroy {
@@ -26,6 +41,9 @@ export class FormularioDetalle implements OnChanges, OnDestroy {
   loading = false;
   currentPage = 1;
   readonly PAGE_SIZE = 10;
+
+  busqueda = '';
+  ordenSeccion: 'asc' | 'desc' | null = null;
 
   mostrarFormulario = false;
   atributoEditando: ReportAtributoFormulario | null = null;
@@ -39,7 +57,11 @@ export class FormularioDetalle implements OnChanges, OnDestroy {
   ) {}
 
   ngOnChanges(): void {
-    if (this.formulario) this.cargarPagina(1);
+    if (this.formulario) {
+      this.busqueda = '';
+      this.ordenSeccion = null;
+      this.cargarPagina(1);
+    }
   }
 
   cargarPagina(page: number): void {
@@ -48,7 +70,7 @@ export class FormularioDetalle implements OnChanges, OnDestroy {
     this.atributos = [];
 
     this.service
-      .getAtributosByFormulario(this.formulario.id, page, this.PAGE_SIZE)
+      .getAtributosByFormulario(this.formulario.id, page, this.PAGE_SIZE, this.busqueda.trim())
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ data, meta }) => {
@@ -56,6 +78,7 @@ export class FormularioDetalle implements OnChanges, OnDestroy {
             this.atributos = data;
             this.meta = meta;
             this.loading = false;
+            this.aplicarOrdenSeccion();
           });
         },
         error: (err) => {
@@ -63,6 +86,31 @@ export class FormularioDetalle implements OnChanges, OnDestroy {
           this.toastr.showError('No se pudo cargar los atributos del formulario', 'Error');
         },
       });
+  }
+
+  onBusquedaChange(valor: string): void {
+    this.busqueda = valor;
+    this.cargarPagina(1);
+  }
+
+  // Ordena la página actualmente cargada por sección — el listado sigue
+  // paginado del lado del servidor (orden por defecto), así que este orden
+  // solo aplica a los atributos ya traídos, igual que el sort-por-orden que
+  // ya hace el service.
+  toggleOrdenSeccion(): void {
+    this.ordenSeccion =
+      this.ordenSeccion === null ? 'asc' : this.ordenSeccion === 'asc' ? 'desc' : null;
+    this.aplicarOrdenSeccion();
+  }
+
+  private aplicarOrdenSeccion(): void {
+    if (this.ordenSeccion === null) return;
+    const factor = this.ordenSeccion === 'asc' ? 1 : -1;
+    this.atributos = [...this.atributos].sort((a, b) => {
+      const sa = a.seccion ?? Number.POSITIVE_INFINITY;
+      const sb = b.seccion ?? Number.POSITIVE_INFINITY;
+      return (sa - sb) * factor;
+    });
   }
 
   abrirFormNuevo(): void {

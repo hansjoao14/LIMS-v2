@@ -76,13 +76,24 @@
 
   <!-- Tabla de atributos -->
   <div class="border border-slate-200 rounded">
-    <div class="px-4 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-      <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide">
+    <div
+      class="px-4 py-3 border-b border-slate-200 flex flex-wrap gap-3 justify-between items-center bg-slate-50"
+    >
+      <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide whitespace-nowrap">
         Atributos del Formulario
       </h2>
-      <span class="text-xs font-bold text-slate-500 uppercase"
-        >{{ meta?.total ?? atributos.length }} atributos</span
-      >
+      <div class="flex items-center gap-3">
+        <input
+          type="text"
+          [ngModel]="busqueda"
+          (ngModelChange)="onBusquedaChange($event)"
+          placeholder="Buscar por pregunta..."
+          class="text-xs border border-slate-300 rounded px-2.5 py-1.5 w-56 focus:outline-none focus:ring-1 focus:ring-[#1e3a8a] focus:border-[#1e3a8a]"
+        />
+        <span class="text-xs font-bold text-slate-500 uppercase whitespace-nowrap"
+          >{{ meta?.total ?? atributos.length }} atributos</span
+        >
+      </div>
     </div>
 
     @if (loading) {
@@ -112,7 +123,21 @@
               <th class="px-3 py-2.5 border-r border-slate-100 text-left">Tipo Dato</th>
               <th class="px-3 py-2.5 border-r border-slate-100 text-center">Obligatorio</th>
               <th class="px-3 py-2.5 border-r border-slate-100 text-center">Oculto</th>
-              <th class="px-3 py-2.5 border-r border-slate-100 text-center">Sección</th>
+              <th
+                class="px-3 py-2.5 border-r border-slate-100 text-center cursor-pointer select-none hover:text-slate-700"
+                (click)="toggleOrdenSeccion()"
+              >
+                Sección
+                <span class="inline-block ml-0.5">
+                  @if (ordenSeccion === 'asc') {
+                    ▲
+                  } @else if (ordenSeccion === 'desc') {
+                    ▼
+                  } @else {
+                    <span class="text-slate-300">⇅</span>
+                  }
+                </span>
+              </th>
               <th class="px-3 py-2.5 border-r border-slate-100 text-center">Integraciones</th>
               <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
               <th class="px-2 py-2.5 text-center">Acciones</th>

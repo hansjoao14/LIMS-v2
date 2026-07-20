@@ -39,12 +39,13 @@ export class ReportFormularioService {
     formularioId: string,
     page = 1,
     take = 10,
+    pregunta = '',
   ): Observable<AtributosPageResult> {
     return this.apollo
       .use(CLIENT_NAME)
       .query<{ collectionReportAtributoFormulario: ReportAtributoFormularioCollectionResponse }>({
         query: GET_ATRIBUTOS_BY_FORMULARIO,
-        variables: { formularioId, page, take },
+        variables: { formularioId, page, take, pregunta },
         fetchPolicy: 'network-only',
       })
       .pipe(
