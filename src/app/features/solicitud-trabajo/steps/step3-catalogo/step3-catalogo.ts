@@ -12,7 +12,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
 
-import { Subject, takeUntil, forkJoin, map } from 'rxjs';
+import { Observable, Subject, takeUntil, forkJoin, of, map, filter, take, tap } from 'rxjs';
 import { CatalogoService } from '../../../../services/catalogo.service';
 import { EnsayoItemService } from '../../../../services/solicitudes/solicitud-trabajo/ensayo-item.service';
 
@@ -32,6 +32,9 @@ export interface MatrizConHijosUI {
   matriz: ItemCatalogo;
   hijos: ItemCatalogoUI[];
   collapsed: boolean;
+  // Los hijos se cargan bajo demanda (al seleccionar la matriz), no todos de
+  // una vez al iniciar el paso — este flag evita refetch si ya se cargaron.
+  hijosCargados?: boolean;
 }
 
 // Una tabla de laboratorio por cada hijo activo del grupo Agua (Superficiales,
@@ -77,9 +80,15 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
   readonly MATRIZ_ID_AIRE = 90;
   readonly MATRIZ_ID_RUIDO = 91;
 
+  // Aunque el catálogo tenga más ítems bajo la matriz Agua (p. ej. H2SO4,
+  // H2SO3, TEMPERATURA), en este formulario solo Aguas Superficiales (92) y
+  // Aguas Residuales (93) deben ofrecerse como hijos seleccionables.
+  readonly HIJOS_AGUA_PERMITIDOS = [92, 93];
+
   matricesConHijos: MatrizConHijosUI[] = [];
   matrizSeleccionada = '';
   loading = true;
+  loadingHijos = false;
 
   ensayosMuestreo: EnsayoMuestreo[] = [];
   // Una tabla de laboratorio por cada hijo activo del grupo Agua (ver
@@ -163,28 +172,30 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     );
   }
 
+  // Solo trae la lista de matrices (Agua/Aire/Ruido) — los hijos de cada una
+  // se cargan bajo demanda (ver onMatrizSeleccionadaChange), salvo que venga
+  // un estado previo con hijos activos (volviendo desde un paso posterior),
+  // en cuyo caso esa matriz puntual se carga de una vez para no perder la
+  // selección ya hecha.
   private getMatricesConHijos(): void {
     this.catalogoService
-      .getMatricesConHijos(this.CATALOGO_MATRICES_ID)
-      .pipe(takeUntil(this.destroy$))
+      .getItemsByCatalogoId(this.CATALOGO_MATRICES_ID)
+      .pipe(
+        filter((r) => r.data.length > 0),
+        take(1),
+        takeUntil(this.destroy$),
+      )
       .subscribe({
-        next: (data) => {
-          const previoHijos = this.estadoPrevio.flatMap((m) => m.hijos);
-          this.matricesConHijos = data.map((item) => ({
+        next: (response) => {
+          this.matricesConHijos = response.data.map((matriz) => ({
             collapsed: false,
-            matriz: item.matriz,
-            hijos: item.hijos.map((h) => {
-              const previo = previoHijos.find((ph) => ph.id === h.id);
-              return { ...h, activo: previo?.activo ?? false };
-            }),
+            matriz,
+            hijos: [],
+            hijosCargados: false,
           }));
-          this.restaurarMatrizSeleccionada();
           this.loading = false;
           this.spinner.hide('catalogo-step3');
-          this.cargarEnsayosActivos();
-          // Defer to avoid NG0100: parent already read catalogosSeleccionados
-          // in this CD cycle — emitting synchronously changes it mid-check.
-          Promise.resolve().then(() => this.estadoCambiado.emit(this.matricesConHijos));
+          this.restaurarActivosPrevios();
         },
         error: () => {
           this.loading = false;
@@ -203,17 +214,80 @@ export class Step3CatalogoComponent implements OnInit, OnChanges, OnDestroy {
     if (grupoActivo) this.matrizSeleccionada = grupoActivo.matriz.nombre;
   }
 
+  // Carga los hijos de las matrices que tengan alguno activo en estadoPrevio
+  // (por eso siempre se piden frescos al servidor en vez de reusar los del
+  // snapshot previo tal cual: si el catálogo agregó ítems nuevos desde que
+  // se guardó ese snapshot, deben aparecer igual) y luego les aplica los
+  // flags .activo que traía ese snapshot. Se usa tanto en la carga inicial
+  // como cuando estadoPrevio llega después (ver ngOnChanges).
+  private restaurarActivosPrevios(): void {
+    const gruposConPrevioActivo = this.matricesConHijos.filter((grupo) =>
+      this.estadoPrevio.some(
+        (m) => m.matriz.id === grupo.matriz.id && m.hijos.some((h) => h.activo),
+      ),
+    );
+    const pendientes = gruposConPrevioActivo.filter((g) => !g.hijosCargados);
+
+    const carga$: Observable<unknown> = pendientes.length
+      ? forkJoin(pendientes.map((grupo) => this.cargarHijosDeMatriz$(grupo)))
+      : of(null);
+
+    carga$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      const previoHijos = this.estadoPrevio.flatMap((m) => m.hijos);
+      this.matricesConHijos = this.matricesConHijos.map((grupo) => ({
+        ...grupo,
+        hijos: grupo.hijos.map((h) => {
+          const previo = previoHijos.find((ph) => ph.id === h.id);
+          return { ...h, activo: previo?.activo ?? h.activo };
+        }),
+      }));
+      this.restaurarMatrizSeleccionada();
+      this.cargarEnsayosActivos();
+      // Defer to avoid NG0100: parent already read catalogosSeleccionados
+      // in this CD cycle — emitting synchronously changes it mid-check.
+      Promise.resolve().then(() => this.estadoCambiado.emit(this.matricesConHijos));
+    });
+  }
+
   private aplicarEstadoPrevio(): void {
-    const previoHijos = this.estadoPrevio.flatMap((m) => m.hijos);
-    this.matricesConHijos = this.matricesConHijos.map((grupo) => ({
-      ...grupo,
-      hijos: grupo.hijos.map((h) => {
-        const previo = previoHijos.find((ph) => ph.id === h.id);
-        return { ...h, activo: previo?.activo ?? h.activo };
+    this.restaurarActivosPrevios();
+  }
+
+  // Se dispara al cambiar la matriz seleccionada en el <select> — trae sus
+  // hijos del servidor solo la primera vez (bajo demanda), en vez de traer
+  // los hijos de las 3 matrices de una sola vez al iniciar el paso.
+  onMatrizSeleccionadaChange(nombre: string): void {
+    this.matrizSeleccionada = nombre;
+    const grupo = this.matricesConHijos.find((g) => this.isMatriz(g, nombre));
+    if (!grupo || grupo.hijosCargados) return;
+    this.loadingHijos = true;
+    this.cargarHijosDeMatriz$(grupo)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.loadingHijos = false;
+        },
+        error: () => {
+          this.loadingHijos = false;
+        },
+      });
+  }
+
+  private cargarHijosDeMatriz$(grupo: MatrizConHijosUI) {
+    const fuente$ = this.esMatriz(grupo, this.MATRIZ_ID_AGUA)
+      ? this.catalogoService.getChildrenByParentIdsAndIds(
+          [grupo.matriz.id],
+          this.HIJOS_AGUA_PERMITIDOS,
+        )
+      : this.catalogoService.getChildrenByParentIdsOnDemand([grupo.matriz.id]);
+
+    return fuente$.pipe(
+      take(1),
+      tap((response) => {
+        grupo.hijos = response.data.map((h) => ({ ...h, activo: false }));
+        grupo.hijosCargados = true;
       }),
-    }));
-    this.restaurarMatrizSeleccionada();
-    this.cargarEnsayosActivos();
+    );
   }
 
   private cargarEnsayosActivos(): void {

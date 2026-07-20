@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Apollo } from 'apollo-angular';
-import { Observable, filter, map, switchMap, take } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import {
   Catalogo,
   CatalogoPayload,
@@ -15,6 +15,7 @@ import {
   GET_ALL_ITEMS_ADMIN,
   GET_CATALOGO,
   GET_CHILDREN_BY_PARENT_IDS,
+  GET_CHILDREN_BY_PARENT_IDS_AND_IDS,
   GET_COLLECTION_CATALOGO,
   GET_COLLECTION_CATALOGO_ADMIN,
   GET_ITEMS_BY_CATALOGO_ID,
@@ -132,25 +133,55 @@ export class CatalogoService {
       );
   }
 
-  getMatricesConHijos(
-    catalogoId: number,
-  ): Observable<{ matriz: ItemCatalogo; hijos: ItemCatalogo[] }[]> {
-    return this.getItemsByCatalogoId(catalogoId).pipe(
-      filter((response) => response.data.length > 0),
-      take(1),
-      switchMap((response) => {
-        const matrices = response.data;
-        const parentIds = matrices.map((m) => m.id);
-        return this.getChildrenByParentIds(parentIds).pipe(
-          map((hijosResponse) => {
-            return matrices.map((matriz) => ({
-              matriz,
-              hijos: hijosResponse.data.filter((h) => h.item_catalogo_id === matriz.id),
-            }));
-          }),
-        );
-      }),
-    );
+  // Igual que getChildrenByParentIds pero con .query() + network-only en vez
+  // de .watchQuery(): pensado para llamadas repetidas bajo demanda (una por
+  // cada matriz que el usuario selecciona), donde reusar la misma
+  // ObservableQuery reactiva con variables distintas en cada llamada no es
+  // seguro. getChildrenByParentIds queda igual para su único consumidor
+  // actual (atributo-form.ts), que la llama una sola vez por instancia.
+  getChildrenByParentIdsOnDemand(parentIds: number[]): Observable<CollectionItemCatalogoResponse> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionItemCatalogo: CollectionItemCatalogoResponse }>({
+        query: GET_CHILDREN_BY_PARENT_IDS,
+        variables: { parentIds },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(
+        map(
+          (result) =>
+            (result.data?.collectionItemCatalogo ?? {
+              count: 0,
+              data: [],
+            }) as CollectionItemCatalogoResponse,
+        ),
+      );
+  }
+
+  // Igual que getChildrenByParentIdsOnDemand pero acotada además a una lista
+  // puntual de ids (p. ej. la matriz Agua solo debe ofrecer Aguas
+  // Superficiales/Residuales como hijos seleccionables en solicitud-trabajo,
+  // aunque el catálogo tenga más ítems bajo ese mismo padre).
+  getChildrenByParentIdsAndIds(
+    parentIds: number[],
+    ids: number[],
+  ): Observable<CollectionItemCatalogoResponse> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionItemCatalogo: CollectionItemCatalogoResponse }>({
+        query: GET_CHILDREN_BY_PARENT_IDS_AND_IDS,
+        variables: { parentIds, ids },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(
+        map(
+          (result) =>
+            (result.data?.collectionItemCatalogo ?? {
+              count: 0,
+              data: [],
+            }) as CollectionItemCatalogoResponse,
+        ),
+      );
   }
 
   // ── Catálogo mutations ────────────────────────────────────────────────────

@@ -86,3 +86,25 @@ export const GET_CHILDREN_BY_PARENT_IDS = gql`
     }
   }
 `;
+
+// Igual que GET_CHILDREN_BY_PARENT_IDS pero acotada además a una lista puntual
+// de ids (p. ej. en el paso 3 de solicitud-trabajo, la matriz Agua solo debe
+// ofrecer Aguas Superficiales/Residuales como hijos seleccionables, aunque el
+// catálogo tenga más ítems bajo ese mismo padre).
+export const GET_CHILDREN_BY_PARENT_IDS_AND_IDS = gql`
+  query CollectionItemCatalogoChildrenByIds($parentIds: [Int!]!, $ids: [Int!]!) {
+    collectionItemCatalogo(
+      query: {
+        where: {
+          estado: { equals: true }
+          item_catalogo_id: { in: $parentIds }
+          id: { in: $ids }
+        }
+      }
+    ) {
+      count
+      data { ${ITEM_CATALOGO_FIELDS} }
+      meta { ${META_FIELDS} }
+    }
+  }
+`;

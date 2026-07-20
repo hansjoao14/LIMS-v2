@@ -26,7 +26,8 @@
         Matriz ambiental
       </label>
       <select
-        [(ngModel)]="matrizSeleccionada"
+        [ngModel]="matrizSeleccionada"
+        (ngModelChange)="onMatrizSeleccionadaChange($event)"
         class="w-full border border-slate-300 rounded px-3 py-2.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-[#1e3a8a] transition-colors"
       >
         <option value="">Seleccione una matriz...</option>
@@ -100,37 +101,43 @@
                     }}</span>
                   </div>
                   <div class="flex-1 divide-y divide-gray-100">
-                    @for (hijo of grupo.hijos; track $index; let hi = $index) {
-                      <div
-                        class="grid grid-cols-2 items-center bg-white hover:bg-slate-50 transition-colors"
-                      >
-                        <div
-                          class="px-4 py-4 text-[11px] font-semibold text-slate-700 uppercase border-r border-gray-200"
-                        >
-                          {{ hijo.nombre }}
-                        </div>
-                        <div class="px-4 py-4 flex items-center gap-3 justify-center">
-                          <button
-                            type="button"
-                            (click)="toggleHijo(gi, hi)"
-                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
-                            [class.bg-[#1e3a8a]]="hijo.activo"
-                            [class.bg-gray-300]="!hijo.activo"
-                          >
-                            <span
-                              class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-                              [class.translate-x-6]="hijo.activo"
-                              [class.translate-x-1]="!hijo.activo"
-                            ></span>
-                          </button>
-                          <span
-                            class="text-xs font-bold w-6"
-                            [class.text-[#1e3a8a]]="hijo.activo"
-                            [class.text-slate-400]="!hijo.activo"
-                            >{{ hijo.activo ? 'SÍ' : 'NO' }}</span
-                          >
-                        </div>
+                    @if (loadingHijos && !grupo.hijosCargados) {
+                      <div class="px-4 py-6 text-center text-xs text-slate-400 italic">
+                        Cargando servicios...
                       </div>
+                    } @else {
+                      @for (hijo of grupo.hijos; track $index; let hi = $index) {
+                        <div
+                          class="grid grid-cols-2 items-center bg-white hover:bg-slate-50 transition-colors"
+                        >
+                          <div
+                            class="px-4 py-4 text-[11px] font-semibold text-slate-700 uppercase border-r border-gray-200"
+                          >
+                            {{ hijo.nombre }}
+                          </div>
+                          <div class="px-4 py-4 flex items-center gap-3 justify-center">
+                            <button
+                              type="button"
+                              (click)="toggleHijo(gi, hi)"
+                              class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
+                              [class.bg-[#1e3a8a]]="hijo.activo"
+                              [class.bg-gray-300]="!hijo.activo"
+                            >
+                              <span
+                                class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                                [class.translate-x-6]="hijo.activo"
+                                [class.translate-x-1]="!hijo.activo"
+                              ></span>
+                            </button>
+                            <span
+                              class="text-xs font-bold w-6"
+                              [class.text-[#1e3a8a]]="hijo.activo"
+                              [class.text-slate-400]="!hijo.activo"
+                              >{{ hijo.activo ? 'SÍ' : 'NO' }}</span
+                            >
+                          </div>
+                        </div>
+                      }
                     }
                   </div>
                 </div>
