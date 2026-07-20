@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, forkJoin } from 'rxjs';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
@@ -12,6 +12,8 @@ import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { AlertService } from '../../services/alert.service';
+import { EnsayoItemService } from '../../services/solicitudes/solicitud-trabajo/ensayo-item.service';
+import { ReportCatalogoNota } from '../../interfaces/solicitudes/solicitud-trabajo';
 
 export interface EnsayoRow {
   analisis: string;
@@ -29,8 +31,11 @@ export interface EnsayoLaboratorioRow {
   unidad: string;
 }
 
-export interface GrupoLaboratorio {
-  preservante: string;
+// Una tabla por cada entrada de laboratorio que devuelva
+// report-catalogo/ensayo-item/:id.
+export interface TablaLaboratorioUI {
+  titulo: string;
+  notas: ReportCatalogoNota[];
   ensayos: EnsayoLaboratorioRow[];
 }
 
@@ -72,58 +77,11 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   detalleDireccion = '';
   detalleEnsayos: EnsayoRow[] = [];
 
-  ensayosLaboratorio: GrupoLaboratorio[] = [
-    {
-      preservante: 'H2SO4',
-      ensayos: [
-        {
-          activo: false,
-          ensayo: 'DEMANDA QUÍMICA DE OXÍGENO',
-          identificacion: 'DQO',
-          metodoInterno: 'PEE/IAM-Q/03',
-          metodoReferencia: 'APHA 5220D',
-          unidad: 'mg/L',
-        },
-        {
-          activo: false,
-          ensayo: 'ACEITES Y GRASAS',
-          identificacion: 'AyG',
-          metodoInterno: 'PEE/IAM-Q/05',
-          metodoReferencia: 'EPA 1664',
-          unidad: 'mg/L',
-        },
-      ],
-    },
-    {
-      preservante: 'TEMPERATURA',
-      ensayos: [
-        {
-          activo: false,
-          ensayo: 'DEMANDA BIOQUÍMICA DE OXÍGENO',
-          identificacion: 'DBO5',
-          metodoInterno: 'PEE/IAM-Q/27',
-          metodoReferencia: 'APHA 5210B',
-          unidad: 'mg/L',
-        },
-        {
-          activo: false,
-          ensayo: 'SÓLIDOS SUSPENDIDOS TOTALES',
-          identificacion: 'SST',
-          metodoInterno: 'PEE/IAM-Q/02',
-          metodoReferencia: 'APHA 2540D',
-          unidad: 'mg/L',
-        },
-        {
-          activo: false,
-          ensayo: 'TURBIDEZ',
-          identificacion: '-',
-          metodoInterno: 'PEE/IAM-Q/31',
-          metodoReferencia: 'SM 2130 B',
-          unidad: 'NTU',
-        },
-      ],
-    },
-  ];
+  // TODO: prueba temporal — ids quemados de las 3 tablas de laboratorio
+  // (H2SO4, H2SO3, TEMPERATURA) mientras se define de dónde deben derivarse
+  // dinámicamente (ver el mismo listado en step3-catalogo).
+  readonly IDS_LABORATORIO_PRUEBA = [2035, 2036, 2037];
+  tablasLaboratorio: TablaLaboratorioUI[] = [];
 
   private readonly destroy$ = new Subject<void>();
 
@@ -131,6 +89,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     private reportSolicitudService: ReportSolicitudService,
     private reportFormularioService: ReportFormularioService,
     private solicitudDetalleService: SolicitudDetalleService,
+    private ensayoItemService: EnsayoItemService,
     private router: Router,
     private alertService: AlertService,
   ) {}
@@ -145,6 +104,41 @@ export class PlanMuestreo implements OnInit, OnDestroy {
           if (formulario?.fecha_emision) {
             this.fechaEmision = new Date(Number(formulario.fecha_emision));
           }
+        },
+      });
+  }
+
+  // TODO: prueba temporal — trae las 3 tablas de IDS_LABORATORIO_PRUEBA
+  // (fijos, no derivados de la solicitud) para "Análisis Requerido en
+  // Laboratorio", con el mismo formato dinámico (título/notas/ensayos) que
+  // ya se usa en step3-catalogo.
+  private cargarAnalisisLaboratorio(): void {
+    forkJoin(
+      this.IDS_LABORATORIO_PRUEBA.map((id) =>
+        this.ensayoItemService.getReportCatalogoEnsayoItem(id),
+      ),
+    )
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resultados) => {
+          this.tablasLaboratorio = resultados.flat().map((entry) => ({
+            titulo: entry.ensayo_nombre,
+            notas: entry.notas ?? [],
+            ensayos: entry.Ensayos.map((i) => {
+              const partes = i.metodo.split(',');
+              return {
+                activo: false,
+                ensayo: i.analisis,
+                identificacion: i.identificacion,
+                metodoInterno: partes[0]?.trim() ?? '',
+                metodoReferencia: partes.slice(1).join(',').trim(),
+                unidad: i.unidad_medida,
+              };
+            }),
+          }));
+        },
+        error: () => {
+          this.tablasLaboratorio = [];
         },
       });
   }
@@ -203,6 +197,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.panelAbierto = false;
     this.detalleEnsayos = [];
     this.cargarDetalle();
+    this.cargarAnalisisLaboratorio();
   }
 
   private cargarDetalle(): void {
@@ -273,6 +268,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.detalleLongitud = '';
     this.detalleDireccion = '';
     this.detalleEnsayos = [];
+    this.tablasLaboratorio = [];
   }
 
   siguiente(): void {

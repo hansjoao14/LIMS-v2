@@ -1,7 +1,6 @@
 <div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
   <div class="max-w-7xl mx-auto">
     <div class="animate-in fade-in">
-
       <app-page-header
         breadcrumbSection="Operaciones de campo"
         title="Plan de muestreo"
@@ -17,44 +16,76 @@
           <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">Objetivo</h3>
         </div>
         <p class="text-sm text-slate-600 leading-relaxed">
-          Realizar un monitoreo mensual (ENERO) para la caracterización de la calidad de los ríos que
-          conforman la red hídrica (Red metropolitana de monitoreo recurso hídrico -DMQ)
+          Realizar un monitoreo mensual (ENERO) para la caracterización de la calidad de los ríos
+          que conforman la red hídrica (Red metropolitana de monitoreo recurso hídrico -DMQ)
         </p>
       </div>
 
       <!-- INFO GRID -->
       <div class="grid grid-cols-2 gap-6 mb-6">
-
         <!-- INFORMACIÓN DE SOLICITUD -->
         <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
           <div class="mb-4 border-b border-slate-300 pb-4">
-            <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">Información de Solicitud</h3>
+            <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">
+              Información de Solicitud
+            </h3>
           </div>
           <div class="space-y-4">
-
             <div class="flex items-start gap-3">
-              <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">💼</div>
+              <div
+                class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5"
+              >
+                💼
+              </div>
               <div class="flex-1 min-w-0">
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Solicitud de Trabajo No</label>
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+                  >Solicitud de Trabajo No</label
+                >
                 <div class="relative">
                   @if (solicitudSeleccionada) {
-                    <div class="flex items-center justify-between bg-blue-50 border border-blue-300 rounded px-3 py-2">
-                      <span class="text-sm font-bold text-[#1e3a8a]">{{ solicitudSeleccionada.num_secuencial ?? solicitudSeleccionada.id_solicitud }}</span>
-                      <button type="button" (click)="limpiarSolicitud()"
-                        class="text-slate-400 hover:text-red-500 ml-2 text-sm leading-none transition-colors">✕</button>
+                    <div
+                      class="flex items-center justify-between bg-blue-50 border border-blue-300 rounded px-3 py-2"
+                    >
+                      <span class="text-sm font-bold text-[#1e3a8a]">{{
+                        solicitudSeleccionada.num_secuencial ?? solicitudSeleccionada.id_solicitud
+                      }}</span>
+                      <button
+                        type="button"
+                        (click)="limpiarSolicitud()"
+                        class="text-slate-400 hover:text-red-500 ml-2 text-sm leading-none transition-colors"
+                      >
+                        ✕
+                      </button>
                     </div>
                   } @else {
-                    <button type="button" (click)="abrirPanel()"
-                      class="w-full flex items-center gap-2 bg-white border border-dashed border-slate-300 text-slate-500 px-3 py-2.5 rounded text-sm hover:border-[#1e3a8a] hover:text-[#1e3a8a] transition-colors">
-                      <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    <button
+                      type="button"
+                      (click)="abrirPanel()"
+                      class="w-full flex items-center gap-2 bg-white border border-dashed border-slate-300 text-slate-500 px-3 py-2.5 rounded text-sm hover:border-[#1e3a8a] hover:text-[#1e3a8a] transition-colors"
+                    >
+                      <svg
+                        class="w-4 h-4 flex-shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
                       </svg>
                       Buscar solicitud finalizada...
                     </button>
                   }
                   @if (panelAbierto) {
-                    <div class="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden">
-                      <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 bg-slate-50">
+                    <div
+                      class="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden"
+                    >
+                      <div
+                        class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 bg-slate-50"
+                      >
                         <input
                           type="text"
                           class="flex-1 border border-slate-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-[#1e3a8a] transition-colors"
@@ -63,38 +94,76 @@
                           (ngModelChange)="onBusquedaChange($event)"
                           autofocus
                         />
-                        <button type="button" (click)="cerrarPanel()"
-                          class="text-slate-400 hover:text-red-500 text-sm leading-none px-1 transition-colors">✕</button>
+                        <button
+                          type="button"
+                          (click)="cerrarPanel()"
+                          class="text-slate-400 hover:text-red-500 text-sm leading-none px-1 transition-colors"
+                        >
+                          ✕
+                        </button>
                       </div>
                       @if (loadingBusqueda) {
-                        <p class="px-4 py-4 text-xs text-slate-400 italic text-center">Buscando...</p>
+                        <p class="px-4 py-4 text-xs text-slate-400 italic text-center">
+                          Buscando...
+                        </p>
                       } @else if (solicitudesFinalizadas.length === 0) {
-                        <p class="px-4 py-4 text-xs text-slate-400 italic text-center">No se encontraron solicitudes finalizadas.</p>
+                        <p class="px-4 py-4 text-xs text-slate-400 italic text-center">
+                          No se encontraron solicitudes finalizadas.
+                        </p>
                       } @else {
                         <ul class="max-h-64 overflow-y-auto custom-scroll">
                           @for (sol of solicitudesFinalizadas; track sol.id_solicitud) {
-                            <li (click)="seleccionarSolicitud(sol)"
-                              class="px-3.5 py-2.5 border-b border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors flex items-center justify-between gap-2">
+                            <li
+                              (click)="seleccionarSolicitud(sol)"
+                              class="px-3.5 py-2.5 border-b border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors flex items-center justify-between gap-2"
+                            >
                               <div class="flex flex-col min-w-0">
-                                <span class="font-bold text-[#1e3a8a] text-xs truncate">{{ sol.num_secuencial ?? '—' }}</span>
-                                <span class="text-[10px] text-slate-400 truncate">{{ sol.nombres_completos }}</span>
+                                <span class="font-bold text-[#1e3a8a] text-xs truncate">{{
+                                  sol.num_secuencial ?? '—'
+                                }}</span>
+                                <span class="text-[10px] text-slate-400 truncate">{{
+                                  sol.nombres_completos
+                                }}</span>
                               </div>
                               @if (sol.prioridad_id === 386) {
-                                <span class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded border border-red-400 text-red-700 bg-red-50">Urgente</span>
+                                <span
+                                  class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded border border-red-400 text-red-700 bg-red-50"
+                                  >Urgente</span
+                                >
                               } @else if (sol.prioridad_id === 385) {
-                                <span class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50">Normal</span>
+                                <span
+                                  class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50"
+                                  >Normal</span
+                                >
                               }
                             </li>
                           }
                         </ul>
                         @if (meta && meta.totalPages > 1) {
-                          <div class="flex items-center justify-between px-3 py-2 border-t border-slate-100 bg-slate-50">
-                            <span class="text-[10px] text-slate-400">Página {{ meta.page }} de {{ meta.totalPages }} · {{ meta.total }} resultados</span>
+                          <div
+                            class="flex items-center justify-between px-3 py-2 border-t border-slate-100 bg-slate-50"
+                          >
+                            <span class="text-[10px] text-slate-400"
+                              >Página {{ meta.page }} de {{ meta.totalPages }} ·
+                              {{ meta.total }} resultados</span
+                            >
                             <div class="flex gap-1">
-                              <button type="button" [disabled]="!meta.hasPrevPage" (click)="cargarPagina(currentPage - 1)"
-                                class="w-6 h-6 flex items-center justify-center border border-slate-200 rounded text-xs text-[#1e3a8a] hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">‹</button>
-                              <button type="button" [disabled]="!meta.hasNextPage" (click)="cargarPagina(currentPage + 1)"
-                                class="w-6 h-6 flex items-center justify-center border border-slate-200 rounded text-xs text-[#1e3a8a] hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">›</button>
+                              <button
+                                type="button"
+                                [disabled]="!meta.hasPrevPage"
+                                (click)="cargarPagina(currentPage - 1)"
+                                class="w-6 h-6 flex items-center justify-center border border-slate-200 rounded text-xs text-[#1e3a8a] hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                              >
+                                ‹
+                              </button>
+                              <button
+                                type="button"
+                                [disabled]="!meta.hasNextPage"
+                                (click)="cargarPagina(currentPage + 1)"
+                                class="w-6 h-6 flex items-center justify-center border border-slate-200 rounded text-xs text-[#1e3a8a] hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                              >
+                                ›
+                              </button>
                             </div>
                           </div>
                         }
@@ -106,26 +175,46 @@
             </div>
 
             <div class="flex items-start gap-3">
-              <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">📅</div>
+              <div
+                class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5"
+              >
+                📅
+              </div>
               <div>
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Fecha de Emisión</label>
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+                  >Fecha de Emisión</label
+                >
                 <p class="text-sm text-slate-700">{{ detalleFechaEmision || '—' }}</p>
               </div>
             </div>
 
             <div class="flex items-start gap-3">
-              <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">🏢</div>
+              <div
+                class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5"
+              >
+                🏢
+              </div>
               <div>
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Cliente</label>
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+                  >Cliente</label
+                >
                 <p class="text-sm text-slate-700">{{ detalleCliente || '—' }}</p>
               </div>
             </div>
 
             <div class="flex items-start gap-3">
-              <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">🛡️</div>
+              <div
+                class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5"
+              >
+                🛡️
+              </div>
               <div class="flex-1">
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Regulado</label>
-                <select class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors">
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+                  >Regulado</label
+                >
+                <select
+                  class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                >
                   <option value="">Selecciona...</option>
                   <option value="si">Sí</option>
                   <option value="no">No</option>
@@ -134,11 +223,20 @@
             </div>
 
             <div class="flex items-start gap-3">
-              <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">🌐</div>
+              <div
+                class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5"
+              >
+                🌐
+              </div>
               <div>
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Coordenadas</label>
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+                  >Coordenadas</label
+                >
                 @if (detalleLatitud || detalleLongitud) {
-                  <p class="text-sm text-slate-700"><strong>Lat:</strong> {{ detalleLatitud }} &nbsp; <strong>Lon:</strong> {{ detalleLongitud }}</p>
+                  <p class="text-sm text-slate-700">
+                    <strong>Lat:</strong> {{ detalleLatitud }} &nbsp; <strong>Lon:</strong>
+                    {{ detalleLongitud }}
+                  </p>
                 } @else {
                   <p class="text-sm text-slate-400">—</p>
                 }
@@ -146,42 +244,66 @@
             </div>
 
             <div class="flex items-start gap-3">
-              <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">📍</div>
+              <div
+                class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5"
+              >
+                📍
+              </div>
               <div>
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Dirección</label>
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+                  >Dirección</label
+                >
                 <p class="text-sm text-slate-700">{{ detalleDireccion || '—' }}</p>
               </div>
             </div>
-
           </div>
         </div>
 
         <!-- DETALLES DE MUESTREO -->
         <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
           <div class="mb-4 border-b border-slate-300 pb-4">
-            <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">Detalles de Muestreo</h3>
+            <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">
+              Detalles de Muestreo
+            </h3>
           </div>
           <div class="space-y-4">
-
             <div class="flex items-start gap-3">
-              <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">📄</div>
+              <div
+                class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5"
+              >
+                📄
+              </div>
               <div>
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Plan de Muestreo No</label>
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+                  >Plan de Muestreo No</label
+                >
                 <p class="text-sm text-slate-400 italic">Se genera automáticamente al guardar</p>
               </div>
             </div>
 
             <div class="flex items-start gap-3">
-              <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">🗓️</div>
+              <div
+                class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5"
+              >
+                🗓️
+              </div>
               <div>
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Fecha Máxima de Entrega</label>
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+                  >Fecha Máxima de Entrega</label
+                >
                 <p class="text-sm text-slate-700">{{ detalleFechaMaxima || '—' }}</p>
-                <p class="text-[10px] text-slate-400 mt-0.5">Generada automáticamente (10 días tras la emisión)</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">
+                  Generada automáticamente (10 días tras la emisión)
+                </p>
               </div>
             </div>
 
             <div class="flex items-start gap-3">
-              <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">📊</div>
+              <div
+                class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5"
+              >
+                📊
+              </div>
               <div>
                 <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Año</label>
                 <p class="text-sm text-slate-700">2025</p>
@@ -189,24 +311,36 @@
             </div>
 
             <div class="flex items-start gap-3">
-              <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">🔖</div>
+              <div
+                class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5"
+              >
+                🔖
+              </div>
               <div>
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Código de Muestra o Muestras</label>
-                <p class="text-sm text-slate-400 italic">Pendiente — se genera automáticamente al guardar</p>
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+                  >Código de Muestra o Muestras</label
+                >
+                <p class="text-sm text-slate-400 italic">
+                  Pendiente — se genera automáticamente al guardar
+                </p>
               </div>
             </div>
 
             <div class="flex items-start gap-3">
-              <div class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5">🕒</div>
+              <div
+                class="w-9 h-9 bg-slate-100 rounded flex items-center justify-center text-base flex-shrink-0 mt-0.5"
+              >
+                🕒
+              </div>
               <div>
-                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Hora de Muestreo</label>
+                <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+                  >Hora de Muestreo</label
+                >
                 <p class="text-sm text-slate-700">En el lapso de 10:00 am hasta las 14:00 pm</p>
               </div>
             </div>
-
           </div>
         </div>
-
       </div>
 
       <!-- TIPO DE MATRIZ -->
@@ -215,31 +349,44 @@
           <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">Tipo de Matriz</h3>
         </div>
         @if (tipoAguaId !== null) {
-          <div class="h-24 bg-gradient-to-r from-[#1e3a8a] to-[#2541b2] rounded-lg flex items-center px-8">
+          <div
+            class="h-24 bg-gradient-to-r from-[#1e3a8a] to-[#2541b2] rounded-lg flex items-center px-8"
+          >
             <div>
               <!-- <p class="text-blue-200 text-[10px] font-bold uppercase tracking-widest mb-1">Tipo de Matriz</p> -->
               <h2 class="text-white text-2xl font-bold">{{ tipoAguaNombre }}</h2>
             </div>
           </div>
         } @else {
-          <p class="text-sm text-slate-400 italic">Selecciona una solicitud de trabajo para determinar el tipo de matriz.</p>
+          <p class="text-sm text-slate-400 italic">
+            Selecciona una solicitud de trabajo para determinar el tipo de matriz.
+          </p>
         }
       </div>
 
       <!-- ANÁLISIS IN SITU -->
       @if (tipoAguaId !== null) {
-        <div class="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden relative" [class.pointer-events-none]="loadingDetalle">
+        <div
+          class="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden relative"
+          [class.pointer-events-none]="loadingDetalle"
+        >
           @if (loadingDetalle) {
             <div class="absolute inset-0 z-10 flex items-center justify-center bg-white/60 rounded">
-              <span class="animate-spin h-5 w-5 border-2 border-[#1e3a8a] border-t-transparent rounded-full"></span>
+              <span
+                class="animate-spin h-5 w-5 border-2 border-[#1e3a8a] border-t-transparent rounded-full"
+              ></span>
             </div>
           }
           <div class="px-6 py-4 border-b border-slate-200">
-            <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">Análisis Requerido In Situ</h3>
+            <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">
+              Análisis Requerido In Situ
+            </h3>
           </div>
           <table class="w-full text-sm border-collapse">
             <thead>
-              <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
+              <tr
+                class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
+              >
                 <th class="px-4 py-2.5 border-r border-slate-100 text-left">Análisis Requerido</th>
                 <th class="px-4 py-2.5 border-r border-slate-100 text-left">Ensayo</th>
                 <th class="px-4 py-2.5 border-r border-slate-100 text-left">Identificación</th>
@@ -251,18 +398,31 @@
             <tbody>
               @if (detalleEnsayos.length === 0) {
                 <tr>
-                  <td colspan="6" class="px-4 py-8 text-center text-slate-400 italic text-sm">No hay ensayos para el tipo de matriz seleccionado.</td>
+                  <td colspan="6" class="px-4 py-8 text-center text-slate-400 italic text-sm">
+                    No hay ensayos para el tipo de matriz seleccionado.
+                  </td>
                 </tr>
               }
               @for (e of detalleEnsayos; track $index) {
                 <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                   <td class="px-4 py-3 border-r border-slate-100">
-                    <span class="inline-block bg-[#1e3a8a] text-white text-[10px] font-bold px-3 py-1 rounded-full">SI</span>
+                    <span
+                      class="inline-block bg-[#1e3a8a] text-white text-[10px] font-bold px-3 py-1 rounded-full"
+                      >SI</span
+                    >
                   </td>
-                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700">{{ e.analisis }}</td>
-                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700">{{ e.identificacion }}</td>
-                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">{{ e.metodoInterno }}</td>
-                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">{{ e.metodoReferencia }}</td>
+                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700">
+                    {{ e.analisis }}
+                  </td>
+                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700">
+                    {{ e.identificacion }}
+                  </td>
+                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">
+                    {{ e.metodoInterno }}
+                  </td>
+                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">
+                    {{ e.metodoReferencia }}
+                  </td>
                   <td class="px-4 py-3 text-slate-400">—</td>
                 </tr>
               }
@@ -274,25 +434,40 @@
       <!-- ANÁLISIS LABORATORIO -->
       <div class="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-200">
-          <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">Análisis Requerido en Laboratorio</h3>
+          <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">
+            Análisis Requerido en Laboratorio
+          </h3>
         </div>
         <div class="p-6">
-          @for (grupo of ensayosLaboratorio; track $index) {
-            <h4 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider mt-6 mb-3 first:mt-0">{{ grupo.preservante }}</h4>
+          @if (tablasLaboratorio.length === 0) {
+            <p class="text-sm text-slate-400 italic">No hay análisis de laboratorio disponibles.</p>
+          }
+          @for (tabla of tablasLaboratorio; track $index) {
+            <h4
+              class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider mt-6 mb-3 first:mt-0"
+            >
+              {{ tabla.titulo }}
+            </h4>
             <div class="border border-slate-200 rounded overflow-hidden shadow-sm mb-4">
               <table class="w-full text-sm border-collapse">
                 <thead>
-                  <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
-                    <th class="px-4 py-2.5 border-r border-slate-100 text-left">Análisis Requerido</th>
+                  <tr
+                    class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
+                  >
+                    <th class="px-4 py-2.5 border-r border-slate-100 text-left">
+                      Análisis Requerido
+                    </th>
                     <th class="px-4 py-2.5 border-r border-slate-100 text-left">Ensayo</th>
                     <th class="px-4 py-2.5 border-r border-slate-100 text-left">Identificación</th>
                     <th class="px-4 py-2.5 border-r border-slate-100 text-left">Método Interno</th>
-                    <th class="px-4 py-2.5 border-r border-slate-100 text-left">Método Referencia</th>
+                    <th class="px-4 py-2.5 border-r border-slate-100 text-left">
+                      Método Referencia
+                    </th>
                     <th class="px-4 py-2.5 text-left">Unidad</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (e of grupo.ensayos; track $index) {
+                  @for (e of tabla.ensayos; track $index) {
                     <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                       <td class="px-4 py-3 border-r border-slate-100">
                         <div class="flex items-center gap-2">
@@ -309,33 +484,59 @@
                               [class.translate-x-0.5]="!e.activo"
                             ></span>
                           </button>
-                          <span class="text-xs font-bold" [class.text-[#1e3a8a]]="e.activo" [class.text-slate-400]="!e.activo">
+                          <span
+                            class="text-xs font-bold"
+                            [class.text-[#1e3a8a]]="e.activo"
+                            [class.text-slate-400]="!e.activo"
+                          >
                             {{ e.activo ? 'Sí' : 'No' }}
                           </span>
                         </div>
                       </td>
-                      <td class="px-4 py-3 border-r border-slate-100 text-slate-700">{{ e.ensayo }}</td>
-                      <td class="px-4 py-3 border-r border-slate-100 text-slate-700">{{ e.identificacion }}</td>
-                      <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">{{ e.metodoInterno }}</td>
-                      <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">{{ e.metodoReferencia }}</td>
+                      <td class="px-4 py-3 border-r border-slate-100 text-slate-700">
+                        {{ e.ensayo }}
+                      </td>
+                      <td class="px-4 py-3 border-r border-slate-100 text-slate-700">
+                        {{ e.identificacion }}
+                      </td>
+                      <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">
+                        {{ e.metodoInterno }}
+                      </td>
+                      <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">
+                        {{ e.metodoReferencia }}
+                      </td>
                       <td class="px-4 py-3 text-slate-700">{{ e.unidad }}</td>
                     </tr>
                   }
                 </tbody>
               </table>
             </div>
+            @if (tabla.notas.length > 0) {
+              <div class="bg-slate-50 border border-slate-200 rounded p-4 mb-4">
+                <p class="text-[11px] font-bold text-slate-800 mb-2">ⓘ Notas Importantes:</p>
+                <ul class="list-decimal pl-4 space-y-1">
+                  @for (nota of tabla.notas; track nota.header) {
+                    <li class="text-[11px] text-slate-600 leading-tight">
+                      <strong>{{ nota.header }}:</strong> {{ nota.detail }}
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
           }
         </div>
       </div>
 
       <!-- NAVEGACIÓN -->
       <div class="flex items-center justify-end pt-4 border-t border-slate-300">
-        <button type="button" (click)="siguiente()"
-          class="bg-[#1e3a8a] text-white font-bold text-xs uppercase px-8 py-3 rounded hover:bg-[#2541b2] transition-colors">
+        <button
+          type="button"
+          (click)="siguiente()"
+          class="bg-[#1e3a8a] text-white font-bold text-xs uppercase px-8 py-3 rounded hover:bg-[#2541b2] transition-colors"
+        >
           Siguiente
         </button>
       </div>
-
     </div>
   </div>
 </div>
