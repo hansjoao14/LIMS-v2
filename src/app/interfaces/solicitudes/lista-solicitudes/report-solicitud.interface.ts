@@ -21,7 +21,6 @@ export interface ReportSolicitud {
   prioridad_nombre: string | null;
   secuencial_id: string | null;
   tecnico_id: string;
-  tipo_formulario_id: number;
   usuario_actualizacion: string | null;
   usuario_creacion: string;
   usuario_id: string;

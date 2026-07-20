@@ -50,7 +50,6 @@ export const REPORT_SOLICITUD_FIELDS = `
   prioridad_nombre
   secuencial_id
   tecnico_id
-  tipo_formulario_id
   usuario_actualizacion
   usuario_creacion
   usuario_id

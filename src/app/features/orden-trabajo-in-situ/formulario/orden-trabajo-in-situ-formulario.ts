@@ -687,7 +687,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
           num_secuencial: null,
           ctestado_id: 2,
           estado: true,
-          ctformulario_id: this.solicitudSeleccionada.tipo_formulario_id,
+          ctformulario_id: this.solicitudSeleccionada.formulario_ct_id,
         },
         ordenTrabajoDetalle: ensayosSeleccionados.map((e: any) => ({
           estado: true,

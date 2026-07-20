@@ -36,7 +36,7 @@ export interface CrearOrdenTrabajoPayload {
   num_secuencial: string | null;
   ctestado_id: number;
   estado: boolean;
-  ctformulario_id: number;
+  ctformulario_id: number | null;
 }
 
 export interface OrdenTrabajoDetallePayload {
