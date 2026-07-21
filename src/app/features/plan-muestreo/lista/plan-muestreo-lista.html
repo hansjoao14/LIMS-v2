@@ -1,0 +1,104 @@
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
+    <div class="animate-in fade-in">
+
+      <app-page-header
+        breadcrumbSection="Operaciones de campo"
+        title="Plan de muestreo"
+        subtitle="Aquí podrás visualizar los planes de muestreo registrados"
+        [codigoFormulario]="formulario?.descripcion ?? null"
+        [edicion]="formulario?.version ?? null"
+        [fechaSolicitud]="fechaEmision"
+      />
+
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+
+        <div class="flex justify-end mb-4">
+          <button type="button" (click)="nuevoPlan()"
+            class="bg-[#1e3a8a] text-white px-5 py-2 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Nuevo Plan
+          </button>
+        </div>
+
+        <div class="border border-slate-200 rounded">
+          <table class="w-full text-sm border-collapse table-fixed">
+            <colgroup>
+              <col class="w-[140px]" />
+              <col class="w-[150px]" />
+              <col class="w-[160px]" />
+              <col class="w-[130px]" />
+              <col class="w-[160px]" />
+              <col class="w-[110px]" />
+              <col class="w-[120px]" />
+            </colgroup>
+            <thead>
+              <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider">
+                <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Plan</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Solicitud</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-left">Tipo de Matriz</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Periodo</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-left">Responsable</th>
+                <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
+                <th class="px-3 py-2.5 text-left">Fecha creación</th>
+              </tr>
+            </thead>
+            <tbody appTableSkeleton [rows]="loading ? 8 : 0" [cols]="7"></tbody>
+            <tbody>
+              @if (!loading) {
+                @for (plan of planes; track plan.id) {
+                  <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td class="px-3 py-2.5 border-r border-slate-100 text-xs font-semibold text-[#1e3a8a] truncate">
+                      {{ plan.num_secuencial ?? '—' }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
+                      {{ plan.solicitud_num_secuencial ?? '—' }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
+                      {{ plan.ctambiente_nombre }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 text-center">
+                      {{ plan.periodo_nombre_mes }} {{ plan.periodo_anio }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
+                      {{ plan.usuario_nombre_completo }}
+                    </td>
+                    <td class="px-3 py-2.5 border-r border-slate-100 text-center">
+                      @if (plan.ctestado_id === 3) {
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50">{{ plan.ctestado_nombre }}</span>
+                      } @else if (plan.ctestado_id === 388) {
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-blue-400 text-blue-700 bg-blue-50">{{ plan.ctestado_nombre }}</span>
+                      } @else {
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50">{{ plan.ctestado_nombre }}</span>
+                      }
+                    </td>
+                    <td class="px-3 py-2.5 text-xs text-slate-500">
+                      {{ +plan.creado_en | date: 'dd/MM/yyyy' }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="p-10 text-slate-400 italic text-center">No hay registros.</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <app-pagination
+          [meta]="meta"
+          [currentPage]="currentPage"
+          [itemsShown]="planes.length"
+          itemLabel="planes"
+          (pageChange)="irAPagina($event)"
+        >
+        </app-pagination>
+
+      </div>
+
+    </div>
+  </div>
+</div>

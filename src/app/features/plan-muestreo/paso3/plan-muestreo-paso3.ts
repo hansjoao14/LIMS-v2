@@ -7,7 +7,12 @@ import { Subject, firstValueFrom, takeUntil } from 'rxjs';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { AlertService } from '../../../services/alert.service';
 import { ToastrAlertService } from '../../../services/toastr.service';
-import { SolicitudService } from '../../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { AuthService } from '../../auth/service/auth-service';
+import { PeriodoService } from '../../../services/solicitudes/solicitud-trabajo/periodo.service';
+import {
+  CrearPlanMuestreoConDetallePayload,
+  PlanMuestreoService,
+} from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 import { PlanMuestreoGrupo, construirGrupos } from '../model/plan-muestreo-form.model';
 import { camposDe, generarControles } from '../model/plan-muestreo-form.utils';
 import { PlanMuestreoStore } from '../model/plan-muestreo.store';
@@ -42,7 +47,9 @@ export class PlanMuestreoPaso3 implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private router: Router,
     private store: PlanMuestreoStore,
-    private solicitudService: SolicitudService,
+    private planMuestreoService: PlanMuestreoService,
+    private authService: AuthService,
+    private periodoService: PeriodoService,
     private toastrAlert: ToastrAlertService,
     private alertService: AlertService,
   ) {
@@ -108,13 +115,48 @@ export class PlanMuestreoPaso3 implements OnInit, OnDestroy {
       return;
     }
 
-    this.saving = true;
-    try {
-      await firstValueFrom(
-        this.solicitudService.guardarValoresSolicitud({
-          valorSolicitud: this.store.construirValorSolicitud(),
-        }),
+    if (!contexto.tipoAguaId) {
+      this.toastrAlert.showWarning(
+        'No se pudo determinar el tipo de matriz de la solicitud seleccionada.',
+        'Requerido',
       );
+      return;
+    }
+
+    this.saving = true;
+    const { id: userId } = this.authService.currentUser();
+
+    try {
+      const ahora = new Date();
+      const ejercicio = await this.periodoService.getEjercicioByAnio(ahora.getFullYear());
+      if (!ejercicio) throw new Error(`No hay ejercicio activo para ${ahora.getFullYear()}`);
+
+      const periodo = await this.periodoService.getPeriodoByEjercicioAndMes(
+        ejercicio.id,
+        ahora.getMonth() + 1,
+      );
+      if (!periodo) throw new Error(`No hay periodo activo para el mes ${ahora.getMonth() + 1}`);
+
+      //TODO: Cambiar el entidad_id
+      const payload: CrearPlanMuestreoConDetallePayload = {
+        planMuestreo: {
+          solicitud_id: contexto.solicitudId,
+          usuario_id: userId,
+          entidad_id: 'F9687983-F6CF-4706-9004-A1B793E3A987',
+          ctambiente_id: contexto.tipoAguaId,
+          periodo_id: periodo.id,
+          secuencial_id: null,
+          num_secuencial: null,
+          ctestado_id: 2,
+          estado: true,
+          ctformulario_id: contexto.ctformularioId,
+        },
+        planMuestreoDetalle: contexto.ensayos,
+        valorMuestreo: this.store.construirValorMuestreo(),
+      };
+
+      await firstValueFrom(this.planMuestreoService.crearPlanMuestreoConDetalle(payload));
+
       this.toastrAlert.showSuccess('El plan de muestreo ha sido guardado.', '¡Guardado!');
       // Se limpia después de navegar: al destruirse este paso vuelve a
       // persistir sus respuestas en el store.

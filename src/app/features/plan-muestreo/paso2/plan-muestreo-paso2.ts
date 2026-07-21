@@ -94,7 +94,7 @@ export class PlanMuestreoPaso2 implements OnInit, OnDestroy {
   }
 
   regresar(): void {
-    this.router.navigate(['/plan-muestreo']);
+    this.router.navigate(['/plan-muestreo/nuevo']);
   }
 
   siguiente(): void {

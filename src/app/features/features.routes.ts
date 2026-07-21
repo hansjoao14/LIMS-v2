@@ -63,9 +63,16 @@ export const featuresRoutes: Routes = [
   },
   {
     path: 'plan-muestreo',
-    loadComponent: () => import('./plan-muestreo/plan-muestreo').then((m) => m.PlanMuestreo),
+    loadComponent: () =>
+      import('./plan-muestreo/lista/plan-muestreo-lista').then((m) => m.PlanMuestreoLista),
     canActivate: [canActivateWithRealmRoles],
     data: { title: 'Plan de Muestreo', requiredRoles: RoleAccess.PLAN_MUESTREO },
+  },
+  {
+    path: 'plan-muestreo/nuevo',
+    loadComponent: () => import('./plan-muestreo/plan-muestreo').then((m) => m.PlanMuestreo),
+    canActivate: [canActivateWithRealmRoles],
+    data: { title: 'Plan de Muestreo - Paso 1', requiredRoles: RoleAccess.PLAN_MUESTREO },
   },
   {
     path: 'plan-muestreo/paso2',

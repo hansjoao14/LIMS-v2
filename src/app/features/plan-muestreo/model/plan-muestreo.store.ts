@@ -3,17 +3,23 @@ import { Observable, shareReplay } from 'rxjs';
 
 import { AuthService } from '../../auth/service/auth-service';
 import { SolicitudService } from '../../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
-import { ValorSolicitudItem } from '../../../interfaces/solicitudes/solicitud-trabajo/solicitud.interface';
+import {
+  PlanMuestreoDetallePayload,
+  ValorMuestreoPayload,
+} from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 import { FormularioLaboratorio } from '../../solicitud-trabajo/model/solicitud-trabajo.model';
 import { PlanMuestreoCampo } from './plan-muestreo-form.model';
-import { toValorSolicitud } from './plan-muestreo-form.utils';
+import { toValorMuestreo } from './plan-muestreo-form.utils';
 
 /** Datos que el paso 1 deja fijados para el resto del asistente. */
 export interface PlanMuestreoContexto {
   solicitudId: string;
   numSecuencial: string;
+  ctformularioId: number;
   tipoAguaId: number | null;
   tipoAguaNombre: string;
+  /** Ensayos de la solicitud, ya con la forma de `planMuestreoDetalle`. */
+  ensayos: PlanMuestreoDetallePayload[];
 }
 
 /**
@@ -74,16 +80,15 @@ export class PlanMuestreoStore {
   }
 
   /**
-   * Payload final: una entrada por pregunta respondida en todos los pasos,
-   * con el mismo formato que usa la orden de trabajo in situ.
+   * `valorMuestreo` del payload final: una entrada por pregunta respondida en
+   * todos los pasos.
    */
-  construirValorSolicitud(): ValorSolicitudItem[] {
-    const solicitudId = this.contexto?.solicitudId ?? null;
-    const items: ValorSolicitudItem[] = [];
+  construirValorMuestreo(): ValorMuestreoPayload[] {
+    const items: ValorMuestreoPayload[] = [];
     for (const [seccion, campos] of this.campos) {
       const valores = this.respuestasDe(seccion);
       for (const campo of campos) {
-        items.push(toValorSolicitud(campo, valores[campo.key], solicitudId));
+        items.push(toValorMuestreo(campo, valores[campo.key]));
       }
     }
     return items;

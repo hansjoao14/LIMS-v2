@@ -15,6 +15,7 @@ import { AlertService } from '../../services/alert.service';
 import { EnsayoItemService } from '../../services/solicitudes/solicitud-trabajo/ensayo-item.service';
 import { ReportCatalogoNota } from '../../interfaces/solicitudes/solicitud-trabajo';
 import { PlanMuestreoStore } from './model/plan-muestreo.store';
+import { PlanMuestreoDetallePayload } from '../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 
 export interface EnsayoRow {
   analisis: string;
@@ -77,6 +78,8 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   detalleLongitud = '';
   detalleDireccion = '';
   detalleEnsayos: EnsayoRow[] = [];
+  // Los mismos ensayos, con los ids que necesita el POST create-detalle.
+  private ensayosDetalle: PlanMuestreoDetallePayload[] = [];
 
   // TODO: prueba temporal — ids quemados de las 3 tablas de laboratorio
   // (H2SO4, H2SO3, TEMPERATURA) mientras se define de dónde deben derivarse
@@ -259,6 +262,17 @@ export class PlanMuestreo implements OnInit, OnDestroy {
           metodoReferencia: parts[1] ?? '',
         };
       });
+
+    // Los ids que la tabla no muestra pero sí necesita `planMuestreoDetalle`:
+    // el ambiental y el tipo de ensayo salen del grupo, el ensayo de la fila.
+    this.ensayosDetalle = (f.tabla_ensayos ?? []).flatMap((t) =>
+      (t.detalle_ensayo ?? []).map((e) => ({
+        estado: true,
+        ctambiental_id: t.id_ambiental,
+        ensayo_id: e.ensayo_id,
+        cttipo_ensayo_id: t.ensayo_id,
+      })),
+    );
   }
 
   limpiarSolicitud(): void {
@@ -274,7 +288,15 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.detalleLongitud = '';
     this.detalleDireccion = '';
     this.detalleEnsayos = [];
+    this.ensayosDetalle = [];
     this.tablasLaboratorio = [];
+  }
+
+  // Volver a la lista descarta el borrador: el asistente no guarda nada hasta
+  // el paso 3.
+  cancelar(): void {
+    this.store.limpiar();
+    this.router.navigate(['/plan-muestreo']);
   }
 
   siguiente(): void {
@@ -284,8 +306,10 @@ export class PlanMuestreo implements OnInit, OnDestroy {
       this.store.contexto = {
         solicitudId: this.solicitudSeleccionada.id_solicitud,
         numSecuencial: this.solicitudSeleccionada.num_secuencial ?? '',
+        ctformularioId: this.solicitudSeleccionada.formulario_ct_id ?? 0,
         tipoAguaId: this.tipoAguaId,
         tipoAguaNombre: this.tipoAguaNombre,
+        ensayos: this.ensayosDetalle,
       };
     }
     this.router.navigate(['/plan-muestreo/paso2']);
