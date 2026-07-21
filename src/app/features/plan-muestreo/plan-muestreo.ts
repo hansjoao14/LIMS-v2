@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil, forkJoin } from 'rxjs';
+import { Subject, takeUntil, forkJoin, map } from 'rxjs';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
@@ -26,6 +26,11 @@ export interface EnsayoRow {
 
 export interface EnsayoLaboratorioRow {
   activo: boolean;
+  // Ids que no se muestran, pero que necesita `planMuestreoDetalle` al guardar
+  // (mismo criterio que mapDetalleToLaboratorio en step3-catalogo).
+  ensayo_id: number;
+  ctambiental_id: number;
+  cttipo_ensayo_id: number;
   ensayo: string;
   identificacion: string;
   metodoInterno: string;
@@ -119,28 +124,36 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   // ya se usa en step3-catalogo.
   private cargarAnalisisLaboratorio(): void {
     forkJoin(
+      // Se conserva el id consultado: es el `ctambiental_id` de sus ensayos.
       this.IDS_LABORATORIO_PRUEBA.map((id) =>
-        this.ensayoItemService.getReportCatalogoEnsayoItem(id),
+        this.ensayoItemService
+          .getReportCatalogoEnsayoItem(id)
+          .pipe(map((data) => ({ id, data }))),
       ),
     )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (resultados) => {
-          this.tablasLaboratorio = resultados.flat().map((entry) => ({
-            titulo: entry.ensayo_nombre,
-            notas: entry.notas ?? [],
-            ensayos: entry.Ensayos.map((i) => {
-              const partes = i.metodo.split(',');
-              return {
-                activo: false,
-                ensayo: i.analisis,
-                identificacion: i.identificacion,
-                metodoInterno: partes[0]?.trim() ?? '',
-                metodoReferencia: partes.slice(1).join(',').trim(),
-                unidad: i.unidad_medida,
-              };
-            }),
-          }));
+          this.tablasLaboratorio = resultados.flatMap(({ id, data }) =>
+            data.map((entry) => ({
+              titulo: entry.ensayo_nombre,
+              notas: entry.notas ?? [],
+              ensayos: entry.Ensayos.map((i) => {
+                const partes = i.metodo.split(',');
+                return {
+                  activo: false,
+                  ensayo_id: i.id,
+                  ctambiental_id: id,
+                  cttipo_ensayo_id: entry.ensayo_catalogo,
+                  ensayo: i.analisis,
+                  identificacion: i.identificacion,
+                  metodoInterno: partes[0]?.trim() ?? '',
+                  metodoReferencia: partes.slice(1).join(',').trim(),
+                  unidad: i.unidad_medida,
+                };
+              }),
+            })),
+          );
         },
         error: () => {
           this.tablasLaboratorio = [];
@@ -292,6 +305,20 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.tablasLaboratorio = [];
   }
 
+  // Los ensayos In Situ se envían siempre (vienen fijados por la solicitud);
+  // los de laboratorio solo los que el usuario marcó con el interruptor.
+  private ensayosLaboratorioSeleccionados(): PlanMuestreoDetallePayload[] {
+    return this.tablasLaboratorio
+      .flatMap((t) => t.ensayos)
+      .filter((e) => e.activo)
+      .map((e) => ({
+        estado: true,
+        ctambiental_id: e.ctambiental_id,
+        ensayo_id: e.ensayo_id,
+        cttipo_ensayo_id: e.cttipo_ensayo_id,
+      }));
+  }
+
   // Volver a la lista descarta el borrador: el asistente no guarda nada hasta
   // el paso 3.
   cancelar(): void {
@@ -308,7 +335,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
         numSecuencial: this.solicitudSeleccionada.num_secuencial ?? '',
         tipoAguaId: this.tipoAguaId,
         tipoAguaNombre: this.tipoAguaNombre,
-        ensayos: this.ensayosDetalle,
+        ensayos: [...this.ensayosDetalle, ...this.ensayosLaboratorioSeleccionados()],
       };
     }
     this.router.navigate(['/plan-muestreo/paso2']);

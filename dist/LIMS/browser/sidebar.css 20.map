@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/shared/components/sidebar/sidebar.css"],
+  "sourcesContent": ["/* sidebar.component.css */\n\n/* Transición suave para ancho */\naside {\n  transition: width 0.3s ease;\n}\n\n/* opcional: personaliza scroll bar */\naside nav::-webkit-scrollbar {\n  width: 4px;\n}\naside nav::-webkit-scrollbar-thumb {\n  background-color: rgba(255,255,255,0.3);\n  border-radius: 2px;\n}\n"],
+  "mappings": ";AAGA;AACE,cAAA,MAAA,KAAA;AACF;AAGA,MAAA,GAAA;AACE,SAAA;AACF;AACA,MAAA,GAAA;AACE,oBAAA,KAAA,GAAA,EAAA,GAAA,EAAA,GAAA,EAAA;AACA,iBAAA;AACF;",
+  "names": []
+}

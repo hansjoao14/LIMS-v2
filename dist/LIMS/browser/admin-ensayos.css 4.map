@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["admin-ensayos.html"],
+  "sourcesContent": ["\n  .animate-in { animation: animateIn 0.3s ease-out forwards; }\n  .fade-in { opacity: 0; }\n  @keyframes animateIn { to { opacity: 1; } }\n"],
+  "mappings": ";AACE,CAAA;AAAc,aAAA,UAAA,KAAA,SAAA;AAA6C;AAC3D,CAAA;AAAW,WAAA;AAAY;AACvB,WAFc;AAES;AAAK,aAAA;AAAY;AAAE;",
+  "names": []
+}

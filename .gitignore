@@ -1,7 +1,9 @@
 # See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
 # Compiled output
-
+# dist/ no se versiona: el Dockerfile lo regenera con `npm run build` en la
+# etapa de build y copia el resultado, así que el bundle del repo nunca se usa.
+/dist
 /tmp
 /out-tsc
 /bazel-out
