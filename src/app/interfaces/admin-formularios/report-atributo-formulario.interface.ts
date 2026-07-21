@@ -21,6 +21,7 @@ export interface ReportAtributoFormulario {
   formulario_nombre: string;
   formulario_sigla: string;
   formulario_version: number;
+  grupo_texto: string | null;
   hidden: string;
   is_dependent: boolean | null;
   is_dependent_catalogo: boolean | null;

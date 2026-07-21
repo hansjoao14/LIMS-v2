@@ -29,6 +29,7 @@ export class AtributoFormularioPayload {
   is_list_empleado: boolean;
   is_text_area: boolean;
   seccion: number | null;
+  grupo_texto: string | null;
 
   constructor(formularioId: string, source?: ReportAtributoFormulario) {
     this.formulario_id = source?.formulario_id ?? formularioId;
@@ -59,5 +60,6 @@ export class AtributoFormularioPayload {
     this.is_list_empleado = source?.is_list_empleado ?? false;
     this.is_text_area = source?.is_text_area ?? false;
     this.seccion = source?.seccion ?? null;
+    this.grupo_texto = source?.grupo_texto ?? null;
   }
 }

@@ -100,6 +100,7 @@ export const GET_ATRIBUTOS_BY_FORMULARIO = gql`
         formulario_nombre
         formulario_sigla
         formulario_version
+        grupo_texto
         hidden
         is_dependent
         is_dependent_catalogo
