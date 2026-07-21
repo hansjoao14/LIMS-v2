@@ -5,11 +5,10 @@ import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
-import { AuthService } from '../../auth/service/auth-service';
 import { AlertService } from '../../../services/alert.service';
-import { SolicitudService } from '../../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
 import { PlanMuestreoGrupo, construirGrupos } from '../model/plan-muestreo-form.model';
-import { construirValores, generarControles } from '../model/plan-muestreo-form.utils';
+import { camposDe, generarControles } from '../model/plan-muestreo-form.utils';
+import { PlanMuestreoStore } from '../model/plan-muestreo.store';
 import { PlanMuestreoGrupoComponent } from '../grupo/plan-muestreo-grupo';
 
 export interface ControlCalidad {
@@ -25,9 +24,7 @@ export interface ControlCalidad {
   styleUrl: '../plan-muestreo.css',
 })
 export class PlanMuestreoPaso2 implements OnInit, OnDestroy {
-  // Formulario dinámico "PLAN DE MUESTREO"; la sección 2 son las preguntas
-  // de este paso.
-  readonly TIPO_FORMULARIO_ID = 2019;
+  // Preguntas del formulario dinámico que corresponden a este paso.
   readonly SECCION = 2;
 
   form: FormGroup;
@@ -61,23 +58,22 @@ export class PlanMuestreoPaso2 implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private solicitudService: SolicitudService,
-    private authService: AuthService,
+    private store: PlanMuestreoStore,
     private alertService: AlertService,
   ) {
     this.form = this.fb.group({});
   }
 
   ngOnInit(): void {
-    const { id } = this.authService.currentUser();
-
-    this.solicitudService
-      .getFormulario(this.TIPO_FORMULARIO_ID, id)
+    this.store
+      .getFormulario()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (formulario) => {
           this.grupos = construirGrupos(formulario.preguntas ?? [], this.SECCION);
           generarControles(this.form, this.grupos);
+          // Repuebla lo que el usuario ya había respondido en este paso.
+          this.form.patchValue(this.store.respuestasDe(this.SECCION));
           this.loading = false;
         },
         error: () => {
@@ -87,7 +83,12 @@ export class PlanMuestreoPaso2 implements OnInit, OnDestroy {
       });
   }
 
+  // Al salir del paso —por los botones o por el historial del navegador— las
+  // respuestas quedan en el store, que arma el payload final en el paso 3.
   ngOnDestroy(): void {
+    if (!this.loading) {
+      this.store.guardarSeccion(this.SECCION, camposDe(this.grupos), this.form.getRawValue());
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -97,9 +98,6 @@ export class PlanMuestreoPaso2 implements OnInit, OnDestroy {
   }
 
   siguiente(): void {
-    // TODO: persistir las respuestas cuando exista el endpoint del plan de
-    // muestreo; por ahora solo se deja el payload estándar a la vista.
-    console.log('[plan-muestreo-paso2:siguiente]', construirValores(this.form, this.grupos));
     this.router.navigate(['/plan-muestreo/paso3']);
   }
 }

@@ -2,14 +2,15 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, firstValueFrom, takeUntil } from 'rxjs';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
-import { AuthService } from '../../auth/service/auth-service';
 import { AlertService } from '../../../services/alert.service';
+import { ToastrAlertService } from '../../../services/toastr.service';
 import { SolicitudService } from '../../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
 import { PlanMuestreoGrupo, construirGrupos } from '../model/plan-muestreo-form.model';
-import { construirValores, generarControles } from '../model/plan-muestreo-form.utils';
+import { camposDe, generarControles } from '../model/plan-muestreo-form.utils';
+import { PlanMuestreoStore } from '../model/plan-muestreo.store';
 import { PlanMuestreoGrupoComponent } from '../grupo/plan-muestreo-grupo';
 
 @Component({
@@ -20,14 +21,13 @@ import { PlanMuestreoGrupoComponent } from '../grupo/plan-muestreo-grupo';
   styleUrl: '../plan-muestreo.css',
 })
 export class PlanMuestreoPaso3 implements OnInit, OnDestroy {
-  // Formulario dinámico "PLAN DE MUESTREO"; la sección 3 son las preguntas
-  // de este paso.
-  readonly TIPO_FORMULARIO_ID = 2019;
+  // Preguntas del formulario dinámico que corresponden a este paso.
   readonly SECCION = 3;
 
   form: FormGroup;
   grupos: PlanMuestreoGrupo[] = [];
   loading = true;
+  saving = false;
 
   // Contenido fijo que no forma parte del formulario dinámico.
   readonly procedimiento = 'PEE/IAMQ/42';
@@ -41,23 +41,24 @@ export class PlanMuestreoPaso3 implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private router: Router,
+    private store: PlanMuestreoStore,
     private solicitudService: SolicitudService,
-    private authService: AuthService,
+    private toastrAlert: ToastrAlertService,
     private alertService: AlertService,
   ) {
     this.form = this.fb.group({});
   }
 
   ngOnInit(): void {
-    const { id } = this.authService.currentUser();
-
-    this.solicitudService
-      .getFormulario(this.TIPO_FORMULARIO_ID, id)
+    this.store
+      .getFormulario()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (formulario) => {
           this.grupos = construirGrupos(formulario.preguntas ?? [], this.SECCION);
           generarControles(this.form, this.grupos);
+          // Repuebla lo que el usuario ya había respondido en este paso.
+          this.form.patchValue(this.store.respuestasDe(this.SECCION));
           this.loading = false;
         },
         error: () => {
@@ -68,22 +69,61 @@ export class PlanMuestreoPaso3 implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.persistir();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  // Deja las respuestas de este paso en el store, que acumula las de todos.
+  private persistir(): void {
+    if (this.loading) return;
+    this.store.guardarSeccion(this.SECCION, camposDe(this.grupos), this.form.getRawValue());
   }
 
   regresar(): void {
     this.router.navigate(['/plan-muestreo/paso2']);
   }
 
-  guardar(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.alertService.error('Complete los campos obligatorios');
+  // Último paso: se envían de una sola vez las respuestas acumuladas en los
+  // pasos anteriores, con el mismo formato que la orden de trabajo in situ.
+  async guardar(): Promise<void> {
+    this.persistir();
+
+    const contexto = this.store.contexto;
+    if (!contexto?.solicitudId) {
+      this.toastrAlert.showWarning(
+        'Seleccione una solicitud de trabajo en el paso 1 antes de guardar.',
+        'Requerido',
+      );
       return;
     }
 
-    // TODO: enviar al endpoint del plan de muestreo cuando esté disponible.
-    console.log('[plan-muestreo-paso3:guardar]', construirValores(this.form, this.grupos));
+    const faltantes = this.store.camposFaltantes();
+    if (faltantes.length > 0) {
+      this.form.markAllAsTouched();
+      this.toastrAlert.showWarning(
+        'Complete todos los campos obligatorios antes de guardar.',
+        'Requerido',
+      );
+      return;
+    }
+
+    this.saving = true;
+    try {
+      await firstValueFrom(
+        this.solicitudService.guardarValoresSolicitud({
+          valorSolicitud: this.store.construirValorSolicitud(),
+        }),
+      );
+      this.toastrAlert.showSuccess('El plan de muestreo ha sido guardado.', '¡Guardado!');
+      // Se limpia después de navegar: al destruirse este paso vuelve a
+      // persistir sus respuestas en el store.
+      await this.router.navigate(['/plan-muestreo']);
+      this.store.limpiar();
+    } catch {
+      this.toastrAlert.showError('No se pudo guardar el plan de muestreo.', 'Error');
+    } finally {
+      this.saving = false;
+    }
   }
 }

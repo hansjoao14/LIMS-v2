@@ -14,6 +14,7 @@ import { PageHeader } from '../../shared/components/page-header/page-header';
 import { AlertService } from '../../services/alert.service';
 import { EnsayoItemService } from '../../services/solicitudes/solicitud-trabajo/ensayo-item.service';
 import { ReportCatalogoNota } from '../../interfaces/solicitudes/solicitud-trabajo';
+import { PlanMuestreoStore } from './model/plan-muestreo.store';
 
 export interface EnsayoRow {
   analisis: string;
@@ -92,6 +93,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     private ensayoItemService: EnsayoItemService,
     private router: Router,
     private alertService: AlertService,
+    private store: PlanMuestreoStore,
   ) {}
 
   ngOnInit(): void {
@@ -193,6 +195,9 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   }
 
   seleccionarSolicitud(sol: ReportSolicitud): void {
+    // Cambiar de solicitud invalida las respuestas capturadas en los pasos
+    // siguientes: el payload se arma siempre contra una sola solicitud.
+    this.store.limpiar();
     this.solicitudSeleccionada = sol;
     this.panelAbierto = false;
     this.detalleEnsayos = [];
@@ -257,6 +262,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   }
 
   limpiarSolicitud(): void {
+    this.store.limpiar();
     this.solicitudSeleccionada = null;
     this.tipoAguaId = null;
     this.tipoAguaNombre = '';
@@ -272,6 +278,16 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   }
 
   siguiente(): void {
+    // El contexto de la solicitud viaja en el store hasta el guardado final
+    // del paso 3.
+    if (this.solicitudSeleccionada) {
+      this.store.contexto = {
+        solicitudId: this.solicitudSeleccionada.id_solicitud,
+        numSecuencial: this.solicitudSeleccionada.num_secuencial ?? '',
+        tipoAguaId: this.tipoAguaId,
+        tipoAguaNombre: this.tipoAguaNombre,
+      };
+    }
     this.router.navigate(['/plan-muestreo/paso2']);
   }
 }

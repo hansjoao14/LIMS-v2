@@ -2,6 +2,9 @@ export interface ValorSolicitudItem {
   solicitud_id: string | null;
   atributo_formulario_id: string;
   valor_texto: string | null;
+  // TODO(backend): create-many valida este campo con @IsDecimal() y @IsNumber()
+  // a la vez, así que ni el número ni su texto lo pasan. Hasta que se corrija,
+  // los valores numéricos se envían en valor_texto y este va siempre en null.
   valor_numero: number | null;
   valor_fecha: string | null;
   valor_booleano: boolean | null;

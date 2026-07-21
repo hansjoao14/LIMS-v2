@@ -1,10 +1,6 @@
 import { FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
+import { ValorSolicitudItem } from '../../../interfaces/solicitudes/solicitud-trabajo/solicitud.interface';
 import { PlanMuestreoCampo, PlanMuestreoGrupo } from './plan-muestreo-form.model';
-
-export interface ValorPlanMuestreo {
-  atributo_formulario_id: string;
-  valor_texto: string;
-}
 
 /**
  * Agrega al FormGroup un control por cada campo de las tarjetas. Nunca recrea
@@ -33,16 +29,35 @@ function validadores(campo: PlanMuestreoCampo): ValidatorFn[] {
   return campo.required ? [Validators.required] : [];
 }
 
+/** Todos los campos de un paso, sin la agrupación en tarjetas. */
+export function camposDe(grupos: PlanMuestreoGrupo[]): PlanMuestreoCampo[] {
+  return grupos.flatMap((g) => g.campos);
+}
+
 /**
- * Payload estándar de respuestas: un registro por campo visible, con el id del
- * atributo del formulario y el valor en texto.
+ * Convierte una respuesta en el ítem que espera `/valor-solicitud/create-many`,
+ * con el mismo criterio que la orden de trabajo in situ: cada valor viaja en
+ * la columna que corresponde a su tipo y el resto va en null.
  */
-export function construirValores(form: FormGroup, grupos: PlanMuestreoGrupo[]): ValorPlanMuestreo[] {
-  const valores = form.getRawValue();
-  return grupos
-    .flatMap((g) => g.campos)
-    .map((campo) => ({
-      atributo_formulario_id: campo.id,
-      valor_texto: String(valores[campo.key] ?? ''),
-    }));
+export function toValorSolicitud(
+  campo: PlanMuestreoCampo,
+  valor: unknown,
+  solicitudId: string | null,
+): ValorSolicitudItem {
+  const esSelect = campo.controlType === 'select';
+  const esToggle = campo.controlType === 'toggle';
+  const vacio = valor === null || valor === undefined || valor === '';
+
+  return {
+    solicitud_id: solicitudId,
+    atributo_formulario_id: String(campo.id),
+    // Los numéricos viajan en valor_texto, igual que en el resto de la app.
+    valor_texto: esSelect || esToggle ? null : vacio ? null : String(valor),
+    valor_numero: null,
+    valor_fecha: null,
+    valor_booleano: esToggle ? !!valor : null,
+    valor_multiple: null,
+    valor_catalogo: esSelect ? Number(valor) || 0 : 0,
+    valor_uuid: null,
+  };
 }
