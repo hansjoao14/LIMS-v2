@@ -94,9 +94,7 @@ export class PlanMuestreoPaso3 implements OnInit, OnDestroy {
   // Último paso: se envían de una sola vez las respuestas acumuladas en los
   // pasos anteriores, con el mismo formato que la orden de trabajo in situ.
   async guardar(): Promise<void> {
-        debugger;
     this.persistir();
-    debugger; // Para inspeccionar el payload en el navegador antes de enviarlo.
     const contexto = this.store.contexto;
     if (!contexto?.solicitudId) {
       this.toastrAlert.showWarning(
