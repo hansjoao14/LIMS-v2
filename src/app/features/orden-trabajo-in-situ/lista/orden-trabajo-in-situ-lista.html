@@ -22,7 +22,8 @@
         <col class="w-[100px]" />
         <col class="w-[130px]" />
         <col class="w-[160px]" />
-        <col class="w-[110px]" />
+        <!-- Ancho para estados largos, ej. "Finalizado Solicitud" -->
+        <col class="w-[150px]" />
         <col class="w-[120px]" />
         <col class="w-[118px]" />
       </colgroup>
@@ -65,17 +66,17 @@
               <td class="px-3 py-2.5 border-r border-slate-100 text-center">
                 @if (esFinalizado(orden)) {
                   <span
-                    class="text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50"
+                    class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50"
                     >{{ orden.ctestado_nombre }}</span
                   >
                 } @else if (orden.ctestado_id === 388) {
                   <span
-                    class="text-[10px] font-bold px-2 py-0.5 rounded border border-blue-400 text-blue-700 bg-blue-50"
+                    class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-blue-400 text-blue-700 bg-blue-50"
                     >{{ orden.ctestado_nombre }}</span
                   >
                 } @else {
                   <span
-                    class="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50"
+                    class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50"
                     >{{ orden.ctestado_nombre }}</span
                   >
                 }

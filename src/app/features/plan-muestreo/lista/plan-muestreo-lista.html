@@ -31,7 +31,8 @@
               <col class="w-[160px]" />
               <col class="w-[130px]" />
               <col class="w-[160px]" />
-              <col class="w-[110px]" />
+              <!-- Ancho para estados largos, ej. "Finalizado Solicitud" -->
+              <col class="w-[150px]" />
               <col class="w-[120px]" />
               <col class="w-[118px]" />
             </colgroup>
@@ -69,9 +70,9 @@
                     </td>
                     <td class="px-3 py-2.5 border-r border-slate-100 text-center">
                       @if (esFinalizado(plan)) {
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50">{{ plan.ctestado_nombre }}</span>
+                        <span class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50">{{ plan.ctestado_nombre }}</span>
                       } @else {
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50">{{ plan.ctestado_nombre }}</span>
+                        <span class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50">{{ plan.ctestado_nombre }}</span>
                       }
                     </td>
                     <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-500">
@@ -118,16 +119,19 @@
                                 Eliminar
                               </button>
 
-                              <div class="border-t border-slate-100 mt-1 pt-1">
-                                <button type="button" (click)="imprimirPlan(plan); closeMenu()"
-                                  class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">
-                                  <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                  </svg>
-                                  Imprimir
-                                </button>
-                              </div>
+                              <!-- El PDF solo existe una vez autorizado el plan -->
+                              @if (esFinalizado(plan)) {
+                                <div class="border-t border-slate-100 mt-1 pt-1">
+                                  <button type="button" (click)="imprimirPlan(plan); closeMenu()"
+                                    class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">
+                                    <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                    </svg>
+                                    Imprimir
+                                  </button>
+                                </div>
+                              }
                             </div>
                           }
                         </div>
@@ -155,10 +159,24 @@
 
       </div>
 
+      <!-- Capa para cerrar el menú al hacer clic afuera. Va dentro de
+           .animate-in: esa clase termina con transform, lo que crea un
+           contexto de apilamiento, y desde fuera esta capa quedaría por
+           encima del menú y se comería sus clics. -->
+      @if (openMenuId !== null) {
+        <div class="fixed inset-0 z-40" (click)="closeMenu()"></div>
+      }
+
     </div>
   </div>
 </div>
 
-@if (openMenuId !== null) {
-  <div class="fixed inset-0 z-40" (click)="closeMenu()"></div>
-}
+<app-pdf-viewer
+  [visible]="showPdfModal"
+  [loading]="isPdfCargando"
+  [pdfUrl]="pdfPreviewUrl"
+  titulo="Plan de Muestreo"
+  (closed)="cerrarPdf()"
+  (downloaded)="descargarPdf()"
+>
+</app-pdf-viewer>

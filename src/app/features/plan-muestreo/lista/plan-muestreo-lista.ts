@@ -1,11 +1,13 @@
 import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { Subject, finalize, takeUntil } from 'rxjs';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
+import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import { ReportPlanMuestreoService } from '../../../services/solicitudes/plan-muestreo/report-plan-muestreo.service';
 import { ReportPlanMuestreo } from '../../../interfaces/solicitudes/plan-muestreo/report-plan-muestreo.interface';
@@ -25,7 +27,7 @@ const ESTADO_FINALIZADO = 2023;
 @Component({
   selector: 'app-plan-muestreo-lista',
   standalone: true,
-  imports: [CommonModule, PageHeader, TableSkeleton, PaginationComponent],
+  imports: [CommonModule, PageHeader, TableSkeleton, PaginationComponent, PdfViewerComponent],
   templateUrl: './plan-muestreo-lista.html',
   styleUrl: '../plan-muestreo.css',
 })
@@ -46,6 +48,12 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   openMenuId: string | null = null;
   procesandoId: string | null = null;
 
+  showPdfModal = false;
+  isPdfCargando = false;
+  pdfPreviewUrl: SafeResourceUrl | null = null;
+  private pdfBlobUrl: string | null = null;
+  private pdfNombre = 'plan-muestreo.pdf';
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -56,6 +64,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
     private alertService: AlertService,
     private toastrAlert: ToastrAlertService,
     private zone: NgZone,
+    private sanitizer: DomSanitizer,
     private store: PlanMuestreoStore,
   ) {}
 
@@ -76,6 +85,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.revocarPdf();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -198,8 +208,51 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
       });
   }
 
+  // ── PDF ──────────────────────────────────────────────────────────────────
+
   imprimirPlan(plan: ReportPlanMuestreo): void {
-    console.log('[plan-muestreo:imprimir]', plan);
+    this.showPdfModal = true;
+    this.isPdfCargando = true;
+    this.pdfPreviewUrl = null;
+    this.revocarPdf();
+    this.pdfNombre = `${plan.num_secuencial ?? 'plan-muestreo'}.pdf`;
+
+    this.planMuestreoService
+      .getPdfPlanMuestreo(plan.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) =>
+          this.zone.run(() => {
+            this.pdfBlobUrl = URL.createObjectURL(blob);
+            this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
+            this.isPdfCargando = false;
+          }),
+        error: () =>
+          this.zone.run(() => {
+            this.isPdfCargando = false;
+            this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
+          }),
+      });
+  }
+
+  cerrarPdf(): void {
+    this.showPdfModal = false;
+    this.pdfPreviewUrl = null;
+    this.revocarPdf();
+  }
+
+  descargarPdf(): void {
+    if (!this.pdfBlobUrl) return;
+    const a = document.createElement('a');
+    a.href = this.pdfBlobUrl;
+    a.download = this.pdfNombre;
+    a.click();
+  }
+
+  private revocarPdf(): void {
+    if (!this.pdfBlobUrl) return;
+    URL.revokeObjectURL(this.pdfBlobUrl);
+    this.pdfBlobUrl = null;
   }
 
   // El asistente arranca siempre en blanco: se descarta cualquier borrador que

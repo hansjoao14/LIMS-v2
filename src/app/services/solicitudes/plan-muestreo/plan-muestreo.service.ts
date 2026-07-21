@@ -65,6 +65,7 @@ export const IDENTIFICADOR_SECUENCIAL_PLAN_MUESTREO = 'PM';
 @Injectable({ providedIn: 'root' })
 export class PlanMuestreoService {
   private readonly apiSolicitud = environment.api_solicitud;
+  private readonly apiReportes = environment.api_reportes;
 
   constructor(private http: HttpClient) {}
 
@@ -79,5 +80,11 @@ export class PlanMuestreoService {
 
   deshabilitarPlan(id: string): Observable<any> {
     return this.http.patch<any>(`${this.apiSolicitud}/plan-muestreo/${id}/disable`, {});
+  }
+
+  getPdfPlanMuestreo(id: string): Observable<Blob> {
+    return this.http.get(`${this.apiReportes}/report-solicitud/pdf-plan-muestreo/${id}`, {
+      responseType: 'blob',
+    });
   }
 }

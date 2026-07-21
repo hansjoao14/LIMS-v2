@@ -24,7 +24,11 @@ import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 
-const ESTADO_FINALIZADO = 3;
+const ESTADO_FINALIZADO = 2023;
+// Las órdenes creadas antes del cambio de catálogo quedaron con el estado 3
+// ("Finalizado"); se siguen reconociendo como finalizadas para no ofrecer
+// autorizarlas de nuevo.
+const ESTADOS_FINALIZADOS = [ESTADO_FINALIZADO, 3];
 
 @Component({
   selector: 'app-orden-trabajo-in-situ-lista',
@@ -126,7 +130,7 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
   }
 
   esFinalizado(orden: ReportOrden): boolean {
-    return orden.ctestado_id === ESTADO_FINALIZADO;
+    return ESTADOS_FINALIZADOS.includes(orden.ctestado_id);
   }
 
   private getIdentificadorSecuencial(orden: ReportOrden): string {

@@ -686,7 +686,9 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
           num_secuencial: null,
           ctestado_id: 2,
           estado: true,
-          ctformulario_id: this.solicitudSeleccionada.formulario_ct_id,
+          // El del formulario "Orden de Trabajo In Situ" (F-PG-09-03), no el de
+          // la solicitud de la que se parte.
+          ctformulario_id: Number(FORMULARIO_OPERATIVO_ID),
         },
         ordenTrabajoDetalle: ensayosSeleccionados.map((e: any) => ({
           estado: true,
