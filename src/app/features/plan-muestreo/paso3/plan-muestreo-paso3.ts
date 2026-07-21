@@ -1,54 +1,89 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { PageHeader } from '../../../shared/components/page-header/page-header';
+import { Subject, takeUntil } from 'rxjs';
 
-export interface SolucionBuffer {
-  nombre: string;
-  activo: boolean;
-}
+import { PageHeader } from '../../../shared/components/page-header/page-header';
+import { AuthService } from '../../auth/service/auth-service';
+import { AlertService } from '../../../services/alert.service';
+import { SolicitudService } from '../../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { PlanMuestreoGrupo, construirGrupos } from '../model/plan-muestreo-form.model';
+import { construirValores, generarControles } from '../model/plan-muestreo-form.utils';
+import { PlanMuestreoGrupoComponent } from '../grupo/plan-muestreo-grupo';
 
 @Component({
   selector: 'app-plan-muestreo-paso3',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeader],
+  imports: [CommonModule, ReactiveFormsModule, PageHeader, PlanMuestreoGrupoComponent],
   templateUrl: './plan-muestreo-paso3.html',
   styleUrl: '../plan-muestreo.css',
 })
-export class PlanMuestreoPaso3 {
-  equipamientoSeguridad =
-    'Casco, overol con cintas reflectivas, zapatos punta de acero, gafas, mascarilla para vapores ácidos, guantes de nitrilo, guantes de hilo, botiquín de primeros auxilios, gel antibacterial, conos';
+export class PlanMuestreoPaso3 implements OnInit, OnDestroy {
+  // Formulario dinámico "PLAN DE MUESTREO"; la sección 3 son las preguntas
+  // de este paso.
+  readonly TIPO_FORMULARIO_ID = 2019;
+  readonly SECCION = 3;
 
-  soluciones: SolucionBuffer[] = [
-    { nombre: 'BUFFER DE PH 2 CÓD. QC-18', activo: false },
-    { nombre: 'BUFFER DE PH 4 CÓD. QC-17', activo: false },
-    { nombre: 'BUFFER DE PH 7 CÓD. QC-16', activo: false },
-    { nombre: 'BUFFER DE PH 10 CÓD. QC-14', activo: false },
-    { nombre: 'PE DE PH 6.63', activo: false },
-    { nombre: 'ESTÁNDAR OXÍGENO DISUELTO 0 MG/L CÓD. RV-42', activo: false },
-    { nombre: 'ESTÁNDAR CONDUCTIVIDAD 1413 CÓD. RV-63', activo: false },
-    { nombre: 'ESTÁNDAR CONDUCTIVIDAD 147 CÓD. RV-62', activo: false },
-  ];
+  form: FormGroup;
+  grupos: PlanMuestreoGrupo[] = [];
+  loading = true;
 
-  observaciones = '';
-
+  // Contenido fijo que no forma parte del formulario dinámico.
+  readonly procedimiento = 'PEE/IAMQ/42';
   notas = [
     'Nota 1: El muestreador debe lavar los frascos de muestra con el agua del sitio de muestreo antes de recolectar la muestra.',
     'Nota 2: En caso de que el punto de muestreo se encuentre en una zona de difícil acceso, se debe notificar al responsable del área.',
   ];
 
-  constructor(private router: Router) {}
+  private readonly destroy$ = new Subject<void>();
+
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private solicitudService: SolicitudService,
+    private authService: AuthService,
+    private alertService: AlertService,
+  ) {
+    this.form = this.fb.group({});
+  }
+
+  ngOnInit(): void {
+    const { id } = this.authService.currentUser();
+
+    this.solicitudService
+      .getFormulario(this.TIPO_FORMULARIO_ID, id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (formulario) => {
+          this.grupos = construirGrupos(formulario.preguntas ?? [], this.SECCION);
+          generarControles(this.form, this.grupos);
+          this.loading = false;
+        },
+        error: () => {
+          this.loading = false;
+          this.alertService.error('No se pudo cargar el formulario dinámico');
+        },
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   regresar(): void {
     this.router.navigate(['/plan-muestreo/paso2']);
   }
 
   guardar(): void {
-    console.log('[plan-muestreo-paso3:guardar]', {
-      equipamientoSeguridad: this.equipamientoSeguridad,
-      soluciones: this.soluciones,
-      observaciones: this.observaciones,
-    });
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.alertService.error('Complete los campos obligatorios');
+      return;
+    }
+
+    // TODO: enviar al endpoint del plan de muestreo cuando esté disponible.
+    console.log('[plan-muestreo-paso3:guardar]', construirValores(this.form, this.grupos));
   }
 }

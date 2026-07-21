@@ -47,6 +47,12 @@ export interface Pregunta {
   num_atras?: number | null;
   num_adelante?: number | null;
   is_dependent_catalogo?: boolean | null;
+  // Agrupación configurada en BD: `seccion` reparte las preguntas entre los
+  // pasos del formulario y `grupo_texto` entre las tarjetas de cada paso.
+  seccion?: number | null;
+  grupo_texto?: string | null;
+  grupo_numerico?: number | null;
+  is_search?: boolean;
 }
 
 export interface FormularioLaboratorio {

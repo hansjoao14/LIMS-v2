@@ -1,0 +1,152 @@
+<section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+  <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+    <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">{{ grupo.titulo }}</h4>
+  </div>
+
+  @switch (grupo.layout) {
+
+    @case ('preservacion') {
+      <!-- Tabla preservación / volumen / recipiente -->
+      <div class="overflow-x-auto custom-scroll">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-gray-200 tracking-wider">
+              <th class="px-4 py-2.5 border-r border-gray-100 text-left">Preservación</th>
+              <th class="px-4 py-2.5 border-r border-gray-100 text-left">Volumen (L)</th>
+              <th class="px-4 py-2.5 text-left">Tipo de Recipiente</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (campo of grupo.campos; track campo.id) {
+              <tr class="border-b border-gray-100 hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 border-r border-gray-100 text-slate-600 text-xs">{{ campo.label }}</td>
+                <td class="px-4 py-3 border-r border-gray-100">
+                  <input type="number" [formControlName]="campo.key" [readonly]="campo.readonly"
+                    [placeholder]="campo.placeholder || 'ej. 5'"
+                    class="w-full border border-slate-300 bg-white text-slate-700 p-2 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                    [class.border-red-500]="esCampoInvalido(campo.key)"
+                    [class.bg-red-50]="esCampoInvalido(campo.key)" />
+                </td>
+                <td class="px-4 py-3 text-slate-600 text-xs">{{ tipoRecipiente(campo.key) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @case ('toggles') {
+      <!-- Lista de interruptores SÍ / NO -->
+      <div class="divide-y divide-slate-100">
+        @for (campo of grupo.campos; track campo.id) {
+          <div class="px-5 py-3 flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
+            <ng-container *ngTemplateOutlet="filaToggle; context: { $implicit: campo }" />
+          </div>
+        }
+      </div>
+    }
+
+    @case ('toggles-2col') {
+      <div class="grid grid-cols-1 md:grid-cols-2">
+        @for (campo of grupo.campos; track campo.id; let i = $index) {
+          <div class="px-5 py-3 flex items-center justify-between gap-4 border-b border-slate-100 hover:bg-slate-50 transition-colors"
+            [ngClass]="{ 'md:border-r': i % 2 === 0 }"
+            [class.border-l-2]="valor(campo.key)"
+            [class.border-l-[#1e3a8a]]="valor(campo.key)">
+            <ng-container *ngTemplateOutlet="filaToggle; context: { $implicit: campo }" />
+          </div>
+        }
+      </div>
+    }
+
+    @default {
+      <!-- Grid de campos con etiqueta -->
+      <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+        @for (campo of grupo.campos; track campo.id) {
+          <div class="flex flex-col" [ngClass]="{ 'md:col-span-2': campo.controlType === 'textarea' }">
+            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
+              [class.text-red-600]="esCampoInvalido(campo.key)">
+              {{ campo.label }}
+              @if (campo.required) { <span class="text-red-500">*</span> }
+            </label>
+
+            @switch (campo.controlType) {
+
+              @case ('select') {
+                <select [formControlName]="campo.key"
+                  class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                  [class.border-red-500]="esCampoInvalido(campo.key)"
+                  [class.bg-red-50]="esCampoInvalido(campo.key)">
+                  <option value="">Seleccione...</option>
+                  @for (opcion of campo.opciones; track opcion.id) {
+                    <option [value]="opcion.id">{{ opcion.nombre }}</option>
+                  }
+                </select>
+              }
+
+              @case ('textarea') {
+                <textarea [formControlName]="campo.key" [rows]="filas(campo)" [readonly]="campo.readonly"
+                  [placeholder]="campo.placeholder"
+                  class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white text-slate-700 transition-colors"
+                  [class.border-red-500]="esCampoInvalido(campo.key)"
+                  [class.bg-red-50]="esCampoInvalido(campo.key)"></textarea>
+              }
+
+              @case ('numero') {
+                <div class="flex items-center gap-3">
+                  <button type="button" (click)="sumar(campo, -1)"
+                    class="w-8 h-8 rounded border border-slate-300 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition-colors">−</button>
+                  <span class="text-sm font-bold text-[#1e3a8a] w-8 text-center">{{ valor(campo.key) ?? 0 }}</span>
+                  <button type="button" (click)="sumar(campo, 1)"
+                    class="w-8 h-8 rounded border border-slate-300 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition-colors">+</button>
+                  @if (campo.unidad) {
+                    <span class="text-xs text-slate-500">{{ campo.unidad }}</span>
+                  }
+                </div>
+              }
+
+              @case ('toggle') {
+                <div class="flex items-center gap-2">
+                  <ng-container *ngTemplateOutlet="interruptor; context: { $implicit: campo }" />
+                </div>
+              }
+
+              @default {
+                <input type="text" [formControlName]="campo.key" [readonly]="campo.readonly"
+                  [placeholder]="campo.placeholder"
+                  class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                  [class.border-red-500]="esCampoInvalido(campo.key)"
+                  [class.bg-red-50]="esCampoInvalido(campo.key)" />
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</section>
+
+<!-- Fila completa: etiqueta a la izquierda, interruptor a la derecha -->
+<ng-template #filaToggle let-campo>
+  <span class="text-[11px] font-bold text-[#1e3a8a] uppercase">{{ campo.label }}</span>
+  <div class="flex items-center gap-2 shrink-0">
+    <ng-container *ngTemplateOutlet="interruptor; context: { $implicit: campo }" />
+  </div>
+</ng-template>
+
+<ng-template #interruptor let-campo>
+  <button type="button" (click)="alternar(campo)"
+    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
+    [class.bg-[#1e3a8a]]="valor(campo.key)"
+    [class.bg-slate-300]="!valor(campo.key)">
+    <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+      [class.translate-x-6]="valor(campo.key)"
+      [class.translate-x-1]="!valor(campo.key)">
+    </span>
+  </button>
+  <span class="text-xs font-bold w-6"
+    [class.text-[#1e3a8a]]="valor(campo.key)"
+    [class.text-slate-400]="!valor(campo.key)">
+    {{ valor(campo.key) ? 'SÍ' : 'NO' }}
+  </span>
+</ng-template>

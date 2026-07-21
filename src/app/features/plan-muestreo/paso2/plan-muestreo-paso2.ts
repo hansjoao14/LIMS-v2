@@ -1,41 +1,40 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
+
 import { PageHeader } from '../../../shared/components/page-header/page-header';
+import { AuthService } from '../../auth/service/auth-service';
+import { AlertService } from '../../../services/alert.service';
+import { SolicitudService } from '../../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { PlanMuestreoGrupo, construirGrupos } from '../model/plan-muestreo-form.model';
+import { construirValores, generarControles } from '../model/plan-muestreo-form.utils';
+import { PlanMuestreoGrupoComponent } from '../grupo/plan-muestreo-grupo';
 
 export interface ControlCalidad {
   tipo: string;
   filas: { analisis: string; muestrasFaltantes: number }[];
 }
 
-export interface PreservacionMuestra {
-  preservacion: string;
-  volumen: number | null;
-  tipoRecipiente: string;
-}
-
-export interface Equipo {
-  nombre: string;
-  seleccion: string;
-  opciones: string[];
-}
-
-export interface Material {
-  nombre: string;
-  activo: boolean;
-}
-
 @Component({
   selector: 'app-plan-muestreo-paso2',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeader],
+  imports: [CommonModule, ReactiveFormsModule, PageHeader, PlanMuestreoGrupoComponent],
   templateUrl: './plan-muestreo-paso2.html',
   styleUrl: '../plan-muestreo.css',
 })
-export class PlanMuestreoPaso2 {
-  tipoMuestreo = '';
+export class PlanMuestreoPaso2 implements OnInit, OnDestroy {
+  // Formulario dinámico "PLAN DE MUESTREO"; la sección 2 son las preguntas
+  // de este paso.
+  readonly TIPO_FORMULARIO_ID = 2019;
+  readonly SECCION = 2;
 
+  form: FormGroup;
+  grupos: PlanMuestreoGrupo[] = [];
+  loading = true;
+
+  // Los controles de calidad no forman parte del formulario dinámico.
   controlesCalidad: ControlCalidad[] = [
     {
       tipo: 'REPETIBILIDAD',
@@ -57,43 +56,50 @@ export class PlanMuestreoPaso2 {
     },
   ];
 
-  preservaciones: PreservacionMuestra[] = [
-    { preservacion: 'Temperatura 0ºC a 6ºC', volumen: null, tipoRecipiente: 'Vidrio opaco' },
-    { preservacion: 'H2SO4', volumen: null, tipoRecipiente: 'Vidrio opaco' },
-    { preservacion: 'HNO3', volumen: null, tipoRecipiente: 'Vidrio opaco' },
-  ];
+  private readonly destroy$ = new Subject<void>();
 
-  equiposMedicion: Equipo[] = [
-    { nombre: 'MULTIPARÁMETROS', seleccion: '', opciones: ['IDM-21-15', 'IDM-21-26'] },
-    { nombre: 'TERMÓMETRO DIGITAL', seleccion: '', opciones: ['IDM-21-15'] },
-    { nombre: 'AFORADOR DOPPLER', seleccion: '', opciones: ['IDM-21-15'] },
-    { nombre: 'MEDIDOR DE CAUDAL MAGNÉTICO - INDUCTIVO', seleccion: '', opciones: ['IDM-21-15'] },
-  ];
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private solicitudService: SolicitudService,
+    private authService: AuthService,
+    private alertService: AlertService,
+  ) {
+    this.form = this.fb.group({});
+  }
 
-  equiposPreservacion: Equipo[] = [
-    { nombre: 'FRIGORÍFICO PORTÁTIL', seleccion: '', opciones: ['A-21-18','A-21-19'] },
-  ];
+  ngOnInit(): void {
+    const { id } = this.authService.currentUser();
 
-  materiales: Material[] = [
-    { nombre: 'PÉRTIGA EXTENSIBLE', activo: false },
-    { nombre: 'BALDE PLÁSTICO CON TAPA', activo: false },
-    { nombre: 'VASO ANGULAR O DE CUCHARA', activo: false },
-    { nombre: 'SOGA DE ESCALADA 30 METROS DE LARGO', activo: false },
-    { nombre: 'JARRA DE VIDRIO DE 1 LITRO', activo: false },
-  ];
+    this.solicitudService
+      .getFormulario(this.TIPO_FORMULARIO_ID, id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (formulario) => {
+          this.grupos = construirGrupos(formulario.preguntas ?? [], this.SECCION);
+          generarControles(this.form, this.grupos);
+          this.loading = false;
+        },
+        error: () => {
+          this.loading = false;
+          this.alertService.error('No se pudo cargar el formulario dinámico');
+        },
+      });
+  }
 
-  personasEnCampo = 0;
-  movilizacion = '';
-  tiempoPermanencia = 0;
-  duracionMuestreo = 0;
-
-  constructor(private router: Router) {}
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   regresar(): void {
     this.router.navigate(['/plan-muestreo']);
   }
 
   siguiente(): void {
+    // TODO: persistir las respuestas cuando exista el endpoint del plan de
+    // muestreo; por ahora solo se deja el payload estándar a la vista.
+    console.log('[plan-muestreo-paso2:siguiente]', construirValores(this.form, this.grupos));
     this.router.navigate(['/plan-muestreo/paso3']);
   }
 }
