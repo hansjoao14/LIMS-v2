@@ -448,15 +448,14 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       ? new Date(+orden.creado_en).toISOString().split('T')[0]
       : '';
 
+    // Dirección/Teléfono PCA quedan vacíos al editar: el reporte ya no expone
+    // direccion_pca ni telefono_pca (salieron del contrato de la orden, igual
+    // que en la creación — ver guardar()).
     this.form.patchValue({
       solicitudTrabajoNo: orden.solicitud_num_secuencial,
       ordenTrabajoNo: orden.num_secuencial ?? '',
       fechaEmision,
       cliente: { solicitadoPor: orden.usuario_nombre_completo },
-      usoSuelo: {
-        direccionPca: orden.direccion_pca ?? '',
-        telefonoPca: orden.telefono_pca ?? '',
-      },
     });
 
     // Si el formulario dinámico ya cargó sus campos (p. ej. el usuario venía

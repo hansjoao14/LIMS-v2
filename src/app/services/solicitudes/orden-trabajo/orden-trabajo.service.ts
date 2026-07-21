@@ -11,12 +11,16 @@ export interface OrdenTrabajoPayload {
   periodo_id: number;
   secuencial_id: string | null;
   num_secuencial: string | null;
-  ctuso_suelo_id: number | null;
-  ctcaracteristica_horaria_id: number | null;
-  ctpunto_critico_id: number | null;
-  direccion_pca: string | null;
-  telefono_pca: string | null;
-  observacion: string | null;
+  // Opcionales: salieron del contrato (ver CrearOrdenTrabajoPayload) y el
+  // reporte ya no los devuelve, así que no hay de dónde releerlos para un PUT
+  // parcial. Se omiten en vez de mandarlos en null para no borrar en BD lo que
+  // pueda quedar guardado.
+  ctuso_suelo_id?: number | null;
+  ctcaracteristica_horaria_id?: number | null;
+  ctpunto_critico_id?: number | null;
+  direccion_pca?: string | null;
+  telefono_pca?: string | null;
+  observacion?: string | null;
   ctestado_id: number;
   estado: boolean;
   ctformulario_id: number; //tipo_formulario_id

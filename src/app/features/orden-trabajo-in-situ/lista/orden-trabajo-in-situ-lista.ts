@@ -21,13 +21,15 @@ import { AlertService } from '../../../services/alert.service';
 import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
 import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.utils';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
+import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 
 const ESTADO_FINALIZADO = 3;
 const ESTADO_RECHAZADO = 51;
 
 @Component({
   selector: 'app-orden-trabajo-in-situ-lista',
-  imports: [CommonModule, TableSkeleton],
+  imports: [CommonModule, TableSkeleton, PaginationComponent],
   templateUrl: './orden-trabajo-in-situ-lista.html',
 })
 export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
@@ -36,6 +38,11 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
 
   loading = true;
   ordenes: ReportOrden[] = [];
+
+  // Paginación del lado del servidor (meta de collectionReportOrden).
+  meta: PaginationMeta | null = null;
+  currentPage = 1;
+  readonly PAGE_SIZE = 10;
 
   openMenuId: string | null = null;
   procesandoId: string | null = null;
@@ -85,20 +92,33 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  cargarOrdenes(): void {
+  cargarOrdenes(page = this.currentPage): void {
     this.loading = true;
+    this.currentPage = page;
     this.reportOrdenService
-      .getOrdenes()
+      .getOrdenes(page, this.PAGE_SIZE)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
+        next: ({ data, meta }) => {
           this.ordenes = data;
+          this.meta = meta;
+          // Si la página quedó vacía al eliminar el último registro, se
+          // retrocede a la anterior.
+          if (data.length === 0 && page > 1) {
+            this.cargarOrdenes(page - 1);
+            return;
+          }
           this.loading = false;
         },
         error: () => {
           this.loading = false;
         },
       });
+  }
+
+  irAPagina(page: number): void {
+    this.closeMenu();
+    this.cargarOrdenes(page);
   }
 
   toggleMenu(id: string, event: MouseEvent): void {
@@ -173,12 +193,6 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
         periodo_id: orden.periodo_id,
         secuencial_id: orden.secuencial_id,
         num_secuencial: orden.num_secuencial,
-        ctuso_suelo_id: orden.ctuso_suelo_id,
-        ctcaracteristica_horaria_id: orden.ctcaracteristica_horaria_id,
-        ctpunto_critico_id: orden.ctpunto_critico_id,
-        direccion_pca: orden.direccion_pca,
-        telefono_pca: orden.telefono_pca,
-        observacion: orden.observacion,
         ctestado_id: ESTADO_RECHAZADO,
         estado: orden.estado,
         ctformulario_id: orden.ctformulario_id,

@@ -235,6 +235,15 @@
       </tbody>
     </table>
   </div>
+
+  <app-pagination
+    [meta]="meta"
+    [currentPage]="currentPage"
+    [itemsShown]="ordenes.length"
+    itemLabel="órdenes"
+    (pageChange)="irAPagina($event)"
+  >
+  </app-pagination>
 </div>
 
 @if (openMenuId !== null) {

@@ -5,33 +5,28 @@ export interface ReportOrden {
   creado_por: string;
   ctambiente_id: number;
   ctambiente_nombre: string;
-  ctcaracteristica_horaria_id: number | null;
-  ctcaracteristica_horaria_nombre: string | null;
   ctestado_id: number;
   ctestado_nombre: string;
   ctformulario_id: number;
   ctformulario_nombre: string | null;
-  ctpunto_critico_id: number | null;
-  ctpunto_critico_nombre: string | null;
-  ctuso_suelo_id: number | null;
-  ctuso_suelo_nombre: string | null;
-  direccion_pca: string | null;
   entidad_id: string;
   entidad_nombre: string;
   estado: boolean;
   id: string;
   num_secuencial: string | null;
-  observacion: string | null;
   periodo_anio: string;
   periodo_id: number;
   periodo_nombre_mes: string;
   secuencial_id: string | null;
   solicitud_id: string;
   solicitud_num_secuencial: string;
-  telefono_pca: string | null;
   usuario_id: string;
   usuario_nombre_completo: string;
 }
+// Nota: ReportOrdenDataType ya no expone ctuso_suelo_*, ctcaracteristica_horaria_*,
+// ctpunto_critico_*, direccion_pca, telefono_pca ni observacion. Siguen
+// existiendo en OrdenTrabajoPayload (escritura), pero no se pueden leer desde
+// el reporte.
 
 export interface ReportOrdenDetalle {
   id: string;
