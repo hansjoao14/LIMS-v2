@@ -47,6 +47,21 @@ export interface CrearPlanMuestreoConDetallePayload {
   valorMuestreo: ValorMuestreoPayload[];
 }
 
+// Ojo: este DTO sí tiene los nombres bien escritos, a diferencia del de la
+// orden de trabajo (`idOrden` / `identifcadorSecuecnial`). Los mensajes de
+// error del backend todavía citan los nombres viejos, pero las llaves que
+// valida son estas.
+export interface FinalizarPlanMuestreoPayload {
+  idPlanMuestreo: string;
+  identificadorSecuencial: string;
+  ctestado: number;
+}
+
+// Identificador con el que el backend genera el secuencial del plan de
+// muestreo (la orden in situ usa ORD_AIR / ORD_RDO).
+export const IDENTIFICADOR_SECUENCIAL_PLAN_MUESTREO = 'PM';
+
+
 @Injectable({ providedIn: 'root' })
 export class PlanMuestreoService {
   private readonly apiSolicitud = environment.api_solicitud;
@@ -55,5 +70,14 @@ export class PlanMuestreoService {
 
   crearPlanMuestreoConDetalle(payload: CrearPlanMuestreoConDetallePayload): Observable<any> {
     return this.http.post<any>(`${this.apiSolicitud}/plan-muestreo/create-detalle`, payload);
+  }
+
+  /** Autoriza el plan y le asigna el secuencial. */
+  finalizarPlan(payload: FinalizarPlanMuestreoPayload): Observable<any> {
+    return this.http.post<any>(`${this.apiSolicitud}/plan-muestreo/finalizar`, payload);
+  }
+
+  deshabilitarPlan(id: string): Observable<any> {
+    return this.http.patch<any>(`${this.apiSolicitud}/plan-muestreo/${id}/disable`, {});
   }
 }

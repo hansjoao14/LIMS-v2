@@ -1,7 +1,7 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, finalize, takeUntil } from 'rxjs';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
@@ -12,7 +12,15 @@ import { ReportPlanMuestreo } from '../../../interfaces/solicitudes/plan-muestre
 import { ReportFormularioService } from '../../../services/admin-formularios/report-formulario.service';
 import { ReportFormulario } from '../../../interfaces/admin-formularios/report-formulario.interface';
 import { AlertService } from '../../../services/alert.service';
+import { ToastrAlertService } from '../../../services/toastr.service';
+import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.utils';
+import {
+  IDENTIFICADOR_SECUENCIAL_PLAN_MUESTREO,
+  PlanMuestreoService,
+} from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 import { PlanMuestreoStore } from '../model/plan-muestreo.store';
+
+const ESTADO_FINALIZADO = 2023;
 
 @Component({
   selector: 'app-plan-muestreo-lista',
@@ -35,13 +43,19 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   currentPage = 1;
   readonly PAGE_SIZE = 10;
 
+  openMenuId: string | null = null;
+  procesandoId: string | null = null;
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private router: Router,
     private reportPlanMuestreoService: ReportPlanMuestreoService,
     private reportFormularioService: ReportFormularioService,
+    private planMuestreoService: PlanMuestreoService,
     private alertService: AlertService,
+    private toastrAlert: ToastrAlertService,
+    private zone: NgZone,
     private store: PlanMuestreoStore,
   ) {}
 
@@ -76,6 +90,12 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
         next: ({ data, meta }) => {
           this.planes = data;
           this.meta = meta;
+          // Si la página quedó vacía al eliminar el último registro, se
+          // retrocede a la anterior.
+          if (data.length === 0 && page > 1) {
+            this.cargarPlanes(page - 1);
+            return;
+          }
           this.loading = false;
         },
         error: () => {
@@ -86,7 +106,100 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   }
 
   irAPagina(page: number): void {
+    this.closeMenu();
     this.cargarPlanes(page);
+  }
+
+  // ── Menú contextual ──────────────────────────────────────────────────────
+
+  toggleMenu(id: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.openMenuId = this.openMenuId === id ? null : id;
+  }
+
+  closeMenu(): void {
+    this.openMenuId = null;
+  }
+
+  abrirHaciaArriba(index: number): boolean {
+    return abrirMenuHaciaArriba(index, this.planes.length);
+  }
+
+  // ── Acciones ─────────────────────────────────────────────────────────────
+
+  esFinalizado(plan: ReportPlanMuestreo): boolean {
+    return plan.ctestado_id === ESTADO_FINALIZADO;
+  }
+
+  async finalizarPlan(plan: ReportPlanMuestreo): Promise<void> {
+    const confirmado = await this.alertService.confirm({
+      icon: 'question',
+      title: '¿Autorizar plan de muestreo?',
+      text: `Se autorizará el plan de la solicitud ${plan.solicitud_num_secuencial ?? plan.id}.`,
+      confirmButtonColor: '#16a34a',
+      confirmButtonText: 'Sí, autorizar',
+    });
+    if (!confirmado) return;
+
+    this.procesandoId = plan.id;
+    this.planMuestreoService
+      .finalizarPlan({
+        idPlanMuestreo: plan.id,
+        identificadorSecuencial: IDENTIFICADOR_SECUENCIAL_PLAN_MUESTREO,
+        ctestado: ESTADO_FINALIZADO,
+      })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
+        }),
+      )
+      .subscribe({
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess('Plan de muestreo autorizado.', '¡Autorizado!');
+            this.cargarPlanes();
+          }),
+        error: () =>
+          this.zone.run(() =>
+            this.toastrAlert.showError('No se pudo autorizar el plan de muestreo.', 'Error'),
+          ),
+      });
+  }
+
+  async eliminarPlan(plan: ReportPlanMuestreo): Promise<void> {
+    const confirmado = await this.alertService.confirm({
+      title: '¿Eliminar plan de muestreo?',
+      text: `Se eliminará el plan de la solicitud ${plan.solicitud_num_secuencial ?? plan.id}. Esta acción no se puede deshacer.`,
+      confirmButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar',
+    });
+    if (!confirmado) return;
+
+    this.procesandoId = plan.id;
+    this.planMuestreoService
+      .deshabilitarPlan(plan.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
+        }),
+      )
+      .subscribe({
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess('Plan de muestreo eliminado.', '¡Eliminado!');
+            this.cargarPlanes();
+          }),
+        error: () =>
+          this.zone.run(() =>
+            this.toastrAlert.showError('No se pudo eliminar el plan de muestreo.', 'Error'),
+          ),
+      });
+  }
+
+  imprimirPlan(plan: ReportPlanMuestreo): void {
+    console.log('[plan-muestreo:imprimir]', plan);
   }
 
   // El asistente arranca siempre en blanco: se descarta cualquier borrador que
