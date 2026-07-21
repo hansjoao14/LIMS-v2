@@ -86,7 +86,7 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
     [AppRole.RESPONSABLE_LAB]:  ['ver', 'editar', 'crear', 'autorizar', 'rechazar'],
     [AppRole.ANALISTA_CAMPO]:   ['ver'],
     [AppRole.ANALISTA_LAB]:     ['ver'],
-    [AppRole.ADMIN]:            ['ver', 'eliminar'],
+    [AppRole.ADMIN]:            ['ver', 'editar', 'eliminar', 'crear', 'autorizar', 'rechazar'],
   },
 
   // Plan de muestreo F-PEE-42-01
@@ -95,7 +95,7 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
     [AppRole.RESPONSABLE_LAB]:  ['ver', 'editar', 'crear', 'autorizar', 'rechazar'],
     [AppRole.ANALISTA_CAMPO]:   ['ver'],
     [AppRole.ANALISTA_LAB]:     ['ver'],
-    [AppRole.ADMIN]:            ['ver', 'eliminar'],
+    [AppRole.ADMIN]:            ['ver', 'editar', 'eliminar', 'crear', 'autorizar', 'rechazar'],
   },
 
   // Calibración de equipos F-PEE-11-02

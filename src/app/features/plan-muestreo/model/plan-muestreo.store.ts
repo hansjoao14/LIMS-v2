@@ -15,7 +15,6 @@ import { toValorMuestreo } from './plan-muestreo-form.utils';
 export interface PlanMuestreoContexto {
   solicitudId: string;
   numSecuencial: string;
-  ctformularioId: number;
   tipoAguaId: number | null;
   tipoAguaNombre: string;
   /** Ensayos de la solicitud, ya con la forma de `planMuestreoDetalle`. */

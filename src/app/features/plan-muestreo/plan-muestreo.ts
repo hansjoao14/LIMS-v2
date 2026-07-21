@@ -306,7 +306,6 @@ export class PlanMuestreo implements OnInit, OnDestroy {
       this.store.contexto = {
         solicitudId: this.solicitudSeleccionada.id_solicitud,
         numSecuencial: this.solicitudSeleccionada.num_secuencial ?? '',
-        ctformularioId: this.solicitudSeleccionada.formulario_ct_id ?? 0,
         tipoAguaId: this.tipoAguaId,
         tipoAguaNombre: this.tipoAguaNombre,
         ensayos: this.ensayosDetalle,

@@ -149,7 +149,9 @@ export class PlanMuestreoPaso3 implements OnInit, OnDestroy {
           num_secuencial: null,
           ctestado_id: 2,
           estado: true,
-          ctformulario_id: contexto.ctformularioId,
+          // El del formulario "PLAN DE MUESTREO" (F-PEE-42-01), no el de la
+          // solicitud de la que se parte.
+          ctformulario_id: this.store.TIPO_FORMULARIO_ID,
         },
         planMuestreoDetalle: contexto.ensayos,
         valorMuestreo: this.store.construirValorMuestreo(),

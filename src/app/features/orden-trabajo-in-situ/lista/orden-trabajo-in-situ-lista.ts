@@ -25,7 +25,6 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 
 const ESTADO_FINALIZADO = 3;
-const ESTADO_RECHAZADO = 51;
 
 @Component({
   selector: 'app-orden-trabajo-in-situ-lista',
@@ -34,6 +33,8 @@ const ESTADO_RECHAZADO = 51;
 })
 export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
   @Output() nuevaOrden = new EventEmitter<void>();
+  // La tabla ya no ofrece "Editar", pero el flujo de edición del formulario
+  // sigue cableado: basta con volver a emitir este evento para reactivarlo.
   @Output() editar = new EventEmitter<ReportOrden>();
 
   loading = true;
@@ -57,16 +58,6 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
   canFinalizar = computed(() => {
     const role = this.userAppRole();
     return role ? hasPermission(MenuKey.ORDEN_TRABAJO_IN_SITU, role, 'autorizar') : false;
-  });
-
-  canRechazar = computed(() => {
-    const role = this.userAppRole();
-    return role ? hasPermission(MenuKey.ORDEN_TRABAJO_IN_SITU, role, 'rechazar') : false;
-  });
-
-  canEdit = computed(() => {
-    const role = this.userAppRole();
-    return role ? hasPermission(MenuKey.ORDEN_TRABAJO_IN_SITU, role, 'editar') : false;
   });
 
   canDelete = computed(() => {
@@ -134,6 +125,10 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
     return abrirMenuHaciaArriba(index, this.ordenes.length);
   }
 
+  esFinalizado(orden: ReportOrden): boolean {
+    return orden.ctestado_id === ESTADO_FINALIZADO;
+  }
+
   private getIdentificadorSecuencial(orden: ReportOrden): string {
     const nombre = (orden.ctambiente_nombre ?? '').toLowerCase();
     return nombre.includes('ruido') ? 'ORD_RDO' : 'ORD_AIR';
@@ -173,49 +168,6 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
             this.toastrAlert.showError('No se pudo autorizar la orden.', 'Error'),
           ),
       });
-  }
-
-  async rechazarOrden(orden: ReportOrden): Promise<void> {
-    const confirmado = await this.alertService.confirm({
-      title: 'Rechazar orden',
-      text: `Se rechazará la orden ${orden.num_secuencial ?? orden.id}.`,
-      confirmButtonColor: '#d33',
-      confirmButtonText: 'Sí, rechazar',
-    });
-    if (!confirmado) return;
-    this.procesandoId = orden.id;
-    this.ordenTrabajoService
-      .actualizarOrden(orden.id, {
-        solicitud_id: orden.solicitud_id,
-        usuario_id: orden.usuario_id,
-        entidad_id: orden.entidad_id,
-        ctambiente_id: orden.ctambiente_id,
-        periodo_id: orden.periodo_id,
-        secuencial_id: orden.secuencial_id,
-        num_secuencial: orden.num_secuencial,
-        ctestado_id: ESTADO_RECHAZADO,
-        estado: orden.estado,
-        ctformulario_id: orden.ctformulario_id,
-      })
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => {
-          this.procesandoId = null;
-        }),
-      )
-      .subscribe({
-        next: () =>
-          this.zone.run(() => {
-            this.toastrAlert.showWarning('Orden rechazada.', 'Rechazado');
-            this.cargarOrdenes();
-          }),
-        error: () =>
-          this.zone.run(() => this.toastrAlert.showError('No se pudo rechazar la orden.', 'Error')),
-      });
-  }
-
-  editarOrden(orden: ReportOrden): void {
-    this.editar.emit(orden);
   }
 
   async eliminarOrden(orden: ReportOrden): Promise<void> {

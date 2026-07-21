@@ -63,7 +63,7 @@
                 {{ orden.usuario_nombre_completo }}
               </td>
               <td class="px-3 py-2.5 border-r border-slate-100 text-center">
-                @if (orden.ctestado_id === 3) {
+                @if (esFinalizado(orden)) {
                   <span
                     class="text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50"
                     >{{ orden.ctestado_nombre }}</span
@@ -85,7 +85,8 @@
               </td>
               <td class="px-2 py-2.5 text-center">
                 <div class="flex items-center justify-center gap-1.5">
-                  @if (canFinalizar()) {
+                  <!-- Autorizar/Rechazar: solo mientras la orden no esté finalizada -->
+                  @if (canFinalizar() && !esFinalizado(orden)) {
                     <button
                       type="button"
                       title="Autorizar"
@@ -108,31 +109,7 @@
                       </svg>
                     </button>
                   }
-                  @if (canRechazar()) {
-                    <button
-                      type="button"
-                      title="Rechazar"
-                      (click)="rechazarOrden(orden)"
-                      [disabled]="procesandoId === orden.id"
-                      class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-                    >
-                      <svg
-                        class="h-3.5 w-3.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </button>
-                  }
-                  @if (canEdit() || canDelete()) {
-                    <div class="relative">
+                  <div class="relative">
                       <button
                         type="button"
                         title="Más acciones"
@@ -153,28 +130,6 @@
                           [class.bottom-full]="abrirHaciaArriba(i)"
                           [class.mb-1]="abrirHaciaArriba(i)"
                         >
-                          @if (canEdit()) {
-                            <button
-                              type="button"
-                              (click)="editarOrden(orden); closeMenu()"
-                              class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50"
-                            >
-                              <svg
-                                class="h-3.5 w-3.5 shrink-0"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                />
-                              </svg>
-                              Editar
-                            </button>
-                          }
                           @if (canDelete()) {
                             <button
                               type="button"
@@ -221,8 +176,7 @@
                           </div>
                         </div>
                       }
-                    </div>
-                  }
+                  </div>
                 </div>
               </td>
             </tr>
