@@ -1,4 +1,5 @@
 import { FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
 import { ValorMuestreoPayload } from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 import { PlanMuestreoCampo, PlanMuestreoGrupo } from './plan-muestreo-form.model';
 
@@ -12,10 +13,64 @@ export function generarControles(form: FormGroup, grupos: PlanMuestreoGrupo[]): 
       if (form.contains(campo.key)) continue;
       form.addControl(
         campo.key,
-        new FormControl(valorInicial(campo, grupo), validadores(campo)),
+        new FormControl(
+          { value: valorInicial(campo, grupo), disabled: campo.hidden },
+          validadores(campo, campo.hidden),
+        ),
       );
     }
   }
+}
+
+/**
+ * Motor de dependencias del formulario dinámico (ver
+ * docs/formularios-dinamicos-estandar.md, §6). Un campo con `dependsOn` se
+ * muestra solo cuando su campo padre toma el `triggerValue`; al ocultarse se
+ * deshabilita, se limpia y pierde sus validadores para no bloquear el guardado.
+ * Se evalúa una vez al inicio y en cada cambio del formulario.
+ */
+export function aplicarDependencias(
+  form: FormGroup,
+  grupos: PlanMuestreoGrupo[],
+  destroy$: Subject<void>,
+): void {
+  const campos = camposDe(grupos);
+  const actualizar = () => actualizarDependientes(form, campos);
+  actualizar();
+  form.valueChanges.pipe(takeUntil(destroy$)).subscribe(actualizar);
+}
+
+function actualizarDependientes(form: FormGroup, campos: PlanMuestreoCampo[]): void {
+  for (const campo of campos) {
+    if (!campo.dependsOn) {
+      sincronizarCampo(form, campo, !!campo.source.hidden);
+      continue;
+    }
+    const padre = campos.find((c) => c.id === campo.dependsOn!.fieldId);
+    const valorPadre = padre ? form.get(padre.key)?.value : null;
+    sincronizarCampo(form, campo, String(valorPadre ?? '') !== campo.dependsOn.triggerValue);
+  }
+}
+
+function sincronizarCampo(form: FormGroup, campo: PlanMuestreoCampo, oculto: boolean): void {
+  campo.hidden = oculto;
+  const control = form.get(campo.key);
+  if (!control) return;
+  if (oculto) {
+    control.disable({ emitEvent: false });
+    control.reset(valorReset(campo), { emitEvent: false });
+  } else {
+    control.enable({ emitEvent: false });
+  }
+  control.setValidators(validadores(campo, oculto));
+  control.updateValueAndValidity({ emitEvent: false });
+}
+
+// Valor con el que se limpia un campo al ocultarse, según su tipo de control.
+function valorReset(campo: PlanMuestreoCampo): unknown {
+  if (campo.controlType === 'toggle') return false;
+  if (campo.controlType === 'numero') return 0;
+  return '';
 }
 
 function valorInicial(campo: PlanMuestreoCampo, grupo: PlanMuestreoGrupo): unknown {
@@ -25,8 +80,8 @@ function valorInicial(campo: PlanMuestreoCampo, grupo: PlanMuestreoGrupo): unkno
   return '';
 }
 
-function validadores(campo: PlanMuestreoCampo): ValidatorFn[] {
-  return campo.required ? [Validators.required] : [];
+function validadores(campo: PlanMuestreoCampo, oculto = false): ValidatorFn[] {
+  return campo.required && !oculto ? [Validators.required] : [];
 }
 
 /** Todos los campos de un paso, sin la agrupación en tarjetas. */

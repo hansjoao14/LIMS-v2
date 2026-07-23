@@ -255,7 +255,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     const fechaEmision = f.fecha_emision_solicitud ? new Date(f.fecha_emision_solicitud) : null;
     this.detalleFechaEmision = fechaEmision ? fechaEmision.toLocaleDateString('es-EC') : '';
     this.detalleFechaMaxima = fechaEmision
-      ? new Date(new Date(fechaEmision).setDate(fechaEmision.getDate() + 10)).toLocaleDateString(
+      ? new Date(new Date(fechaEmision).setDate(fechaEmision.getDate() + 30)).toLocaleDateString(
           'es-EC',
         )
       : '';

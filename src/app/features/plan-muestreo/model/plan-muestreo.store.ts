@@ -69,6 +69,7 @@ export class PlanMuestreoStore {
     for (const [seccion, campos] of this.campos) {
       const valores = this.respuestasDe(seccion);
       for (const campo of campos) {
+        if (campo.hidden) continue; // un dependiente oculto no es obligatorio
         const valor = valores[campo.key];
         if (campo.required && (valor === null || valor === undefined || valor === '')) {
           faltantes.push(campo);
@@ -87,6 +88,7 @@ export class PlanMuestreoStore {
     for (const [seccion, campos] of this.campos) {
       const valores = this.respuestasDe(seccion);
       for (const campo of campos) {
+        if (campo.hidden) continue; // no se envían valores de campos ocultos
         items.push(toValorMuestreo(campo, valores[campo.key]));
       }
     }

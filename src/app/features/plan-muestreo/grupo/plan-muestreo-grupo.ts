@@ -27,6 +27,11 @@ export class PlanMuestreoGrupoComponent {
 
   readonly tipoRecipiente = tipoRecipiente;
 
+  // Campos que el motor de dependencias mantiene visibles en esta tarjeta.
+  get camposVisibles(): PlanMuestreoCampo[] {
+    return this.grupo.campos.filter((campo) => !campo.hidden);
+  }
+
   private controlContainer = inject(ControlContainer);
 
   get form(): FormGroup {

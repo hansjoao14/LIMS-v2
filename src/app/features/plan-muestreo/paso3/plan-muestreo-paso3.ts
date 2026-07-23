@@ -14,7 +14,7 @@ import {
   PlanMuestreoService,
 } from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 import { PlanMuestreoGrupo, construirGrupos } from '../model/plan-muestreo-form.model';
-import { camposDe, generarControles } from '../model/plan-muestreo-form.utils';
+import { aplicarDependencias, camposDe, generarControles } from '../model/plan-muestreo-form.utils';
 import { PlanMuestreoStore } from '../model/plan-muestreo.store';
 import { PlanMuestreoGrupoComponent } from '../grupo/plan-muestreo-grupo';
 
@@ -66,6 +66,8 @@ export class PlanMuestreoPaso3 implements OnInit, OnDestroy {
           generarControles(this.form, this.grupos);
           // Repuebla lo que el usuario ya había respondido en este paso.
           this.form.patchValue(this.store.respuestasDe(this.SECCION));
+          // Muestra/oculta los campos dependientes según sus campos padre.
+          aplicarDependencias(this.form, this.grupos, this.destroy$);
           this.loading = false;
         },
         error: () => {

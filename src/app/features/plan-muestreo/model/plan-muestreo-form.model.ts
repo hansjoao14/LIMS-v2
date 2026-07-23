@@ -18,6 +18,14 @@ export interface PlanMuestreoCampo {
   readonly: boolean;
   opciones: CatalogoItem[];
   unidad: string; // sufijo de los contadores ("Horas", "Personas")
+  // Oculto dinámicamente: se recalcula según el valor del campo del que depende.
+  hidden: boolean;
+  // Presente solo en campos dependientes: se muestran cuando el campo `fieldId`
+  // toma el valor `triggerValue`. Deriva de `atributo_id` / `item_catalogo_id`.
+  dependsOn?: {
+    fieldId: string;
+    triggerValue: string;
+  };
   source: Pregunta;
 }
 
@@ -134,7 +142,9 @@ export function construirGrupos(preguntas: Pregunta[], seccion: number): PlanMue
   const porGrupo = new Map<string, PlanMuestreoCampo[]>();
 
   preguntas
-    .filter((p) => p.estado !== false && !p.hidden && seccionDe(p) === seccion)
+    // Los campos dependientes llegan ocultos: se conservan para que la lógica de
+    // dependencia los muestre cuando su campo padre tome el valor disparador.
+    .filter((p) => p.estado !== false && (!p.hidden || !!p.atributo_id) && seccionDe(p) === seccion)
     .sort((a, b) => a.orden - b.orden)
     .forEach((p) => {
       const key = grupoDe(p);
@@ -169,6 +179,10 @@ function toCampo(pregunta: Pregunta): PlanMuestreoCampo {
     readonly: !!pregunta.readonly,
     opciones: pregunta.catalogos ?? [],
     unidad: resolverUnidad(pregunta),
+    hidden: !!pregunta.hidden,
+    dependsOn: pregunta.atributo_id
+      ? { fieldId: String(pregunta.atributo_id), triggerValue: String(pregunta.item_catalogo_id ?? '') }
+      : undefined,
     source: pregunta,
   };
 }
