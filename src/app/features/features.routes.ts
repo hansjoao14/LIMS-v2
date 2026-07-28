@@ -72,19 +72,19 @@ export const featuresRoutes: Routes = [
     path: 'plan-muestreo/nuevo',
     loadComponent: () => import('./plan-muestreo/plan-muestreo').then((m) => m.PlanMuestreo),
     canActivate: [canActivateWithRealmRoles],
-    data: { title: 'Plan de Muestreo - Paso 1', requiredRoles: RoleAccess.PLAN_MUESTREO },
+    data: { title: 'Plan de Muestreo - Paso 1', requiredRoles: RoleAccess.PLAN_MUESTREO_CREAR },
   },
   {
     path: 'plan-muestreo/paso2',
     loadComponent: () => import('./plan-muestreo/paso2/plan-muestreo-paso2').then((m) => m.PlanMuestreoPaso2),
     canActivate: [canActivateWithRealmRoles],
-    data: { title: 'Plan de Muestreo - Paso 2', requiredRoles: RoleAccess.PLAN_MUESTREO },
+    data: { title: 'Plan de Muestreo - Paso 2', requiredRoles: RoleAccess.PLAN_MUESTREO_CREAR },
   },
   {
     path: 'plan-muestreo/paso3',
     loadComponent: () => import('./plan-muestreo/paso3/plan-muestreo-paso3').then((m) => m.PlanMuestreoPaso3),
     canActivate: [canActivateWithRealmRoles],
-    data: { title: 'Plan de Muestreo - Paso 3', requiredRoles: RoleAccess.PLAN_MUESTREO },
+    data: { title: 'Plan de Muestreo - Paso 3', requiredRoles: RoleAccess.PLAN_MUESTREO_CREAR },
   },
   {
     path: 'calibracion-equipos',

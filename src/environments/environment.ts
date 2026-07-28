@@ -15,7 +15,7 @@ export const environment = {
   api_formulario: `${LIMS_BASE}/api/parametro`,
   api_catalogo: `${LIMS_BASE}/api/catalogo`,
 
-  keycloak_api: 'http://185.197.251.149:8080',
+  keycloak_api: 'http://185.197.251.149',
   graphql: `${SGIA_BASE}/api/graphql`,
   graphql_catalogo: `${LIMS_BASE}/graphql-catalogo`,
   graphql_establecimiento: `${LIMS_BASE}/graphql-establecimiento`,

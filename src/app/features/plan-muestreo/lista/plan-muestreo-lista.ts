@@ -1,4 +1,4 @@
-import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
@@ -16,6 +16,8 @@ import { ReportFormulario } from '../../../interfaces/admin-formularios/report-f
 import { AlertService } from '../../../services/alert.service';
 import { ToastrAlertService } from '../../../services/toastr.service';
 import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.utils';
+import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
+import { AuthService } from '../../auth/service/auth-service';
 import {
   IDENTIFICADOR_SECUENCIAL_PLAN_MUESTREO,
   PlanMuestreoService,
@@ -56,6 +58,26 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
 
   private readonly destroy$ = new Subject<void>();
 
+  private userAppRole = computed<AppRole | null>(() => {
+    const roles = this.authService.userProfile()?.roles ?? [];
+    return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
+  });
+
+  canCrear = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.PLAN_MUESTREO, role, 'crear') : false;
+  });
+
+  canDelete = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.PLAN_MUESTREO, role, 'eliminar') : false;
+  });
+
+  canAutorizar = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.PLAN_MUESTREO, role, 'autorizar') : false;
+  });
+
   constructor(
     private router: Router,
     private reportPlanMuestreoService: ReportPlanMuestreoService,
@@ -66,6 +88,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
     private zone: NgZone,
     private sanitizer: DomSanitizer,
     private store: PlanMuestreoStore,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {

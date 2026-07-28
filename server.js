@@ -138,8 +138,8 @@ app.use(cors());
 app.use(express.json());
 
 // 🧩 Configuración de Keycloak
-const KEYCLOAK_URL = process.env.KEYCLOAK_URL || "http://185.197.251.149:8080";
-const REALM = process.env.KEYCLOAK_REALM || "LIMS";
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL || "http://173.212.251.64:8080";
+const REALM = process.env.KEYCLOAK_REALM || "faq-sgia";
 const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "lims_frontend";
 // Sin CLIENT_SECRET: cliente público (Client authentication: Off)
 
@@ -164,7 +164,7 @@ app.post("/login", async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password)
     return res.status(400).json({ error: "Faltan credenciales" });
-
+  console.log("Login request received for username:", username);
   const params = new URLSearchParams();
   params.append("grant_type", "password");
   params.append("client_id", CLIENT_ID);
