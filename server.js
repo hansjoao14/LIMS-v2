@@ -141,7 +141,7 @@ app.use(express.json());
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL || "http://173.212.251.64:8080";
 const REALM = process.env.KEYCLOAK_REALM || "faq-sgia";
 const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "lims_frontend";
-const CLIENT_SECRET = process.env.KEYCLOAK_SECRET || "eCi2QiNPfHuTr7BBPGdbs7XQgvGm0HF1";
+const CLIENT_SECRET = process.env.KEYCLOAK_SECRET || "E1RXroUwrq16rNO6vUQekywIdmN4cRGj";
 // Sin CLIENT_SECRET: cliente público (Client authentication: Off)
 
 // 📦 Helper: solicitar token genérico
