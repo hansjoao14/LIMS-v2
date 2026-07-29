@@ -159,6 +159,15 @@ export class EnsayoItemLista implements OnInit, OnDestroy, OnChanges {
   async toggleEstadoItem(item: EnsayoItem): Promise<void> {
     const accion = item.estado ? 'deshabilitar' : 'habilitar';
     const nombre = item.item_catalogo?.nombre ?? `ítem #${item.ctambiental_id}`;
+    // El endpoint identifica la fila por los tres ids de la clave compuesta:
+    // sin cttipo_ensayo_id no hay ruta que llamar.
+    if (item.cttipo_ensayo_id === null) {
+      this.toastrAlert.showError(
+        `"${nombre}" no tiene tipo de ensayo asociado, no se puede ${accion}.`,
+        'Error',
+      );
+      return;
+    }
     const confirmado = await this.alertService.confirm({
       title: `¿${item.estado ? 'Deshabilitar' : 'Habilitar'} ítem?`,
       text: `Se ${accion}á "${nombre}".`,
@@ -168,7 +177,7 @@ export class EnsayoItemLista implements OnInit, OnDestroy, OnChanges {
     if (!confirmado) return;
     this.procesandoId = this.itemKey(item);
     this.ensayoService
-      .toggleEnsayoItem(item.ctambiental_id, item.ensayo_id, !item.estado)
+      .toggleEnsayoItem(item.ensayo_id, item.ctambiental_id, item.cttipo_ensayo_id, !item.estado)
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => {

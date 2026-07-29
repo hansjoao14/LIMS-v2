@@ -144,7 +144,17 @@ export class EnsayoService {
     return this.http.put<EnsayoItem>(`${this.baseEnsayoItem}/${ctambientalId}`, payload);
   }
 
-  toggleEnsayoItem(ctambientalId: number, ensayoId: number, estado: boolean): Observable<void> {
-    return this.http.patch<void>(`${this.baseEnsayoItem}/${ctambientalId}/disable`, { estado });
+  // PATCH /ensayo-item/:idEnsayo/:idItem/:idTipo/disable — la clave de un
+  // ensayo-item es compuesta, así que los tres ids viajan en la ruta.
+  toggleEnsayoItem(
+    ensayoId: number,
+    ctambientalId: number,
+    cttipoEnsayoId: number,
+    estado: boolean,
+  ): Observable<void> {
+    return this.http.patch<void>(
+      `${this.baseEnsayoItem}/${ensayoId}/${ctambientalId}/${cttipoEnsayoId}/disable`,
+      { estado },
+    );
   }
 }
