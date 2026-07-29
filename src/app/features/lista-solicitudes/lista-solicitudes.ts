@@ -1,7 +1,8 @@
-import { Component, OnDestroy, OnInit, computed } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
@@ -16,11 +17,24 @@ import { AppRole, MenuKey, hasPermission } from '../../core/utils/roles.constans
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { TableSkeleton } from '../../ui/table-skeleton/table-skeleton';
 import { AlertService } from '../../services/alert.service';
+import { ToastrAlertService } from '../../services/toastr.service';
+import { abrirMenuHaciaArriba } from '../../core/utils/dropdown-position.utils';
+import { PdfViewerComponent } from '../../shared/components/pdf-viewer/pdf-viewer';
+
+const ESTADO_PENDIENTE = 2;
+const ESTADO_AUTORIZADO = 387;
 
 @Component({
   selector: 'app-lista-solicitudes',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginationComponent, PageHeader, TableSkeleton],
+  imports: [
+    CommonModule,
+    FormsModule,
+    PaginationComponent,
+    PageHeader,
+    TableSkeleton,
+    PdfViewerComponent,
+  ],
   templateUrl: './lista-solicitudes.html',
   styleUrls: ['./lista-solicitudes.css'],
 })
@@ -41,8 +55,16 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   meta: PaginationMeta | null = null;
   loading = true;
   cargandoEdicionId: string | null = null;
+  openMenuId: string | null = null;
   currentPage = 1;
   readonly PAGE_SIZE = 10;
+
+  // ── Visor de PDF ─────────────────────────────────────────────────────────
+  showPdfModal = false;
+  isPdfCargando = false;
+  pdfPreviewUrl: SafeResourceUrl | null = null;
+  private pdfBlobUrl: string | null = null;
+  private pdfNombre = 'solicitud.pdf';
 
   readonly COLOR_PRIMARIO = '#1d2b64';
   readonly fechaActual = new Date();
@@ -73,6 +95,9 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
     private router: Router,
     public authService: AuthService,
     private alertService: AlertService,
+    private toastrAlert: ToastrAlertService,
+    private zone: NgZone,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -95,8 +120,90 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.revocarPdf();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  // ── Menú de acciones ─────────────────────────────────────────────────────
+
+  toggleMenu(id: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.openMenuId = this.openMenuId === id ? null : id;
+  }
+
+  closeMenu(): void {
+    this.openMenuId = null;
+  }
+
+  abrirHaciaArriba(index: number): boolean {
+    return abrirMenuHaciaArriba(index, this.solicitudes.length);
+  }
+
+  puedeEditar(doc: ReportSolicitud): boolean {
+    return doc.ctestado_id === ESTADO_PENDIENTE && this.canEdit();
+  }
+
+  // Firmar es la acción primaria: queda como botón directo, fuera del menú.
+  puedeFirmar(doc: ReportSolicitud): boolean {
+    return doc.ctestado_id === ESTADO_AUTORIZADO && this.canFirmar();
+  }
+
+  tieneMenu(doc: ReportSolicitud): boolean {
+    return this.puedeEditar(doc) || this.canDelete() || this.esAutorizado(doc);
+  }
+
+  // ── Impresión ────────────────────────────────────────────────────────────
+
+  // El PDF solo tiene sentido una vez autorizada la solicitud.
+  esAutorizado(doc: ReportSolicitud): boolean {
+    return doc.ctestado_id === ESTADO_AUTORIZADO;
+  }
+
+  imprimirSolicitud(doc: ReportSolicitud): void {
+    if (!this.esAutorizado(doc)) return;
+    this.showPdfModal = true;
+    this.isPdfCargando = true;
+    this.pdfPreviewUrl = null;
+    this.revocarPdf();
+    this.pdfNombre = `${doc.num_secuencial ?? 'solicitud'}.pdf`;
+
+    this.solicitudService
+      .getPdfSolicitud(doc.id_solicitud)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) =>
+          this.zone.run(() => {
+            this.pdfBlobUrl = URL.createObjectURL(blob);
+            this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
+            this.isPdfCargando = false;
+          }),
+        error: () =>
+          this.zone.run(() => {
+            this.isPdfCargando = false;
+            this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
+          }),
+      });
+  }
+
+  cerrarPdf(): void {
+    this.showPdfModal = false;
+    this.pdfPreviewUrl = null;
+    this.revocarPdf();
+  }
+
+  descargarPdf(): void {
+    if (!this.pdfBlobUrl) return;
+    const a = document.createElement('a');
+    a.href = this.pdfBlobUrl;
+    a.download = this.pdfNombre;
+    a.click();
+  }
+
+  private revocarPdf(): void {
+    if (!this.pdfBlobUrl) return;
+    URL.revokeObjectURL(this.pdfBlobUrl);
+    this.pdfBlobUrl = null;
   }
 
   cargarPagina(page: number): void {

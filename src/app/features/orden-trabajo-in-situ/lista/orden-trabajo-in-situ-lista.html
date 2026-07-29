@@ -14,103 +14,106 @@
   </div>
 
   <!-- Tabla con skeleton loader -->
-  <div class="border border-slate-200 rounded">
-    <table class="w-full text-sm border-collapse table-fixed">
-      <colgroup>
-        <col class="w-[140px]" />
-        <col class="w-[130px]" />
-        <col class="w-[100px]" />
-        <col class="w-[130px]" />
-        <col class="w-[160px]" />
-        <!-- Ancho para estados largos, ej. "Finalizado Solicitud" -->
-        <col class="w-[150px]" />
-        <col class="w-[120px]" />
-        <col class="w-[118px]" />
-      </colgroup>
-      <thead>
-        <tr
-          class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
-        >
-          <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Orden</th>
-          <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Solicitud</th>
-          <th class="px-3 py-2.5 border-r border-slate-100 text-left">Ambiente</th>
-          <th class="px-3 py-2.5 border-r border-slate-100 text-left">Periodo</th>
-          <th class="px-3 py-2.5 border-r border-slate-100 text-left">Responsable</th>
-          <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
-          <th class="px-3 py-2.5 border-r border-slate-100 text-left">Fecha creación</th>
-          <th class="px-2 py-2.5 text-center">Acciones</th>
-        </tr>
-      </thead>
-      <tbody appTableSkeleton [rows]="loading ? 8 : 0" [cols]="7" [actionButtons]="3"></tbody>
-      <tbody>
-        @if (!loading) {
-          @for (orden of ordenes; track orden.id; let i = $index) {
-            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td
-                class="px-3 py-2.5 border-r border-slate-100 text-xs font-semibold text-[#1e3a8a] truncate"
-              >
-                {{ orden.num_secuencial ?? '—' }}
-              </td>
-              <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
-                {{ orden.solicitud_num_secuencial }}
-              </td>
-              <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
-                {{ orden.ctambiente_nombre }}
-              </td>
-              <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 text-center">
-                {{ orden.periodo_nombre_mes }} {{ orden.periodo_anio }}
-              </td>
-              <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
-                {{ orden.usuario_nombre_completo }}
-              </td>
-              <td class="px-3 py-2.5 border-r border-slate-100 text-center">
-                @if (esFinalizado(orden)) {
-                  <span
-                    class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50"
-                    >{{ orden.ctestado_nombre }}</span
-                  >
-                } @else if (orden.ctestado_id === 388) {
-                  <span
-                    class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-blue-400 text-blue-700 bg-blue-50"
-                    >{{ orden.ctestado_nombre }}</span
-                  >
-                } @else {
-                  <span
-                    class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50"
-                    >{{ orden.ctestado_nombre }}</span
-                  >
-                }
-              </td>
-              <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-500">
-                {{ +orden.creado_en | date: 'dd/MM/yyyy' }}
-              </td>
-              <td class="px-2 py-2.5 text-center">
-                <div class="flex items-center justify-center gap-1.5">
-                  <!-- Autorizar/Rechazar: solo mientras la orden no esté finalizada -->
-                  @if (canFinalizar() && !esFinalizado(orden)) {
-                    <button
-                      type="button"
-                      title="Autorizar"
-                      (click)="finalizarOrden(orden)"
-                      [disabled]="procesandoId === orden.id"
-                      class="h-8 w-8 flex items-center justify-center rounded border border-green-400 text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+  <div class="border border-slate-200 rounded overflow-hidden">
+    <div class="overflow-x-auto custom-scroll">
+      <table class="w-full text-sm border-collapse table-fixed min-w-[1050px]">
+        <colgroup>
+          <col class="w-[140px]" />
+          <col class="w-[130px]" />
+          <col class="w-[100px]" />
+          <col class="w-[130px]" />
+          <col class="w-[160px]" />
+          <!-- Ancho para estados largos, ej. "Finalizado Solicitud" -->
+          <col class="w-[150px]" />
+          <col class="w-[120px]" />
+          <col class="w-[118px]" />
+        </colgroup>
+        <thead>
+          <tr
+            class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
+          >
+            <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Orden</th>
+            <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Solicitud</th>
+            <th class="px-3 py-2.5 border-r border-slate-100 text-left">Ambiente</th>
+            <th class="px-3 py-2.5 border-r border-slate-100 text-left">Periodo</th>
+            <th class="px-3 py-2.5 border-r border-slate-100 text-left">Responsable</th>
+            <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
+            <th class="px-3 py-2.5 border-r border-slate-100 text-left">Fecha creación</th>
+            <th class="px-2 py-2.5 text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody appTableSkeleton [rows]="loading ? 8 : 0" [cols]="7" [actionButtons]="3"></tbody>
+        <tbody>
+          @if (!loading) {
+            @for (orden of ordenes; track orden.id; let i = $index) {
+              <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td
+                  class="px-3 py-2.5 border-r border-slate-100 text-xs font-semibold text-[#1e3a8a] truncate"
+                >
+                  {{ orden.num_secuencial ?? '—' }}
+                </td>
+                <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
+                  {{ orden.solicitud_num_secuencial }}
+                </td>
+                <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
+                  {{ orden.ctambiente_nombre }}
+                </td>
+                <td
+                  class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 text-center"
+                >
+                  {{ orden.periodo_nombre_mes }} {{ orden.periodo_anio }}
+                </td>
+                <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate">
+                  {{ orden.usuario_nombre_completo }}
+                </td>
+                <td class="px-3 py-2.5 border-r border-slate-100 text-center">
+                  @if (esFinalizado(orden)) {
+                    <span
+                      class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50"
+                      >{{ orden.ctestado_nombre }}</span
                     >
-                      <svg
-                        class="h-3.5 w-3.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </button>
+                  } @else if (orden.ctestado_id === 388) {
+                    <span
+                      class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-blue-400 text-blue-700 bg-blue-50"
+                      >{{ orden.ctestado_nombre }}</span
+                    >
+                  } @else {
+                    <span
+                      class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50"
+                      >{{ orden.ctestado_nombre }}</span
+                    >
                   }
-                  <div class="relative">
+                </td>
+                <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-500">
+                  {{ +orden.creado_en | date: 'dd/MM/yyyy' }}
+                </td>
+                <td class="px-2 py-2.5 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <!-- Autorizar/Rechazar: solo mientras la orden no esté finalizada -->
+                    @if (canFinalizar() && !esFinalizado(orden)) {
+                      <button
+                        type="button"
+                        title="Autorizar"
+                        (click)="finalizarOrden(orden)"
+                        [disabled]="procesandoId === orden.id"
+                        class="h-8 w-8 flex items-center justify-center rounded border border-green-400 text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                      >
+                        <svg
+                          class="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </button>
+                    }
+                    <div class="relative">
                       <button
                         type="button"
                         title="Más acciones"
@@ -177,18 +180,21 @@
                           </div>
                         </div>
                       }
+                    </div>
                   </div>
-                </div>
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="8" class="p-10 text-slate-400 italic text-center">No hay registros.</td>
-            </tr>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="p-10 text-slate-400 italic text-center">
+                  No hay registros.
+                </td>
+              </tr>
+            }
           }
-        }
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <app-pagination
