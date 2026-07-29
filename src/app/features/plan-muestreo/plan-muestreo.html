@@ -364,12 +364,14 @@
         }
       </div>
 
-      <!-- ANÁLISIS IN SITU -->
-      @if (tipoAguaId !== null) {
+      <!-- ANÁLISIS LABORATORIO -->
+      @if (solicitudSeleccionada) {
         <div
           class="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden relative"
           [class.pointer-events-none]="loadingDetalle"
         >
+          <!-- Mientras llega el detalle no se sabe qué filas quedan bloqueadas:
+               se bloquea la interacción para no marcar algo que va a cambiar. -->
           @if (loadingDetalle) {
             <div class="absolute inset-0 z-10 flex items-center justify-center bg-white/60 rounded">
               <span
@@ -379,153 +381,117 @@
           }
           <div class="px-6 py-4 border-b border-slate-200">
             <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">
-              Análisis Requerido In Situ
+              Análisis Requerido en Laboratorio
             </h3>
           </div>
-          <table class="w-full text-sm border-collapse">
-            <thead>
-              <tr
-                class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
+          <div class="p-6">
+            @if (tablasLaboratorio.length === 0) {
+              <p class="text-sm text-slate-400 italic">
+                No hay análisis de laboratorio disponibles.
+              </p>
+            }
+            @for (tabla of tablasLaboratorio; track $index) {
+              <h4
+                class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider mt-6 mb-3 first:mt-0"
               >
-                <th class="px-4 py-2.5 border-r border-slate-100 text-left">Análisis Requerido</th>
-                <th class="px-4 py-2.5 border-r border-slate-100 text-left">Ensayo</th>
-                <th class="px-4 py-2.5 border-r border-slate-100 text-left">Identificación</th>
-                <th class="px-4 py-2.5 border-r border-slate-100 text-left">Método Interno</th>
-                <th class="px-4 py-2.5 border-r border-slate-100 text-left">Método Referencia</th>
-                <th class="px-4 py-2.5 text-left">Unidad</th>
-              </tr>
-            </thead>
-            <tbody>
-              @if (detalleEnsayos.length === 0) {
-                <tr>
-                  <td colspan="6" class="px-4 py-8 text-center text-slate-400 italic text-sm">
-                    No hay ensayos para el tipo de matriz seleccionado.
-                  </td>
-                </tr>
-              }
-              @for (e of detalleEnsayos; track $index) {
-                <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                  <td class="px-4 py-3 border-r border-slate-100">
-                    <span
-                      class="inline-block bg-[#1e3a8a] text-white text-[10px] font-bold px-3 py-1 rounded-full"
-                      >SI</span
+                {{ tabla.titulo }}
+              </h4>
+              <div class="border border-slate-200 rounded overflow-hidden shadow-sm mb-4">
+                <table class="w-full text-sm border-collapse">
+                  <thead>
+                    <tr
+                      class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
                     >
-                  </td>
-                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700">
-                    {{ e.analisis }}
-                  </td>
-                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700">
-                    {{ e.identificacion }}
-                  </td>
-                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">
-                    {{ e.metodoInterno }}
-                  </td>
-                  <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">
-                    {{ e.metodoReferencia }}
-                  </td>
-                  <td class="px-4 py-3 text-slate-400">—</td>
-                </tr>
+                      <th class="px-4 py-2.5 border-r border-slate-100 text-left">
+                        Análisis Requerido
+                      </th>
+                      <th class="px-4 py-2.5 border-r border-slate-100 text-left">Ensayo</th>
+                      <th class="px-4 py-2.5 border-r border-slate-100 text-left">
+                        Identificación
+                      </th>
+                      <th class="px-4 py-2.5 border-r border-slate-100 text-left">
+                        Método Interno
+                      </th>
+                      <th class="px-4 py-2.5 border-r border-slate-100 text-left">
+                        Método Referencia
+                      </th>
+                      <th class="px-4 py-2.5 text-left">Unidad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (e of tabla.ensayos; track $index) {
+                      <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-3 border-r border-slate-100">
+                          <div class="flex items-center gap-2">
+                            <button
+                              type="button"
+                              class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+                              [class.bg-[#1e3a8a]]="e.activo"
+                              [class.bg-slate-300]="!e.activo"
+                              [class.opacity-60]="e.bloqueado"
+                              [class.cursor-not-allowed]="e.bloqueado"
+                              [disabled]="e.bloqueado"
+                              [title]="
+                                e.bloqueado ? 'Requerido por la solicitud (Análisis In Situ)' : ''
+                              "
+                              (click)="alternarEnsayoLaboratorio(e)"
+                            >
+                              <span
+                                class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+                                [class.translate-x-4]="e.activo"
+                                [class.translate-x-0.5]="!e.activo"
+                              ></span>
+                            </button>
+                            <span
+                              class="text-xs font-bold"
+                              [class.text-[#1e3a8a]]="e.activo"
+                              [class.text-slate-400]="!e.activo"
+                            >
+                              {{ e.activo ? 'Sí' : 'No' }}
+                            </span>
+                            @if (e.bloqueado) {
+                              <span
+                                class="text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-300 text-[#1e3a8a] bg-blue-50 uppercase tracking-wide"
+                                title="Requerido por la solicitud (Análisis In Situ)"
+                                >In Situ</span
+                              >
+                            }
+                          </div>
+                        </td>
+                        <td class="px-4 py-3 border-r border-slate-100 text-slate-700">
+                          {{ e.ensayo }}
+                        </td>
+                        <td class="px-4 py-3 border-r border-slate-100 text-slate-700">
+                          {{ e.identificacion }}
+                        </td>
+                        <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">
+                          {{ e.metodoInterno }}
+                        </td>
+                        <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">
+                          {{ e.metodoReferencia }}
+                        </td>
+                        <td class="px-4 py-3 text-slate-700">{{ e.unidad }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              @if (tabla.notas.length > 0) {
+                <div class="bg-slate-50 border border-slate-200 rounded p-4 mb-4">
+                  <p class="text-[11px] font-bold text-slate-800 mb-2">ⓘ Notas Importantes:</p>
+                  <ul class="list-decimal pl-4 space-y-1">
+                    @for (nota of tabla.notas; track nota.header) {
+                      <li class="text-[11px] text-slate-600 leading-tight">
+                        <strong>{{ nota.header }}:</strong> {{ nota.detail }}
+                      </li>
+                    }
+                  </ul>
+                </div>
               }
-            </tbody>
-          </table>
+            }
+          </div>
         </div>
       }
-
-      <!-- ANÁLISIS LABORATORIO -->
-      <div class="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200">
-          <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">
-            Análisis Requerido en Laboratorio
-          </h3>
-        </div>
-        <div class="p-6">
-          @if (tablasLaboratorio.length === 0) {
-            <p class="text-sm text-slate-400 italic">No hay análisis de laboratorio disponibles.</p>
-          }
-          @for (tabla of tablasLaboratorio; track $index) {
-            <h4
-              class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider mt-6 mb-3 first:mt-0"
-            >
-              {{ tabla.titulo }}
-            </h4>
-            <div class="border border-slate-200 rounded overflow-hidden shadow-sm mb-4">
-              <table class="w-full text-sm border-collapse">
-                <thead>
-                  <tr
-                    class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
-                  >
-                    <th class="px-4 py-2.5 border-r border-slate-100 text-left">
-                      Análisis Requerido
-                    </th>
-                    <th class="px-4 py-2.5 border-r border-slate-100 text-left">Ensayo</th>
-                    <th class="px-4 py-2.5 border-r border-slate-100 text-left">Identificación</th>
-                    <th class="px-4 py-2.5 border-r border-slate-100 text-left">Método Interno</th>
-                    <th class="px-4 py-2.5 border-r border-slate-100 text-left">
-                      Método Referencia
-                    </th>
-                    <th class="px-4 py-2.5 text-left">Unidad</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (e of tabla.ensayos; track $index) {
-                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                      <td class="px-4 py-3 border-r border-slate-100">
-                        <div class="flex items-center gap-2">
-                          <button
-                            type="button"
-                            class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
-                            [class.bg-[#1e3a8a]]="e.activo"
-                            [class.bg-slate-300]="!e.activo"
-                            (click)="e.activo = !e.activo"
-                          >
-                            <span
-                              class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
-                              [class.translate-x-4]="e.activo"
-                              [class.translate-x-0.5]="!e.activo"
-                            ></span>
-                          </button>
-                          <span
-                            class="text-xs font-bold"
-                            [class.text-[#1e3a8a]]="e.activo"
-                            [class.text-slate-400]="!e.activo"
-                          >
-                            {{ e.activo ? 'Sí' : 'No' }}
-                          </span>
-                        </div>
-                      </td>
-                      <td class="px-4 py-3 border-r border-slate-100 text-slate-700">
-                        {{ e.ensayo }}
-                      </td>
-                      <td class="px-4 py-3 border-r border-slate-100 text-slate-700">
-                        {{ e.identificacion }}
-                      </td>
-                      <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">
-                        {{ e.metodoInterno }}
-                      </td>
-                      <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">
-                        {{ e.metodoReferencia }}
-                      </td>
-                      <td class="px-4 py-3 text-slate-700">{{ e.unidad }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-            @if (tabla.notas.length > 0) {
-              <div class="bg-slate-50 border border-slate-200 rounded p-4 mb-4">
-                <p class="text-[11px] font-bold text-slate-800 mb-2">ⓘ Notas Importantes:</p>
-                <ul class="list-decimal pl-4 space-y-1">
-                  @for (nota of tabla.notas; track nota.header) {
-                    <li class="text-[11px] text-slate-600 leading-tight">
-                      <strong>{{ nota.header }}:</strong> {{ nota.detail }}
-                    </li>
-                  }
-                </ul>
-              </div>
-            }
-          }
-        </div>
-      </div>
 
       <!-- NAVEGACIÓN -->
       <div class="flex items-center justify-between pt-4 border-t border-slate-300">

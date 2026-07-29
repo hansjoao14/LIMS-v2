@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil, forkJoin, map } from 'rxjs';
+import { Subject, takeUntil, forkJoin, map, catchError, of } from 'rxjs';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
@@ -13,19 +13,18 @@ import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-de
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { AlertService } from '../../services/alert.service';
 import { EnsayoItemService } from '../../services/solicitudes/solicitud-trabajo/ensayo-item.service';
-import { ReportCatalogoNota } from '../../interfaces/solicitudes/solicitud-trabajo';
+import {
+  ReportCatalogoNota,
+  ReportCatalogoEnsayoItem,
+} from '../../interfaces/solicitudes/solicitud-trabajo';
 import { PlanMuestreoStore } from './model/plan-muestreo.store';
 import { PlanMuestreoDetallePayload } from '../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 
-export interface EnsayoRow {
-  analisis: string;
-  identificacion: string;
-  metodoInterno: string;
-  metodoReferencia: string;
-}
-
 export interface EnsayoLaboratorioRow {
   activo: boolean;
+  // El ensayo ya viene exigido In Situ por la solicitud: se marca solo y el
+  // usuario no puede desmarcarlo.
+  bloqueado: boolean;
   // Ids que no se muestran, pero que necesita `planMuestreoDetalle` al guardar
   // (mismo criterio que mapDetalleToLaboratorio en step3-catalogo).
   ensayo_id: number;
@@ -82,15 +81,16 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   detalleLatitud = '';
   detalleLongitud = '';
   detalleDireccion = '';
-  detalleEnsayos: EnsayoRow[] = [];
-  // Los mismos ensayos, con los ids que necesita el POST create-detalle.
-  private ensayosDetalle: PlanMuestreoDetallePayload[] = [];
 
-  // TODO: prueba temporal — ids quemados de las 3 tablas de laboratorio
-  // (H2SO4, H2SO3, TEMPERATURA) mientras se define de dónde deben derivarse
-  // dinámicamente (ver el mismo listado en step3-catalogo).
-  readonly IDS_LABORATORIO_PRUEBA = [2035, 2036, 2037];
+  // TODO: prueba temporal — ids quemados de las tablas de laboratorio
+  // (H2SO4, HNO3, TEMPERATURA, Aguas Residuales/Aguas) mientras se define de
+  // dónde deben derivarse dinámicamente (ver el mismo listado en step3-catalogo).
+  readonly IDS_LABORATORIO_PRUEBA = [2073, 2035, 2036, 2037];
   tablasLaboratorio: TablaLaboratorioUI[] = [];
+  // `ensayo_id` de los análisis que la solicitud ya exige In Situ. El cruce va
+  // por ensayo: el ctambiental_id de la solicitud nunca coincide con el de las
+  // tablas de laboratorio, que son catálogos distintos.
+  private ensayosInSituIds = new Set<number>();
 
   private readonly destroy$ = new Subject<void>();
 
@@ -116,9 +116,11 @@ export class PlanMuestreo implements OnInit, OnDestroy {
           }
         },
       });
+    // Las tablas de laboratorio son ids fijos: no dependen de la solicitud.
+    this.cargarAnalisisLaboratorio();
   }
 
-  // TODO: prueba temporal — trae las 3 tablas de IDS_LABORATORIO_PRUEBA
+  // TODO: prueba temporal — trae las tablas de IDS_LABORATORIO_PRUEBA
   // (fijos, no derivados de la solicitud) para "Análisis Requerido en
   // Laboratorio", con el mismo formato dinámico (título/notas/ensayos) que
   // ya se usa en step3-catalogo.
@@ -126,9 +128,12 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     forkJoin(
       // Se conserva el id consultado: es el `ctambiental_id` de sus ensayos.
       this.IDS_LABORATORIO_PRUEBA.map((id) =>
-        this.ensayoItemService
-          .getReportCatalogoEnsayoItem(id)
-          .pipe(map((data) => ({ id, data }))),
+        this.ensayoItemService.getReportCatalogoEnsayoItem(id).pipe(
+          // Un id sin datos (o que falle) no debe tumbar las demás tablas:
+          // forkJoin aborta con el primer error.
+          map((data) => ({ id, data: data ?? [] })),
+          catchError(() => of({ id, data: [] as ReportCatalogoEnsayoItem[] })),
+        ),
       ),
     )
       .pipe(takeUntil(this.destroy$))
@@ -142,6 +147,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
                 const partes = i.metodo.split(',');
                 return {
                   activo: false,
+                  bloqueado: false,
                   ensayo_id: i.id,
                   ctambiental_id: id,
                   cttipo_ensayo_id: entry.ensayo_catalogo,
@@ -154,11 +160,32 @@ export class PlanMuestreo implements OnInit, OnDestroy {
               }),
             })),
           );
+          // Las tablas y el detalle se cargan en paralelo: quien termine
+          // último es el que deja el bloqueo aplicado.
+          this.aplicarBloqueoInSitu();
         },
         error: () => {
           this.tablasLaboratorio = [];
         },
       });
+  }
+
+  // Marca y bloquea, en las tablas de laboratorio, los ensayos que la solicitud
+  // ya exige In Situ.
+  private aplicarBloqueoInSitu(): void {
+    for (const tabla of this.tablasLaboratorio) {
+      for (const ensayo of tabla.ensayos) {
+        ensayo.bloqueado = this.ensayosInSituIds.has(ensayo.ensayo_id);
+        if (ensayo.bloqueado) {
+          ensayo.activo = true;
+        }
+      }
+    }
+  }
+
+  alternarEnsayoLaboratorio(ensayo: EnsayoLaboratorioRow): void {
+    if (ensayo.bloqueado) return;
+    ensayo.activo = !ensayo.activo;
   }
 
   ngOnDestroy(): void {
@@ -216,7 +243,9 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.store.limpiar();
     this.solicitudSeleccionada = sol;
     this.panelAbierto = false;
-    this.detalleEnsayos = [];
+    // El bloqueo depende de la solicitud: se descarta hasta que llegue el
+    // detalle de la nueva.
+    this.ensayosInSituIds.clear();
     this.cargarDetalle();
     this.cargarAnalisisLaboratorio();
   }
@@ -264,28 +293,12 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.detalleLongitud = attr('val_long');
     this.detalleDireccion = attr('val_dir_op');
 
-    this.detalleEnsayos = (f.tabla_ensayos ?? [])
-      .flatMap((t) => t.detalle_ensayo ?? [])
-      .map((e) => {
-        const parts = (e.metodo ?? '').split(', ');
-        return {
-          analisis: e.analisis ?? '',
-          identificacion: e.identificacion ?? '',
-          metodoInterno: parts[0] ?? '',
-          metodoReferencia: parts[1] ?? '',
-        };
-      });
-
-    // Los ids que la tabla no muestra pero sí necesita `planMuestreoDetalle`:
-    // el ambiental y el tipo de ensayo salen del grupo, el ensayo de la fila.
-    this.ensayosDetalle = (f.tabla_ensayos ?? []).flatMap((t) =>
-      (t.detalle_ensayo ?? []).map((e) => ({
-        estado: true,
-        ctambiental_id: t.id_ambiental,
-        ensayo_id: e.ensayo_id,
-        cttipo_ensayo_id: t.ensayo_id,
-      })),
+    // Los ensayos In Situ ya no se listan ni se envían: solo sirven para saber
+    // qué filas de laboratorio quedan marcadas y bloqueadas.
+    this.ensayosInSituIds = new Set(
+      (f.tabla_ensayos ?? []).flatMap((t) => (t.detalle_ensayo ?? []).map((e) => e.ensayo_id)),
     );
+    this.aplicarBloqueoInSitu();
   }
 
   limpiarSolicitud(): void {
@@ -300,13 +313,12 @@ export class PlanMuestreo implements OnInit, OnDestroy {
     this.detalleLatitud = '';
     this.detalleLongitud = '';
     this.detalleDireccion = '';
-    this.detalleEnsayos = [];
-    this.ensayosDetalle = [];
+    this.ensayosInSituIds.clear();
     this.tablasLaboratorio = [];
   }
 
-  // Los ensayos In Situ se envían siempre (vienen fijados por la solicitud);
-  // los de laboratorio solo los que el usuario marcó con el interruptor.
+  // Solo se envían los ensayos de laboratorio: los marcados por el usuario y
+  // los que quedaron bloqueados por venir exigidos In Situ en la solicitud.
   private ensayosLaboratorioSeleccionados(): PlanMuestreoDetallePayload[] {
     return this.tablasLaboratorio
       .flatMap((t) => t.ensayos)
@@ -335,7 +347,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
         numSecuencial: this.solicitudSeleccionada.num_secuencial ?? '',
         tipoAguaId: this.tipoAguaId,
         tipoAguaNombre: this.tipoAguaNombre,
-        ensayos: [...this.ensayosDetalle, ...this.ensayosLaboratorioSeleccionados()],
+        ensayos: this.ensayosLaboratorioSeleccionados(),
       };
     }
     this.router.navigate(['/plan-muestreo/paso2']);
