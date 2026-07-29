@@ -164,6 +164,18 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
     return plan.ctestado_id === ESTADO_FINALIZADO;
   }
 
+  // El catálogo nombra al estado "Finalizado Solicitud", pero en el listado de
+  // planes el sufijo no aporta: ya se sabe que la fila es un plan.
+  etiquetaEstado(plan: ReportPlanMuestreo): string {
+    return this.esFinalizado(plan) ? 'Finalizado' : plan.ctestado_nombre;
+  }
+
+  // Un plan finalizado ya está autorizado y tiene PDF: no se elimina, aunque el
+  // rol tenga el permiso.
+  puedeEliminar(plan: ReportPlanMuestreo): boolean {
+    return this.canDelete() && !this.esFinalizado(plan);
+  }
+
   async finalizarPlan(plan: ReportPlanMuestreo): Promise<void> {
     const confirmado = await this.alertService.confirm({
       icon: 'question',
@@ -201,6 +213,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   }
 
   async eliminarPlan(plan: ReportPlanMuestreo): Promise<void> {
+    if (!this.puedeEliminar(plan)) return;
     const confirmado = await this.alertService.confirm({
       title: '¿Eliminar plan de muestreo?',
       text: `Se eliminará el plan de la solicitud ${plan.solicitud_num_secuencial ?? plan.id}. Esta acción no se puede deshacer.`,

@@ -5,6 +5,8 @@ import { PaginationMeta } from '../../catalogos/catalogo.interface';
 export interface ReportPlanMuestreo {
   actualizado_en: string | null;
   actualizado_por: string | null;
+  // Se asigna al finalizar el plan: los que siguen en curso lo traen en null.
+  codigo_muestreo: string | null;
   creado_en: string;
   creado_por: string;
   ctambiente_id: string;

@@ -10,6 +10,7 @@ export const GET_COLLECTION_REPORT_PLAN_MUESTREO = gql`
       data {
         actualizado_en
         actualizado_por
+        codigo_muestreo
         creado_en
         creado_por
         ctambiente_id
