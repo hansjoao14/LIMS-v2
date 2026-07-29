@@ -11,11 +11,6 @@ import { aplicarDependencias, camposDe, generarControles } from '../model/plan-m
 import { PlanMuestreoStore } from '../model/plan-muestreo.store';
 import { PlanMuestreoGrupoComponent } from '../grupo/plan-muestreo-grupo';
 
-export interface ControlCalidad {
-  tipo: string;
-  filas: { analisis: string; muestrasFaltantes: number }[];
-}
-
 @Component({
   selector: 'app-plan-muestreo-paso2',
   standalone: true,
@@ -30,28 +25,6 @@ export class PlanMuestreoPaso2 implements OnInit, OnDestroy {
   form: FormGroup;
   grupos: PlanMuestreoGrupo[] = [];
   loading = true;
-
-  // Los controles de calidad no forman parte del formulario dinámico.
-  controlesCalidad: ControlCalidad[] = [
-    {
-      tipo: 'REPETIBILIDAD',
-      filas: [
-        { analisis: 'pH, TEMPERATURA', muestrasFaltantes: 4 },
-        { analisis: 'MUESTREO', muestrasFaltantes: 9 },
-      ],
-    },
-    {
-      tipo: 'REPRODUCIBILIDAD',
-      filas: [
-        { analisis: 'pH, TEMPERATURA', muestrasFaltantes: 4 },
-        { analisis: 'MUESTREO', muestrasFaltantes: 29 },
-      ],
-    },
-    {
-      tipo: 'BLANCO DE CONTROL',
-      filas: [{ analisis: 'MUESTREO', muestrasFaltantes: 29 }],
-    },
-  ];
 
   private readonly destroy$ = new Subject<void>();
 

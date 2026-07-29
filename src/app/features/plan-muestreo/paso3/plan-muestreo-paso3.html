@@ -47,20 +47,6 @@
                   </section>
                 }
 
-                @case ('notas') {
-                  <!-- Sección estática: no viene del formulario dinámico -->
-                  <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
-                    <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
-                      <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">{{ grupo.titulo }}</h4>
-                    </div>
-                    <div class="p-5 space-y-2">
-                      @for (nota of notas; track $index) {
-                        <p class="text-xs text-slate-600">{{ nota }}</p>
-                      }
-                    </div>
-                  </section>
-                }
-
                 @default {
                   <app-plan-muestreo-grupo [grupo]="grupo" />
                 }

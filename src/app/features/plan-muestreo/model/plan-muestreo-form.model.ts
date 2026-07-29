@@ -54,7 +54,6 @@ interface GrupoDef {
 const GRUPOS: Record<string, GrupoDef> = {
   // Paso 2
   tipo_muestreo: { titulo: 'Tipo de Muestreo', layout: 'campos', orden: 10 },
-  controles_calidad: { titulo: 'Controles de Calidad', layout: 'estatico', orden: 20 },
   preservacion_de_las_muestras: {
     titulo: 'Preservación de las Muestras',
     layout: 'preservacion',
@@ -84,13 +83,11 @@ const GRUPOS: Record<string, GrupoDef> = {
     orden: 30,
   },
   observaciones: { titulo: 'Observaciones', layout: 'campos', orden: 40 },
-  notas: { titulo: 'Notas', layout: 'estatico', orden: 50 },
 };
 
 // Tarjetas que no salen del formulario dinámico y se arman en la plantilla.
 const GRUPOS_ESTATICOS: Record<number, string[]> = {
-  2: ['controles_calidad'],
-  3: ['procedimiento_muestreo', 'notas'],
+  3: ['procedimiento_muestreo'],
 };
 
 /**

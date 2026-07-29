@@ -36,10 +36,6 @@ export class PlanMuestreoPaso3 implements OnInit, OnDestroy {
 
   // Contenido fijo que no forma parte del formulario dinámico.
   readonly procedimiento = 'PEE/IAMQ/42';
-  notas = [
-    'Nota 1: El muestreador debe lavar los frascos de muestra con el agua del sitio de muestreo antes de recolectar la muestra.',
-    'Nota 2: En caso de que el punto de muestreo se encuentre en una zona de difícil acceso, se debe notificar al responsable del área.',
-  ];
 
   private readonly destroy$ = new Subject<void>();
 
