@@ -57,15 +57,127 @@
               <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
                 Código de muestra o muestras
               </label>
-              <select
-                [(ngModel)]="codigoMuestra"
-                class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-              >
-                <option value="">Selecciona el código de muestra</option>
-                @for (codigo of codigosMuestra; track codigo.id) {
-                  <option [value]="codigo.id">{{ codigo.nombre }}</option>
+              <div class="relative">
+                @if (planSeleccionado) {
+                  <div
+                    class="flex items-center justify-between bg-blue-50 border border-blue-300 rounded px-3 py-2"
+                  >
+                    <span class="text-sm font-bold text-[#1e3a8a]">{{
+                      etiquetaCodigo(planSeleccionado)
+                    }}</span>
+                    <button
+                      type="button"
+                      (click)="limpiarPlan()"
+                      class="text-slate-400 hover:text-red-500 ml-2 text-sm leading-none transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                } @else {
+                  <button
+                    type="button"
+                    (click)="abrirPanel()"
+                    class="w-full flex items-center gap-2 bg-white border border-dashed border-slate-300 text-slate-500 px-3 py-2.5 rounded text-sm hover:border-[#1e3a8a] hover:text-[#1e3a8a] transition-colors"
+                  >
+                    <svg
+                      class="w-4 h-4 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                    Selecciona el código de muestra
+                  </button>
                 }
-              </select>
+                @if (panelAbierto) {
+                  <div
+                    class="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden"
+                  >
+                    <div
+                      class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 bg-slate-50"
+                    >
+                      <input
+                        type="text"
+                        class="flex-1 border border-slate-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-[#1e3a8a] transition-colors"
+                        placeholder="Buscar por código..."
+                        [ngModel]="busqueda"
+                        (ngModelChange)="onBusquedaChange($event)"
+                        autofocus
+                      />
+                      <button
+                        type="button"
+                        (click)="cerrarPanel()"
+                        class="text-slate-400 hover:text-red-500 text-sm leading-none px-1 transition-colors"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    @if (loadingBusqueda) {
+                      <p class="px-4 py-4 text-xs text-slate-400 italic text-center">Buscando...</p>
+                    } @else if (planesFiltrados.length === 0) {
+                      <p class="px-4 py-4 text-xs text-slate-400 italic text-center">
+                        No se encontraron planes finalizados.
+                      </p>
+                    } @else {
+                      <ul class="max-h-64 overflow-y-auto custom-scroll">
+                        @for (plan of planesFiltrados; track plan.id) {
+                          <li
+                            (click)="seleccionarPlan(plan)"
+                            class="px-3.5 py-2.5 border-b border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors flex items-center justify-between gap-2"
+                          >
+                            <div class="flex flex-col min-w-0">
+                              <span class="font-bold text-[#1e3a8a] text-xs truncate">{{
+                                etiquetaCodigo(plan)
+                              }}</span>
+                              <span class="text-[10px] text-slate-400 truncate">{{
+                                plan.solicitud_num_secuencial ?? '—'
+                              }}</span>
+                            </div>
+                            <span
+                              class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50"
+                              >{{ plan.ctambiente_nombre }}</span
+                            >
+                          </li>
+                        }
+                      </ul>
+                      @if (meta && meta.totalPages > 1) {
+                        <div
+                          class="flex items-center justify-between px-3 py-2 border-t border-slate-100 bg-slate-50"
+                        >
+                          <span class="text-[10px] text-slate-400"
+                            >Página {{ meta.page }} de {{ meta.totalPages }} ·
+                            {{ meta.total }} resultados</span
+                          >
+                          <div class="flex gap-1">
+                            <button
+                              type="button"
+                              [disabled]="!meta.hasPrevPage"
+                              (click)="cargarPagina(currentPage - 1)"
+                              class="w-6 h-6 flex items-center justify-center border border-slate-200 rounded text-xs text-[#1e3a8a] hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                              ‹
+                            </button>
+                            <button
+                              type="button"
+                              [disabled]="!meta.hasNextPage"
+                              (click)="cargarPagina(currentPage + 1)"
+                              class="w-6 h-6 flex items-center justify-center border border-slate-200 rounded text-xs text-[#1e3a8a] hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                              ›
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+              </div>
             </div>
           </div>
         </div>
