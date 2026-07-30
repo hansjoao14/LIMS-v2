@@ -8,6 +8,7 @@ import { PorContraloriaIcon } from '../../../ui/icons/por-contraloria-icon/por-c
 import { OperacionesCampoIcon } from '../../../ui/icons/operaciones-campo-icon/operaciones-campo-icon';
 import { OrdenTrabajoInSituIcon } from '../../../ui/icons/orden-trabajo-in-situ-icon/orden-trabajo-in-situ-icon';
 import { PlanMuestreoIcon } from '../../../ui/icons/plan-muestreo-icon/plan-muestreo-icon';
+import { TicketMuestrasIcon } from '../../../ui/icons/ticket-muestras-icon/ticket-muestras-icon';
 import { AccesoAutorizado } from '../../../ui/icons/acceso-autorizado/acceso-autorizado';
 import { CalibracionEquiposIcon } from '../../../ui/icons/calibracion-equipos-icon/calibracion-equipos-icon';
 import { BookIcon } from '../../../ui/icons/book-icon/book-icon';
@@ -97,6 +98,12 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
         requiredRoles: RoleAccess.PLAN_MUESTREO,
       },
     ],
+  },
+  {
+    path: '/ticket-entrega-muestras',
+    label: 'Ticket de Entrega de Muestras',
+    icon: TicketMuestrasIcon,
+    requiredRoles: RoleAccess.TICKET_ENTREGA_MUESTRAS,
   },
   {
     path: '/calibracion-equipos',

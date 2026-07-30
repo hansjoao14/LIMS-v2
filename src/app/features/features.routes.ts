@@ -95,6 +95,18 @@ export const featuresRoutes: Routes = [
     data: { title: 'Plan de Muestreo - Paso 3', requiredRoles: RoleAccess.PLAN_MUESTREO_CREAR },
   },
   {
+    path: 'ticket-entrega-muestras',
+    loadComponent: () =>
+      import('./ticket-entrega-muestras/ticket-entrega-muestras').then(
+        (m) => m.TicketEntregaMuestras,
+      ),
+    canActivate: [canActivateWithRealmRoles],
+    data: {
+      title: 'Ticket de Entrega de Muestras',
+      requiredRoles: RoleAccess.TICKET_ENTREGA_MUESTRAS,
+    },
+  },
+  {
     path: 'calibracion-equipos',
     loadComponent: () =>
       import('./calibracion-equipos/calibracion-equipos').then((m) => m.CalibracionEquipos),

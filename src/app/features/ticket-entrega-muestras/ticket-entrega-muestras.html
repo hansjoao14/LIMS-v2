@@ -1,0 +1,188 @@
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
+    <div class="animate-in fade-in">
+      <app-page-header
+        breadcrumbSection="Ticket de Entrega de muestras"
+        title="Ticket de Entrega de muestras de Descargas Líquidas y Aguas Superficiales"
+        subtitle="Aquí podrás realizar el formulario para la recepción de ticket de muestras"
+        [codigoFormulario]="codigoFormulario"
+        [edicion]="edicion"
+        [elaboradoPor]="elaboradoPor"
+        [fechaSolicitud]="fechaSolicitud"
+      />
+
+      <!-- INFORMACIÓN DE LAS MUESTRAS -->
+      <h3 class="text-sm font-bold text-[#1d2b64] uppercase tracking-wide mb-3">
+        Información de las muestras:
+      </h3>
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- Plan de muestreo (solo lectura: viene del plan seleccionado) -->
+          <div class="flex items-start gap-3">
+            <div
+              class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-[#1e3a8a] flex-shrink-0"
+            >
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+                Plan de Muestreo No :
+              </label>
+              <p class="text-sm text-slate-700">{{ planMuestreoNo }}</p>
+            </div>
+          </div>
+
+          <!-- Código de muestra -->
+          <div class="flex items-start gap-3">
+            <div
+              class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-[#1e3a8a] flex-shrink-0"
+            >
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                />
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+                Código de muestra o muestras
+              </label>
+              <select
+                [(ngModel)]="codigoMuestra"
+                class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+              >
+                <option value="">Selecciona el código de muestra</option>
+                @for (codigo of codigosMuestra; track codigo.id) {
+                  <option [value]="codigo.id">{{ codigo.nombre }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECEPCIÓN DE LAS MUESTRAS -->
+      <h3 class="text-sm font-bold text-[#1d2b64] uppercase tracking-wide mb-3">
+        Recepción de las muestras:
+      </h3>
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="flex items-start gap-3">
+            <div
+              class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-[#1e3a8a] flex-shrink-0"
+            >
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+                Entregada por:
+              </label>
+              <p class="text-sm text-slate-700">{{ entregadaPor }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div
+              class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-[#1e3a8a] flex-shrink-0"
+            >
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                />
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+                Recibida por:
+              </label>
+              <p class="text-sm text-slate-700">{{ recibidaPor }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRESERVACIÓN DE LAS MUESTRAS -->
+      <h3 class="text-sm font-bold text-[#1d2b64] uppercase tracking-wide mb-3">
+        Preservación de las muestras
+      </h3>
+      <div class="border border-slate-200 rounded overflow-hidden bg-white mb-8">
+        <div class="overflow-x-auto custom-scroll">
+          <table class="w-full text-sm border-collapse table-fixed min-w-[640px]">
+            <colgroup>
+              <col class="w-[260px]" />
+              <col class="w-[220px]" />
+              <col class="w-[220px]" />
+            </colgroup>
+            <thead>
+              <tr
+                class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
+              >
+                <th class="px-4 py-3 border-r border-slate-100 text-center">Preservación</th>
+                <th class="px-4 py-3 border-r border-slate-100 text-center">Volumen ( L )</th>
+                <th class="px-4 py-3 text-center">Tipo de Recipiente</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (fila of preservaciones; track $index) {
+                <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <td
+                    class="px-4 py-4 border-r border-slate-100 text-center text-xs font-bold text-slate-700"
+                  >
+                    {{ fila.preservacion }}
+                  </td>
+                  <td class="px-4 py-4 border-r border-slate-100">
+                    <input
+                      type="number"
+                      [(ngModel)]="fila.volumen"
+                      class="w-full border border-slate-300 bg-white text-slate-700 p-2 rounded text-sm text-center outline-none focus:border-[#1e3a8a] transition-colors"
+                    />
+                  </td>
+                  <td class="px-4 py-4 text-center text-xs text-slate-600">
+                    {{ fila.tipoRecipiente }}
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3" class="p-10 text-slate-400 italic text-center">
+                    No hay preservaciones registradas.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- NAVEGACIÓN -->
+      <div class="pt-4 border-t border-slate-300">
+        <button
+          type="button"
+          (click)="guardar()"
+          class="bg-[#1e3a8a] text-white px-10 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all"
+        >
+          GUARDAR
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
