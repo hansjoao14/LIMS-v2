@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
-import { FormularioLaboratorio } from '../../../features/solicitud-trabajo/model/solicitud-trabajo.model';
+import { FormularioLaboratorio } from '../../../shared/dynamic-form';
 import { environment } from '../../../../environments/environment';
 import {
   ValorSolicitudItem,

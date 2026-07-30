@@ -1,20 +1,37 @@
 import { FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
-import { ValorMuestreoPayload } from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
-import { PlanMuestreoCampo, PlanMuestreoGrupo } from './plan-muestreo-form.model';
+import { DynamicField, DynamicGroup } from './dynamic-form.model';
+
+/**
+ * Utilidades del formulario dinámico: construcción de controles, motor de
+ * dependencias y serialización de respuestas. Compartidas por todos los módulos
+ * que usan `construirGrupos`.
+ */
+
+export interface GenerarControlesOptions {
+  /**
+   * Layouts en los que un campo numérico arranca vacío en vez de en cero (una
+   * tabla de volúmenes, por ejemplo). Los contadores ± siempre arrancan en 0.
+   */
+  numeroVacioEnLayouts?: string[];
+}
 
 /**
  * Agrega al FormGroup un control por cada campo de las tarjetas. Nunca recrea
  * el FormGroup: si el control ya existe se respeta su valor.
  */
-export function generarControles(form: FormGroup, grupos: PlanMuestreoGrupo[]): void {
+export function generarControles(
+  form: FormGroup,
+  grupos: DynamicGroup[],
+  options: GenerarControlesOptions = {},
+): void {
   for (const grupo of grupos) {
     for (const campo of grupo.campos) {
       if (form.contains(campo.key)) continue;
       form.addControl(
         campo.key,
         new FormControl(
-          { value: valorInicial(campo, grupo), disabled: campo.hidden },
+          { value: valorInicial(campo, grupo, options), disabled: campo.hidden },
           validadores(campo, campo.hidden),
         ),
       );
@@ -31,7 +48,7 @@ export function generarControles(form: FormGroup, grupos: PlanMuestreoGrupo[]): 
  */
 export function aplicarDependencias(
   form: FormGroup,
-  grupos: PlanMuestreoGrupo[],
+  grupos: DynamicGroup[],
   destroy$: Subject<void>,
 ): void {
   const campos = camposDe(grupos);
@@ -40,7 +57,7 @@ export function aplicarDependencias(
   form.valueChanges.pipe(takeUntil(destroy$)).subscribe(actualizar);
 }
 
-function actualizarDependientes(form: FormGroup, campos: PlanMuestreoCampo[]): void {
+function actualizarDependientes(form: FormGroup, campos: DynamicField[]): void {
   for (const campo of campos) {
     if (!campo.dependsOn) {
       sincronizarCampo(form, campo, !!campo.source.hidden);
@@ -52,7 +69,7 @@ function actualizarDependientes(form: FormGroup, campos: PlanMuestreoCampo[]): v
   }
 }
 
-function sincronizarCampo(form: FormGroup, campo: PlanMuestreoCampo, oculto: boolean): void {
+function sincronizarCampo(form: FormGroup, campo: DynamicField, oculto: boolean): void {
   campo.hidden = oculto;
   const control = form.get(campo.key);
   if (!control) return;
@@ -67,41 +84,62 @@ function sincronizarCampo(form: FormGroup, campo: PlanMuestreoCampo, oculto: boo
 }
 
 // Valor con el que se limpia un campo al ocultarse, según su tipo de control.
-function valorReset(campo: PlanMuestreoCampo): unknown {
+function valorReset(campo: DynamicField): unknown {
   if (campo.controlType === 'toggle') return false;
   if (campo.controlType === 'numero') return 0;
   return '';
 }
 
-function valorInicial(campo: PlanMuestreoCampo, grupo: PlanMuestreoGrupo): unknown {
+function valorInicial(
+  campo: DynamicField,
+  grupo: DynamicGroup,
+  options: GenerarControlesOptions,
+): unknown {
   if (campo.controlType === 'toggle') return false;
-  // Los volúmenes arrancan vacíos; los contadores (± Horas / Personas) en cero.
-  if (campo.controlType === 'numero') return grupo.layout === 'preservacion' ? null : 0;
+  if (campo.controlType === 'numero') {
+    return options.numeroVacioEnLayouts?.includes(grupo.layout) ? null : 0;
+  }
   return '';
 }
 
-function validadores(campo: PlanMuestreoCampo, oculto = false): ValidatorFn[] {
+function validadores(campo: DynamicField, oculto = false): ValidatorFn[] {
   return campo.required && !oculto ? [Validators.required] : [];
 }
 
 /** Todos los campos de un paso, sin la agrupación en tarjetas. */
-export function camposDe(grupos: PlanMuestreoGrupo[]): PlanMuestreoCampo[] {
+export function camposDe(grupos: DynamicGroup[]): DynamicField[] {
   return grupos.flatMap((g) => g.campos);
 }
 
 /**
- * Convierte una respuesta en el ítem `valorMuestreo` del POST create-detalle,
- * con el mismo criterio que `buildValorOrdenTrabajo` de la orden in situ: cada
- * valor viaja en la columna que le corresponde y el resto va en null.
+ * Forma en la que viajan las respuestas del formulario dinámico: cada valor va
+ * en la columna que le corresponde y el resto queda en null. Coincide con
+ * `ValorMuestreoPayload` / `ValorOrdenTrabajoPayload`; los módulos que necesiten
+ * llaves extra (`valor_uuid`, por ejemplo) extienden este objeto.
  */
-export function toValorMuestreo(campo: PlanMuestreoCampo, valor: unknown): ValorMuestreoPayload {
+export interface ValorDinamicoPayload {
+  atributo_formulario_id: string;
+  valor_texto: string | null;
+  valor_numero: number | null;
+  valor_fecha: string | null;
+  valor_booleano: boolean | null;
+  valor_multiple: string | null;
+  estado: boolean;
+  valor_catalogo: number;
+}
+
+/**
+ * Convierte una respuesta al ítem de payload del backend, con el mismo criterio
+ * en todos los módulos: los numéricos viajan en `valor_texto`, los selects en
+ * `valor_catalogo` y los booleanos en `valor_booleano`.
+ */
+export function toValorDinamico(campo: DynamicField, valor: unknown): ValorDinamicoPayload {
   const esSelect = campo.controlType === 'select';
   const esToggle = campo.controlType === 'toggle';
   const vacio = valor === null || valor === undefined || valor === '';
 
   return {
     atributo_formulario_id: String(campo.id),
-    // Los numéricos viajan en valor_texto, igual que en el resto de la app.
     valor_texto: esSelect || esToggle ? null : vacio ? null : String(valor),
     valor_numero: null,
     valor_fecha: null,

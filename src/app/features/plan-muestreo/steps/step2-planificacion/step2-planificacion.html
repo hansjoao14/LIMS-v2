@@ -1,0 +1,120 @@
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
+    <div class="animate-in fade-in">
+      <app-page-header
+        breadcrumbSection="Operaciones de campo"
+        title="Plan de muestreo"
+        subtitle="Aquí podrás visualizar los detalles del plan de muestreo"
+        [codigoFormulario]="formulario?.descripcion ?? null"
+        [edicion]="formulario?.version ?? null"
+        [fechaSolicitud]="fechaEmision"
+      />
+
+      <!-- Stepper (ui-standards §9) -->
+      <div class="mb-6">
+        <div class="flex justify-between items-center mb-3">
+          <p class="text-xl font-bold text-[#1e3a8a] uppercase tracking-tight">
+            {{ formulario?.descripcion ?? 'PLAN DE MUESTREO' }}
+          </p>
+          <span
+            class="text-[10px] font-bold text-[#1e3a8a] bg-blue-100 px-3 py-1 rounded-full uppercase tracking-widest"
+            >PASO {{ PASO }} DE {{ TOTAL_PASOS }}</span
+          >
+        </div>
+        <div class="flex items-center gap-2">
+          @for (s of [1, 2, 3]; track s) {
+            <div
+              class="flex-1 h-2.5 rounded-full transition-all duration-500"
+              [class.bg-[#2541b2]]="PASO >= s"
+              [class.bg-slate-200]="PASO < s"
+            ></div>
+          }
+        </div>
+      </div>
+
+      <!-- Step-card (Nivel 1A) -->
+      <div
+        class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 space-y-8 animate-in fade-in slide-in-from-right-4"
+      >
+        <!-- Step-header (Nivel 2A) -->
+        <div class="mb-6 border-b border-slate-300 pb-4">
+          <h3 class="text-lg font-bold text-[#1e3a8a] mb-1">Paso 2: Planificación del Muestreo</h3>
+        </div>
+
+        @if (loading) {
+          <app-loading />
+        } @else {
+          <form [formGroup]="form" class="space-y-8">
+            @for (grupo of grupos; track grupo.key) {
+              <app-dynamic-form-group
+                [grupo]="grupo"
+                [plantillaLayout]="tablaPreservacion"
+                [filasTextarea]="FILAS_TEXTAREA"
+              />
+            }
+
+            <!-- Layout propio del plan: tabla preservación / volumen / recipiente.
+                   Va dentro del <form> para que formControlName encuentre el
+                   [formGroup] en su injector de declaración. -->
+            <ng-template #tablaPreservacion let-grupo>
+              <div class="overflow-x-auto custom-scroll">
+                <table class="w-full text-sm border-collapse">
+                  <thead>
+                    <tr
+                      class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-gray-200 tracking-wider"
+                    >
+                      <th class="px-4 py-2.5 border-r border-gray-100 text-left">Preservación</th>
+                      <th class="px-4 py-2.5 border-r border-gray-100 text-left">Volumen (L)</th>
+                      <th class="px-4 py-2.5 text-left">Tipo de Recipiente</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (campo of grupo.campos; track campo.id) {
+                      @if (!campo.hidden) {
+                        <tr class="border-b border-gray-100 hover:bg-slate-50 transition-colors">
+                          <td class="px-4 py-3 border-r border-gray-100 text-slate-600 text-xs">
+                            {{ campo.label }}
+                          </td>
+                          <td class="px-4 py-3 border-r border-gray-100">
+                            <input
+                              type="number"
+                              [formControlName]="campo.key"
+                              [readonly]="campo.readonly"
+                              [placeholder]="campo.placeholder || 'ej. 5'"
+                              class="w-full border border-slate-300 bg-white text-slate-700 p-2 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                            />
+                          </td>
+                          <td class="px-4 py-3 text-slate-600 text-xs">
+                            {{ tipoRecipiente(campo.key) }}
+                          </td>
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </ng-template>
+          </form>
+        }
+
+        <!-- Nav buttons -->
+        <div class="flex justify-between pt-4 border-t border-slate-300">
+          <button
+            type="button"
+            (click)="regresar()"
+            class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all"
+          >
+            REGRESAR
+          </button>
+          <button
+            type="button"
+            (click)="siguiente()"
+            class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all"
+          >
+            SIGUIENTE
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

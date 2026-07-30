@@ -45,7 +45,8 @@ import {
   SolicitudService,
   ValorSolicitudItem,
 } from '../../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
-import { FieldConfig, Pregunta } from '../../solicitud-trabajo/model/solicitud-trabajo.model';
+import { FieldConfig } from '../../solicitud-trabajo/model/solicitud-trabajo.model';
+import { Pregunta } from '../../../shared/dynamic-form';
 
 /**
  * Formulario dinámico propio de "Orden de Trabajo In Situ" (observaciones,

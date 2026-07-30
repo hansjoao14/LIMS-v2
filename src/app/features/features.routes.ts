@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 import { canActivateWithRealmRoles } from '../core/guards/roles.guard';
 import { RoleAccess } from '../core/utils/roles.constans';
 
-
 /**
  * Defines the feature routes for the application using centralized RoleAccess.
  */
@@ -70,19 +69,28 @@ export const featuresRoutes: Routes = [
   },
   {
     path: 'plan-muestreo/nuevo',
-    loadComponent: () => import('./plan-muestreo/plan-muestreo').then((m) => m.PlanMuestreo),
+    loadComponent: () =>
+      import('./plan-muestreo/steps/step1-solicitud/step1-solicitud').then(
+        (m) => m.Step1SolicitudComponent,
+      ),
     canActivate: [canActivateWithRealmRoles],
     data: { title: 'Plan de Muestreo - Paso 1', requiredRoles: RoleAccess.PLAN_MUESTREO_CREAR },
   },
   {
     path: 'plan-muestreo/paso2',
-    loadComponent: () => import('./plan-muestreo/paso2/plan-muestreo-paso2').then((m) => m.PlanMuestreoPaso2),
+    loadComponent: () =>
+      import('./plan-muestreo/steps/step2-planificacion/step2-planificacion').then(
+        (m) => m.Step2PlanificacionComponent,
+      ),
     canActivate: [canActivateWithRealmRoles],
     data: { title: 'Plan de Muestreo - Paso 2', requiredRoles: RoleAccess.PLAN_MUESTREO_CREAR },
   },
   {
     path: 'plan-muestreo/paso3',
-    loadComponent: () => import('./plan-muestreo/paso3/plan-muestreo-paso3').then((m) => m.PlanMuestreoPaso3),
+    loadComponent: () =>
+      import('./plan-muestreo/steps/step3-procedimiento/step3-procedimiento').then(
+        (m) => m.Step3ProcedimientoComponent,
+      ),
     canActivate: [canActivateWithRealmRoles],
     data: { title: 'Plan de Muestreo - Paso 3', requiredRoles: RoleAccess.PLAN_MUESTREO_CREAR },
   },
@@ -95,22 +103,19 @@ export const featuresRoutes: Routes = [
   },
   {
     path: 'admin-catalogos',
-    loadComponent: () =>
-      import('./admin-catalogos/admin-catalogos').then((m) => m.AdminCatalogos),
+    loadComponent: () => import('./admin-catalogos/admin-catalogos').then((m) => m.AdminCatalogos),
     canActivate: [canActivateWithRealmRoles],
     data: { title: 'Administración de Catálogos', requiredRoles: RoleAccess.ADMIN_CATALOGOS },
   },
   {
     path: 'admin-ensayos',
-    loadComponent: () =>
-      import('./admin-ensayos/admin-ensayos').then((m) => m.AdminEnsayos),
+    loadComponent: () => import('./admin-ensayos/admin-ensayos').then((m) => m.AdminEnsayos),
     canActivate: [canActivateWithRealmRoles],
     data: { title: 'Administración de Ensayos', requiredRoles: RoleAccess.ADMIN_ENSAYOS },
   },
   {
     path: 'secuencial',
-    loadComponent: () =>
-      import('./secuencial/secuencial').then((m) => m.Secuencial),
+    loadComponent: () => import('./secuencial/secuencial').then((m) => m.Secuencial),
     canActivate: [canActivateWithRealmRoles],
     data: { title: 'Administración de Secuenciales', requiredRoles: RoleAccess.SECUENCIAL },
   },

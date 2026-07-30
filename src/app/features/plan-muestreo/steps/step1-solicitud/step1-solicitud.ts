@@ -4,21 +4,20 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil, forkJoin, map, catchError, of } from 'rxjs';
 
-import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
-import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
-import { ReportSolicitud } from '../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
-import { ReportFormulario } from '../../interfaces/admin-formularios/report-formulario.interface';
-import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
-import { SolicitudDetalleService } from '../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
-import { PageHeader } from '../../shared/components/page-header/page-header';
-import { AlertService } from '../../services/alert.service';
-import { EnsayoItemService } from '../../services/solicitudes/solicitud-trabajo/ensayo-item.service';
+import { ReportSolicitudService } from '../../../../services/solicitudes/lista-solicitudes/report-solicitud.service';
+import { ReportSolicitud } from '../../../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
+import { ReportFormulario } from '../../../../interfaces/admin-formularios/report-formulario.interface';
+import { PaginationMeta } from '../../../../interfaces/catalogos/catalogo.interface';
+import { SolicitudDetalleService } from '../../../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
+import { PageHeader } from '../../../../shared/components/page-header/page-header';
+import { AlertService } from '../../../../services/alert.service';
+import { EnsayoItemService } from '../../../../services/solicitudes/solicitud-trabajo/ensayo-item.service';
 import {
   ReportCatalogoNota,
   ReportCatalogoEnsayoItem,
-} from '../../interfaces/solicitudes/solicitud-trabajo';
-import { PlanMuestreoStore } from './model/plan-muestreo.store';
-import { PlanMuestreoDetallePayload } from '../../services/solicitudes/plan-muestreo/plan-muestreo.service';
+} from '../../../../interfaces/solicitudes/solicitud-trabajo';
+import { PlanMuestreoStore } from '../../model/plan-muestreo.store';
+import { PlanMuestreoDetallePayload } from '../../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 
 export interface EnsayoLaboratorioRow {
   activo: boolean;
@@ -46,12 +45,16 @@ export interface TablaLaboratorioUI {
 }
 
 @Component({
-  selector: 'app-plan-muestreo',
+  selector: 'app-plan-muestreo-step1',
   imports: [CommonModule, FormsModule, PageHeader],
-  templateUrl: './plan-muestreo.html',
-  styleUrl: './plan-muestreo.css',
+  templateUrl: './step1-solicitud.html',
+  styleUrl: '../../plan-muestreo.css',
 })
-export class PlanMuestreo implements OnInit, OnDestroy {
+export class Step1SolicitudComponent implements OnInit, OnDestroy {
+  // Posición en el asistente, para el stepper de la cabecera.
+  readonly PASO = 1;
+  readonly TOTAL_PASOS = 3;
+
   formulario: ReportFormulario | null = null;
   fechaEmision: Date | null = null;
 
@@ -96,7 +99,6 @@ export class PlanMuestreo implements OnInit, OnDestroy {
 
   constructor(
     private reportSolicitudService: ReportSolicitudService,
-    private reportFormularioService: ReportFormularioService,
     private solicitudDetalleService: SolicitudDetalleService,
     private ensayoItemService: EnsayoItemService,
     private router: Router,
@@ -105,16 +107,15 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.reportFormularioService
-      .getFormularioByCTId(2019)
+    // Cabecera compartida por los tres pasos: el store la cachea.
+    this.store
+      .getMetaFormulario()
       .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (formulario) => {
-          this.formulario = formulario;
-          if (formulario?.fecha_emision) {
-            this.fechaEmision = new Date(Number(formulario.fecha_emision));
-          }
-        },
+      .subscribe((formulario) => {
+        this.formulario = formulario;
+        if (formulario?.fecha_emision) {
+          this.fechaEmision = new Date(Number(formulario.fecha_emision));
+        }
       });
     // Las tablas de laboratorio son ids fijos: no dependen de la solicitud.
     this.cargarAnalisisLaboratorio();
@@ -268,7 +269,7 @@ export class PlanMuestreo implements OnInit, OnDestroy {
   }
 
   private poblarDetalle(
-    detalle: import('../../services/solicitudes/solicitud-detalle/solicitud-detalle.service').SolicitudDetalle,
+    detalle: import('../../../../services/solicitudes/solicitud-detalle/solicitud-detalle.service').SolicitudDetalle,
   ): void {
     const f = detalle.formularios?.[0];
     if (!f) return;

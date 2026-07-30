@@ -13,12 +13,8 @@ import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import * as L from 'leaflet';
 
-import {
-  FieldConfig,
-  FieldSectionId,
-  FormularioLaboratorio,
-  Pregunta,
-} from './model/solicitud-trabajo.model';
+import { FieldConfig, FieldSectionId } from './model/solicitud-trabajo.model';
+import { FormularioLaboratorio, Pregunta } from '../../shared/dynamic-form';
 import {
   SolicitudService,
   SolicitudPayload,

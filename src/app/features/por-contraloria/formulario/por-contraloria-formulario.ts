@@ -12,9 +12,8 @@ import { ToastrAlertService } from '../../../services/toastr.service';
 import {
   SolicitudService, ValorSolicitudItem, SolicitudPayload,
 } from '../../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
-import {
-  FieldConfig, FormularioLaboratorio, Pregunta,
-} from '../../solicitud-trabajo/model/solicitud-trabajo.model';
+import { FieldConfig } from '../../solicitud-trabajo/model/solicitud-trabajo.model';
+import { FormularioLaboratorio, Pregunta } from '../../../shared/dynamic-form';
 import { AuthService } from '../../auth/service/auth-service';
 import { PeriodoService } from '../../../services/solicitudes/solicitud-trabajo/periodo.service';
 import { LoadingComponent } from '../../../shared/components/loading/loading';

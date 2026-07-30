@@ -7,9 +7,9 @@ import {
   PlanMuestreoDetallePayload,
   ValorMuestreoPayload,
 } from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
-import { FormularioLaboratorio } from '../../solicitud-trabajo/model/solicitud-trabajo.model';
-import { PlanMuestreoCampo } from './plan-muestreo-form.model';
-import { toValorMuestreo } from './plan-muestreo-form.utils';
+import { ReportFormularioService } from '../../../services/admin-formularios/report-formulario.service';
+import { ReportFormulario } from '../../../interfaces/admin-formularios/report-formulario.interface';
+import { DynamicField, FormularioLaboratorio, toValorDinamico } from '../../../shared/dynamic-form';
 
 /** Datos que el paso 1 deja fijados para el resto del asistente. */
 export interface PlanMuestreoContexto {
@@ -35,11 +35,13 @@ export class PlanMuestreoStore {
   contexto: PlanMuestreoContexto | null = null;
 
   private formulario$?: Observable<FormularioLaboratorio>;
-  private readonly campos = new Map<number, PlanMuestreoCampo[]>();
+  private metaFormulario$?: Observable<ReportFormulario | null>;
+  private readonly campos = new Map<number, DynamicField[]>();
   private readonly respuestas = new Map<number, Record<string, unknown>>();
 
   private authService = inject(AuthService);
   private solicitudService = inject(SolicitudService);
+  private reportFormularioService = inject(ReportFormularioService);
 
   /** Una sola petición por sesión: los pasos comparten la misma respuesta. */
   getFormulario(): Observable<FormularioLaboratorio> {
@@ -52,20 +54,34 @@ export class PlanMuestreoStore {
     return this.formulario$;
   }
 
+  /**
+   * Metadata de cabecera (código, edición, fecha de emisión) para el
+   * `<app-page-header>` de los tres pasos. Se cachea igual que el formulario:
+   * antes cada paso la traía por su cuenta o la tenía quemada en el template.
+   */
+  getMetaFormulario(): Observable<ReportFormulario | null> {
+    if (!this.metaFormulario$) {
+      this.metaFormulario$ = this.reportFormularioService
+        .getFormularioByCTId(this.TIPO_FORMULARIO_ID)
+        .pipe(shareReplay({ bufferSize: 1, refCount: false }));
+    }
+    return this.metaFormulario$;
+  }
+
   /** Respuestas ya capturadas de una sección, para repoblar el paso al volver. */
   respuestasDe(seccion: number): Record<string, unknown> {
     return this.respuestas.get(seccion) ?? {};
   }
 
   /** Se llama al salir de cada paso, con los valores crudos de su FormGroup. */
-  guardarSeccion(seccion: number, campos: PlanMuestreoCampo[], valores: Record<string, unknown>): void {
+  guardarSeccion(seccion: number, campos: DynamicField[], valores: Record<string, unknown>): void {
     this.campos.set(seccion, campos);
     this.respuestas.set(seccion, valores);
   }
 
   /** Obligatorios sin responder en cualquiera de los pasos ya visitados. */
-  camposFaltantes(): PlanMuestreoCampo[] {
-    const faltantes: PlanMuestreoCampo[] = [];
+  camposFaltantes(): DynamicField[] {
+    const faltantes: DynamicField[] = [];
     for (const [seccion, campos] of this.campos) {
       const valores = this.respuestasDe(seccion);
       for (const campo of campos) {
@@ -89,7 +105,7 @@ export class PlanMuestreoStore {
       const valores = this.respuestasDe(seccion);
       for (const campo of campos) {
         if (campo.hidden) continue; // no se envían valores de campos ocultos
-        items.push(toValorMuestreo(campo, valores[campo.key]));
+        items.push(toValorDinamico(campo, valores[campo.key]));
       }
     }
     return items;

@@ -4,33 +4,61 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, firstValueFrom, takeUntil } from 'rxjs';
 
-import { PageHeader } from '../../../shared/components/page-header/page-header';
-import { AlertService } from '../../../services/alert.service';
-import { ToastrAlertService } from '../../../services/toastr.service';
-import { AuthService } from '../../auth/service/auth-service';
-import { PeriodoService } from '../../../services/solicitudes/solicitud-trabajo/periodo.service';
+import { PageHeader } from '../../../../shared/components/page-header/page-header';
+import { LoadingComponent } from '../../../../shared/components/loading/loading';
+import { AlertService } from '../../../../services/alert.service';
+import { ToastrAlertService } from '../../../../services/toastr.service';
+import { AuthService } from '../../../auth/service/auth-service';
+import { PeriodoService } from '../../../../services/solicitudes/solicitud-trabajo/periodo.service';
 import {
   CrearPlanMuestreoConDetallePayload,
   PlanMuestreoService,
-} from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
-import { PlanMuestreoGrupo, construirGrupos } from '../model/plan-muestreo-form.model';
-import { aplicarDependencias, camposDe, generarControles } from '../model/plan-muestreo-form.utils';
-import { PlanMuestreoStore } from '../model/plan-muestreo.store';
-import { PlanMuestreoGrupoComponent } from '../grupo/plan-muestreo-grupo';
+} from '../../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
+import {
+  DynamicFormGroupComponent,
+  DynamicGroup,
+  aplicarDependencias,
+  camposDe,
+  construirGrupos,
+  generarControles,
+} from '../../../../shared/dynamic-form';
+import {
+  FILAS_TEXTAREA,
+  LAYOUTS_NUMERO_VACIO,
+  PLAN_MUESTREO_FORM_CONFIG,
+  tipoRecipiente,
+} from '../../model/plan-muestreo-form.model';
+import { ReportFormulario } from '../../../../interfaces/admin-formularios/report-formulario.interface';
+import { PlanMuestreoStore } from '../../model/plan-muestreo.store';
 
 @Component({
-  selector: 'app-plan-muestreo-paso3',
+  selector: 'app-plan-muestreo-step3',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeader, PlanMuestreoGrupoComponent],
-  templateUrl: './plan-muestreo-paso3.html',
-  styleUrl: '../plan-muestreo.css',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    PageHeader,
+    LoadingComponent,
+    DynamicFormGroupComponent,
+  ],
+  templateUrl: './step3-procedimiento.html',
+  styleUrl: '../../plan-muestreo.css',
 })
-export class PlanMuestreoPaso3 implements OnInit, OnDestroy {
+export class Step3ProcedimientoComponent implements OnInit, OnDestroy {
+  // Posición en el asistente, para el stepper de la cabecera.
+  readonly PASO = 3;
+  readonly TOTAL_PASOS = 3;
+
+  readonly FILAS_TEXTAREA = FILAS_TEXTAREA;
+  readonly tipoRecipiente = tipoRecipiente;
+
   // Preguntas del formulario dinámico que corresponden a este paso.
   readonly SECCION = 3;
 
   form: FormGroup;
-  grupos: PlanMuestreoGrupo[] = [];
+  grupos: DynamicGroup[] = [];
+  formulario: ReportFormulario | null = null;
+  fechaEmision: Date | null = null;
   loading = true;
   saving = false;
 
@@ -54,12 +82,28 @@ export class PlanMuestreoPaso3 implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.store
+      .getMetaFormulario()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((formulario) => {
+        this.formulario = formulario;
+        if (formulario?.fecha_emision) {
+          this.fechaEmision = new Date(Number(formulario.fecha_emision));
+        }
+      });
+
+    this.store
       .getFormulario()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (formulario) => {
-          this.grupos = construirGrupos(formulario.preguntas ?? [], this.SECCION);
-          generarControles(this.form, this.grupos);
+          this.grupos = construirGrupos(
+            formulario.preguntas ?? [],
+            this.SECCION,
+            PLAN_MUESTREO_FORM_CONFIG,
+          );
+          generarControles(this.form, this.grupos, {
+            numeroVacioEnLayouts: LAYOUTS_NUMERO_VACIO,
+          });
           // Repuebla lo que el usuario ya había respondido en este paso.
           this.form.patchValue(this.store.respuestasDe(this.SECCION));
           // Muestra/oculta los campos dependientes según sus campos padre.
