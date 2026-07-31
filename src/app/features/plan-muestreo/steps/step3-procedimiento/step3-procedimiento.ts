@@ -10,10 +10,8 @@ import { AlertService } from '../../../../services/alert.service';
 import { ToastrAlertService } from '../../../../services/toastr.service';
 import { AuthService } from '../../../auth/service/auth-service';
 import { PeriodoService } from '../../../../services/solicitudes/solicitud-trabajo/periodo.service';
-import {
-  CrearPlanMuestreoConDetallePayload,
-  PlanMuestreoService,
-} from '../../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
+import { PlanMuestreoService } from '../../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
+import { CrearPlanMuestreoConDetallePayload } from '../../../../interfaces/solicitudes/plan-muestreo/plan-muestreo.interface';
 import {
   DynamicFormGroupComponent,
   DynamicGroup,

@@ -17,7 +17,7 @@ import {
   ReportCatalogoEnsayoItem,
 } from '../../../../interfaces/solicitudes/solicitud-trabajo';
 import { PlanMuestreoStore } from '../../model/plan-muestreo.store';
-import { PlanMuestreoDetallePayload } from '../../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
+import { PlanMuestreoDetallePayload } from '../../../../interfaces/solicitudes/plan-muestreo/plan-muestreo.interface';
 
 export interface EnsayoLaboratorioRow {
   activo: boolean;

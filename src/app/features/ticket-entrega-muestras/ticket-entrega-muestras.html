@@ -35,7 +35,7 @@
               <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
                 Plan de Muestreo No :
               </label>
-              <p class="text-sm text-slate-700">{{ planMuestreoNo }}</p>
+              <p class="text-sm text-slate-700">{{ planMuestreoNo || '—' }}</p>
             </div>
           </div>
 
@@ -255,30 +255,42 @@
               </tr>
             </thead>
             <tbody>
-              @for (fila of preservaciones; track $index) {
-                <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                  <td
-                    class="px-4 py-4 border-r border-slate-100 text-center text-xs font-bold text-slate-700"
-                  >
-                    {{ fila.preservacion }}
-                  </td>
-                  <td class="px-4 py-4 border-r border-slate-100">
-                    <input
-                      type="number"
-                      [(ngModel)]="fila.volumen"
-                      class="w-full border border-slate-300 bg-white text-slate-700 p-2 rounded text-sm text-center outline-none focus:border-[#1e3a8a] transition-colors"
-                    />
-                  </td>
-                  <td class="px-4 py-4 text-center text-xs text-slate-600">
-                    {{ fila.tipoRecipiente }}
-                  </td>
-                </tr>
-              } @empty {
+              @if (cargandoDetalle) {
                 <tr>
                   <td colspan="3" class="p-10 text-slate-400 italic text-center">
-                    No hay preservaciones registradas.
+                    Cargando preservaciones...
                   </td>
                 </tr>
+              } @else {
+                @for (fila of preservaciones; track $index) {
+                  <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td
+                      class="px-4 py-4 border-r border-slate-100 text-center text-xs font-bold text-slate-700"
+                    >
+                      {{ fila.preservacion }}
+                    </td>
+                    <td class="px-4 py-4 border-r border-slate-100">
+                      <input
+                        type="number"
+                        [(ngModel)]="fila.volumen"
+                        class="w-full border border-slate-300 bg-white text-slate-700 p-2 rounded text-sm text-center outline-none focus:border-[#1e3a8a] transition-colors"
+                      />
+                    </td>
+                    <td class="px-4 py-4 text-center text-xs text-slate-600">
+                      {{ fila.tipoRecipiente }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3" class="p-10 text-slate-400 italic text-center">
+                      @if (planSeleccionado) {
+                        Este plan no tiene preservaciones registradas.
+                      } @else {
+                        Selecciona un código de muestra para ver sus preservaciones.
+                      }
+                    </td>
+                  </tr>
+                }
               }
             </tbody>
           </table>

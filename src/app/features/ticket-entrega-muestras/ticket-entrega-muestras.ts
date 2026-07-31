@@ -5,17 +5,25 @@ import { Subject, takeUntil } from 'rxjs';
 
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
-import {
-  PlanMuestreoOpcion,
-  ReportPlanMuestreoService,
-} from '../../services/solicitudes/plan-muestreo/report-plan-muestreo.service';
+import { ReportPlanMuestreoService } from '../../services/solicitudes/plan-muestreo/report-plan-muestreo.service';
+import { PlanMuestreoOpcion } from '../../interfaces/solicitudes/plan-muestreo/report-plan-muestreo.interface';
+import { PlanMuestreoService } from '../../services/solicitudes/plan-muestreo/plan-muestreo.service';
+import { PreservacionRow } from '../../interfaces/ticket-entrega-muestras/ticket-entrega-muestras.interface';
 
-/** Una fila de la tabla de preservación de muestras. */
-export interface PreservacionRow {
-  preservacion: string;
-  volumen: number | null;
-  tipoRecipiente: string;
-}
+/** Grupo del que sale la tabla de preservación dentro del detalle del plan. */
+const GRUPO_PRESERVACION = 'PRESERVACIÓN DE LAS MUESTRAS';
+
+/**
+ * Tipo de recipiente por preservación. El detalle del plan no lo devuelve, así
+ * que se completa con este mapa — el mismo criterio (y el mismo TODO) que en
+ * `plan-muestreo/model/plan-muestreo-form.model.ts`.
+ * TODO(backend): exponerlo en el detalle y borrar esta constante.
+ */
+const TIPO_RECIPIENTE: Record<string, string> = {
+  temperatura_0_6_c: 'Vidrio opaco',
+  h2so4: 'Vidrio opaco',
+  hno3: 'Vidrio opaco',
+};
 
 @Component({
   selector: 'app-ticket-entrega-muestras',
@@ -35,7 +43,8 @@ export class TicketEntregaMuestras implements OnDestroy {
   readonly fechaSolicitud = new Date(2025, 4, 27);
 
   // ── Información de las muestras ──────────────────────────────────────────
-  readonly planMuestreoNo = 'PM-058-25';
+  /** Sale del plan seleccionado; vacío mientras no se elija ninguno. */
+  planMuestreoNo = '';
 
   // ── Panel de búsqueda del código de muestra ──────────────────────────────
   // Mismo patrón que "Solicitud de Trabajo No" en plan-muestreo/nuevo.
@@ -55,15 +64,15 @@ export class TicketEntregaMuestras implements OnDestroy {
   readonly recibidaPor = 'Karen Guerron';
 
   // ── Preservación de las muestras ─────────────────────────────────────────
-  preservaciones: PreservacionRow[] = [
-    { preservacion: 'Temperatura 0°C a 6°C', volumen: 7, tipoRecipiente: 'Vidrio opaco' },
-    { preservacion: 'H2SO4', volumen: 3, tipoRecipiente: 'Vidrio opaco' },
-    { preservacion: 'HNO3', volumen: 4, tipoRecipiente: 'Vidrio opaco' },
-  ];
+  preservaciones: PreservacionRow[] = [];
+  cargandoDetalle = false;
 
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private reportPlanMuestreoService: ReportPlanMuestreoService) {}
+  constructor(
+    private reportPlanMuestreoService: ReportPlanMuestreoService,
+    private planMuestreoService: PlanMuestreoService,
+  ) {}
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -119,10 +128,42 @@ export class TicketEntregaMuestras implements OnDestroy {
   seleccionarPlan(plan: PlanMuestreoOpcion): void {
     this.planSeleccionado = plan;
     this.panelAbierto = false;
+    this.cargarDetallePlan(plan.id);
   }
 
   limpiarPlan(): void {
     this.planSeleccionado = null;
+    this.planMuestreoNo = '';
+    this.preservaciones = [];
+  }
+
+  // ── Detalle del plan ─────────────────────────────────────────────────────
+
+  private cargarDetallePlan(id: string): void {
+    this.cargandoDetalle = true;
+    this.planMuestreoService
+      .getPlanMuestreoDetalle(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (detalle) => {
+          const formulario = detalle?.formularios?.[0];
+          this.planMuestreoNo = formulario?.num_secuencial_muestreo ?? '';
+          // Match exacto: por substring "PRESERVACIÓN" también entraría el
+          // grupo "EQUIPOS PRESERVACIÓN", que no va en esta tabla.
+          const grupo = formulario?.atributos?.find((g) => g.grupo_texto === GRUPO_PRESERVACION);
+          this.preservaciones = (grupo?.detalle_seccion ?? []).map((a) => ({
+            preservacion: a.pregunta_atributo_formulario,
+            volumen: a.valor_texto ?? '',
+            tipoRecipiente: TIPO_RECIPIENTE[a.nombre_atributo_formulario] ?? '—',
+          }));
+          this.cargandoDetalle = false;
+        },
+        error: () => {
+          this.planMuestreoNo = '';
+          this.preservaciones = [];
+          this.cargandoDetalle = false;
+        },
+      });
   }
 
   /**

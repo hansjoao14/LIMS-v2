@@ -6,7 +6,7 @@ import { SolicitudService } from '../../../services/solicitudes/solicitud-trabaj
 import {
   PlanMuestreoDetallePayload,
   ValorMuestreoPayload,
-} from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
+} from '../../../interfaces/solicitudes/plan-muestreo/plan-muestreo.interface';
 import { ReportFormularioService } from '../../../services/admin-formularios/report-formulario.service';
 import { ReportFormulario } from '../../../interfaces/admin-formularios/report-formulario.interface';
 import { DynamicField, FormularioLaboratorio, toValorDinamico } from '../../../shared/dynamic-form';

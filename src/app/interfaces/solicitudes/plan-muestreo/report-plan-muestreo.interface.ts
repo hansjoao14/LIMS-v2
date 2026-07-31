@@ -34,3 +34,26 @@ export interface ReportPlanMuestreoCollectionResponse {
   data: ReportPlanMuestreo[];
   meta: PaginationMeta;
 }
+
+/** Subconjunto de campos que pide `GET_PLANES_MUESTREO_POR_ESTADO`. */
+export type PlanMuestreoOpcion = Pick<
+  ReportPlanMuestreo,
+  | 'id'
+  | 'codigo_muestreo'
+  | 'num_secuencial'
+  | 'ctestado_id'
+  | 'ctestado_nombre'
+  | 'ctambiente_nombre'
+  | 'solicitud_id'
+  | 'solicitud_num_secuencial'
+>;
+
+export interface PlanesMuestreoOpcionPage {
+  data: PlanMuestreoOpcion[];
+  meta: PaginationMeta | null;
+}
+
+export interface PlanesMuestreoPage {
+  data: ReportPlanMuestreo[];
+  meta: PaginationMeta | null;
+}

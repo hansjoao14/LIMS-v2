@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
 // Contrato de POST /plan-muestreo/create-detalle: mismo esquema que la orden
@@ -8,59 +8,21 @@ import { environment } from '../../../../environments/environment';
 // formulario dinámico), con la salvedad de que la tercera llave se llama
 // `valorMuestreo`, no `valorPlanMuestreo`.
 
-export interface PlanMuestreoPayload {
-  solicitud_id: string;
-  usuario_id: string;
-  entidad_id: string;
-  ctambiente_id: number;
-  periodo_id: number;
-  secuencial_id: string | null;
-  num_secuencial: string | null;
-  ctestado_id: number;
-  estado: boolean;
-  ctformulario_id: number;
-}
-
-export interface PlanMuestreoDetallePayload {
-  estado: boolean;
-  ctambiental_id: number;
-  ensayo_id: number;
-  cttipo_ensayo_id: number;
-}
-
-// A diferencia de ValorOrdenTrabajoPayload, este DTO no admite `valor_uuid`:
-// el backend rechaza la propiedad (forbidNonWhitelisted).
-export interface ValorMuestreoPayload {
-  atributo_formulario_id: string;
-  valor_texto: string | null;
-  valor_numero: number | null;
-  valor_fecha: string | null;
-  valor_booleano: boolean | null;
-  valor_multiple: string | null;
-  estado: boolean;
-  valor_catalogo: number;
-}
-
-export interface CrearPlanMuestreoConDetallePayload {
-  planMuestreo: PlanMuestreoPayload;
-  planMuestreoDetalle: PlanMuestreoDetallePayload[];
-  valorMuestreo: ValorMuestreoPayload[];
-}
-
-// Ojo: este DTO sí tiene los nombres bien escritos, a diferencia del de la
-// orden de trabajo (`idOrden` / `identifcadorSecuecnial`). Los mensajes de
-// error del backend todavía citan los nombres viejos, pero las llaves que
-// valida son estas.
-export interface FinalizarPlanMuestreoPayload {
-  idPlanMuestreo: string;
-  identificadorSecuencial: string;
-  ctestado: number;
-}
+import {
+  CrearPlanMuestreoConDetallePayload,
+  FinalizarPlanMuestreoPayload,
+  PlanMuestreoAtributoDetalle,
+  PlanMuestreoDetalle,
+  PlanMuestreoDetallePayload,
+  PlanMuestreoFormularioDetalle,
+  PlanMuestreoGrupoDetalle,
+  PlanMuestreoPayload,
+  ValorMuestreoPayload,
+} from '../../../interfaces/solicitudes/plan-muestreo/plan-muestreo.interface';
 
 // Identificador con el que el backend genera el secuencial del plan de
 // muestreo (la orden in situ usa ORD_AIR / ORD_RDO).
 export const IDENTIFICADOR_SECUENCIAL_PLAN_MUESTREO = 'PM';
-
 
 @Injectable({ providedIn: 'root' })
 export class PlanMuestreoService {
@@ -80,6 +42,15 @@ export class PlanMuestreoService {
 
   deshabilitarPlan(id: string): Observable<any> {
     return this.http.patch<any>(`${this.apiSolicitud}/plan-muestreo/${id}/disable`, {});
+  }
+
+  /** Detalle completo de un plan ya guardado (cabecera, atributos y ensayos). */
+  getPlanMuestreoDetalle(id: string): Observable<PlanMuestreoDetalle> {
+    return this.http
+      .get<{ message: string; success: boolean; data: PlanMuestreoDetalle }>(
+        `${this.apiReportes}/report-solicitud/plan-muestreo/${id}`,
+      )
+      .pipe(map((res) => res.data));
   }
 
   getPdfPlanMuestreo(id: string): Observable<Blob> {
