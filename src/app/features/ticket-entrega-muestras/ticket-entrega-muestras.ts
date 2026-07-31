@@ -43,8 +43,11 @@ export class TicketEntregaMuestras implements OnDestroy {
   readonly fechaSolicitud = new Date(2025, 4, 27);
 
   // ── Información de las muestras ──────────────────────────────────────────
-  /** Sale del plan seleccionado; vacío mientras no se elija ninguno. */
+  // El usuario busca un PLAN; el código de muestra se deriva del plan elegido.
+  /** `num_secuencial` del plan, confirmado con su detalle. */
   planMuestreoNo = '';
+  /** `codigo_muestreo` del plan elegido. Varios planes aún no lo tienen. */
+  codigoMuestra = '';
 
   // ── Panel de búsqueda del código de muestra ──────────────────────────────
   // Mismo patrón que "Solicitud de Trabajo No" en plan-muestreo/nuevo.
@@ -121,19 +124,22 @@ export class TicketEntregaMuestras implements OnDestroy {
   private aplicarFiltro(): void {
     const q = this.busqueda.trim().toLowerCase();
     this.planesFiltrados = q
-      ? this.todosLosPlanes.filter((p) => this.etiquetaCodigo(p).toLowerCase().includes(q))
+      ? this.todosLosPlanes.filter((p) => this.etiquetaPlan(p).toLowerCase().includes(q))
       : this.todosLosPlanes;
   }
 
   seleccionarPlan(plan: PlanMuestreoOpcion): void {
     this.planSeleccionado = plan;
     this.panelAbierto = false;
+    // El detalle no devuelve `codigo_muestreo`: sale del propio listado.
+    this.codigoMuestra = plan.codigo_muestreo ?? '';
     this.cargarDetallePlan(plan.id);
   }
 
   limpiarPlan(): void {
     this.planSeleccionado = null;
     this.planMuestreoNo = '';
+    this.codigoMuestra = '';
     this.preservaciones = [];
   }
 
@@ -166,13 +172,9 @@ export class TicketEntregaMuestras implements OnDestroy {
       });
   }
 
-  /**
-   * Etiqueta visible del plan. Varios planes finalizados todavía no tienen
-   * `codigo_muestreo`, así que se cae al número de plan para no dejar la fila
-   * en blanco.
-   */
-  etiquetaCodigo(plan: PlanMuestreoOpcion): string {
-    return plan.codigo_muestreo ?? plan.num_secuencial ?? plan.id;
+  /** Etiqueta principal del plan en el buscador y en el chip de selección. */
+  etiquetaPlan(plan: PlanMuestreoOpcion): string {
+    return plan.num_secuencial ?? plan.id;
   }
 
   // TODO(funcionalidad): armar el payload y llamar al servicio.
