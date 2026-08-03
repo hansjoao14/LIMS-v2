@@ -87,9 +87,14 @@ function grupoDe(pregunta: Pregunta, config: DynamicFormConfig): string {
 
 /**
  * Arma las tarjetas de un paso a partir de las preguntas del formulario
- * dinámico: filtra por `seccion`, agrupa por `grupo_texto` y ordena por
- * `orden`. Las preguntas sin `seccion` no pertenecen a ningún paso y se
- * descartan.
+ * dinámico. `seccion` reparte las preguntas entre los pasos y `grupo_texto`
+ * entre las tarjetas de cada paso. Las preguntas sin `seccion` no pertenecen a
+ * ningún paso y se descartan.
+ *
+ * El orden de las tarjetas lo manda el backend vía `grupo_numerico`: cada
+ * tarjeta se posiciona con el valor más bajo de sus preguntas. Solo las que no
+ * traen `grupo_numerico` — las estáticas, que no salen del schema — caen al
+ * `orden` de la configuración.
  */
 export function construirGrupos(
   preguntas: Pregunta[],
@@ -97,15 +102,26 @@ export function construirGrupos(
   config: DynamicFormConfig = {},
 ): DynamicGroup[] {
   const defs = config.grupos ?? {};
-  const porGrupo = new Map<string, DynamicField[]>();
+  const delPaso = preguntas.filter((p) => seccionDe(p, config) === seccion);
 
-  preguntas
+  // Posición de cada tarjeta. Se calcula sobre todas las preguntas del paso,
+  // incluidas las que no se renderizan, para que una tarjeta no pierda su lugar
+  // por tener oculta la única pregunta que la nombra.
+  const posicionGrupo = new Map<string, number>();
+  for (const p of delPaso) {
+    if (p.grupo_numerico === null || p.grupo_numerico === undefined) continue;
+    const key = grupoDe(p, config);
+    const previa = posicionGrupo.get(key);
+    if (previa === undefined || p.grupo_numerico < previa) {
+      posicionGrupo.set(key, p.grupo_numerico);
+    }
+  }
+
+  const porGrupo = new Map<string, DynamicField[]>();
+  delPaso
     // Los campos dependientes llegan ocultos: se conservan para que la lógica de
     // dependencia los muestre cuando su campo padre tome el valor disparador.
-    .filter(
-      (p) =>
-        p.estado !== false && (!p.hidden || !!p.atributo_id) && seccionDe(p, config) === seccion,
-    )
+    .filter((p) => p.estado !== false && (!p.hidden || !!p.atributo_id))
     .sort((a, b) => a.orden - b.orden)
     .forEach((p) => {
       const key = grupoDe(p, config);
@@ -114,9 +130,12 @@ export function construirGrupos(
       porGrupo.set(key, campos);
     });
 
+  // Las tarjetas estáticas existen aunque no tengan preguntas visibles.
   for (const key of config.gruposEstaticos?.[seccion] ?? []) {
-    porGrupo.set(key, []);
+    if (!porGrupo.has(key)) porGrupo.set(key, []);
   }
+
+  const posicion = (key: string) => posicionGrupo.get(key) ?? defs[key]?.orden ?? ORDEN_POR_DEFECTO;
 
   return [...porGrupo.entries()]
     .map(([key, campos]) => ({
@@ -125,10 +144,7 @@ export function construirGrupos(
       layout: defs[key]?.layout ?? 'campos',
       campos,
     }))
-    .sort(
-      (a, b) =>
-        (defs[a.key]?.orden ?? ORDEN_POR_DEFECTO) - (defs[b.key]?.orden ?? ORDEN_POR_DEFECTO),
-    );
+    .sort((a, b) => posicion(a.key) - posicion(b.key));
 }
 
 export function toCampo(pregunta: Pregunta): DynamicField {
