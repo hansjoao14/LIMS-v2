@@ -98,9 +98,15 @@
               >
                 −
               </button>
-              <span class="text-sm font-bold text-[#1e3a8a] w-8 text-center">{{
-                valor(campo.key) ?? 0
-              }}</span>
+              <input
+                type="number"
+                step="any"
+                [formControlName]="campo.key"
+                [readonly]="campo.readonly"
+                class="w-24 border border-slate-300 bg-white text-sm font-bold text-[#1e3a8a] text-center p-1.5 rounded outline-none focus:border-[#1e3a8a] transition-colors"
+                [class.border-red-500]="esCampoInvalido(campo.key)"
+                [class.bg-red-50]="esCampoInvalido(campo.key)"
+              />
               <button
                 type="button"
                 (click)="sumar(campo, 1)"

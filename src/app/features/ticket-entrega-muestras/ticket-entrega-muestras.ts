@@ -9,6 +9,7 @@ import { ReportPlanMuestreoService } from '../../services/solicitudes/plan-muest
 import { PlanMuestreoOpcion } from '../../interfaces/solicitudes/plan-muestreo/report-plan-muestreo.interface';
 import { PlanMuestreoService } from '../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 import { PreservacionRow } from '../../interfaces/ticket-entrega-muestras/ticket-entrega-muestras.interface';
+import { ToastrAlertService } from '../../services/toastr.service';
 
 /** Grupo del que sale la tabla de preservación dentro del detalle del plan. */
 const GRUPO_PRESERVACION = 'PRESERVACIÓN DE LAS MUESTRAS';
@@ -75,6 +76,7 @@ export class TicketEntregaMuestras implements OnDestroy {
   constructor(
     private reportPlanMuestreoService: ReportPlanMuestreoService,
     private planMuestreoService: PlanMuestreoService,
+    private toastrAlert: ToastrAlertService,
   ) {}
 
   ngOnDestroy(): void {
@@ -177,8 +179,18 @@ export class TicketEntregaMuestras implements OnDestroy {
     return plan.num_secuencial ?? plan.id;
   }
 
-  // TODO(funcionalidad): armar el payload y llamar al servicio.
   guardar(): void {
-    return;
+    if (!this.planSeleccionado) {
+      this.toastrAlert.showWarning(
+        'Selecciona un plan de muestreo antes de guardar el ticket.',
+        'Requerido',
+      );
+      return;
+    }
+
+    // TODO(funcionalidad): armar el payload y llamar al servicio. Por ahora el
+    // guardado es solo de interfaz: confirma y deja el formulario en blanco.
+    this.toastrAlert.showSuccess('El ticket de entrega ha sido guardado.', '¡Guardado!');
+    this.limpiarPlan();
   }
 }

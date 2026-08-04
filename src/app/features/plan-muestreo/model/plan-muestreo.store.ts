@@ -9,6 +9,7 @@ import {
 } from '../../../interfaces/solicitudes/plan-muestreo/plan-muestreo.interface';
 import { ReportFormularioService } from '../../../services/admin-formularios/report-formulario.service';
 import { ReportFormulario } from '../../../interfaces/admin-formularios/report-formulario.interface';
+import { TecnicoPlanMuestreo } from '../../../interfaces/solicitudes/plan-muestreo/tecnico-plan-muestreo.interface';
 import { DynamicField, FormularioLaboratorio, toValorDinamico } from '../../../shared/dynamic-form';
 
 /** Datos que el paso 1 deja fijados para el resto del asistente. */
@@ -33,6 +34,13 @@ export class PlanMuestreoStore {
   readonly TIPO_FORMULARIO_ID = 2019;
 
   contexto: PlanMuestreoContexto | null = null;
+
+  /**
+   * Técnico elegido antes de crear el plan. Por ahora solo se arrastra entre
+   * pantallas.
+   * TODO(funcionalidad): incluirlo en el payload de creación.
+   */
+  tecnico: TecnicoPlanMuestreo | null = null;
 
   private formulario$?: Observable<FormularioLaboratorio>;
   private metaFormulario$?: Observable<ReportFormulario | null>;
@@ -113,6 +121,7 @@ export class PlanMuestreoStore {
 
   limpiar(): void {
     this.contexto = null;
+    this.tecnico = null;
     this.campos.clear();
     this.respuestas.clear();
   }

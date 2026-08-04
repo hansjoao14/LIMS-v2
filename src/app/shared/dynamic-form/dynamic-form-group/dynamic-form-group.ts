@@ -66,10 +66,17 @@ export class DynamicFormGroupComponent {
     control?.markAsDirty();
   }
 
+  /**
+   * Los ± suman de a 1 sobre el valor actual, conservando su parte decimal
+   * (2.5 → 3.5). Se redondea a 6 decimales para no arrastrar el ruido de la
+   * coma flotante (0.1 + 0.2 = 0.30000000000000004).
+   */
   sumar(campo: DynamicField, delta: number): void {
     const control = this.control(campo.key);
     if (!control) return;
-    control.setValue(Math.max(0, Number(control.value ?? 0) + delta));
+    const actual = Number(control.value ?? 0);
+    const siguiente = Math.max(0, (Number.isFinite(actual) ? actual : 0) + delta);
+    control.setValue(Math.round(siguiente * 1e6) / 1e6);
     control.markAsDirty();
   }
 

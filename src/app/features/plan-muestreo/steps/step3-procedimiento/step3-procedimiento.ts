@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, firstValueFrom, takeUntil } from 'rxjs';
 
@@ -24,10 +24,12 @@ import {
   FILAS_TEXTAREA,
   LAYOUTS_NUMERO_VACIO,
   PLAN_MUESTREO_FORM_CONFIG,
+  procedimientoDeMuestreo,
   tipoRecipiente,
 } from '../../model/plan-muestreo-form.model';
 import { ReportFormulario } from '../../../../interfaces/admin-formularios/report-formulario.interface';
 import { PlanMuestreoStore } from '../../model/plan-muestreo.store';
+import { TecnicoPlanMuestreo } from '../../../../interfaces/solicitudes/plan-muestreo/tecnico-plan-muestreo.interface';
 
 @Component({
   selector: 'app-plan-muestreo-step3',
@@ -35,6 +37,7 @@ import { PlanMuestreoStore } from '../../model/plan-muestreo.store';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     PageHeader,
     LoadingComponent,
     DynamicFormGroupComponent,
@@ -60,8 +63,37 @@ export class Step3ProcedimientoComponent implements OnInit, OnDestroy {
   loading = true;
   saving = false;
 
-  // Contenido fijo que no forma parte del formulario dinámico.
-  readonly procedimiento = 'PEE/IAMQ/42';
+  /**
+   * Procedimiento del recurso hídrico: depende del tipo de matriz que fijó el
+   * paso 1 (Aguas Superficiales → PEE/IAMQ/42, Aguas Residuales → PG/IAMQ/08).
+   */
+  get procedimiento(): string {
+    return procedimientoDeMuestreo(this.store.contexto?.tipoAguaId);
+  }
+
+  // ── Modal del técnico responsable ────────────────────────────────────────
+  showTecnicoModal = false;
+  tecnicoSeleccionado: TecnicoPlanMuestreo | null = null;
+  busquedaTecnico = '';
+
+  // TODO(datos): listado de maqueta. El backend todavía no expone un endpoint
+  // de técnicos; hoy solo llega embebido en el formulario dinámico
+  // (`listado_empleado`).
+  readonly tecnicos: TecnicoPlanMuestreo[] = [
+    { id: '1', nombre: 'Juan Ledesma', cargo: 'Técnico/a de Muestreo en Campo' },
+    { id: '2', nombre: 'José Luis Montenegro', cargo: 'Técnico/a de Muestreo en Campo' },
+    { id: '3', nombre: 'Karen Guerron', cargo: 'Analista de Laboratorio' },
+    { id: '4', nombre: 'Jorge Diaz', cargo: 'Técnico/a de Muestreo en Campo' },
+    { id: '5', nombre: 'María Fernanda Salazar', cargo: 'Analista de Calidad' },
+  ];
+
+  get tecnicosFiltrados(): TecnicoPlanMuestreo[] {
+    const q = this.busquedaTecnico.trim().toLowerCase();
+    if (!q) return this.tecnicos;
+    return this.tecnicos.filter(
+      (t) => t.nombre.toLowerCase().includes(q) || t.cargo.toLowerCase().includes(q),
+    );
+  }
 
   private readonly destroy$ = new Subject<void>();
 
@@ -131,9 +163,36 @@ export class Step3ProcedimientoComponent implements OnInit, OnDestroy {
     this.router.navigate(['/plan-muestreo/paso2']);
   }
 
-  // Último paso: se envían de una sola vez las respuestas acumuladas en los
-  // pasos anteriores, con el mismo formato que la orden de trabajo in situ.
-  async guardar(): Promise<void> {
+  // ── Selección del técnico ────────────────────────────────────────────────
+
+  /**
+   * Guardar no envía de inmediato: primero valida y luego pide el técnico
+   * responsable. El envío real ocurre en `confirmarGuardado()`.
+   */
+  guardar(): void {
+    if (!this.puedeGuardar()) return;
+    this.tecnicoSeleccionado = null;
+    this.busquedaTecnico = '';
+    this.showTecnicoModal = true;
+  }
+
+  cerrarTecnicoModal(): void {
+    this.showTecnicoModal = false;
+  }
+
+  seleccionarTecnico(tecnico: TecnicoPlanMuestreo): void {
+    this.tecnicoSeleccionado = tecnico;
+  }
+
+  confirmarGuardado(): void {
+    if (!this.tecnicoSeleccionado) return;
+    this.store.tecnico = this.tecnicoSeleccionado;
+    this.showTecnicoModal = false;
+    void this.enviarPlan();
+  }
+
+  /** Validaciones previas: sin esto no tiene sentido pedir el técnico. */
+  private puedeGuardar(): boolean {
     this.persistir();
     const contexto = this.store.contexto;
     if (!contexto?.solicitudId) {
@@ -141,7 +200,7 @@ export class Step3ProcedimientoComponent implements OnInit, OnDestroy {
         'Seleccione una solicitud de trabajo en el paso 1 antes de guardar.',
         'Requerido',
       );
-      return;
+      return false;
     }
 
     const faltantes = this.store.camposFaltantes();
@@ -151,7 +210,7 @@ export class Step3ProcedimientoComponent implements OnInit, OnDestroy {
         'Complete todos los campos obligatorios antes de guardar.',
         'Requerido',
       );
-      return;
+      return false;
     }
 
     if (!contexto.tipoAguaId) {
@@ -159,8 +218,17 @@ export class Step3ProcedimientoComponent implements OnInit, OnDestroy {
         'No se pudo determinar el tipo de matriz de la solicitud seleccionada.',
         'Requerido',
       );
-      return;
+      return false;
     }
+
+    return true;
+  }
+
+  // Último paso: se envían de una sola vez las respuestas acumuladas en los
+  // pasos anteriores, con el mismo formato que la orden de trabajo in situ.
+  private async enviarPlan(): Promise<void> {
+    const contexto = this.store.contexto;
+    if (!contexto?.solicitudId || !contexto.tipoAguaId) return;
 
     this.saving = true;
     const { id: userId } = this.authService.currentUser();

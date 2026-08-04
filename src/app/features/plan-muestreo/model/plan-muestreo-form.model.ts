@@ -7,18 +7,31 @@ import { DynamicFormConfig } from '../../../shared/dynamic-form';
  * construcción de controles y el renderizado son compartidos; aquí solo queda
  * lo propio de este formulario.
  */
+/** Layout propio de este formulario: el motor lo delega a la plantilla del paso. */
+export const LAYOUT_PRESERVACION = 'preservacion';
+
+/** Los volúmenes de la tabla de preservación arrancan vacíos, no en cero. */
+export const LAYOUTS_NUMERO_VACIO = [LAYOUT_PRESERVACION];
+
 export const PLAN_MUESTREO_FORM_CONFIG: DynamicFormConfig = {
+  // La clave es el `grupo_texto` tal como lo envía el backend. `orden` es solo
+  // un respaldo: el orden real lo manda `grupo_numerico` de cada pregunta.
   grupos: {
     // Paso 2
-    tipo_muestreo: { titulo: 'Tipo de Muestreo', layout: 'campos', orden: 10 },
-    preservacion_de_las_muestras: {
+    'TIPO DE MUESTREO': { titulo: 'Tipo de Muestreo', layout: 'campos', orden: 10 },
+    'PRESERVACIÓN DE LAS MUESTRAS': {
       titulo: 'Preservación de las Muestras',
-      layout: 'preservacion',
+      layout: LAYOUT_PRESERVACION,
+      orden: 20,
+    },
+    'EQUIPOS MEDICIÓN IN SITU': {
+      titulo: 'Equipos de Medición In Situ',
+      layout: 'campos',
       orden: 30,
     },
-    equipos: { titulo: 'Equipos', layout: 'campos', orden: 40 },
-    materiales_para_muestreo: { titulo: 'Materiales para Muestreo', layout: 'toggles', orden: 50 },
-    condiciones_momento_de_muestreo: {
+    'EQUIPOS PRESERVACIÓN': { titulo: 'Equipos de Preservación', layout: 'campos', orden: 40 },
+    'EQUIPOS MUESTREO': { titulo: 'Equipos de Muestreo', layout: 'toggles', orden: 50 },
+    'CONDICIONES MOMENTO DE MUESTREO': {
       titulo: 'Condiciones Momento de Muestreo',
       layout: 'campos',
       orden: 60,
@@ -29,17 +42,17 @@ export const PLAN_MUESTREO_FORM_CONFIG: DynamicFormConfig = {
       layout: 'estatico',
       orden: 10,
     },
-    equipamiento_de_seguridad_seccion: {
+    'EQUIPAMIENTO DE SEGURIDAD': {
       titulo: 'Equipamiento de Seguridad',
       layout: 'campos',
       orden: 20,
     },
-    soluciones_buffer_y_estandares: {
+    'SOLUCIONES BUFFER Y ESTÁNDARES': {
       titulo: 'Soluciones Buffer y Estándares',
       layout: 'toggles-2col',
       orden: 30,
     },
-    observaciones: { titulo: 'Observaciones', layout: 'campos', orden: 40 },
+    OBSERVACIONES: { titulo: 'Observaciones', layout: 'campos', orden: 40 },
   },
 
   // Tarjetas que no salen del formulario dinámico y se arman en la plantilla.
@@ -47,33 +60,34 @@ export const PLAN_MUESTREO_FORM_CONFIG: DynamicFormConfig = {
     3: ['procedimiento_muestreo'],
   },
 
-  /**
-   * Correcciones de agrupación sobre lo que devuelve la API: estos buffers y
-   * estándares llegan con `grupo_texto` = condiciones_momento_de_muestreo (y uno
-   * de ellos en la sección 2), pero en el formulario impreso pertenecen a
-   * "Soluciones Buffer y Estándares" del paso 3.
-   * TODO(backend): corregir la configuración en BD y borrar este mapa.
-   */
-  ajustesAgrupacion: {
-    buffer_de_ph_10_cod_qc_14: { seccion: 3, grupo: 'soluciones_buffer_y_estandares' },
-    buffer_ph_4_qc_17: { grupo: 'soluciones_buffer_y_estandares' },
-    estandar_oxigeno_disuelto_0_mg_l_rv_42: { grupo: 'soluciones_buffer_y_estandares' },
-    estandar_conductividad_1413_cod_rv_63: { grupo: 'soluciones_buffer_y_estandares' },
-    estandar_conductividad_147_cod_rv_62: { grupo: 'soluciones_buffer_y_estandares' },
-  },
+  // Sin `ajustesAgrupacion`: el backend ya devuelve cada pregunta en su
+  // `grupo_texto` y `seccion` correctos. El mapa que había reasignaba 5 de los
+  // 8 buffers a otra clave y partía la tarjeta en dos.
 };
-
-/** Layout propio de este formulario: el motor lo delega a la plantilla del paso. */
-export const LAYOUT_PRESERVACION = 'preservacion';
-
-/** Los volúmenes de la tabla de preservación arrancan vacíos, no en cero. */
-export const LAYOUTS_NUMERO_VACIO = [LAYOUT_PRESERVACION];
 
 /** Alto de los textarea que lo necesitan; el resto usa el valor por defecto. */
 export const FILAS_TEXTAREA: Record<string, number> = {
   observaciones: 4,
   equipamiento_de_seguridad: 4,
 };
+
+/** Tipos de matriz que maneja el plan de muestreo (`ctambiente_id`). */
+export const MATRIZ_AGUAS_SUPERFICIALES = 92;
+export const MATRIZ_AGUAS_RESIDUALES = 93;
+
+/**
+ * Procedimiento de muestreo del recurso hídrico, según el tipo de matriz de la
+ * solicitud. La API no lo devuelve todavía.
+ * TODO(backend): exponerlo en el detalle y borrar esta constante.
+ */
+const PROCEDIMIENTO_POR_MATRIZ: Record<number, string> = {
+  [MATRIZ_AGUAS_SUPERFICIALES]: 'PEE/IAMQ/42',
+  [MATRIZ_AGUAS_RESIDUALES]: 'PG/IAMQ/08',
+};
+
+export function procedimientoDeMuestreo(tipoAguaId: number | null | undefined): string {
+  return tipoAguaId != null ? (PROCEDIMIENTO_POR_MATRIZ[tipoAguaId] ?? '—') : '—';
+}
 
 /**
  * Tipo de recipiente de cada preservación. La API todavía no lo devuelve, así
