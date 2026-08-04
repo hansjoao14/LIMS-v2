@@ -84,6 +84,8 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
   detalleLatitud = '';
   detalleLongitud = '';
   detalleDireccion = '';
+  /** Jornadas del operador, ya formateadas por el backend en `val_jor_la`. */
+  detalleHorarios: string[] = [];
 
   // TODO: prueba temporal — ids quemados de las tablas de laboratorio
   // (H2SO4, HNO3, TEMPERATURA, Aguas Residuales/Aguas) mientras se define de
@@ -279,8 +281,9 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
     this.tipoAguaId = f.tabla_ensayos?.[0]?.id_ambiental ?? null;
     this.tipoAguaNombre = f.tabla_ensayos?.[0]?.ensayo_nombre ?? '';
 
-    const attr = (nombre: string) =>
-      f.atributos?.find((a) => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
+    const buscarAtributo = (nombre: string) =>
+      f.atributos?.find((a) => a.nombre_atributo_formulario === nombre);
+    const attr = (nombre: string) => buscarAtributo(nombre)?.valor_texto ?? '';
 
     const fechaEmision = f.fecha_emision_solicitud ? new Date(f.fecha_emision_solicitud) : null;
     this.detalleFechaEmision = fechaEmision ? fechaEmision.toLocaleDateString('es-EC') : '';
@@ -293,6 +296,13 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
     this.detalleLatitud = attr('val_lati');
     this.detalleLongitud = attr('val_long');
     this.detalleDireccion = attr('val_dir_op');
+
+    // El backend ya arma el texto de las jornadas ("Lunes (08:00 - 09:00) |
+    // Martes (09:00 - 10:00)"); aquí solo se separa en bloques para listarlos.
+    this.detalleHorarios = (buscarAtributo('val_jor_la')?.valor_multiple_format ?? '')
+      .split('|')
+      .map((bloque) => bloque.trim())
+      .filter((bloque) => bloque.length > 0);
 
     // Los ensayos In Situ ya no se listan ni se envían: solo sirven para saber
     // qué filas de laboratorio quedan marcadas y bloqueadas.
@@ -314,6 +324,7 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
     this.detalleLatitud = '';
     this.detalleLongitud = '';
     this.detalleDireccion = '';
+    this.detalleHorarios = [];
     this.ensayosInSituIds.clear();
     this.tablasLaboratorio = [];
   }

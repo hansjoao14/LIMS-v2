@@ -354,11 +354,23 @@
               >
                 🕒
               </div>
-              <div>
+              <div class="flex-1 min-w-0">
                 <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
                   >Hora de Muestreo</label
                 >
-                <p class="text-sm text-slate-700">En el lapso de 10:00 am hasta las 14:00 pm</p>
+                @if (detalleHorarios.length > 0) {
+                  <div class="flex flex-wrap gap-1.5">
+                    @for (horario of detalleHorarios; track $index) {
+                      <span
+                        class="inline-block bg-blue-50 border border-blue-200 text-[#1e3a8a] text-xs font-medium px-2.5 py-1 rounded"
+                      >
+                        {{ horario }}
+                      </span>
+                    }
+                  </div>
+                } @else {
+                  <p class="text-sm text-slate-700">—</p>
+                }
               </div>
             </div>
           </div>
