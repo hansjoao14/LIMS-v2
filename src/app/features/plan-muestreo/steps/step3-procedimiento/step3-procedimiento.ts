@@ -22,6 +22,7 @@ import {
 } from '../../../../shared/dynamic-form';
 import {
   FILAS_TEXTAREA,
+  GRUPOS_AYUDA_COMO_VALOR,
   LAYOUTS_NUMERO_VACIO,
   PLAN_MUESTREO_FORM_CONFIG,
   procedimientoDeMuestreo,
@@ -134,6 +135,7 @@ export class Step3ProcedimientoComponent implements OnInit, OnDestroy {
           generarControles(this.form, this.grupos, {
             numeroVacioEnLayouts: LAYOUTS_NUMERO_VACIO,
             togglesActivosPorDefecto: true,
+            ayudaComoValorEnGrupos: GRUPOS_AYUDA_COMO_VALOR,
           });
           // Repuebla lo que el usuario ya había respondido en este paso.
           this.form.patchValue(this.store.respuestasDe(this.SECCION));

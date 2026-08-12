@@ -13,6 +13,12 @@ export const LAYOUT_PRESERVACION = 'preservacion';
 /** Los volúmenes de la tabla de preservación arrancan vacíos, no en cero. */
 export const LAYOUTS_NUMERO_VACIO = [LAYOUT_PRESERVACION];
 
+/**
+ * Grupos cuyo texto de ayuda va precargado dentro del control, no como
+ * placeholder: es el contenido esperado y el usuario lo edita, no lo tipea.
+ */
+export const GRUPOS_AYUDA_COMO_VALOR = ['EQUIPAMIENTO DE SEGURIDAD'];
+
 export const PLAN_MUESTREO_FORM_CONFIG: DynamicFormConfig = {
   // La clave es el `grupo_texto` tal como lo envía el backend. `orden` es solo
   // un respaldo: el orden real lo manda `grupo_numerico` de cada pregunta.

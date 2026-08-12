@@ -20,6 +20,13 @@ export interface GenerarControlesOptions {
    * repuebla después con `patchValue` y siempre gana.
    */
   togglesActivosPorDefecto?: boolean;
+  /**
+   * Grupos (`grupo_texto`) cuyos campos de texto arrancan con el texto de ayuda
+   * ya escrito dentro del control, en vez de mostrarlo como placeholder. Útil
+   * cuando la ayuda es el contenido esperado y no una pista: el usuario lo edita
+   * en vez de tipearlo desde cero. Solo aplica a `texto` y `textarea`.
+   */
+  ayudaComoValorEnGrupos?: string[];
 }
 
 /**
@@ -104,6 +111,10 @@ function valorInicial(
   if (campo.controlType === 'toggle') return options.togglesActivosPorDefecto ?? false;
   if (campo.controlType === 'numero') {
     return options.numeroVacioEnLayouts?.includes(grupo.layout) ? null : 0;
+  }
+  const esTexto = campo.controlType === 'texto' || campo.controlType === 'textarea';
+  if (esTexto && options.ayudaComoValorEnGrupos?.includes(grupo.key)) {
+    return campo.placeholder;
   }
   return '';
 }
