@@ -445,26 +445,22 @@
                     <tr
                       class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
                     >
-                      <th class="px-4 py-2.5 border-r border-slate-100 text-left">
+                      <th class="px-3 py-2 border-r border-slate-100 text-left">
                         Análisis Requerido
                       </th>
-                      <th class="px-4 py-2.5 border-r border-slate-100 text-left">Ensayo</th>
-                      <th class="px-4 py-2.5 border-r border-slate-100 text-left">
-                        Identificación
-                      </th>
-                      <th class="px-4 py-2.5 border-r border-slate-100 text-left">
-                        Método Interno
-                      </th>
-                      <th class="px-4 py-2.5 border-r border-slate-100 text-left">
+                      <th class="px-3 py-2 border-r border-slate-100 text-left">Ensayo</th>
+                      <th class="px-3 py-2 border-r border-slate-100 text-left">Identificación</th>
+                      <th class="px-3 py-2 border-r border-slate-100 text-left">Método Interno</th>
+                      <th class="px-3 py-2 border-r border-slate-100 text-left">
                         Método Referencia
                       </th>
-                      <th class="px-4 py-2.5 text-left">Unidad</th>
+                      <th class="px-3 py-2 text-left">Unidad</th>
                     </tr>
                   </thead>
                   <tbody>
                     @for (e of tabla.ensayos; track $index) {
                       <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                        <td class="px-4 py-3 border-r border-slate-100">
+                        <td class="px-3 py-2 border-r border-slate-100">
                           <div class="flex items-center gap-2">
                             <button
                               type="button"
@@ -492,28 +488,21 @@
                             >
                               {{ e.activo ? 'Sí' : 'No' }}
                             </span>
-                            @if (e.bloqueado) {
-                              <span
-                                class="text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-300 text-[#1e3a8a] bg-blue-50 uppercase tracking-wide"
-                                title="Requerido por la solicitud (Análisis In Situ)"
-                                >In Situ</span
-                              >
-                            }
                           </div>
                         </td>
-                        <td class="px-4 py-3 border-r border-slate-100 text-slate-700">
+                        <td class="px-3 py-2 border-r border-slate-100 text-slate-700">
                           {{ e.ensayo }}
                         </td>
-                        <td class="px-4 py-3 border-r border-slate-100 text-slate-700">
+                        <td class="px-3 py-2 border-r border-slate-100 text-slate-700">
                           {{ e.identificacion }}
                         </td>
-                        <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">
+                        <td class="px-3 py-2 border-r border-slate-100 text-slate-700 font-mono">
                           {{ e.metodoInterno }}
                         </td>
-                        <td class="px-4 py-3 border-r border-slate-100 text-slate-700 font-mono">
+                        <td class="px-3 py-2 border-r border-slate-100 text-slate-700 font-mono">
                           {{ e.metodoReferencia }}
                         </td>
-                        <td class="px-4 py-3 text-slate-700">{{ e.unidad }}</td>
+                        <td class="px-3 py-2 text-slate-700">{{ e.unidad }}</td>
                       </tr>
                     }
                   </tbody>

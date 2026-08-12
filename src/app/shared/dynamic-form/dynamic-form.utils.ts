@@ -14,6 +14,12 @@ export interface GenerarControlesOptions {
    * tabla de volúmenes, por ejemplo). Los contadores ± siempre arrancan en 0.
    */
   numeroVacioEnLayouts?: string[];
+  /**
+   * Arranca los toggles (`tipo_respuesta: 'Boolean'`) en "Sí" en vez de "No".
+   * Solo afecta a los controles nuevos: lo que el usuario ya respondió se
+   * repuebla después con `patchValue` y siempre gana.
+   */
+  togglesActivosPorDefecto?: boolean;
 }
 
 /**
@@ -95,7 +101,7 @@ function valorInicial(
   grupo: DynamicGroup,
   options: GenerarControlesOptions,
 ): unknown {
-  if (campo.controlType === 'toggle') return false;
+  if (campo.controlType === 'toggle') return options.togglesActivosPorDefecto ?? false;
   if (campo.controlType === 'numero') {
     return options.numeroVacioEnLayouts?.includes(grupo.layout) ? null : 0;
   }

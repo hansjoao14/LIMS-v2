@@ -133,6 +133,7 @@ export class Step3ProcedimientoComponent implements OnInit, OnDestroy {
           );
           generarControles(this.form, this.grupos, {
             numeroVacioEnLayouts: LAYOUTS_NUMERO_VACIO,
+            togglesActivosPorDefecto: true,
           });
           // Repuebla lo que el usuario ya había respondido en este paso.
           this.form.patchValue(this.store.respuestasDe(this.SECCION));
