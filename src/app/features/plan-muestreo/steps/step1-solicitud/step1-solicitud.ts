@@ -7,7 +7,8 @@ import { Subject, takeUntil, forkJoin, map, catchError, of } from 'rxjs';
 import { ReportSolicitudService } from '../../../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { ReportSolicitud } from '../../../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { ReportFormulario } from '../../../../interfaces/admin-formularios/report-formulario.interface';
-import { PaginationMeta } from '../../../../interfaces/catalogos/catalogo.interface';
+import { ItemCatalogo, PaginationMeta } from '../../../../interfaces/catalogos/catalogo.interface';
+import { CatalogoService } from '../../../../services/catalogo.service';
 import { SolicitudDetalleService } from '../../../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { PageHeader } from '../../../../shared/components/page-header/page-header';
 import { AlertService } from '../../../../services/alert.service';
@@ -58,6 +59,12 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
   formulario: ReportFormulario | null = null;
   fechaEmision: Date | null = null;
 
+  // ── Objetivo del muestreo ────────────────────────────────────────────────
+  // Catálogo de objetivos: antes el texto estaba quemado en el template.
+  readonly CATALOGO_OBJETIVO_ID = 1014;
+  objetivos: ItemCatalogo[] = [];
+  objetivoId: number | null = null;
+
   // ── Tipo de matriz (Aguas Superficiales=92 / Aguas Residuales=93) ───────
   tipoAguaId: number | null = null;
   tipoAguaNombre = '';
@@ -106,6 +113,7 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
     private router: Router,
     private alertService: AlertService,
     private store: PlanMuestreoStore,
+    private catalogoService: CatalogoService,
   ) {}
 
   ngOnInit(): void {
@@ -119,8 +127,25 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
           this.fechaEmision = new Date(Number(formulario.fecha_emision));
         }
       });
+    this.cargarObjetivos();
     // Las tablas de laboratorio son ids fijos: no dependen de la solicitud.
     this.cargarAnalisisLaboratorio();
+  }
+
+  // Opciones del desplegable "Objetivo" (catálogo 1014).
+  private cargarObjetivos(): void {
+    this.catalogoService
+      .getItemsByCatalogoId(this.CATALOGO_OBJETIVO_ID)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => (this.objetivos = res.data ?? []),
+        error: () => this.alertService.error('No se pudieron cargar los objetivos del muestreo'),
+      });
+  }
+
+  /** Texto completo del objetivo elegido, para mostrarlo bajo el desplegable. */
+  get objetivoTexto(): string {
+    return this.objetivos.find((o) => o.id === this.objetivoId)?.nombre ?? '';
   }
 
   // TODO: prueba temporal — trae las tablas de IDS_LABORATORIO_PRUEBA

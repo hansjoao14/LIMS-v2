@@ -37,10 +37,19 @@
         <div class="mb-4 border-b border-slate-300 pb-4">
           <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">Objetivo</h3>
         </div>
-        <p class="text-sm text-slate-600 leading-relaxed">
-          Realizar un monitoreo mensual (ENERO) para la caracterización de la calidad de los ríos
-          que conforman la red hídrica (Red metropolitana de monitoreo recurso hídrico -DMQ)
-        </p>
+        <select
+          class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+          [ngModel]="objetivoId"
+          (ngModelChange)="objetivoId = $event"
+        >
+          <option [ngValue]="null">Selecciona el objetivo del muestreo...</option>
+          @for (obj of objetivos; track obj.id) {
+            <option [ngValue]="obj.id">{{ obj.nombre }}</option>
+          }
+        </select>
+        @if (objetivoTexto) {
+          <p class="text-sm text-slate-600 leading-relaxed mt-3">{{ objetivoTexto }}</p>
+        }
       </div>
 
       <!-- INFO GRID -->
