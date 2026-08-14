@@ -1,0 +1,166 @@
+import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { Subject, finalize, takeUntil } from 'rxjs';
+
+import { PageHeader } from '../../../shared/components/page-header/page-header';
+import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
+import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
+import { ReportTicketEntrega } from '../../../interfaces/ticket-entrega-muestras/ticket-entrega-muestras.interface';
+import { ReportTicketEntregaService } from '../../../services/solicitudes/ticket-entrega-muestras/report-ticket-entrega.service';
+import { TicketEntregaMuestrasService } from '../../../services/solicitudes/ticket-entrega-muestras/ticket-entrega-muestras.service';
+import { AlertService } from '../../../services/alert.service';
+import { ToastrAlertService } from '../../../services/toastr.service';
+import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.utils';
+import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
+import { AuthService } from '../../auth/service/auth-service';
+
+@Component({
+  selector: 'app-ticket-entrega-muestras-lista',
+  standalone: true,
+  imports: [CommonModule, PageHeader, TableSkeleton, PaginationComponent],
+  templateUrl: './ticket-entrega-muestras-lista.html',
+  styleUrl: '../ticket-entrega-muestras.css',
+})
+export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
+  // TODO(datos): igual que en el formulario, la metadata de cabecera debería
+  // salir del API, pero el formulario F-I-53-01 no está registrado en
+  // parametrización. Ver el TODO de `ticket-entrega-muestras.ts`.
+  readonly codigoFormulario = 'F-I-53-01';
+  readonly edicion = '02';
+
+  loading = true;
+  tickets: ReportTicketEntrega[] = [];
+
+  meta: PaginationMeta | null = null;
+  currentPage = 1;
+  readonly PAGE_SIZE = 10;
+
+  openMenuId: string | null = null;
+  procesandoId: string | null = null;
+
+  private readonly destroy$ = new Subject<void>();
+
+  private userAppRole = computed<AppRole | null>(() => {
+    const roles = this.authService.userProfile()?.roles ?? [];
+    return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
+  });
+
+  canCrear = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.TICKET_ENTREGA_MUESTRAS, role, 'crear') : false;
+  });
+
+  canDelete = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.TICKET_ENTREGA_MUESTRAS, role, 'eliminar') : false;
+  });
+
+  constructor(
+    private router: Router,
+    private reportTicketEntregaService: ReportTicketEntregaService,
+    private ticketEntregaService: TicketEntregaMuestrasService,
+    private alertService: AlertService,
+    private toastrAlert: ToastrAlertService,
+    private zone: NgZone,
+    private authService: AuthService,
+  ) {}
+
+  ngOnInit(): void {
+    this.cargarTickets();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  cargarTickets(page = this.currentPage): void {
+    this.loading = true;
+    this.currentPage = page;
+    this.reportTicketEntregaService
+      .getTickets(page, this.PAGE_SIZE)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ data, meta }) => {
+          this.tickets = data;
+          this.meta = meta;
+          // Si la página quedó vacía al dar de baja el último registro, se
+          // retrocede a la anterior.
+          if (data.length === 0 && page > 1) {
+            this.cargarTickets(page - 1);
+            return;
+          }
+          this.loading = false;
+        },
+        error: () => {
+          this.loading = false;
+          this.alertService.error('No se pudo cargar la lista de tickets de entrega');
+        },
+      });
+  }
+
+  irAPagina(page: number): void {
+    this.closeMenu();
+    this.cargarTickets(page);
+  }
+
+  // ── Menú contextual ──────────────────────────────────────────────────────
+
+  toggleMenu(id: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.openMenuId = this.openMenuId === id ? null : id;
+  }
+
+  closeMenu(): void {
+    this.openMenuId = null;
+  }
+
+  abrirHaciaArriba(index: number): boolean {
+    return abrirMenuHaciaArriba(index, this.tickets.length);
+  }
+
+  // ── Acciones ─────────────────────────────────────────────────────────────
+
+  /** Etiqueta principal de la fila, para los mensajes de confirmación. */
+  etiquetaTicket(ticket: ReportTicketEntrega): string {
+    return ticket.num_secuencial ?? ticket.plan_num_secuencial ?? ticket.id;
+  }
+
+  async eliminarTicket(ticket: ReportTicketEntrega): Promise<void> {
+    if (!this.canDelete()) return;
+    const confirmado = await this.alertService.confirm({
+      title: '¿Eliminar ticket de entrega?',
+      text: `Se eliminará el ticket de ${this.etiquetaTicket(ticket)}. Esta acción no se puede deshacer.`,
+      confirmButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar',
+    });
+    if (!confirmado) return;
+
+    this.procesandoId = ticket.id;
+    this.ticketEntregaService
+      .deshabilitarTicketEntrega(ticket.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
+        }),
+      )
+      .subscribe({
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess('Ticket de entrega eliminado.', '¡Eliminado!');
+            this.cargarTickets();
+          }),
+        error: () =>
+          this.zone.run(() =>
+            this.toastrAlert.showError('No se pudo eliminar el ticket de entrega.', 'Error'),
+          ),
+      });
+  }
+
+  nuevoTicket(): void {
+    this.router.navigate(['/ticket-entrega-muestras/nuevo']);
+  }
+}

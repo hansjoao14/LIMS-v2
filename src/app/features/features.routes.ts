@@ -97,13 +97,25 @@ export const featuresRoutes: Routes = [
   {
     path: 'ticket-entrega-muestras',
     loadComponent: () =>
-      import('./ticket-entrega-muestras/ticket-entrega-muestras').then(
-        (m) => m.TicketEntregaMuestras,
+      import('./ticket-entrega-muestras/lista/ticket-entrega-muestras-lista').then(
+        (m) => m.TicketEntregaMuestrasLista,
       ),
     canActivate: [canActivateWithRealmRoles],
     data: {
       title: 'Ticket de Entrega de Muestras',
       requiredRoles: RoleAccess.TICKET_ENTREGA_MUESTRAS,
+    },
+  },
+  {
+    path: 'ticket-entrega-muestras/nuevo',
+    loadComponent: () =>
+      import('./ticket-entrega-muestras/ticket-entrega-muestras').then(
+        (m) => m.TicketEntregaMuestras,
+      ),
+    canActivate: [canActivateWithRealmRoles],
+    data: {
+      title: 'Ticket de Entrega de Muestras - Nuevo',
+      requiredRoles: RoleAccess.TICKET_ENTREGA_MUESTRAS_CREAR,
     },
   },
   {

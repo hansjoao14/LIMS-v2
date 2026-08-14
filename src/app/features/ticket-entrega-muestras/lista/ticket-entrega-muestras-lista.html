@@ -1,0 +1,188 @@
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
+    <div class="animate-in fade-in">
+      <app-page-header
+        breadcrumbSection="Ticket de Entrega de muestras"
+        title="Ticket de Entrega de muestras"
+        subtitle="Aquí podrás visualizar los tickets de entrega registrados"
+        [codigoFormulario]="codigoFormulario"
+        [edicion]="edicion"
+      />
+
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        @if (canCrear()) {
+          <div class="flex justify-end mb-4">
+            <button
+              type="button"
+              (click)="nuevoTicket()"
+              class="bg-[#1e3a8a] text-white px-5 py-2 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Nuevo Ticket
+            </button>
+          </div>
+        }
+
+        <div class="border border-slate-200 rounded overflow-hidden">
+          <div class="overflow-x-auto custom-scroll">
+            <table class="w-full text-sm border-collapse table-fixed min-w-[1010px]">
+              <colgroup>
+                <col class="w-[150px]" />
+                <col class="w-[150px]" />
+                <col class="w-[160px]" />
+                <col class="w-[160px]" />
+                <col class="w-[150px]" />
+                <col class="w-[150px]" />
+                <col class="w-[90px]" />
+              </colgroup>
+              <thead>
+                <tr
+                  class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
+                >
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Plan</th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">
+                    Código de Muestreo
+                  </th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Entregada por</th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Recibida por</th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">
+                    Fecha recepción
+                  </th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Observaciones</th>
+                  <th class="px-2 py-2.5 text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody
+                appTableSkeleton
+                [rows]="loading ? 8 : 0"
+                [cols]="6"
+                [actionButtons]="1"
+              ></tbody>
+              <tbody>
+                @if (!loading) {
+                  @for (ticket of tickets; track ticket.id) {
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                      <td
+                        class="px-3 py-2.5 border-r border-slate-100 text-xs font-semibold text-[#1e3a8a] truncate"
+                      >
+                        {{ ticket.plan_num_secuencial ?? '—' }}
+                      </td>
+                      <td
+                        class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate"
+                      >
+                        {{ ticket.plan_codigo_muestreo ?? '—' }}
+                      </td>
+                      <td
+                        class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate"
+                      >
+                        {{ ticket.entregado_por_nombre ?? '—' }}
+                      </td>
+                      <td
+                        class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate"
+                      >
+                        {{ ticket.recibido_por_nombre ?? '—' }}
+                      </td>
+                      <td
+                        class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-500 text-center"
+                      >
+                        {{ ticket.fecha_recepcion | date: 'dd/MM/yyyy HH:mm' }}
+                      </td>
+                      <td
+                        class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate"
+                        [title]="ticket.observaciones ?? ''"
+                      >
+                        {{ ticket.observaciones ?? '—' }}
+                      </td>
+                      <td class="px-2 py-2.5 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                          @if (canDelete()) {
+                            <div class="relative">
+                              <button
+                                type="button"
+                                title="Más acciones"
+                                (click)="toggleMenu(ticket.id, $event)"
+                                [disabled]="procesandoId === ticket.id"
+                                class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                              >
+                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path
+                                    d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"
+                                  />
+                                </svg>
+                              </button>
+
+                              @if (openMenuId === ticket.id) {
+                                <div
+                                  class="absolute right-0 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40"
+                                  [class.top-full]="!abrirHaciaArriba($index)"
+                                  [class.mt-1]="!abrirHaciaArriba($index)"
+                                  [class.bottom-full]="abrirHaciaArriba($index)"
+                                  [class.mb-1]="abrirHaciaArriba($index)"
+                                >
+                                  <button
+                                    type="button"
+                                    (click)="eliminarTicket(ticket); closeMenu()"
+                                    class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
+                                  >
+                                    <svg
+                                      class="h-3.5 w-3.5 shrink-0"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                      />
+                                    </svg>
+                                    Eliminar
+                                  </button>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="7" class="p-10 text-slate-400 italic text-center">
+                        No hay registros.
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <app-pagination
+          [meta]="meta"
+          [currentPage]="currentPage"
+          [itemsShown]="tickets.length"
+          itemLabel="tickets"
+          (pageChange)="irAPagina($event)"
+        >
+        </app-pagination>
+      </div>
+
+      <!-- Capa para cerrar el menú al hacer clic afuera. Va dentro de
+           .animate-in: esa clase termina con transform, lo que crea un
+           contexto de apilamiento, y desde fuera esta capa quedaría por
+           encima del menú y se comería sus clics. -->
+      @if (openMenuId !== null) {
+        <div class="fixed inset-0 z-40" (click)="closeMenu()"></div>
+      }
+    </div>
+  </div>
+</div>

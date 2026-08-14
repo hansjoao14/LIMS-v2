@@ -154,6 +154,7 @@ export const RoleAccess = {
   PLAN_MUESTREO: rolesWithAccess(MenuKey.PLAN_MUESTREO),
   PLAN_MUESTREO_CREAR: rolesWithAction(MenuKey.PLAN_MUESTREO, 'crear'),
   TICKET_ENTREGA_MUESTRAS: rolesWithAccess(MenuKey.TICKET_ENTREGA_MUESTRAS),
+  TICKET_ENTREGA_MUESTRAS_CREAR: rolesWithAction(MenuKey.TICKET_ENTREGA_MUESTRAS, 'crear'),
   CALIBRACION_EQUIPOS: rolesWithAccess(MenuKey.CALIBRACION_EQUIPOS),
   ADMIN_CATALOGOS: rolesWithAccess(MenuKey.ADMIN_CATALOGOS),
   ADMIN_ENSAYOS: rolesWithAccess(MenuKey.ADMIN_ENSAYOS),

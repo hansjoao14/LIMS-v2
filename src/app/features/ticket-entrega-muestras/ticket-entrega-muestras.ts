@@ -7,6 +7,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 
 import { AuthService } from '../auth/service/auth-service';
@@ -100,6 +101,7 @@ export class TicketEntregaMuestras implements OnInit, OnDestroy {
 
   constructor(
     private fb: FormBuilder,
+    private router: Router,
     private authService: AuthService,
     private reportPlanMuestreoService: ReportPlanMuestreoService,
     private planMuestreoService: PlanMuestreoService,
@@ -278,6 +280,9 @@ export class TicketEntregaMuestras implements OnInit, OnDestroy {
           this.limpiarPlan();
           this.form.reset({ fecha_recepcion: this.ahoraParaInput(), observaciones: '' });
           this.guardando = false;
+          // Igual que el plan de muestreo: al guardar se vuelve al listado,
+          // que recarga solo en su ngOnInit.
+          this.router.navigate(['/ticket-entrega-muestras']);
         },
         error: (err) => {
           this.toastrAlert.showError(
