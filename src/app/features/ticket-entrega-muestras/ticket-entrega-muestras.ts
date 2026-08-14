@@ -224,6 +224,10 @@ export class TicketEntregaMuestras implements OnInit, OnDestroy {
       });
   }
 
+  volverAlListado(): void {
+    this.router.navigate(['/ticket-entrega-muestras']);
+  }
+
   /** Etiqueta principal del plan en el buscador y en el chip de selección. */
   etiquetaPlan(plan: PlanMuestreoOpcion): string {
     return plan.num_secuencial ?? plan.id;

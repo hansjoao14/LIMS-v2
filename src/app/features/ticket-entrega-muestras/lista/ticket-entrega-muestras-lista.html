@@ -31,7 +31,12 @@
         }
 
         <div class="border border-slate-200 rounded overflow-hidden">
-          <div class="overflow-x-auto custom-scroll">
+          <!-- min-h reserva el alto que el menú ⋮ necesita para abrirse hacia
+               abajo. `overflow-x-auto` recorta también en vertical, y con 1 o 2
+               filas `abrirMenuHaciaArriba()` devuelve false (abre hacia abajo),
+               así que sin este alto mínimo el menú queda cortado. Con la tabla
+               llena el contenido ya supera este alto y no cambia nada. -->
+          <div class="overflow-x-auto custom-scroll min-h-[200px]">
             <table class="w-full text-sm border-collapse table-fixed min-w-[1010px]">
               <colgroup>
                 <col class="w-[150px]" />
