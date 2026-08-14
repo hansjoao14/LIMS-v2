@@ -23,6 +23,8 @@ export const GET_PLANES_MUESTREO_POR_ESTADO = gql`
         ctambiente_nombre
         solicitud_id
         solicitud_num_secuencial
+        usuario_id
+        usuario_nombre_completo
       }
       meta { ${META_FIELDS} }
     }

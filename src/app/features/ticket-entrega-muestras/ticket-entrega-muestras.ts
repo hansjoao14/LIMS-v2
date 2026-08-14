@@ -1,14 +1,22 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 
+import { AuthService } from '../auth/service/auth-service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import { ReportPlanMuestreoService } from '../../services/solicitudes/plan-muestreo/report-plan-muestreo.service';
 import { PlanMuestreoOpcion } from '../../interfaces/solicitudes/plan-muestreo/report-plan-muestreo.interface';
 import { PlanMuestreoService } from '../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 import { PreservacionRow } from '../../interfaces/ticket-entrega-muestras/ticket-entrega-muestras.interface';
+import { TicketEntregaMuestrasService } from '../../services/solicitudes/ticket-entrega-muestras/ticket-entrega-muestras.service';
 import { ToastrAlertService } from '../../services/toastr.service';
 
 /** Grupo del que sale la tabla de preservación dentro del detalle del plan. */
@@ -29,15 +37,17 @@ const TIPO_RECIPIENTE: Record<string, string> = {
 @Component({
   selector: 'app-ticket-entrega-muestras',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeader],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeader],
   templateUrl: './ticket-entrega-muestras.html',
   styleUrl: './ticket-entrega-muestras.css',
 })
-export class TicketEntregaMuestras implements OnDestroy {
-  // TODO(datos): lo que sigue marcado como maqueta se reemplaza cuando se
-  // defina la funcionalidad. El combo de códigos de muestra ya viene del API.
-
+export class TicketEntregaMuestras implements OnInit, OnDestroy {
   // ── Cabecera ─────────────────────────────────────────────────────────────
+  // TODO(datos): el estándar pide que esta metadata salga del API, pero el
+  // formulario F-I-53-01 no está registrado en parametrización — la
+  // colección de formularios solo tiene ots, pd, GV, GVP-C e IAM-Q. Cuando se
+  // dé de alta, reemplazar por `ReportFormularioService.getFormularioByCTId()`
+  // igual que en `plan-muestreo.store`.
   readonly codigoFormulario = 'F-I-53-01';
   readonly edicion = '02';
   readonly elaboradoPor = 'Tec. Jorge Diaz';
@@ -64,8 +74,23 @@ export class TicketEntregaMuestras implements OnDestroy {
   planesFiltrados: PlanMuestreoOpcion[] = [];
 
   // ── Recepción de las muestras ────────────────────────────────────────────
-  readonly entregadaPor = 'José Luis Montenegro';
-  readonly recibidaPor = 'Karen Guerron';
+  // "Entregada por" es el técnico del plan elegido (`usuario_id`); "Recibida
+  // por" es el usuario logueado, que es quien recibe en laboratorio. Ninguno
+  // se edita a mano: no hay endpoint de empleados — el único listado
+  // (`listado_empleado`) llega embebido en formularios dinámicos que esta
+  // pantalla no usa.
+  form!: FormGroup;
+  guardando = false;
+
+  /** Nombre del usuario logueado, para mostrarlo en "Recibida por". */
+  get recibidaPorNombre(): string {
+    return this.authService.currentUser().nombre || 'Usuario actual';
+  }
+
+  /** Nombre del técnico del plan, para mostrarlo en "Entregada por". */
+  get entregadaPorNombre(): string {
+    return this.planSeleccionado?.usuario_nombre_completo ?? '';
+  }
 
   // ── Preservación de las muestras ─────────────────────────────────────────
   preservaciones: PreservacionRow[] = [];
@@ -74,14 +99,37 @@ export class TicketEntregaMuestras implements OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
     private reportPlanMuestreoService: ReportPlanMuestreoService,
     private planMuestreoService: PlanMuestreoService,
+    private ticketEntregaService: TicketEntregaMuestrasService,
     private toastrAlert: ToastrAlertService,
   ) {}
+
+  ngOnInit(): void {
+    this.form = this.fb.group({
+      fecha_recepcion: [this.ahoraParaInput(), Validators.required],
+      observaciones: ['', Validators.maxLength(500)],
+    });
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /** Marca en rojo el campo solo después de que el usuario lo tocó. */
+  esCampoInvalido(campo: string): boolean {
+    const control = this.form?.get(campo);
+    return !!control && control.invalid && (control.touched || control.dirty);
+  }
+
+  /** `YYYY-MM-DDTHH:mm` en hora local, que es lo que espera datetime-local. */
+  private ahoraParaInput(): string {
+    const ahora = new Date();
+    const offset = ahora.getTimezoneOffset() * 60000;
+    return new Date(ahora.getTime() - offset).toISOString().slice(0, 16);
   }
 
   // ── Panel de búsqueda ────────────────────────────────────────────────────
@@ -180,6 +228,8 @@ export class TicketEntregaMuestras implements OnDestroy {
   }
 
   guardar(): void {
+    if (this.guardando) return;
+
     if (!this.planSeleccionado) {
       this.toastrAlert.showWarning(
         'Selecciona un plan de muestreo antes de guardar el ticket.',
@@ -188,9 +238,54 @@ export class TicketEntregaMuestras implements OnDestroy {
       return;
     }
 
-    // TODO(funcionalidad): armar el payload y llamar al servicio. Por ahora el
-    // guardado es solo de interfaz: confirma y deja el formulario en blanco.
-    this.toastrAlert.showSuccess('El ticket de entrega ha sido guardado.', '¡Guardado!');
-    this.limpiarPlan();
+    // El plan tiene que traer su técnico: es el `entregado_por_id` del ticket
+    // y el backend lo exige como UUID.
+    if (!this.planSeleccionado.usuario_id) {
+      this.toastrAlert.showError(
+        'El plan de muestreo seleccionado no tiene técnico asignado.',
+        'No se puede guardar',
+      );
+      return;
+    }
+
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.toastrAlert.showWarning(
+        'Revisa la fecha de recepción y las observaciones.',
+        'Datos incompletos',
+      );
+      return;
+    }
+
+    const { fecha_recepcion, observaciones } = this.form.value;
+    const observacionesLimpias = (observaciones ?? '').trim();
+
+    this.guardando = true;
+    this.ticketEntregaService
+      .crearTicketEntrega({
+        plan_muestreo_id: this.planSeleccionado.id,
+        entregado_por_id: this.planSeleccionado.usuario_id,
+        recibido_por_id: this.authService.currentUser().id,
+        fecha_recepcion: new Date(fecha_recepcion).toISOString(),
+        // El backend rechaza `''` en un campo opcional con `@IsString`: se
+        // omite mandando null cuando no hay observaciones.
+        observaciones: observacionesLimpias || null,
+      })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toastrAlert.showSuccess('El ticket de entrega ha sido guardado.', '¡Guardado!');
+          this.limpiarPlan();
+          this.form.reset({ fecha_recepcion: this.ahoraParaInput(), observaciones: '' });
+          this.guardando = false;
+        },
+        error: (err) => {
+          this.toastrAlert.showError(
+            err?.error?.message ?? 'No se pudo guardar el ticket de entrega.',
+            'Error',
+          );
+          this.guardando = false;
+        },
+      });
   }
 }

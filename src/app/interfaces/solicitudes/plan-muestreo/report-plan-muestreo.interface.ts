@@ -46,6 +46,9 @@ export type PlanMuestreoOpcion = Pick<
   | 'ctambiente_nombre'
   | 'solicitud_id'
   | 'solicitud_num_secuencial'
+  // El técnico del plan es quien entrega las muestras en el ticket de entrega.
+  | 'usuario_id'
+  | 'usuario_nombre_completo'
 >;
 
 export interface PlanesMuestreoOpcionPage {
