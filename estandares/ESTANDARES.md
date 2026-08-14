@@ -154,9 +154,13 @@ Elige (A) cuando lista y formulario comparten un schema/`fields` cargado una sol
 
 El estado de loading se renderiza como **skeleton rows dentro del `<tbody>`** vía el componente `TableSkeleton` (ver sección 4.1) — nunca con un spinner externo que oculte la tabla. La tabla siempre está presente en el DOM; solo cambia su contenido.
 
+**⚠️ El wrapper de scroll lleva `min-h-[200px]`.** `overflow-x-auto` recorta también en el eje vertical (si un eje no es `visible`, el otro pasa de `visible` a `auto`), así que el menú contextual ⋮ de la última fila queda cortado por el borde inferior del contenedor. `abrirMenuHaciaArriba()` lo resuelve para tablas largas abriendo el menú hacia arriba, pero devuelve `false` cuando hay **1 o 2 filas** — y ahí no hay ni espacio abajo ni filas arriba. El alto mínimo reserva ese espacio; con la tabla llena el contenido ya lo supera y no cambia nada.
+
+> **Corrección (2026-08-14):** las once listas del sistema tenían este bug latente; solo se veía al quedar con una o dos filas. Se agregó `min-h-[200px]` a todas (`plan-muestreo`, `orden-trabajo-in-situ`, `horarios-laborales`, `por-contraloria`, `secuencial`, `calibracion-equipos`, `catalogo`, `item-catalogo`, `ensayo`, `ensayo-item`, `lista-solicitudes` y `ticket-entrega-muestras`). Al crear una lista nueva, copiar el wrapper con el `min-h` ya puesto.
+
 ```html
 <div class="border border-slate-200 rounded overflow-hidden">
-  <div class="overflow-x-auto custom-scroll">
+  <div class="overflow-x-auto custom-scroll min-h-[200px]">
     <table class="w-full text-sm border-collapse table-fixed">
 
       <!-- colgroup: anchos explícitos para todas las columnas -->
@@ -231,7 +235,7 @@ El estado de loading se renderiza como **skeleton rows dentro del `<tbody>`** v�
 | Elemento | Clases |
 |---|---|
 | Wrapper tabla | `border border-slate-200 rounded overflow-hidden` |
-| Wrapper scroll | `overflow-x-auto custom-scroll` |
+| Wrapper scroll | `overflow-x-auto custom-scroll min-h-[200px]` |
 | `<table>` | `w-full text-sm border-collapse table-fixed` (agregar `min-w-[Npx]` si hay muchas columnas) |
 | `<thead> <tr>` | `bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider` |
 | `<th>` izquierda | `px-3 py-2.5 border-r border-slate-100 text-left` |
