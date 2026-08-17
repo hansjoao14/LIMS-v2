@@ -57,6 +57,17 @@ export interface ReportTicketEntrega {
   fecha_recepcion: string;
   observaciones: string | null;
   num_secuencial: string | null;
+  /**
+   * Estado del flujo, del catálogo "Estado de Registro": 2 Pendiente,
+   * 2023 Finalizado Solicitud (lo que deja "Autorizar"), 51 Rechazado.
+   * Ojo: es distinto de `estado`, que es la baja lógica.
+   */
+  ctestado_id: number;
+  ctestado_nombre: string | null;
+  motivo_rechazo: string | null;
+  autorizado_por_id: string | null;
+  autorizado_por_nombre: string | null;
+  fecha_autorizacion: string | null;
   estado: boolean;
   creado_en: string;
   creado_por: string;

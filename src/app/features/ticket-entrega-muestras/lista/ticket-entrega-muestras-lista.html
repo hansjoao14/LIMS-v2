@@ -34,7 +34,7 @@
           <!-- min-h: alto para que el menú ⋮ se abra sin quedar cortado con
                pocas filas. Ver ESTANDARES.md §3. -->
           <div class="overflow-x-auto custom-scroll min-h-[200px]">
-            <table class="w-full text-sm border-collapse table-fixed min-w-[1010px]">
+            <table class="w-full text-sm border-collapse table-fixed min-w-[1120px]">
               <colgroup>
                 <col class="w-[150px]" />
                 <col class="w-[150px]" />
@@ -42,7 +42,11 @@
                 <col class="w-[160px]" />
                 <col class="w-[150px]" />
                 <col class="w-[150px]" />
-                <col class="w-[90px]" />
+                <!-- Ancho para el badge de estado -->
+                <col class="w-[110px]" />
+                @if (hasAnyAction) {
+                  <col class="w-[130px]" />
+                }
               </colgroup>
               <thead>
                 <tr
@@ -54,18 +58,19 @@
                   </th>
                   <th class="px-3 py-2.5 border-r border-slate-100 text-left">Entregada por</th>
                   <th class="px-3 py-2.5 border-r border-slate-100 text-left">Recibida por</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">
-                    Fecha recepción
-                  </th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">Fecha recepción</th>
                   <th class="px-3 py-2.5 border-r border-slate-100 text-left">Observaciones</th>
-                  <th class="px-2 py-2.5 text-center">Acciones</th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
+                  @if (hasAnyAction) {
+                    <th class="px-2 py-2.5 text-center">Acciones</th>
+                  }
                 </tr>
               </thead>
               <tbody
                 appTableSkeleton
                 [rows]="loading ? 8 : 0"
-                [cols]="6"
-                [actionButtons]="1"
+                [cols]="7"
+                [actionButtons]="hasAnyAction ? 3 : 0"
               ></tbody>
               <tbody>
                 @if (!loading) {
@@ -102,62 +107,134 @@
                       >
                         {{ ticket.observaciones ?? '—' }}
                       </td>
-                      <td class="px-2 py-2.5 text-center">
-                        <div class="flex items-center justify-center gap-1.5">
-                          @if (canDelete()) {
-                            <div class="relative">
+                      <td class="px-3 py-2.5 border-r border-slate-100 text-center">
+                        @if (esFinalizado(ticket)) {
+                          <span
+                            class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50"
+                            >{{ etiquetaEstado(ticket) }}</span
+                          >
+                        } @else if (esRechazado(ticket)) {
+                          <span
+                            class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-red-400 text-red-700 bg-red-50"
+                            [title]="ticket.motivo_rechazo ?? ''"
+                            >{{ etiquetaEstado(ticket) }}</span
+                          >
+                        } @else {
+                          <span
+                            class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-amber-400 text-amber-700 bg-amber-50"
+                            >{{ etiquetaEstado(ticket) }}</span
+                          >
+                        }
+                      </td>
+                      @if (hasAnyAction) {
+                        <td class="px-2 py-2.5 text-center">
+                          <div class="flex items-center justify-center gap-1.5">
+                            @if (puedeAutorizar(ticket)) {
                               <button
                                 type="button"
-                                title="Más acciones"
-                                (click)="toggleMenu(ticket.id, $event)"
+                                title="Autorizar"
+                                (click)="autorizarTicket(ticket)"
                                 [disabled]="procesandoId === ticket.id"
-                                class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                                class="h-8 w-8 flex items-center justify-center rounded border border-green-400 text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
                               >
-                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                <svg
+                                  class="h-3.5 w-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
                                   <path
-                                    d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                                   />
                                 </svg>
                               </button>
+                            }
 
-                              @if (openMenuId === ticket.id) {
-                                <div
-                                  class="absolute right-0 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40"
-                                  [class.top-full]="!abrirHaciaArriba($index)"
-                                  [class.mt-1]="!abrirHaciaArriba($index)"
-                                  [class.bottom-full]="abrirHaciaArriba($index)"
-                                  [class.mb-1]="abrirHaciaArriba($index)"
+                            @if (puedeRechazar(ticket)) {
+                              <button
+                                type="button"
+                                title="Rechazar"
+                                (click)="rechazarTicket(ticket)"
+                                [disabled]="procesandoId === ticket.id"
+                                class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                              >
+                                <svg
+                                  class="h-3.5 w-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
                                 >
-                                  <button
-                                    type="button"
-                                    (click)="eliminarTicket(ticket); closeMenu()"
-                                    class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
+                                </svg>
+                              </button>
+                            }
+
+                            @if (puedeEliminar(ticket)) {
+                              <div class="relative">
+                                <button
+                                  type="button"
+                                  title="Más acciones"
+                                  (click)="toggleMenu(ticket.id, $event)"
+                                  [disabled]="procesandoId === ticket.id"
+                                  class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                                >
+                                  <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                      d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"
+                                    />
+                                  </svg>
+                                </button>
+
+                                @if (openMenuId === ticket.id) {
+                                  <div
+                                    class="absolute right-0 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-40"
+                                    [class.top-full]="!abrirHaciaArriba($index)"
+                                    [class.mt-1]="!abrirHaciaArriba($index)"
+                                    [class.bottom-full]="abrirHaciaArriba($index)"
+                                    [class.mb-1]="abrirHaciaArriba($index)"
                                   >
-                                    <svg
-                                      class="h-3.5 w-3.5 shrink-0"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
+                                    <button
+                                      type="button"
+                                      (click)="eliminarTicket(ticket); closeMenu()"
+                                      class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
                                     >
-                                      <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                      />
-                                    </svg>
-                                    Eliminar
-                                  </button>
-                                </div>
-                              }
-                            </div>
-                          }
-                        </div>
-                      </td>
+                                      <svg
+                                        class="h-3.5 w-3.5 shrink-0"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        />
+                                      </svg>
+                                      Eliminar
+                                    </button>
+                                  </div>
+                                }
+                              </div>
+                            }
+                          </div>
+                        </td>
+                      }
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="7" class="p-10 text-slate-400 italic text-center">
+                      <td
+                        [attr.colspan]="hasAnyAction ? 8 : 7"
+                        class="p-10 text-slate-400 italic text-center"
+                      >
                         No hay registros.
                       </td>
                     </tr>

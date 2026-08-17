@@ -14,6 +14,14 @@ export interface ConfirmOptions {
   cancelButtonColor?: string;
 }
 
+export interface PromptOptions extends ConfirmOptions {
+  inputPlaceholder?: string;
+  /** Tope de caracteres del textarea; debe coincidir con el `@MaxLength` del DTO. */
+  maxLength?: number;
+  /** Mensaje cuando el usuario confirma con el campo vacío. */
+  requiredMessage?: string;
+}
+
 /**
  * Wrapper de SweetAlert2 con las variantes que se repiten en las features
  * del proyecto (diálogos de error/éxito/advertencia y toasts), para no
@@ -96,6 +104,29 @@ export class AlertService {
       timer: timerMs,
       showConfirmButton: false,
     });
+  }
+
+  /**
+   * Confirmación que además pide un texto obligatorio (motivo de rechazo,
+   * observación, etc.). Devuelve el texto, o `null` si el usuario canceló.
+   */
+  async prompt(options: PromptOptions): Promise<string | null> {
+    const result = await Swal.fire({
+      icon: options.icon ?? 'warning',
+      title: options.title,
+      text: options.text,
+      input: 'textarea',
+      inputPlaceholder: options.inputPlaceholder,
+      inputAttributes: { maxlength: String(options.maxLength ?? 500) },
+      inputValidator: (value) =>
+        value?.trim() ? null : (options.requiredMessage ?? 'Este campo es obligatorio'),
+      showCancelButton: true,
+      confirmButtonText: options.confirmButtonText ?? 'Sí',
+      cancelButtonText: options.cancelButtonText ?? 'Cancelar',
+      confirmButtonColor: options.confirmButtonColor ?? ALERT_PRIMARY_COLOR,
+      cancelButtonColor: options.cancelButtonColor ?? '#6b7280',
+    });
+    return result.isConfirmed ? (result.value as string).trim() : null;
   }
 
   /** Diálogo de confirmar/cancelar. Devuelve true si el usuario confirmó. */

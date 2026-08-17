@@ -16,6 +16,15 @@ import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.util
 import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
 import { AuthService } from '../../auth/service/auth-service';
 
+// Estados del catálogo "Estado de Registro". El botón dice "Autorizar" pero el
+// estado que queda es "Finalizado Solicitud" (2023), no "Autorizado" (387): es
+// la convención del plan de muestreo, la entidad padre del ticket. Ver
+// plan-muestreo-lista.ts:27 y el CLAUDE.md del backend, sección "Estados del
+// flujo". El front lo muestra como "Finalizado" a secas.
+const ESTADO_PENDIENTE = 2;
+const ESTADO_FINALIZADO = 2023;
+const ESTADO_RECHAZADO = 51;
+
 @Component({
   selector: 'app-ticket-entrega-muestras-lista',
   standalone: true,
@@ -56,6 +65,21 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
     const role = this.userAppRole();
     return role ? hasPermission(MenuKey.TICKET_ENTREGA_MUESTRAS, role, 'eliminar') : false;
   });
+
+  canAutorizar = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.TICKET_ENTREGA_MUESTRAS, role, 'autorizar') : false;
+  });
+
+  canRechazar = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.TICKET_ENTREGA_MUESTRAS, role, 'rechazar') : false;
+  });
+
+  /** ESTANDARES.md §5.1: la columna de acciones solo existe si hay alguna acción. */
+  get hasAnyAction(): boolean {
+    return this.canDelete() || this.canAutorizar() || this.canRechazar();
+  }
 
   constructor(
     private router: Router,
@@ -128,8 +152,116 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
     return ticket.num_secuencial ?? ticket.plan_num_secuencial ?? ticket.id;
   }
 
+  // ── Estado del flujo ─────────────────────────────────────────────────────
+
+  esPendiente(ticket: ReportTicketEntrega): boolean {
+    return ticket.ctestado_id === ESTADO_PENDIENTE;
+  }
+
+  esFinalizado(ticket: ReportTicketEntrega): boolean {
+    return ticket.ctestado_id === ESTADO_FINALIZADO;
+  }
+
+  esRechazado(ticket: ReportTicketEntrega): boolean {
+    return ticket.ctestado_id === ESTADO_RECHAZADO;
+  }
+
+  // El catálogo lo nombra "Finalizado Solicitud", pero en el listado de tickets
+  // el sufijo no aporta: ya se sabe que la fila es un ticket. Mismo criterio que
+  // plan-muestreo-lista.ts.
+  etiquetaEstado(ticket: ReportTicketEntrega): string {
+    if (this.esFinalizado(ticket)) return 'Finalizado';
+    return ticket.ctestado_nombre ?? 'Pendiente';
+  }
+
+  /** Un ticket ya resuelto no se vuelve a autorizar ni a rechazar. */
+  puedeAutorizar(ticket: ReportTicketEntrega): boolean {
+    return this.canAutorizar() && this.esPendiente(ticket);
+  }
+
+  puedeRechazar(ticket: ReportTicketEntrega): boolean {
+    return this.canRechazar() && this.esPendiente(ticket);
+  }
+
+  // Un ticket finalizado ya fue aceptado por el laboratorio: no se elimina,
+  // aunque el rol tenga el permiso. Mismo criterio que plan-muestreo.
+  puedeEliminar(ticket: ReportTicketEntrega): boolean {
+    return this.canDelete() && !this.esFinalizado(ticket);
+  }
+
+  // ── Autorizar / Rechazar ─────────────────────────────────────────────────
+
+  async autorizarTicket(ticket: ReportTicketEntrega): Promise<void> {
+    if (!this.puedeAutorizar(ticket)) return;
+    const confirmado = await this.alertService.confirm({
+      icon: 'question',
+      title: '¿Autorizar ticket de entrega?',
+      text: `Se autorizará la entrega de ${this.etiquetaTicket(ticket)}.`,
+      confirmButtonColor: '#16a34a',
+      confirmButtonText: 'Sí, autorizar',
+    });
+    if (!confirmado) return;
+
+    this.procesandoId = ticket.id;
+    this.ticketEntregaService
+      .autorizarTicketEntrega(ticket.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
+        }),
+      )
+      .subscribe({
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess('Ticket de entrega autorizado.', '¡Autorizado!');
+            this.cargarTickets();
+          }),
+        error: () =>
+          this.zone.run(() =>
+            this.toastrAlert.showError('No se pudo autorizar el ticket de entrega.', 'Error'),
+          ),
+      });
+  }
+
+  async rechazarTicket(ticket: ReportTicketEntrega): Promise<void> {
+    if (!this.puedeRechazar(ticket)) return;
+    // El backend exige `motivo_rechazo` (400 si falta), así que se pide acá.
+    const motivo = await this.alertService.prompt({
+      title: '¿Rechazar ticket de entrega?',
+      text: `Se rechazará la entrega de ${this.etiquetaTicket(ticket)}.`,
+      inputPlaceholder: 'Motivo del rechazo',
+      maxLength: 500,
+      requiredMessage: 'El motivo del rechazo es obligatorio',
+      confirmButtonColor: '#d33',
+      confirmButtonText: 'Sí, rechazar',
+    });
+    if (!motivo) return;
+
+    this.procesandoId = ticket.id;
+    this.ticketEntregaService
+      .rechazarTicketEntrega(ticket.id, motivo)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
+        }),
+      )
+      .subscribe({
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess('Ticket de entrega rechazado.', '¡Rechazado!');
+            this.cargarTickets();
+          }),
+        error: () =>
+          this.zone.run(() =>
+            this.toastrAlert.showError('No se pudo rechazar el ticket de entrega.', 'Error'),
+          ),
+      });
+  }
+
   async eliminarTicket(ticket: ReportTicketEntrega): Promise<void> {
-    if (!this.canDelete()) return;
+    if (!this.puedeEliminar(ticket)) return;
     const confirmado = await this.alertService.confirm({
       title: '¿Eliminar ticket de entrega?',
       text: `Se eliminará el ticket de ${this.etiquetaTicket(ticket)}. Esta acción no se puede deshacer.`,

@@ -103,10 +103,12 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
   // contra la tabla de control de acceso F-PG-09 cuando esté definida.
   [MenuKey.TICKET_ENTREGA_MUESTRAS]: {
     [AppRole.ANALISTA_CALIDAD]: ['ver'],
-    [AppRole.RESPONSABLE_LAB]: ['ver', 'editar', 'crear'],
+    // Autorizar/rechazar la entrega es del responsable de laboratorio: es quien
+    // recibe las muestras y decide si las acepta.
+    [AppRole.RESPONSABLE_LAB]: ['ver', 'editar', 'crear', 'autorizar', 'rechazar'],
     [AppRole.ANALISTA_CAMPO]: ['ver'],
     [AppRole.ANALISTA_LAB]: ['ver', 'editar', 'crear'],
-    [AppRole.ADMIN]: ['ver', 'editar', 'eliminar', 'crear'],
+    [AppRole.ADMIN]: ['ver', 'editar', 'eliminar', 'crear', 'autorizar', 'rechazar'],
   },
 
   // Calibración de equipos F-PEE-11-02

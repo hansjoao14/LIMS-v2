@@ -17,6 +17,12 @@ const REPORT_TICKET_ENTREGA_FIELDS = `
   fecha_recepcion
   observaciones
   num_secuencial
+  ctestado_id
+  ctestado_nombre
+  motivo_rechazo
+  autorizado_por_id
+  autorizado_por_nombre
+  fecha_autorizacion
   estado
   creado_en
   creado_por

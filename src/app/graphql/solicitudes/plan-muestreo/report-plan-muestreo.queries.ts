@@ -4,12 +4,22 @@ import { META_FIELDS } from '../../fragments';
 /**
  * Planes en un estado concreto, paginados: alimenta el panel de búsqueda del
  * "Código de muestra" en el ticket de entrega.
+ *
+ * `tiene_ticket_en_curso: false` saca del selector los planes cuya entrega ya
+ * está registrada (ticket activo en Pendiente o Finalizado). Va en el `where` y
+ * no en el front porque el panel pagina en el servidor: filtrar después de
+ * recibir la página dejaría páginas cortas y un `meta` que miente.
+ * La columna sale de `REPORTES.vw_plan_muestreo_report`.
  */
 export const GET_PLANES_MUESTREO_POR_ESTADO = gql`
   query PlanesMuestreoPorEstado($ctestadoId: Int, $page: Int, $take: Int) {
     collectionReportPlanMuestreo(
       query: {
-        where: { estado: { equals: true }, ctestado_id: { equals: $ctestadoId } }
+        where: {
+          estado: { equals: true }
+          ctestado_id: { equals: $ctestadoId }
+          tiene_ticket_en_curso: { equals: false }
+        }
         pagination: { page: $page, take: $take }
       }
     ) {
