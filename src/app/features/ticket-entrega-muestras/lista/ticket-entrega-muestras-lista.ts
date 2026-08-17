@@ -1,4 +1,5 @@
 import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Subject, finalize, takeUntil } from 'rxjs';
@@ -6,15 +7,21 @@ import { Subject, finalize, takeUntil } from 'rxjs';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
+import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import { ReportTicketEntrega } from '../../../interfaces/ticket-entrega-muestras/ticket-entrega-muestras.interface';
 import { ReportTicketEntregaService } from '../../../services/solicitudes/ticket-entrega-muestras/report-ticket-entrega.service';
-import { TicketEntregaMuestrasService } from '../../../services/solicitudes/ticket-entrega-muestras/ticket-entrega-muestras.service';
+import {
+  IDENTIFICADOR_SECUENCIAL_TICKET_ENTREGA,
+  TicketEntregaMuestrasService,
+} from '../../../services/solicitudes/ticket-entrega-muestras/ticket-entrega-muestras.service';
 import { AlertService } from '../../../services/alert.service';
 import { ToastrAlertService } from '../../../services/toastr.service';
 import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.utils';
 import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
 import { AuthService } from '../../auth/service/auth-service';
+import { ReportFormularioService } from '../../../services/admin-formularios/report-formulario.service';
+import { ReportFormulario } from '../../../interfaces/admin-formularios/report-formulario.interface';
 
 // Estados del catálogo "Estado de Registro". El botón dice "Autorizar" pero el
 // estado que queda es "Finalizado Solicitud" (2023), no "Autorizado" (387): es
@@ -28,16 +35,16 @@ const ESTADO_RECHAZADO = 51;
 @Component({
   selector: 'app-ticket-entrega-muestras-lista',
   standalone: true,
-  imports: [CommonModule, PageHeader, TableSkeleton, PaginationComponent],
+  imports: [CommonModule, PageHeader, TableSkeleton, PaginationComponent, PdfViewerComponent],
   templateUrl: './ticket-entrega-muestras-lista.html',
   styleUrl: '../ticket-entrega-muestras.css',
 })
 export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
-  // TODO(datos): igual que en el formulario, la metadata de cabecera debería
-  // salir del API, pero el formulario F-I-53-01 no está registrado en
-  // parametrización. Ver el TODO de `ticket-entrega-muestras.ts`.
-  readonly codigoFormulario = 'F-I-53-01';
-  readonly edicion = '02';
+  // Ítem de catálogo "Formulario Código de Ticket de Entrega" (catalogo_id 9).
+  // La metadata de cabecera sale del API, igual que en plan-muestreo-lista.
+  readonly TIPO_FORMULARIO_ID = 2085;
+  formulario: ReportFormulario | null = null;
+  fechaEmision: Date | null = null;
 
   loading = true;
   tickets: ReportTicketEntrega[] = [];
@@ -48,6 +55,13 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
 
   openMenuId: string | null = null;
   procesandoId: string | null = null;
+
+  // ── PDF ──────────────────────────────────────────────────────────────────
+  showPdfModal = false;
+  isPdfCargando = false;
+  pdfPreviewUrl: SafeResourceUrl | null = null;
+  private pdfBlobUrl: string | null = null;
+  private pdfNombre = 'ticket-entrega.pdf';
 
   private readonly destroy$ = new Subject<void>();
 
@@ -76,9 +90,18 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
     return role ? hasPermission(MenuKey.TICKET_ENTREGA_MUESTRAS, role, 'rechazar') : false;
   });
 
-  /** ESTANDARES.md §5.1: la columna de acciones solo existe si hay alguna acción. */
+  /**
+   * ESTANDARES.md §5.1: la columna de acciones solo existe si hay alguna acción.
+   * Imprimir no depende del rol — cualquiera que vea el listado puede bajar el
+   * PDF de una entrega finalizada — así que también cuenta.
+   */
   get hasAnyAction(): boolean {
-    return this.canDelete() || this.canAutorizar() || this.canRechazar();
+    return (
+      this.canDelete() ||
+      this.canAutorizar() ||
+      this.canRechazar() ||
+      this.tickets.some((t) => this.puedeImprimir(t))
+    );
   }
 
   constructor(
@@ -89,13 +112,28 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
     private toastrAlert: ToastrAlertService,
     private zone: NgZone,
     private authService: AuthService,
+    private sanitizer: DomSanitizer,
+    private reportFormularioService: ReportFormularioService,
   ) {}
 
   ngOnInit(): void {
+    this.reportFormularioService
+      .getFormularioByCTId(this.TIPO_FORMULARIO_ID)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (formulario) => {
+          this.formulario = formulario;
+          if (formulario?.fecha_emision) {
+            this.fechaEmision = new Date(Number(formulario.fecha_emision));
+          }
+        },
+      });
+
     this.cargarTickets();
   }
 
   ngOnDestroy(): void {
+    this.revocarPdf();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -204,7 +242,7 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
 
     this.procesandoId = ticket.id;
     this.ticketEntregaService
-      .autorizarTicketEntrega(ticket.id)
+      .autorizarTicketEntrega(ticket.id, IDENTIFICADOR_SECUENCIAL_TICKET_ENTREGA)
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => {
@@ -294,5 +332,63 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
 
   nuevoTicket(): void {
     this.router.navigate(['/ticket-entrega-muestras/nuevo']);
+  }
+
+  // ── PDF ──────────────────────────────────────────────────────────────────
+
+  /**
+   * Solo se imprime una entrega finalizada: el backend rechaza con 400 un
+   * ticket pendiente o rechazado, así que la opción tampoco se ofrece.
+   */
+  puedeImprimir(ticket: ReportTicketEntrega): boolean {
+    return this.esFinalizado(ticket);
+  }
+
+  imprimirTicket(ticket: ReportTicketEntrega): void {
+    if (!this.puedeImprimir(ticket)) return;
+
+    this.showPdfModal = true;
+    this.isPdfCargando = true;
+    this.pdfPreviewUrl = null;
+    this.revocarPdf();
+    this.pdfNombre = `${this.etiquetaTicket(ticket)}.pdf`;
+
+    this.ticketEntregaService
+      .getPdfTicketEntrega(ticket.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) =>
+          this.zone.run(() => {
+            this.pdfBlobUrl = URL.createObjectURL(blob);
+            this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
+            this.isPdfCargando = false;
+          }),
+        error: () =>
+          this.zone.run(() => {
+            this.showPdfModal = false;
+            this.isPdfCargando = false;
+            this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
+          }),
+      });
+  }
+
+  cerrarPdf(): void {
+    this.showPdfModal = false;
+    this.pdfPreviewUrl = null;
+    this.revocarPdf();
+  }
+
+  descargarPdf(): void {
+    if (!this.pdfBlobUrl) return;
+    const a = document.createElement('a');
+    a.href = this.pdfBlobUrl;
+    a.download = this.pdfNombre;
+    a.click();
+  }
+
+  private revocarPdf(): void {
+    if (!this.pdfBlobUrl) return;
+    URL.revokeObjectURL(this.pdfBlobUrl);
+    this.pdfBlobUrl = null;
   }
 }

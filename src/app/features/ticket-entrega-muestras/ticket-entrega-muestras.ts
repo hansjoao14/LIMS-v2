@@ -19,6 +19,8 @@ import { PlanMuestreoService } from '../../services/solicitudes/plan-muestreo/pl
 import { PreservacionRow } from '../../interfaces/ticket-entrega-muestras/ticket-entrega-muestras.interface';
 import { TicketEntregaMuestrasService } from '../../services/solicitudes/ticket-entrega-muestras/ticket-entrega-muestras.service';
 import { ToastrAlertService } from '../../services/toastr.service';
+import { ReportFormularioService } from '../../services/admin-formularios/report-formulario.service';
+import { ReportFormulario } from '../../interfaces/admin-formularios/report-formulario.interface';
 
 /** Grupo del que sale la tabla de preservación dentro del detalle del plan. */
 const GRUPO_PRESERVACION = 'PRESERVACIÓN DE LAS MUESTRAS';
@@ -44,15 +46,12 @@ const TIPO_RECIPIENTE: Record<string, string> = {
 })
 export class TicketEntregaMuestras implements OnInit, OnDestroy {
   // ── Cabecera ─────────────────────────────────────────────────────────────
-  // TODO(datos): el estándar pide que esta metadata salga del API, pero el
-  // formulario F-I-53-01 no está registrado en parametrización — la
-  // colección de formularios solo tiene ots, pd, GV, GVP-C e IAM-Q. Cuando se
-  // dé de alta, reemplazar por `ReportFormularioService.getFormularioByCTId()`
-  // igual que en `plan-muestreo.store`.
-  readonly codigoFormulario = 'F-I-53-01';
-  readonly edicion = '02';
-  readonly elaboradoPor = 'Tec. Jorge Diaz';
-  readonly fechaSolicitud = new Date(2025, 4, 27);
+  // Ítem de catálogo "Formulario Código de Ticket de Entrega" (catalogo_id 9).
+  // La metadata sale del API, igual que en plan-muestreo. `elaboradoPor` no se
+  // pasa: <app-page-header> cae al usuario logueado cuando es null.
+  readonly TIPO_FORMULARIO_ID = 2085;
+  formulario: ReportFormulario | null = null;
+  fechaEmision: Date | null = null;
 
   // ── Información de las muestras ──────────────────────────────────────────
   // El usuario busca un PLAN; el código de muestra se deriva del plan elegido.
@@ -107,9 +106,22 @@ export class TicketEntregaMuestras implements OnInit, OnDestroy {
     private planMuestreoService: PlanMuestreoService,
     private ticketEntregaService: TicketEntregaMuestrasService,
     private toastrAlert: ToastrAlertService,
+    private reportFormularioService: ReportFormularioService,
   ) {}
 
   ngOnInit(): void {
+    this.reportFormularioService
+      .getFormularioByCTId(this.TIPO_FORMULARIO_ID)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (formulario) => {
+          this.formulario = formulario;
+          if (formulario?.fecha_emision) {
+            this.fechaEmision = new Date(Number(formulario.fecha_emision));
+          }
+        },
+      });
+
     this.form = this.fb.group({
       fecha_recepcion: [this.ahoraParaInput(), Validators.required],
       observaciones: ['', Validators.maxLength(500)],

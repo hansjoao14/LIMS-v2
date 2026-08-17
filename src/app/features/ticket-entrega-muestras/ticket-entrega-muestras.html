@@ -5,10 +5,9 @@
         breadcrumbSection="Ticket de Entrega de muestras"
         title="Ticket de Entrega de muestras de Descargas Líquidas y Aguas Superficiales"
         subtitle="Aquí podrás realizar el formulario para la recepción de ticket de muestras"
-        [codigoFormulario]="codigoFormulario"
-        [edicion]="edicion"
-        [elaboradoPor]="elaboradoPor"
-        [fechaSolicitud]="fechaSolicitud"
+        [codigoFormulario]="formulario?.descripcion ?? null"
+        [edicion]="formulario?.version ?? null"
+        [fechaSolicitud]="fechaEmision"
       />
 
       <!-- INFORMACIÓN DE LAS MUESTRAS -->
