@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/shared/components/loading/loading.ts", "src/app/shared/components/loading/loading.html"],
-  "sourcesContent": ["import { Component } from '@angular/core';\n\n@Component({\n  selector: 'app-loading',\n  standalone: true,\n  templateUrl: './loading.html',\n})\nexport class LoadingComponent {}\n", "<div class=\"flex items-center justify-center p-16\">\n  <div class=\"animate-spin rounded-full h-10 w-10 border-b-2 border-[#1e3a8a]\"></div>\n</div>\n"],
-  "mappings": ";;;;;;;;;;;AAOM,IAAO,mBAAP,MAAO,kBAAgB;;qCAAhB,mBAAgB;EAAA;yEAAhB,mBAAgB,WAAA,CAAA,CAAA,aAAA,CAAA,GAAA,OAAA,GAAA,MAAA,GAAA,QAAA,CAAA,CAAA,GAAA,QAAA,gBAAA,kBAAA,MAAA,GAAA,CAAA,GAAA,gBAAA,gBAAA,QAAA,QAAA,cAAA,kBAAA,CAAA,GAAA,UAAA,SAAA,0BAAA,IAAA,KAAA;AAAA,QAAA,KAAA,GAAA;ACP7B,MAAA,4BAAA,GAAA,OAAA,CAAA;AACE,MAAA,uBAAA,GAAA,OAAA,CAAA;AACF,MAAA,0BAAA;;;;;sEDKa,kBAAgB,CAAA;UAL5B;uBACW,eAAa,YACX,MAAI,UAAA,uJAAA,CAAA;;;;6EAGL,kBAAgB,EAAA,WAAA,oBAAA,UAAA,gDAAA,YAAA,EAAA,CAAA;AAAA,GAAA;",
-  "names": []
-}

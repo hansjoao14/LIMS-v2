@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["formulario-detalle.html"],
-  "sourcesContent": ["\n  .animate-in { animation: fadeIn 0.25s ease-out forwards; }\n  .fade-in { opacity: 0; }\n  @keyframes fadeIn { to { opacity: 1; } }\n"],
-  "mappings": ";AACE,CAAA;AAAc,aAAA,OAAA,MAAA,SAAA;AAA2C;AACzD,CAAA;AAAW,WAAA;AAAY;AACvB,WAFc;AAEM;AAAK,aAAA;AAAY;AAAE;",
-  "names": []
-}

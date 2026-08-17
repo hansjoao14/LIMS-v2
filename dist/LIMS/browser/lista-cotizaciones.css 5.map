@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/features/lista-cotizaciones/lista-cotizaciones.css"],
-  "sourcesContent": [".animate-in {\n  animation: animateIn 0.3s ease-out forwards;\n}\n\n.fade-in {\n  opacity: 0;\n}\n\n@keyframes animateIn {\n  to {\n    opacity: 1;\n    transform: translate(0);\n  }\n}\n\ninput:focus,\nselect:focus,\ntextarea:focus {\n  outline: none;\n  border-color: #1e3a8a;\n  box-shadow: 0 0 0 1px #1e3a8a;\n}\n"],
-  "mappings": ";AAAA,CAAA;AACE,aAAA,UAAA,KAAA,SAAA;AACF;AAEA,CAAA;AACE,WAAA;AACF;AAEA,WAPE;AAQA;AACE,aAAA;AACA,eAAA,UAAA;AACF;AACF;AAEA,KAAA;;;AAGE,WAAA;AACA,gBAAA;AACA,cAAA,EAAA,EAAA,EAAA,IAAA;AACF;",
-  "names": []
-}

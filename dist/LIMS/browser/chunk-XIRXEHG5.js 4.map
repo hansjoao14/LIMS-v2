@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/graphql/fragments.ts"],
-  "sourcesContent": ["export const META_FIELDS = `\n  hasNextPage\n  hasPrevPage\n  limit\n  nextPage\n  page\n  prevPage\n  skip\n  total\n  totalPages\n`;\n\nexport const REPORT_VALOR_SOLICITUD_FIELDS = `\n  atributo_formulario_id\n  atributo_formulario_nombre\n  atributo_formulario_pregunta\n  atributo_id\n  ctipo_dato_nombre\n  fecha_creacion\n  id_solicitud\n  item_catalogo_id\n  nombres_completos\n  valor_catalogo\n  valor_texto\n  valor_numero\n  valor_fecha\n  valor_booleano\n  valor_multiple\n  valor_solicitud_id\n`;\n\nexport const REPORT_SOLICITUD_FIELDS = `\n  ctestado_id\n  descripcion_solicitud\n  establecimiento_id\n  establecimiento_nombre\n  estado_logico_solicitud\n  estado_solicitud\n  fecha_actualizacion\n  fecha_creacion\n  formulario_id\n  formulario_nombre\n  id_solicitud\n  nombres_completos\n  num_secuencial\n  periodo_id\n  periodo_nombre\n  prioridad_id\n  prioridad_nombre\n  secuencial_id\n  usuario_actualizacion\n  usuario_creacion\n  usuario_id\n  usuario_nombre\n`;\n"],
-  "mappings": ";AAAO,IAAM,cAAc;;;;;;;;;;;AAYpB,IAAM,gCAAgC;;;;;;;;;;;;;;;;;;AAmBtC,IAAM,0BAA0B;;;;;;;;;;;;;;;;;;;;;;;;",
-  "names": []
-}

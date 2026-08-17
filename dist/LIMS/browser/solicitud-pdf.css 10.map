@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["solicitud-pdf.html"],
-  "sourcesContent": ["\n  @media print {\n    .no-print { display: none !important; }\n    .no-print-bg { background: none !important; overflow: visible !important; position: static !important; }\n    .pdf-page { margin: 0 !important; box-shadow: none !important; width: 100% !important; }\n  }\n"],
-  "mappings": ";AACE,OAAA;AACE,GAAA;AAAY,aAAA;AAA0B;AACtC,GAAA;AAAe,gBAAA;AAA6B,cAAA;AAA8B,cAAA;AAA6B;AACvG,GAAA;AAAY,YAAA;AAAsB,gBAAA;AAA6B,WAAA;AAAwB;AACzF;",
-  "names": []
-}

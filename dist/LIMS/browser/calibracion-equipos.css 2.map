@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/features/calibracion-equipos/calibracion-equipos.css"],
-  "sourcesContent": [".animate-in {\n  animation: animateIn 0.3s ease-out forwards;\n}\n\n.fade-in {\n  opacity: 0;\n}\n\n@keyframes animateIn {\n  to {\n    opacity: 1;\n    transform: translate(0);\n  }\n}\n\n.custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }\n.custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }\n.custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }\n.custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }\n\ninput:focus,\nselect:focus,\ntextarea:focus {\n  outline: none;\n  border-color: #1e3a8a;\n  box-shadow: 0 0 0 1px #1e3a8a;\n}\n"],
-  "mappings": ";AAAA,CAAA;AACE,aAAA,UAAA,KAAA,SAAA;AACF;AAEA,CAAA;AACE,WAAA;AACF;AAEA,WAPE;AAQA;AACE,aAAA;AACA,eAAA,UAAA;AACF;AACF;AAEA,CAAA,aAAA;AAAoC,SAAA;AAAY,UAAA;AAAa;AAC7D,CADA,aACA;AAA0C,cAAA;AAAqB,iBAAA;AAAoB;AACnF,CAFA,aAEA;AAA0C,cAAA;AAAqB,iBAAA;AAAoB;AACnF,CAHA,aAGA,yBAAA;AAAgD,cAAA;AAAqB;AAErE,KAAA;;;AAGE,WAAA;AACA,gBAAA;AACA,cAAA,EAAA,EAAA,EAAA,IAAA;AACF;",
-  "names": []
-}
