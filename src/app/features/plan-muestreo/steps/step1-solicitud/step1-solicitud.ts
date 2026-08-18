@@ -1,14 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil, forkJoin, map, catchError, of } from 'rxjs';
 
 import { ReportSolicitudService } from '../../../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { ReportSolicitud } from '../../../../interfaces/solicitudes/lista-solicitudes/report-solicitud.interface';
 import { ReportFormulario } from '../../../../interfaces/admin-formularios/report-formulario.interface';
-import { ItemCatalogo, PaginationMeta } from '../../../../interfaces/catalogos/catalogo.interface';
-import { CatalogoService } from '../../../../services/catalogo.service';
+import { PaginationMeta } from '../../../../interfaces/catalogos/catalogo.interface';
 import { SolicitudDetalleService } from '../../../../services/solicitudes/solicitud-detalle/solicitud-detalle.service';
 import { PageHeader } from '../../../../shared/components/page-header/page-header';
 import { AlertService } from '../../../../services/alert.service';
@@ -17,8 +16,22 @@ import {
   ReportCatalogoNota,
   ReportCatalogoEnsayoItem,
 } from '../../../../interfaces/solicitudes/solicitud-trabajo';
+import {
+  DynamicField,
+  DynamicGroup,
+  aplicarDependencias,
+  camposDe,
+  construirGrupos,
+  generarControles,
+} from '../../../../shared/dynamic-form';
+import { PLAN_MUESTREO_FORM_CONFIG } from '../../model/plan-muestreo-form.model';
 import { PlanMuestreoStore } from '../../model/plan-muestreo.store';
 import { PlanMuestreoDetallePayload } from '../../../../interfaces/solicitudes/plan-muestreo/plan-muestreo.interface';
+
+// `nombre` del atributo en el esquema dinámico. Reemplaza al viejo
+// CATALOGO_OBJETIVO_ID = 1014: el id del catálogo ya viene en la pregunta, no
+// hace falta conocerlo ni pedirlo aparte.
+const CAMPO_OBJETIVO = 'objetivo';
 
 export interface EnsayoLaboratorioRow {
   activo: boolean;
@@ -47,7 +60,7 @@ export interface TablaLaboratorioUI {
 
 @Component({
   selector: 'app-plan-muestreo-step1',
-  imports: [CommonModule, FormsModule, PageHeader],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeader],
   templateUrl: './step1-solicitud.html',
   styleUrl: '../../plan-muestreo.css',
 })
@@ -56,14 +69,18 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
   readonly PASO = 1;
   readonly TOTAL_PASOS = 3;
 
+  // Sección del formulario dinámico que se renderiza en este paso. Hoy trae un
+  // único grupo, "Objetivo", que el usuario elige de un catálogo. Antes ninguna
+  // pantalla pintaba la sección 1: el atributo existía en el esquema pero
+  // quedaba huérfano, nunca se respondía y por eso no llegaba al PDF.
+  readonly SECCION = 1;
+  form: FormGroup;
+  grupos: DynamicGroup[] = [];
+
   formulario: ReportFormulario | null = null;
   fechaEmision: Date | null = null;
 
   // ── Objetivo del muestreo ────────────────────────────────────────────────
-  // Catálogo de objetivos: antes el texto estaba quemado en el template.
-  readonly CATALOGO_OBJETIVO_ID = 1014;
-  objetivos: ItemCatalogo[] = [];
-  objetivoId: number | null = null;
 
   // ── Tipo de matriz (Aguas Superficiales=92 / Aguas Residuales=93) ───────
   tipoAguaId: number | null = null;
@@ -113,10 +130,14 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
     private router: Router,
     private alertService: AlertService,
     private store: PlanMuestreoStore,
-    private catalogoService: CatalogoService,
-  ) {}
+    private fb: FormBuilder,
+  ) {
+    this.form = this.fb.group({});
+  }
 
   ngOnInit(): void {
+    this.cargarSeccionDinamica();
+
     // Cabecera compartida por los tres pasos: el store la cachea.
     this.store
       .getMetaFormulario()
@@ -127,25 +148,8 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
           this.fechaEmision = new Date(Number(formulario.fecha_emision));
         }
       });
-    this.cargarObjetivos();
     // Las tablas de laboratorio son ids fijos: no dependen de la solicitud.
     this.cargarAnalisisLaboratorio();
-  }
-
-  // Opciones del desplegable "Objetivo" (catálogo 1014).
-  private cargarObjetivos(): void {
-    this.catalogoService
-      .getItemsByCatalogoId(this.CATALOGO_OBJETIVO_ID)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res) => (this.objetivos = res.data ?? []),
-        error: () => this.alertService.error('No se pudieron cargar los objetivos del muestreo'),
-      });
-  }
-
-  /** Texto completo del objetivo elegido, para mostrarlo bajo el desplegable. */
-  get objetivoTexto(): string {
-    return this.objetivos.find((o) => o.id === this.objetivoId)?.nombre ?? '';
   }
 
   // TODO: prueba temporal — trae las tablas de IDS_LABORATORIO_PRUEBA
@@ -217,8 +221,49 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Las respuestas quedan en el store, que arma el payload final en el paso 3.
+    // Sin esto el objetivo se perdería al navegar al paso 2.
+    this.store.guardarSeccion(this.SECCION, camposDe(this.grupos), this.form.getRawValue());
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /**
+   * El único campo de la sección 1. Se busca por `key` y no por posición para
+   * que siga funcionando si mañana se agrega otra pregunta a esta sección.
+   */
+  get campoObjetivo(): DynamicField | undefined {
+    return this.grupos.flatMap((g) => g.campos).find((c) => c.key === CAMPO_OBJETIVO);
+  }
+
+  /** Texto completo del objetivo elegido, para mostrarlo bajo el desplegable. */
+  get objetivoTexto(): string {
+    const valor = this.form.get(CAMPO_OBJETIVO)?.value;
+    return this.campoObjetivo?.opciones.find((o) => o.id === valor)?.nombre ?? '';
+  }
+
+  /**
+   * Sección 1 del formulario dinámico. Mismo patrón que los pasos 2 y 3: el
+   * store cachea el esquema, se arman los grupos y se generan los controles.
+   */
+  private cargarSeccionDinamica(): void {
+    this.store
+      .getFormulario()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (formulario) => {
+          this.grupos = construirGrupos(
+            formulario.preguntas ?? [],
+            this.SECCION,
+            PLAN_MUESTREO_FORM_CONFIG,
+          );
+          generarControles(this.form, this.grupos, {});
+          // Repuebla lo ya respondido al volver desde el paso 2.
+          this.form.patchValue(this.store.respuestasDe(this.SECCION));
+          aplicarDependencias(this.form, this.grupos, this.destroy$);
+        },
+        error: () => this.alertService.error('No se pudo cargar el formulario dinámico'),
+      });
   }
 
   // ── Panel de búsqueda ────────────────────────────────────────────────────

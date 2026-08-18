@@ -32,25 +32,34 @@
         </div>
       </div>
 
-      <!-- OBJETIVO -->
-      <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 mb-6">
-        <div class="mb-4 border-b border-slate-300 pb-4">
-          <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">Objetivo</h3>
-        </div>
-        <select
-          class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-          [ngModel]="objetivoId"
-          (ngModelChange)="objetivoId = $event"
-        >
-          <option [ngValue]="null">Selecciona el objetivo del muestreo...</option>
-          @for (obj of objetivos; track obj.id) {
-            <option [ngValue]="obj.id">{{ obj.nombre }}</option>
+      <!-- OBJETIVO — la UI es la de siempre, pero el dato sale de la sección 1
+           del formulario dinámico y se guarda con el resto del payload.
+           Antes el <select> pedía el catálogo 1014 por su cuenta y escribía en
+           `objetivoId`, una propiedad suelta que no entraba en `valorMuestreo`:
+           el objetivo se elegía y se perdía. No se usa <app-dynamic-form-group>
+           acá a propósito: ese componente repite el título de la tarjeta y
+           angosta el control. -->
+      <form [formGroup]="form">
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 mb-6">
+          <div class="mb-4 border-b border-slate-300 pb-4">
+            <h3 class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider">Objetivo</h3>
+          </div>
+          @if (campoObjetivo) {
+            <select
+              class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+              [formControlName]="campoObjetivo.key"
+            >
+              <option [ngValue]="''">Selecciona el objetivo del muestreo...</option>
+              @for (obj of campoObjetivo.opciones; track obj.id) {
+                <option [ngValue]="obj.id">{{ obj.nombre }}</option>
+              }
+            </select>
+            @if (objetivoTexto) {
+              <p class="text-sm text-slate-600 leading-relaxed mt-3">{{ objetivoTexto }}</p>
+            }
           }
-        </select>
-        @if (objetivoTexto) {
-          <p class="text-sm text-slate-600 leading-relaxed mt-3">{{ objetivoTexto }}</p>
-        }
-      </div>
+        </div>
+      </form>
 
       <!-- INFO GRID -->
       <div class="grid grid-cols-2 gap-6 mb-6">
