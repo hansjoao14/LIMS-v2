@@ -32,12 +32,15 @@ const REPORT_TICKET_ENTREGA_FIELDS = `
  * Listado paginado de tickets de entrega activos. El orden lo fija el
  * repositorio en api-reportes (`creado_en` descendente): el ticket recién
  * guardado sale primero.
+ *
+ * El `query` va como variable, no escrito en el documento, para armar el
+ * `where` en TypeScript según el campo por el que se busca. El WhereInput no
+ * expone `OR`, así que se busca por un campo a la vez. Mismo criterio que el
+ * listado de plan de muestreo.
  */
 export const GET_COLLECTION_REPORT_TICKET_ENTREGA = gql`
-  query CollectionReportTicketEntrega($page: Int, $take: Int) {
-    collectionReportTicketEntrega(
-      query: { where: { estado: { equals: true } }, pagination: { page: $page, take: $take } }
-    ) {
+  query CollectionReportTicketEntrega($q: ReportTicketEntregaQueryInput) {
+    collectionReportTicketEntrega(query: $q) {
       count
       data { ${REPORT_TICKET_ENTREGA_FIELDS} }
       meta { ${META_FIELDS} }

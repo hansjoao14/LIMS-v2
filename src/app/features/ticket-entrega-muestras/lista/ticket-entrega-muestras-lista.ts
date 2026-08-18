@@ -1,6 +1,8 @@
 import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
+import { EstadoOrden, alternarOrden, iconoOrden } from '../../../core/utils/orden-tabla.utils';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, finalize, takeUntil } from 'rxjs';
 
@@ -10,7 +12,13 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import { ReportTicketEntrega } from '../../../interfaces/ticket-entrega-muestras/ticket-entrega-muestras.interface';
-import { ReportTicketEntregaService } from '../../../services/solicitudes/ticket-entrega-muestras/report-ticket-entrega.service';
+import {
+  CAMPOS_FECHA_TICKET,
+  CampoBusquedaTicket,
+  CampoOrdenTicket,
+  ORDEN_INICIAL_TICKET,
+  ReportTicketEntregaService,
+} from '../../../services/solicitudes/ticket-entrega-muestras/report-ticket-entrega.service';
 import {
   IDENTIFICADOR_SECUENCIAL_TICKET_ENTREGA,
   TicketEntregaMuestrasService,
@@ -35,7 +43,14 @@ const ESTADO_RECHAZADO = 51;
 @Component({
   selector: 'app-ticket-entrega-muestras-lista',
   standalone: true,
-  imports: [CommonModule, PageHeader, TableSkeleton, PaginationComponent, PdfViewerComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    PageHeader,
+    TableSkeleton,
+    PaginationComponent,
+    PdfViewerComponent,
+  ],
   templateUrl: './ticket-entrega-muestras-lista.html',
   styleUrl: '../ticket-entrega-muestras.css',
 })
@@ -45,6 +60,20 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
   readonly TIPO_FORMULARIO_ID = 2085;
   formulario: ReportFormulario | null = null;
   fechaEmision: Date | null = null;
+
+  // Buscador: un campo a la vez. El WhereInput de la colección no soporta OR,
+  // así que no se pueden consultar los dos de una sola vez; el selector deja
+  // elegir cuál. Mismo criterio que el listado de plan de muestreo.
+  readonly CAMPOS_BUSQUEDA: { valor: CampoBusquedaTicket; etiqueta: string }[] = [
+    { valor: 'num_secuencial', etiqueta: 'N° Ticket' },
+    { valor: 'plan_num_secuencial', etiqueta: 'N° Plan de Muestreo' },
+  ];
+  campoBusqueda: CampoBusquedaTicket = 'num_secuencial';
+  busqueda = '';
+
+  // Ordenamiento por columna. La colección solo admite UN campo en el orderBy,
+  // así que al hacer clic se reemplaza el anterior en vez de acumularse.
+  orden: EstadoOrden<CampoOrdenTicket> = { ...ORDEN_INICIAL_TICKET };
 
   loading = true;
   tickets: ReportTicketEntrega[] = [];
@@ -138,11 +167,29 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  /** Clic en un encabezado: alterna la dirección o cambia de columna. */
+  ordenarPor(campo: CampoOrdenTicket): void {
+    this.orden = alternarOrden(this.orden, campo, CAMPOS_FECHA_TICKET);
+    this.closeMenu();
+    this.cargarTickets(1);
+  }
+
+  /** ▲ / ▼ en la columna activa, vacío en el resto. */
+  icono(campo: CampoOrdenTicket): string {
+    return iconoOrden(this.orden, campo);
+  }
+
+  /** Relanza la búsqueda desde la primera página. */
+  filtrar(): void {
+    this.closeMenu();
+    this.cargarTickets(1);
+  }
+
   cargarTickets(page = this.currentPage): void {
     this.loading = true;
     this.currentPage = page;
     this.reportTicketEntregaService
-      .getTickets(page, this.PAGE_SIZE)
+      .getTickets(page, this.PAGE_SIZE, this.campoBusqueda, this.busqueda, this.orden)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ data, meta }) => {

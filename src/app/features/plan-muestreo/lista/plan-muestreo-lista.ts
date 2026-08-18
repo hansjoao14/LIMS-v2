@@ -1,5 +1,6 @@
 import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { EstadoOrden, alternarOrden, iconoOrden } from '../../../core/utils/orden-tabla.utils';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
@@ -11,7 +12,10 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import {
+  CAMPOS_FECHA_PLAN,
   CampoBusquedaPlan,
+  CampoOrdenPlan,
+  ORDEN_INICIAL_PLAN,
   ReportPlanMuestreoService,
 } from '../../../services/solicitudes/plan-muestreo/report-plan-muestreo.service';
 import { ReportPlanMuestreo } from '../../../interfaces/solicitudes/plan-muestreo/report-plan-muestreo.interface';
@@ -59,6 +63,10 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   ];
   campoBusqueda: CampoBusquedaPlan = 'num_secuencial';
   busqueda = '';
+
+  // Ordenamiento por columna. La colección solo admite UN campo en el orderBy,
+  // así que al hacer clic se reemplaza el anterior en vez de acumularse.
+  orden: EstadoOrden<CampoOrdenPlan> = { ...ORDEN_INICIAL_PLAN };
 
   formulario: ReportFormulario | null = null;
   fechaEmision: Date | null = null;
@@ -136,6 +144,18 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  /** Clic en un encabezado: alterna la dirección o cambia de columna. */
+  ordenarPor(campo: CampoOrdenPlan): void {
+    this.orden = alternarOrden(this.orden, campo, CAMPOS_FECHA_PLAN);
+    this.closeMenu();
+    this.cargarPlanes(1);
+  }
+
+  /** ▲ / ▼ en la columna activa, vacío en el resto. */
+  icono(campo: CampoOrdenPlan): string {
+    return iconoOrden(this.orden, campo);
+  }
+
   /** Relanza la búsqueda desde la primera página. */
   filtrar(): void {
     this.closeMenu();
@@ -146,7 +166,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
     this.loading = true;
     this.currentPage = page;
     this.reportPlanMuestreoService
-      .getPlanes(page, this.PAGE_SIZE, this.campoBusqueda, this.busqueda)
+      .getPlanes(page, this.PAGE_SIZE, this.campoBusqueda, this.busqueda, this.orden)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ data, meta }) => {

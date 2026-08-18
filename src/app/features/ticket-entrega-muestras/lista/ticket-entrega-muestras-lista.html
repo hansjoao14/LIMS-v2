@@ -31,6 +31,44 @@
           </div>
         }
 
+        <!-- Buscador: selector de campo + texto. Se busca por UN campo a la vez
+             porque el WhereInput de la colección no expone OR. El filtro viaja
+             al servidor, así que la paginación sigue siendo correcta. -->
+        <div class="flex gap-2 mb-4">
+          <select
+            [(ngModel)]="campoBusqueda"
+            (ngModelChange)="filtrar()"
+            class="border border-slate-300 bg-white rounded px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#1e3a8a] transition-colors shrink-0"
+          >
+            @for (campo of CAMPOS_BUSQUEDA; track campo.valor) {
+              <option [ngValue]="campo.valor">{{ campo.etiqueta }}</option>
+            }
+          </select>
+
+          <div class="relative max-w-sm flex-1">
+            <input
+              type="text"
+              [(ngModel)]="busqueda"
+              (ngModelChange)="filtrar()"
+              placeholder="Buscar..."
+              class="w-full border border-slate-300 rounded pl-9 pr-4 py-2 text-sm text-slate-700 outline-none focus:border-[#1e3a8a] transition-colors"
+            />
+            <svg
+              class="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+        </div>
+
         <div class="border border-slate-200 rounded overflow-hidden">
           <!-- min-h: alto para que el menú ⋮ se abra sin quedar cortado con
                pocas filas. Ver ESTANDARES.md §3. -->
@@ -53,15 +91,67 @@
                 <tr
                   class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
                 >
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">N° Ticket</th>
                   <th class="px-3 py-2.5 border-r border-slate-100 text-left">
-                    N° Plan de Muestreo
+                    <button
+                      type="button"
+                      (click)="ordenarPor('num_secuencial')"
+                      class="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[#1e3a8a] transition-colors"
+                    >
+                      N° Ticket
+                      <span class="text-[8px] w-2">{{ icono('num_secuencial') }}</span>
+                    </button>
                   </th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Entregada por</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">Recibida por</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">Fecha recepción</th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">
+                    <button
+                      type="button"
+                      (click)="ordenarPor('plan_num_secuencial')"
+                      class="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[#1e3a8a] transition-colors"
+                    >
+                      N° Plan de Muestreo
+                      <span class="text-[8px] w-2">{{ icono('plan_num_secuencial') }}</span>
+                    </button>
+                  </th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">
+                    <button
+                      type="button"
+                      (click)="ordenarPor('entregado_por_nombre')"
+                      class="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[#1e3a8a] transition-colors"
+                    >
+                      Entregada por
+                      <span class="text-[8px] w-2">{{ icono('entregado_por_nombre') }}</span>
+                    </button>
+                  </th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-left">
+                    <button
+                      type="button"
+                      (click)="ordenarPor('recibido_por_nombre')"
+                      class="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[#1e3a8a] transition-colors"
+                    >
+                      Recibida por
+                      <span class="text-[8px] w-2">{{ icono('recibido_por_nombre') }}</span>
+                    </button>
+                  </th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">
+                    <button
+                      type="button"
+                      (click)="ordenarPor('fecha_recepcion')"
+                      class="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[#1e3a8a] transition-colors"
+                    >
+                      Fecha recepción
+                      <span class="text-[8px] w-2">{{ icono('fecha_recepcion') }}</span>
+                    </button>
+                  </th>
                   <th class="px-3 py-2.5 border-r border-slate-100 text-left">Observaciones</th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">Estado</th>
+                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">
+                    <button
+                      type="button"
+                      (click)="ordenarPor('ctestado_nombre')"
+                      class="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[#1e3a8a] transition-colors"
+                    >
+                      Estado
+                      <span class="text-[8px] w-2">{{ icono('ctestado_nombre') }}</span>
+                    </button>
+                  </th>
                   @if (hasAnyAction) {
                     <th class="px-2 py-2.5 text-center">Acciones</th>
                   }

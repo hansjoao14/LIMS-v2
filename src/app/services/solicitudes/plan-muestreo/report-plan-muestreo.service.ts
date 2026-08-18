@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Apollo } from 'apollo-angular';
+import { EstadoOrden } from '../../../core/utils/orden-tabla.utils';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
@@ -18,6 +19,36 @@ import {
 const CLIENT_NAME = 'reportes';
 
 /** Campos del listado por los que se puede buscar, tal como los nombra la vista. */
+/**
+ * Columnas del listado por las que se puede ordenar. Son las que se muestran en
+ * la tabla; el `orderBy` de la colección admite muchas más.
+ */
+export type CampoOrdenPlan =
+  | 'num_secuencial'
+  | 'solicitud_num_secuencial'
+  | 'codigo_muestreo'
+  | 'periodo_nombre_mes'
+  | 'usuario_nombre_completo'
+  | 'ctestado_nombre'
+  | 'creado_en';
+
+/**
+ * Orden inicial. El backend, si no se le manda nada, ordena por `id: 'asc'` —
+ * o sea por UUID, que es orden aleatorio y hacía que los planes salieran
+ * mezclados.
+ *
+ * Se arranca por `creado_en` y no por `num_secuencial` a propósito: el número
+ * es NULL hasta que el plan se finaliza, y los NULL caen al final del DESC, con
+ * lo que un borrador recién hecho quedaría escondido en las últimas páginas.
+ */
+export const ORDEN_INICIAL_PLAN: EstadoOrden<CampoOrdenPlan> = {
+  campo: 'creado_en',
+  direccion: 'DESC',
+};
+
+/** Columnas de fecha: al ordenarlas por primera vez conviene DESC. */
+export const CAMPOS_FECHA_PLAN: readonly CampoOrdenPlan[] = ['creado_en'];
+
 export type CampoBusquedaPlan = 'num_secuencial' | 'solicitud_num_secuencial' | 'codigo_muestreo';
 
 /** Finalizado Solicitud: el plan ya está autorizado y su muestra puede entregarse. */
@@ -37,6 +68,7 @@ export class ReportPlanMuestreoService {
     take = 10,
     campo: CampoBusquedaPlan | null = null,
     texto = '',
+    orden: EstadoOrden<CampoOrdenPlan> = ORDEN_INICIAL_PLAN,
   ): Observable<PlanesMuestreoPage> {
     const termino = texto.trim();
     return this.apollo
@@ -52,6 +84,7 @@ export class ReportPlanMuestreoService {
               ...(campo && termino ? { [campo]: { contains: termino } } : {}),
             },
             pagination: { page, take },
+            orderBy: { [orden.campo]: orden.direccion },
           },
         },
         fetchPolicy: 'network-only',
