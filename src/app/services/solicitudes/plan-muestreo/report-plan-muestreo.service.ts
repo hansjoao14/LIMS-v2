@@ -17,6 +17,9 @@ import {
 
 const CLIENT_NAME = 'reportes';
 
+/** Campos del listado por los que se puede buscar, tal como los nombra la vista. */
+export type CampoBusquedaPlan = 'num_secuencial' | 'solicitud_num_secuencial' | 'codigo_muestreo';
+
 /** Finalizado Solicitud: el plan ya está autorizado y su muestra puede entregarse. */
 export const ESTADO_PLAN_FINALIZADO = 2023;
 
@@ -24,12 +27,33 @@ export const ESTADO_PLAN_FINALIZADO = 2023;
 export class ReportPlanMuestreoService {
   constructor(private apollo: Apollo) {}
 
-  getPlanes(page = 1, take = 10): Observable<PlanesMuestreoPage> {
+  /**
+   * Listado de planes. `campo` y `texto` son el buscador: se filtra por UN campo
+   * a la vez porque el WhereInput no expone `OR`. El filtro va en el `where` del
+   * servidor y no sobre la página ya recibida, para no romper la paginación.
+   */
+  getPlanes(
+    page = 1,
+    take = 10,
+    campo: CampoBusquedaPlan | null = null,
+    texto = '',
+  ): Observable<PlanesMuestreoPage> {
+    const termino = texto.trim();
     return this.apollo
       .use(CLIENT_NAME)
       .query<{ collectionReportPlanMuestreo: ReportPlanMuestreoCollectionResponse }>({
         query: GET_COLLECTION_REPORT_PLAN_MUESTREO,
-        variables: { page, take },
+        variables: {
+          q: {
+            where: {
+              estado: { equals: true },
+              // Solo se agrega la clave si hay texto: `contains: null` o `''`
+              // no sirven como "sin filtro" (Prisma rechaza el null).
+              ...(campo && termino ? { [campo]: { contains: termino } } : {}),
+            },
+            pagination: { page, take },
+          },
+        },
         fetchPolicy: 'network-only',
       })
       .pipe(

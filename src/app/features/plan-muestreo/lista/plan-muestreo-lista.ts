@@ -1,5 +1,6 @@
 import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { Subject, finalize, takeUntil } from 'rxjs';
@@ -9,7 +10,10 @@ import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
-import { ReportPlanMuestreoService } from '../../../services/solicitudes/plan-muestreo/report-plan-muestreo.service';
+import {
+  CampoBusquedaPlan,
+  ReportPlanMuestreoService,
+} from '../../../services/solicitudes/plan-muestreo/report-plan-muestreo.service';
 import { ReportPlanMuestreo } from '../../../interfaces/solicitudes/plan-muestreo/report-plan-muestreo.interface';
 import { ReportFormularioService } from '../../../services/admin-formularios/report-formulario.service';
 import { ReportFormulario } from '../../../interfaces/admin-formularios/report-formulario.interface';
@@ -29,13 +33,32 @@ const ESTADO_FINALIZADO = 2023;
 @Component({
   selector: 'app-plan-muestreo-lista',
   standalone: true,
-  imports: [CommonModule, PageHeader, TableSkeleton, PaginationComponent, PdfViewerComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    PageHeader,
+    TableSkeleton,
+    PaginationComponent,
+    PdfViewerComponent,
+  ],
   templateUrl: './plan-muestreo-lista.html',
   styleUrl: '../plan-muestreo.css',
 })
 export class PlanMuestreoLista implements OnInit, OnDestroy {
   // Formulario "PLAN DE MUESTREO", solo para los metadatos de la cabecera.
   readonly TIPO_FORMULARIO_ID = 2019;
+
+  // Buscador: un campo a la vez. El WhereInput de la colección no soporta OR,
+  // así que no se puede buscar en los tres de una sola consulta; el selector
+  // deja elegir cuál. Es el mismo criterio de secuencial, catálogo y ensayo,
+  // que también buscan por un único campo.
+  readonly CAMPOS_BUSQUEDA: { valor: CampoBusquedaPlan; etiqueta: string }[] = [
+    { valor: 'num_secuencial', etiqueta: 'N° Plan' },
+    { valor: 'solicitud_num_secuencial', etiqueta: 'N° Solicitud' },
+    { valor: 'codigo_muestreo', etiqueta: 'Código de Muestreo' },
+  ];
+  campoBusqueda: CampoBusquedaPlan = 'num_secuencial';
+  busqueda = '';
 
   formulario: ReportFormulario | null = null;
   fechaEmision: Date | null = null;
@@ -113,11 +136,17 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  /** Relanza la búsqueda desde la primera página. */
+  filtrar(): void {
+    this.closeMenu();
+    this.cargarPlanes(1);
+  }
+
   cargarPlanes(page = this.currentPage): void {
     this.loading = true;
     this.currentPage = page;
     this.reportPlanMuestreoService
-      .getPlanes(page, this.PAGE_SIZE)
+      .getPlanes(page, this.PAGE_SIZE, this.campoBusqueda, this.busqueda)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ data, meta }) => {

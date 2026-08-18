@@ -41,11 +41,20 @@ export const GET_PLANES_MUESTREO_POR_ESTADO = gql`
   }
 `;
 
+/**
+ * Listado paginado de planes.
+ *
+ * El `query` entero viaja como variable en vez de escribirse en el documento,
+ * para poder armar el `where` en TypeScript según el campo por el que se busca.
+ * Hace falta porque el WhereInput no soporta `OR` — se verificó contra el
+ * servidor: "Field OR is not defined by type ReportMuestreoWhereInput" — así
+ * que no se puede buscar en varios campos a la vez y hay que elegir uno.
+ * Tampoco sirve dejar los tres con `contains: null`: Prisma responde
+ * "Argument `contains` must not be null".
+ */
 export const GET_COLLECTION_REPORT_PLAN_MUESTREO = gql`
-  query CollectionReportPlanMuestreo($page: Int, $take: Int) {
-    collectionReportPlanMuestreo(
-      query: { where: { estado: { equals: true } }, pagination: { page: $page, take: $take } }
-    ) {
+  query CollectionReportPlanMuestreo($q: ReportMuestreoQueryInput) {
+    collectionReportPlanMuestreo(query: $q) {
       count
       data {
         actualizado_en
