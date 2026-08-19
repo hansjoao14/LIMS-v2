@@ -33,3 +33,15 @@ textarea:focus {
   border-color: #1e3a8a;
   box-shadow: 0 0 0 1px #1e3a8a;
 }
+
+/* Fila de un plan rechazado: se atenúa para que se note de un vistazo que ya no
+   está en juego, pero sigue siendo legible.
+
+   La opacidad va en las celdas de datos y NO en el <tr>: la última columna
+   tiene el menú ⋮, y `opacity` sobre la fila la heredaría el desplegable —
+   que se abre con position:absolute dentro de esa celda — dejándolo también
+   translúcido. Excluyendo la última columna, el menú y su única opción
+   (Eliminar) quedan a plena opacidad y perfectamente usables. */
+.fila-rechazada > td:not(:last-child) {
+  opacity: 0.45;
+}

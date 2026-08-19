@@ -166,7 +166,10 @@
               <tbody>
                 @if (!loading) {
                   @for (ticket of tickets; track ticket.id) {
-                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <tr
+                      class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                      [class.fila-rechazada]="esRechazado(ticket)"
+                    >
                       <!-- Número propio del ticket, no el del plan: lo asigna
                            sp_generar_secuencial_ticket_entrega al autorizar, así
                            que hasta entonces va '—'. Mismo criterio que la
