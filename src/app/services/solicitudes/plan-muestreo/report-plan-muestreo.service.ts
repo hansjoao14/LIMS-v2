@@ -14,6 +14,7 @@ import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface
 import {
   GET_COLLECTION_REPORT_PLAN_MUESTREO,
   GET_PLANES_MUESTREO_POR_ESTADO,
+  GET_SOLICITUD_IDS_CON_PLAN_VIGENTE,
 } from '../../../graphql/solicitudes/plan-muestreo/report-plan-muestreo.queries';
 
 const CLIENT_NAME = 'reportes';
@@ -52,6 +53,9 @@ export type CampoBusquedaPlan = 'num_secuencial' | 'solicitud_num_secuencial' | 
 
 /** Finalizado Solicitud: el plan ya está autorizado y su muestra puede entregarse. */
 export const ESTADO_PLAN_FINALIZADO = 2023;
+
+/** Rechazado: el plan ya no cuenta, ni para el índice único ni para el selector. */
+export const ESTADO_PLAN_RECHAZADO = 51;
 
 @Injectable({ providedIn: 'root' })
 export class ReportPlanMuestreoService {
@@ -126,6 +130,48 @@ export class ReportPlanMuestreoService {
             meta: (res?.meta ?? null) as PaginationMeta | null,
           };
         }),
+      );
+  }
+  /**
+   * Ids de las solicitudes que YA tienen un plan de muestreo vigente.
+   *
+   * "Vigente" es la misma condición del índice único de la base
+   * (UQ_plan_muestreo_solicitud_ambiente_vigente): activo y no rechazado. Un
+   * plan rechazado o dado de baja no cuenta, así que su solicitud vuelve a
+   * quedar disponible.
+   *
+   * ⚠️ 200 es el MÁXIMO que acepta la paginación de la colección: con un valor
+   * mayor la consulta falla con "La cantidad de registros no puede ser mayor a
+   * 200", el catch deja la lista vacía y no se excluye nada — el bug se ve como
+   * "el filtro no hace nada".
+   *
+   * Con más de 200 planes vigentes los excedentes no se excluirían y volvería a
+   * aparecer el P2002 al elegirlos. Si el volumen crece hay que resolverlo con
+   * una columna calculada en la vista de solicitudes, como
+   * `tiene_ticket_en_curso`; desde el front no hay forma de subir ese tope.
+   */
+  getSolicitudIdsConPlanVigente(take = 200): Observable<string[]> {
+    return this.apollo
+      .use(CLIENT_NAME)
+      .query<{ collectionReportPlanMuestreo: { data: { solicitud_id: string }[] } }>({
+        query: GET_SOLICITUD_IDS_CON_PLAN_VIGENTE,
+        variables: {
+          q: {
+            where: {
+              estado: { equals: true },
+              ctestado_id: { notIn: [ESTADO_PLAN_RECHAZADO] },
+            },
+            pagination: { page: 1, take },
+          },
+        },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(
+        map((result) => [
+          ...new Set(
+            (result.data?.collectionReportPlanMuestreo?.data ?? []).map((p) => p.solicitud_id),
+          ),
+        ]),
       );
   }
 }

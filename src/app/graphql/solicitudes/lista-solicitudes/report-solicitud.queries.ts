@@ -76,11 +76,22 @@ export const GET_SOLICITUDES_FINALIZADAS_BY_FORMULARIO_CT = gql`
     $page: Int
     $take: Int
     $formularioCtIds: [Int!]
+    $excluirSolicitudIds: [String!]
   ) {
     collectionReportSolicitud(
       query: {
         orderBy: { fecha_creacion: DESC }
-        where: { ctestado_id: { equals: 387 } formulario_ct_id: { in: $formularioCtIds } }
+        where: {
+          ctestado_id: { equals: 387 }
+          formulario_ct_id: { in: $formularioCtIds }
+          # Solicitudes que ya tienen un plan de muestreo vigente (Pendiente o
+          # Finalizado). Los ids los trae getSolicitudIdsConPlanVigente: el
+          # WhereInput no puede preguntar por una tabla relacionada, así que la
+          # exclusion se arma con notIn. Va en el where del servidor y no
+          # sobre el arreglo recibido, para no romper la paginacion.
+          # Con la lista vacía, notIn no filtra nada (verificado).
+          id_solicitud: { notIn: $excluirSolicitudIds }
+        }
         pagination: { page: $page, take: $take }
       }
     ) {

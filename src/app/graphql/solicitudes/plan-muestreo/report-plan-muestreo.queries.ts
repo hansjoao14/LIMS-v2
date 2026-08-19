@@ -85,3 +85,27 @@ export const GET_COLLECTION_REPORT_PLAN_MUESTREO = gql`
     }
   }
 `;
+
+/**
+ * Solo los `solicitud_id` de los planes vigentes, para excluir esas solicitudes
+ * del selector de plan-muestreo/paso1.
+ *
+ * Hace falta una consulta aparte porque el WhereInput de las solicitudes no
+ * puede preguntar por una tabla relacionada: se traen los ids acá y se pasan al
+ * `notIn` de la otra consulta. Así el filtro sigue ocurriendo en el servidor y
+ * la paginación del selector no se rompe.
+ *
+ * Trae solo `solicitud_id`: el resto de los campos no se piden.
+ */
+export const GET_SOLICITUD_IDS_CON_PLAN_VIGENTE = gql`
+  query SolicitudIdsConPlanVigente($q: ReportMuestreoQueryInput) {
+    collectionReportPlanMuestreo(query: $q) {
+      data {
+        solicitud_id
+      }
+      meta {
+        total
+      }
+    }
+  }
+`;

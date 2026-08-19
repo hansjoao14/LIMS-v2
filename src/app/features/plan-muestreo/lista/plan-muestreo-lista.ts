@@ -13,6 +13,8 @@ import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-vi
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import {
   CAMPOS_FECHA_PLAN,
+  ESTADO_PLAN_FINALIZADO,
+  ESTADO_PLAN_RECHAZADO,
   CampoBusquedaPlan,
   CampoOrdenPlan,
   ORDEN_INICIAL_PLAN,
@@ -32,8 +34,6 @@ import {
 } from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 import { PlanMuestreoStore } from '../model/plan-muestreo.store';
 
-const ESTADO_FINALIZADO = 2023;
-const ESTADO_RECHAZADO = 51;
 
 @Component({
   selector: 'app-plan-muestreo-lista',
@@ -216,7 +216,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   // ── Acciones ─────────────────────────────────────────────────────────────
 
   esFinalizado(plan: ReportPlanMuestreo): boolean {
-    return plan.ctestado_id === ESTADO_FINALIZADO;
+    return plan.ctestado_id === ESTADO_PLAN_FINALIZADO;
   }
 
   // El catálogo nombra al estado "Finalizado Solicitud", pero en el listado de
@@ -232,7 +232,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   }
 
   esRechazado(plan: ReportPlanMuestreo): boolean {
-    return plan.ctestado_id === ESTADO_RECHAZADO;
+    return plan.ctestado_id === ESTADO_PLAN_RECHAZADO;
   }
 
   /** Autorizar y rechazar son de una sola vía: solo desde un plan sin resolver. */
@@ -260,7 +260,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
 
     this.procesandoId = plan.id;
     this.planMuestreoService
-      .rechazarPlan(plan.id, ESTADO_RECHAZADO)
+      .rechazarPlan(plan.id, ESTADO_PLAN_RECHAZADO)
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => {
@@ -295,7 +295,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
       .finalizarPlan({
         idPlanMuestreo: plan.id,
         identificadorSecuencial: IDENTIFICADOR_SECUENCIAL_PLAN_MUESTREO,
-        ctestado: ESTADO_FINALIZADO,
+        ctestado: ESTADO_PLAN_FINALIZADO,
       })
       .pipe(
         takeUntil(this.destroy$),

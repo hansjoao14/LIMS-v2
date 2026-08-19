@@ -120,17 +120,25 @@ export class ReportSolicitudService {
   // formularioCtIds acota el listado a ciertos tipos de formulario (p. ej.
   // orden-trabajo-in-situ solo admite solicitudes de los formularios
   // 2029/380); si se omite, trae todas las finalizadas sin ese filtro.
+  /**
+   * `excluirSolicitudIds` saca del listado las solicitudes que ya tienen un
+   * plan de muestreo vigente. Solo aplica a la variante por formulario, que es
+   * la que usa el selector de plan-muestreo/paso1.
+   */
   getSolicitudesFinalizadas(
     page: number,
     limit: number,
     formularioCtIds?: number[],
+    excluirSolicitudIds: string[] = [],
   ): Observable<SolicitudesPage> {
     const query =
       formularioCtIds != null
         ? GET_SOLICITUDES_FINALIZADAS_BY_FORMULARIO_CT
         : GET_SOLICITUDES_FINALIZADAS;
     const variables =
-      formularioCtIds != null ? { page, take: limit, formularioCtIds } : { page, take: limit };
+      formularioCtIds != null
+        ? { page, take: limit, formularioCtIds, excluirSolicitudIds }
+        : { page, take: limit };
     return this.apollo
       .use(CLIENT_NAME)
       .query<{ collectionReportSolicitud: ReportSolicitudCollectionResponse }>({

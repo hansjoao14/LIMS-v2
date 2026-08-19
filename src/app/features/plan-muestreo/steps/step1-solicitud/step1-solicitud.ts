@@ -25,6 +25,7 @@ import {
   generarControles,
 } from '../../../../shared/dynamic-form';
 import { PLAN_MUESTREO_FORM_CONFIG } from '../../model/plan-muestreo-form.model';
+import { ReportPlanMuestreoService } from '../../../../services/solicitudes/plan-muestreo/report-plan-muestreo.service';
 import { PlanMuestreoStore } from '../../model/plan-muestreo.store';
 import { PlanMuestreoDetallePayload } from '../../../../interfaces/solicitudes/plan-muestreo/plan-muestreo.interface';
 
@@ -121,6 +122,16 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
   // tablas de laboratorio, que son catálogos distintos.
   private ensayosInSituIds = new Set<number>();
 
+  /**
+   * Solicitudes que ya tienen un plan de muestreo vigente (Pendiente o
+   * Finalizado). Se excluyen del panel: elegir una de esas termina en P2002
+   * contra el índice único de la base.
+   *
+   * Se cargan una sola vez al entrar; el panel se abre y pagina muchas veces y
+   * la lista no cambia mientras el usuario está en este paso.
+   */
+  private solicitudesConPlan: string[] = [];
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -131,11 +142,13 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
     private alertService: AlertService,
     private store: PlanMuestreoStore,
     private fb: FormBuilder,
+    private reportPlanMuestreoService: ReportPlanMuestreoService,
   ) {
     this.form = this.fb.group({});
   }
 
   ngOnInit(): void {
+    this.cargarSolicitudesConPlan();
     this.cargarSeccionDinamica();
 
     // Cabecera compartida por los tres pasos: el store la cachea.
@@ -283,11 +296,31 @@ export class Step1SolicitudComponent implements OnInit, OnDestroy {
     this.aplicarFiltro();
   }
 
+  /**
+   * Ids a excluir del selector. Si falla, se sigue sin excluir nada: es
+   * preferible ofrecer de más —y que el alta avise con su mensaje— antes que
+   * dejar el panel vacío por un error de esta consulta auxiliar.
+   */
+  private cargarSolicitudesConPlan(): void {
+    this.reportPlanMuestreoService
+      .getSolicitudIdsConPlanVigente()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (ids) => (this.solicitudesConPlan = ids),
+        error: () => (this.solicitudesConPlan = []),
+      });
+  }
+
   cargarPagina(page: number): void {
     this.loadingBusqueda = true;
     this.currentPage = page;
     this.reportSolicitudService
-      .getSolicitudesFinalizadas(page, this.PAGE_SIZE, this.FORMULARIO_CT_IDS)
+      .getSolicitudesFinalizadas(
+        page,
+        this.PAGE_SIZE,
+        this.FORMULARIO_CT_IDS,
+        this.solicitudesConPlan,
+      )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ data, meta }) => {
