@@ -71,12 +71,15 @@
 
         <div class="border border-slate-200 rounded overflow-hidden">
           <div class="overflow-x-auto custom-scroll min-h-[200px]">
-            <table class="w-full text-sm border-collapse table-fixed min-w-[960px]">
+            <table class="w-full text-sm border-collapse table-fixed min-w-[1108px]">
               <colgroup>
-                <col class="w-[140px]" />
-                <col class="w-[150px]" />
-                <col class="w-[150px]" />
-                <col class="w-[130px]" />
+                <!-- Los tres primeros anchos salen de repartir el que ocupaba
+                     la columna Periodo: los códigos son largos (PM-IAMQ-2026-027,
+                     ST-A-IAMQ-2026-0002-M) y con table-fixed + truncate se
+                     cortaban a mitad. -->
+                <col class="w-[180px]" />
+                <col class="w-[200px]" />
+                <col class="w-[180px]" />
                 <col class="w-[160px]" />
                 <!-- Ancho para el badge de estado -->
                 <col class="w-[150px]" />
@@ -117,16 +120,6 @@
                       <span class="text-[8px] w-2">{{ icono('codigo_muestreo') }}</span>
                     </button>
                   </th>
-                  <th class="px-3 py-2.5 border-r border-slate-100 text-center">
-                    <button
-                      type="button"
-                      (click)="ordenarPor('periodo_nombre_mes')"
-                      class="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[#1e3a8a] transition-colors"
-                    >
-                      Periodo
-                      <span class="text-[8px] w-2">{{ icono('periodo_nombre_mes') }}</span>
-                    </button>
-                  </th>
                   <th class="px-3 py-2.5 border-r border-slate-100 text-left">
                     <button
                       type="button"
@@ -163,7 +156,7 @@
               <tbody
                 appTableSkeleton
                 [rows]="loading ? 8 : 0"
-                [cols]="7"
+                [cols]="6"
                 [actionButtons]="2"
               ></tbody>
               <tbody>
@@ -184,11 +177,6 @@
                         class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate"
                       >
                         {{ plan.codigo_muestreo ?? '—' }}
-                      </td>
-                      <td
-                        class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 text-center"
-                      >
-                        {{ plan.periodo_nombre_mes }} {{ plan.periodo_anio }}
                       </td>
                       <td
                         class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-600 truncate"
@@ -352,7 +340,7 @@
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="8" class="p-10 text-slate-400 italic text-center">
+                      <td colspan="7" class="p-10 text-slate-400 italic text-center">
                         No hay registros.
                       </td>
                     </tr>

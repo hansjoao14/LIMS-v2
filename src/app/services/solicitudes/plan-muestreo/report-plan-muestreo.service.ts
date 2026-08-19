@@ -27,7 +27,6 @@ export type CampoOrdenPlan =
   | 'num_secuencial'
   | 'solicitud_num_secuencial'
   | 'codigo_muestreo'
-  | 'periodo_nombre_mes'
   | 'usuario_nombre_completo'
   | 'ctestado_nombre'
   | 'creado_en';
