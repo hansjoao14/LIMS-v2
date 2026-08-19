@@ -40,6 +40,24 @@ export class PlanMuestreoService {
     return this.http.post<any>(`${this.apiSolicitud}/plan-muestreo/finalizar`, payload);
   }
 
+  /**
+   * Rechaza el plan dejándolo en "Rechazado" (51).
+   *
+   * Usa el PUT de actualización y NO `finalizarPlan`: ese llama al SP
+   * sp_generar_secuencial_muestreo, que consume un número de la secuencia PM y
+   * asigna un código de muestra. Un plan rechazado no debe gastar ninguno de
+   * los dos.
+   *
+   * El body va parcial a propósito: los demás campos del plan no cambian y el
+   * DTO de actualización los tiene todos opcionales (verificado contra el
+   * endpoint: un body con solo ctestado_id pasa la validación).
+   */
+  rechazarPlan(id: string, ctestado: number): Observable<any> {
+    return this.http.put<any>(`${this.apiSolicitud}/plan-muestreo/${id}`, {
+      ctestado_id: ctestado,
+    });
+  }
+
   deshabilitarPlan(id: string): Observable<any> {
     return this.http.patch<any>(`${this.apiSolicitud}/plan-muestreo/${id}/disable`, {});
   }

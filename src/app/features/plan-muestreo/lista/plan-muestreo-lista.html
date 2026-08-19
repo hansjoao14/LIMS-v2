@@ -201,6 +201,11 @@
                             class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50"
                             >{{ etiquetaEstado(plan) }}</span
                           >
+                        } @else if (esRechazado(plan)) {
+                          <span
+                            class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-red-400 text-red-700 bg-red-50"
+                            >{{ etiquetaEstado(plan) }}</span
+                          >
                         } @else {
                           <span
                             class="inline-block whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300 text-slate-500 bg-slate-50"
@@ -214,7 +219,7 @@
                       <td class="px-2 py-2.5 text-center">
                         <div class="flex items-center justify-center gap-1.5">
                           <!-- Autorizar: solo mientras el plan siga pendiente -->
-                          @if (canAutorizar() && !esFinalizado(plan)) {
+                          @if (puedeAutorizar(plan)) {
                             <button
                               type="button"
                               title="Autorizar"
@@ -233,6 +238,30 @@
                                   stroke-linejoin="round"
                                   stroke-width="2"
                                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                            </button>
+                          }
+
+                          @if (puedeRechazar(plan)) {
+                            <button
+                              type="button"
+                              title="Rechazar"
+                              (click)="rechazarPlan(plan)"
+                              [disabled]="procesandoId === plan.id"
+                              class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                            >
+                              <svg
+                                class="h-3.5 w-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
                                 />
                               </svg>
                             </button>

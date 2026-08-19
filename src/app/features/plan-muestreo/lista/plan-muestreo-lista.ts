@@ -33,6 +33,7 @@ import {
 import { PlanMuestreoStore } from '../model/plan-muestreo.store';
 
 const ESTADO_FINALIZADO = 2023;
+const ESTADO_RECHAZADO = 51;
 
 @Component({
   selector: 'app-plan-muestreo-lista',
@@ -107,6 +108,11 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   canAutorizar = computed(() => {
     const role = this.userAppRole();
     return role ? hasPermission(MenuKey.PLAN_MUESTREO, role, 'autorizar') : false;
+  });
+
+  canRechazar = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.PLAN_MUESTREO, role, 'rechazar') : false;
   });
 
   constructor(
@@ -223,6 +229,55 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   // rol tenga el permiso.
   puedeEliminar(plan: ReportPlanMuestreo): boolean {
     return this.canDelete() && !this.esFinalizado(plan);
+  }
+
+  esRechazado(plan: ReportPlanMuestreo): boolean {
+    return plan.ctestado_id === ESTADO_RECHAZADO;
+  }
+
+  /** Autorizar y rechazar son de una sola vía: solo desde un plan sin resolver. */
+  private sinResolver(plan: ReportPlanMuestreo): boolean {
+    return !this.esFinalizado(plan) && !this.esRechazado(plan);
+  }
+
+  puedeAutorizar(plan: ReportPlanMuestreo): boolean {
+    return this.canAutorizar() && this.sinResolver(plan);
+  }
+
+  puedeRechazar(plan: ReportPlanMuestreo): boolean {
+    return this.canRechazar() && this.sinResolver(plan);
+  }
+
+  async rechazarPlan(plan: ReportPlanMuestreo): Promise<void> {
+    if (!this.puedeRechazar(plan)) return;
+    const confirmado = await this.alertService.confirm({
+      title: '¿Rechazar plan de muestreo?',
+      text: `Se rechazará el plan de la solicitud ${plan.solicitud_num_secuencial ?? plan.id}.`,
+      confirmButtonColor: '#d33',
+      confirmButtonText: 'Sí, rechazar',
+    });
+    if (!confirmado) return;
+
+    this.procesandoId = plan.id;
+    this.planMuestreoService
+      .rechazarPlan(plan.id, ESTADO_RECHAZADO)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
+        }),
+      )
+      .subscribe({
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess('Plan de muestreo rechazado.', '¡Rechazado!');
+            this.cargarPlanes();
+          }),
+        error: () =>
+          this.zone.run(() =>
+            this.toastrAlert.showError('No se pudo rechazar el plan de muestreo.', 'Error'),
+          ),
+      });
   }
 
   async finalizarPlan(plan: ReportPlanMuestreo): Promise<void> {
