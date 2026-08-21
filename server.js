@@ -137,11 +137,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🧩 Configuración de Keycloak
+// 🧩 Configuración de Keycloak (touch: 2026-08-21 15:21:04)
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL || "http://173.212.251.64:8080";
-const REALM = process.env.KEYCLOAK_REALM || "faq-sgia";
+const REALM = process.env.KEYCLOAK_REALM || "FAQ-SGIA-V2";
 const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "lims_frontend";
-const CLIENT_SECRET = process.env.KEYCLOAK_SECRET || "E1RXroUwrq16rNO6vUQekywIdmN4cRGj";
+const CLIENT_SECRET = process.env.KEYCLOAK_SECRET || "JCkKproUECksareMniT4NF4sixZ9nHHG";
 // Sin CLIENT_SECRET: cliente público (Client authentication: Off)
 
 // 📦 Helper: solicitar token genérico
