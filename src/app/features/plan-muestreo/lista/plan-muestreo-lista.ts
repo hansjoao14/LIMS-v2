@@ -10,6 +10,7 @@ import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer';
+import { FirmaElectronicaComponent } from '../../../shared/components/firma-electronica/firma-electronica';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import {
   CAMPOS_FECHA_PLAN,
@@ -33,7 +34,7 @@ import {
   PlanMuestreoService,
 } from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 import { PlanMuestreoStore } from '../model/plan-muestreo.store';
-
+import { DatosFirmaElectronica } from '../../../interfaces/solicitudes/plan-muestreo/firma-plan-muestreo.interface';
 
 @Component({
   selector: 'app-plan-muestreo-lista',
@@ -45,6 +46,7 @@ import { PlanMuestreoStore } from '../model/plan-muestreo.store';
     TableSkeleton,
     PaginationComponent,
     PdfViewerComponent,
+    FirmaElectronicaComponent,
   ],
   templateUrl: './plan-muestreo-lista.html',
   styleUrl: '../plan-muestreo.css',
@@ -81,6 +83,13 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
 
   openMenuId: string | null = null;
   procesandoId: string | null = null;
+
+  // ── Firma electrónica ────────────────────────────────────────────────────
+  mostrarModalFirma = false;
+  cargandoPdfFirma = false;
+  procesandoFirma = false;
+  planFirmando: ReportPlanMuestreo | null = null;
+  pdfFirmaBlob: Blob | null = null;
 
   showPdfModal = false;
   isPdfCargando = false;
@@ -346,6 +355,107 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
             this.toastrAlert.showError('No se pudo eliminar el plan de muestreo.', 'Error'),
           ),
       });
+  }
+
+  // ── Firma electrónica ────────────────────────────────────────────────────
+
+  /**
+   * Firmar depende del estado del documento, no del rol.
+   *
+   * El backend acepta la firma de cualquier usuario autenticado: lo que
+   * acredita la identidad es el certificado .p12, no el perfil en el sistema.
+   * Lo que sí exige es que exista el PDF congelado, y eso solo ocurre al
+   * autorizar el plan — de ahí la condición.
+   */
+  puedeFirmar(plan: ReportPlanMuestreo): boolean {
+    return this.esFinalizado(plan);
+  }
+
+  abrirFirma(plan: ReportPlanMuestreo): void {
+    this.closeMenu();
+
+    this.planFirmando = plan;
+    this.pdfFirmaBlob = null;
+    this.cargandoPdfFirma = true;
+    this.procesandoFirma = false;
+    this.mostrarModalFirma = true;
+
+    /*
+     * Se pide el PDF a api_solicitud y no a api_reportes: este trae el archivo
+     * congelado CON las firmas que ya tenga. El de reportes lo regenera y
+     * siempre viene sin firmar, así que firmar sobre él perdería las
+     * anteriores.
+     */
+    this.planMuestreoService
+      .getPdfFirmado(plan.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) =>
+          this.zone.run(() => {
+            this.pdfFirmaBlob = blob;
+            this.cargandoPdfFirma = false;
+          }),
+        error: () =>
+          this.zone.run(() => {
+            this.cargandoPdfFirma = false;
+            this.cerrarFirma();
+            this.toastrAlert.showError('No se pudo cargar el documento para firmarlo.', 'Error');
+          }),
+      });
+  }
+
+  confirmarFirma(datos: DatosFirmaElectronica): void {
+    if (!this.planFirmando || this.procesandoFirma) return;
+
+    const plan = this.planFirmando;
+    const usuario = this.authService.currentUser();
+
+    this.procesandoFirma = true;
+
+    this.planMuestreoService
+      .firmarPlan(plan.id, {
+        ...datos,
+        usuarioId: usuario.id,
+        nombreFirmante: usuario.nombre,
+      })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoFirma = false;
+        }),
+      )
+      .subscribe({
+        next: (respuesta) =>
+          this.zone.run(() => {
+            this.cerrarFirma();
+            this.toastrAlert.showSuccess(
+              `El documento quedó con ${respuesta.totalFirmas} firma(s).`,
+              '¡Firmado!',
+            );
+            this.cargarPlanes();
+          }),
+        error: (error) =>
+          this.zone.run(() => {
+            const mensaje =
+              error?.error?.message ||
+              'No se pudo firmar el documento. Revisa el certificado y su contraseña.';
+            this.toastrAlert.showError(mensaje, 'Error de firma');
+          }),
+      });
+  }
+
+  cerrarFirma(): void {
+    if (this.procesandoFirma) return;
+
+    this.mostrarModalFirma = false;
+    this.cargandoPdfFirma = false;
+    this.pdfFirmaBlob = null;
+    this.planFirmando = null;
+  }
+
+  nombreDocumentoFirma(): string {
+    if (!this.planFirmando) return 'plan-muestreo.pdf';
+    return `${this.planFirmando.num_secuencial ?? 'plan-muestreo'}.pdf`;
   }
 
   // ── PDF ──────────────────────────────────────────────────────────────────

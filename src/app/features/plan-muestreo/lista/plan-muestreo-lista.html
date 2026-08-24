@@ -258,6 +258,33 @@
                             </button>
                           }
 
+                          <!-- Firmar: solo con el plan autorizado, que es cuando
+                               existe el PDF congelado sobre el que se estampa. -->
+                          @if (puedeFirmar(plan)) {
+                            <button
+                              type="button"
+                              title="Firmar electrónicamente"
+                              (click)="abrirFirma(plan)"
+                              [disabled]="procesandoId === plan.id"
+                              class="h-8 px-2.5 flex items-center justify-center gap-1 rounded bg-[#0f172a] text-white text-[11px] font-bold uppercase hover:bg-[#1e293b] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                            >
+                              <svg
+                                class="h-3.5 w-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                />
+                              </svg>
+                              Firmar
+                            </button>
+                          }
+
                           @if (puedeEliminar(plan) || esFinalizado(plan)) {
                             <div class="relative">
                               <button
@@ -384,3 +411,14 @@
   (downloaded)="descargarPdf()"
 >
 </app-pdf-viewer>
+
+<!-- Modal de firma electrónica -->
+<app-firma-electronica
+  [mostrar]="mostrarModalFirma"
+  [pdfBlob]="pdfFirmaBlob"
+  [nombreDocumento]="nombreDocumentoFirma()"
+  [cargandoPdf]="cargandoPdfFirma"
+  [procesando]="procesandoFirma"
+  (cerrar)="cerrarFirma()"
+  (firmar)="confirmarFirma($event)"
+/>

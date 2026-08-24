@@ -1,0 +1,171 @@
+###############################################################################
+# Pruebas de autenticación — Keycloak + server.js
+#
+# Requiere la extensión "REST Client" (humao.rest-client) en VS Code.
+# Cada bloque separado por ### es una petición: pulsa "Send Request" encima.
+#
+# Orden sugerido: 1) Well-known  2) Login directo  3) Userinfo  4) Refresh
+#                 5) Logout      6) Los mismos vía server.js (/login, etc.)
+###############################################################################
+
+# ⚠️ Probado desde fuera del servidor, este Keycloak responde
+#    403 {"error":"invalid_request","error_description":"HTTPS required"}
+#    porque el realm tiene "Require SSL: external" y no hay HTTPS publicado
+#    (el 443 de esa IP sirve otra app Angular, no Keycloak).
+#    Opciones para probar desde tu máquina:
+#      a) Túnel SSH y usar localhost (recomendado, no cambia nada en el server):
+#           ssh -L 8080:localhost:8080 usuario@173.212.251.64
+#         y luego dejar @keycloak = http://localhost:8080
+#      b) Poner Require SSL = none en Realm settings → General (solo dev)
+#      c) Ejecutar estas pruebas desde el propio servidor
+@keycloak   = http://173.212.251.64:8080
+# @keycloak = http://localhost:8080      # <- usar con el túnel SSH del punto (a)
+@realm      = FAQ-SGIA-V2
+@clientId   = lims_frontend
+@secret     = JCkKproUECksareMniT4NF4sixZ9nHHG
+@username   = jalvear
+@password   = jalvear2026
+
+# Backend Express (server.js). Cambia el puerto si usas otro.
+@api        = http://localhost:5200
+
+
+###############################################################################
+# 1. Configuración del realm (verifica URL y realm sin necesitar credenciales)
+###############################################################################
+
+GET {{keycloak}}/realms/{{realm}}/.well-known/openid-configuration
+Accept: application/json
+
+
+###############################################################################
+# 2. Login directo contra Keycloak (grant_type=password)
+#    Guarda la respuesta como "kcLogin" para reutilizar los tokens abajo.
+###############################################################################
+
+# @name kcLogin
+POST {{keycloak}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password
+&client_id={{clientId}}
+&client_secret={{secret}}
+&username={{username}}
+&password={{password}}
+
+###
+# Variables derivadas del login anterior
+@accessToken  = {{kcLogin.response.body.access_token}}
+@refreshToken = {{kcLogin.response.body.refresh_token}}
+
+
+###############################################################################
+# 3. Userinfo — comprueba que el access_token es válido
+###############################################################################
+
+GET {{keycloak}}/realms/{{realm}}/protocol/openid-connect/userinfo
+Authorization: Bearer {{accessToken}}
+
+
+###############################################################################
+# 4. Introspección del token (muestra roles, exp, activo/inactivo)
+###############################################################################
+
+POST {{keycloak}}/realms/{{realm}}/protocol/openid-connect/token/introspect
+Content-Type: application/x-www-form-urlencoded
+
+client_id={{clientId}}
+&client_secret={{secret}}
+&token={{accessToken}}
+
+
+###############################################################################
+# 5. Refrescar token
+###############################################################################
+
+# @name kcRefresh
+POST {{keycloak}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token
+&client_id={{clientId}}
+&client_secret={{secret}}
+&refresh_token={{refreshToken}}
+
+
+###############################################################################
+# 6. Logout (204 No Content si todo va bien)
+###############################################################################
+
+POST {{keycloak}}/realms/{{realm}}/protocol/openid-connect/logout
+Content-Type: application/x-www-form-urlencoded
+
+client_id={{clientId}}
+&client_secret={{secret}}
+&refresh_token={{refreshToken}}
+
+
+###############################################################################
+# 7. Login a través del backend (server.js → POST /login)
+###############################################################################
+
+# @name apiLogin
+POST {{api}}/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+###
+@apiRefreshToken = {{apiLogin.response.body.refresh_token}}
+
+
+###############################################################################
+# 8. Refresh a través del backend (POST /refresh)
+#    OJO: server.js NO envía client_secret en /refresh. Si el cliente
+#    "lims_frontend" es confidencial, Keycloak responderá
+#    "unauthorized_client / Client secret not provided in request".
+###############################################################################
+
+POST {{api}}/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "{{apiRefreshToken}}"
+}
+
+
+###############################################################################
+# 9. Logout a través del backend (POST /logout) — mismo detalle del secret
+###############################################################################
+
+POST {{api}}/logout
+Content-Type: application/json
+
+{
+  "refresh_token": "{{apiRefreshToken}}"
+}
+
+
+###############################################################################
+# 10. Casos de error para verificar el manejo del backend
+###############################################################################
+
+### Credenciales incorrectas → 401
+POST {{api}}/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "clave-incorrecta"
+}
+
+### Faltan credenciales → 400
+POST {{api}}/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}"
+}

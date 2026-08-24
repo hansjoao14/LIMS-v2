@@ -19,6 +19,11 @@ import {
   PlanMuestreoPayload,
   ValorMuestreoPayload,
 } from '../../../interfaces/solicitudes/plan-muestreo/plan-muestreo.interface';
+import {
+  FirmaPlanMuestreo,
+  FirmarPlanMuestreoPayload,
+  FirmarPlanMuestreoResponse,
+} from '../../../interfaces/solicitudes/plan-muestreo/firma-plan-muestreo.interface';
 
 // Identificador con el que el backend genera el secuencial del plan de
 // muestreo (la orden in situ usa ORD_AIR / ORD_RDO).
@@ -75,5 +80,38 @@ export class PlanMuestreoService {
     return this.http.get(`${this.apiReportes}/report-solicitud/pdf-plan-muestreo/${id}`, {
       responseType: 'blob',
     });
+  }
+
+  /**
+   * PDF del plan tal como está almacenado, **con las firmas estampadas**.
+   *
+   * No confundir con `getPdfPlanMuestreo`: ese lo pide a `api_reportes`, que lo
+   * regenera desde la base en cada llamada y por lo tanto nunca trae firmas.
+   * Este sale de `api_solicitud`, que devuelve el archivo congelado al
+   * autorizar el plan. Para firmar y para ver un documento ya firmado hay que
+   * usar este.
+   */
+  getPdfFirmado(id: string): Observable<Blob> {
+    return this.http.get(`${this.apiSolicitud}/plan-muestreo/${id}/pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  /** Estampa una firma electrónica sobre el PDF congelado. */
+  firmarPlan(
+    id: string,
+    payload: FirmarPlanMuestreoPayload,
+  ): Observable<FirmarPlanMuestreoResponse> {
+    return this.http.post<FirmarPlanMuestreoResponse>(
+      `${this.apiSolicitud}/plan-muestreo/${id}/firmar`,
+      payload,
+    );
+  }
+
+  /** Bitácora: quién firmó el documento, con qué cargo y cuándo. */
+  getFirmasPlan(id: string): Observable<FirmaPlanMuestreo[]> {
+    return this.http.get<FirmaPlanMuestreo[]>(
+      `${this.apiSolicitud}/plan-muestreo/${id}/firmas`,
+    );
   }
 }
