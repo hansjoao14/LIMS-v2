@@ -5,6 +5,7 @@ import {
   EventEmitter,
   HostListener,
   Input,
+  NgZone,
   OnChanges,
   OnDestroy,
   OnInit,
@@ -105,7 +106,10 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
   private offsetArrastreX = 0;
   private offsetArrastreY = 0;
 
-  constructor(private certificadoStorage: CertificadoP12StorageService) {
+  constructor(
+    private certificadoStorage: CertificadoP12StorageService,
+    private zone: NgZone,
+  ) {
     /*
      * El worker se sirve desde assets. `angular.json` lo copia de
      * node_modules/pdfjs-dist en cada build, así que no queda una copia
@@ -182,20 +186,35 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
         return;
       }
 
-      this.pdfDocument = documento;
-      this.blobCargado = this.pdfBlob;
-      this.totalPaginas = documento.numPages;
-      this.paginaActual = 1;
-      this.zoom = 1;
-      this.posicionVisual = null;
-      this.posicionPdf = null;
+      /*
+       * A partir de acá se toca estado que el template lee, y hay que hacerlo
+       * dentro de la zona de Angular.
+       *
+       * pdf.js resuelve sus promesas desde un Web Worker, fuera de la zona, así
+       * que asignar `totalPaginas` o `renderizando` a secas no dispara la
+       * detección de cambios. El canvas igual se ve —lo pinta pdf.js por su
+       * cuenta, sin pasar por Angular— y eso confunde: parece que cargó pero la
+       * barra de páginas no aparece y el spinner no se va hasta que un clic
+       * fuerza el repintado.
+       */
+      this.zone.run(() => {
+        this.pdfDocument = documento;
+        this.blobCargado = this.pdfBlob;
+        this.totalPaginas = documento.numPages;
+        this.paginaActual = 1;
+        this.zoom = 1;
+        this.posicionVisual = null;
+        this.posicionPdf = null;
+      });
 
       await this.renderizarPagina();
     } catch (error) {
       console.error('No se pudo renderizar el PDF:', error);
-      this.errorPdf = 'No se pudo mostrar el documento PDF.';
+      this.zone.run(() => (this.errorPdf = 'No se pudo mostrar el documento PDF.'));
     } finally {
-      if (token === this.tokenCarga) this.renderizando = false;
+      if (token === this.tokenCarga) {
+        this.zone.run(() => (this.renderizando = false));
+      }
     }
   }
 
@@ -236,13 +255,17 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
 
       await this.renderTask.promise;
 
-      // Al cambiar de página o zoom, el recuadro se vuelve a ubicar a partir de
-      // las coordenadas del PDF, que son las que no cambian.
-      this.reubicarMarcador();
+      // Igual que en cargarPdf: el render termina fuera de la zona de Angular,
+      // así que el reposicionamiento del recuadro se hace dentro.
+      this.zone.run(() => {
+        // Al cambiar de página o zoom, el recuadro se vuelve a ubicar a partir
+        // de las coordenadas del PDF, que son las que no cambian.
+        this.reubicarMarcador();
+      });
     } catch (error: any) {
       if (error?.name !== 'RenderingCancelledException') {
         console.error('Error renderizando la página:', error);
-        this.errorPdf = 'No se pudo mostrar la página seleccionada.';
+        this.zone.run(() => (this.errorPdf = 'No se pudo mostrar la página seleccionada.'));
       }
     }
   }
@@ -518,11 +541,11 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
   puedeFirmar(): boolean {
     return Boolean(
       this.archivoP12Base64 &&
-        this.passwordP12.trim() &&
-        this.posicionPdf &&
-        !this.procesando &&
-        !this.renderizando &&
-        !this.cargandoPdf,
+      this.passwordP12.trim() &&
+      this.posicionPdf &&
+      !this.procesando &&
+      !this.renderizando &&
+      !this.cargandoPdf,
     );
   }
 
