@@ -22,6 +22,7 @@ import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.const
 import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.utils';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
+import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 
 const ESTADO_FINALIZADO = 2023;
@@ -32,7 +33,7 @@ const ESTADOS_FINALIZADOS = [ESTADO_FINALIZADO, 3];
 
 @Component({
   selector: 'app-orden-trabajo-in-situ-lista',
-  imports: [CommonModule, TableSkeleton, PaginationComponent],
+  imports: [CommonModule, TableSkeleton, PaginationComponent, PdfViewerComponent],
   templateUrl: './orden-trabajo-in-situ-lista.html',
 })
 export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
@@ -51,6 +52,11 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
 
   openMenuId: string | null = null;
   procesandoId: string | null = null;
+
+  showPdfModal = false;
+  isPdfCargando = false;
+  pdfPreviewBlob: Blob | null = null;
+  pdfNombre = 'orden-trabajo.pdf';
 
   private readonly destroy$ = new Subject<void>();
 
@@ -133,9 +139,17 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
     return ESTADOS_FINALIZADOS.includes(orden.ctestado_id);
   }
 
+  /**
+   * Identificador con el que `sp_generar_secuencial_orden` busca la fila de
+   * PARAMETRIZACION.PARA_SECUENCIAL (columna `identificador_secu`).
+   *
+   * Los valores van tal cual están configurados en la base — ojo con que uno
+   * lleva guion y el otro guion bajo. Si no coincide, el SP corta con
+   * "No existe un secuencial configurado para el identificador indicado".
+   */
   private getIdentificadorSecuencial(orden: ReportOrden): string {
     const nombre = (orden.ctambiente_nombre ?? '').toLowerCase();
-    return nombre.includes('ruido') ? 'ORD_RDO' : 'ORD_AIR';
+    return nombre.includes('ruido') ? 'OTIS-Ruido' : 'OTIS_Emision';
   }
 
   async finalizarOrden(orden: ReportOrden): Promise<void> {
@@ -202,7 +216,42 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Solo se imprime una orden autorizada: hasta entonces sigue en edición y su
+   * PDF no es el documento definitivo, así que la opción tampoco se ofrece.
+   */
+  puedeImprimir(orden: ReportOrden): boolean {
+    return this.esFinalizado(orden);
+  }
+
   imprimirOrden(orden: ReportOrden): void {
-    console.log('[orden-in-situ:imprimir]', orden);
+    if (!this.puedeImprimir(orden)) return;
+
+    this.showPdfModal = true;
+    this.isPdfCargando = true;
+    this.pdfPreviewBlob = null;
+    this.pdfNombre = `${orden.num_secuencial ?? 'orden-trabajo'}.pdf`;
+
+    this.ordenTrabajoService
+      .getPdfOrden(orden.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) =>
+          this.zone.run(() => {
+            this.pdfPreviewBlob = blob;
+            this.isPdfCargando = false;
+          }),
+        error: () =>
+          this.zone.run(() => {
+            this.showPdfModal = false;
+            this.isPdfCargando = false;
+            this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
+          }),
+      });
+  }
+
+  cerrarPdf(): void {
+    this.showPdfModal = false;
+    this.pdfPreviewBlob = null;
   }
 }

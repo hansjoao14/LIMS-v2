@@ -81,6 +81,7 @@ export interface FinalizarOrdenPayload {
 @Injectable({ providedIn: 'root' })
 export class OrdenTrabajoService {
   private readonly apiSolicitud = environment.api_solicitud;
+  private readonly apiReportes = environment.api_reportes;
 
   constructor(private http: HttpClient) {}
 
@@ -94,6 +95,13 @@ export class OrdenTrabajoService {
 
   autorizarOrden(payload: FinalizarOrdenPayload): Observable<any> {
     return this.http.post<any>(`${this.apiSolicitud}/orden-trabajo/finalizar`, payload);
+  }
+
+  /** Orden de trabajo in situ en PDF, generada por api_reportes. */
+  getPdfOrden(id: string): Observable<Blob> {
+    return this.http.get(`${this.apiReportes}/report-solicitud/pdf-orden/${id}`, {
+      responseType: 'blob',
+    });
   }
 
   deshabilitarOrden(id: string): Observable<any> {
