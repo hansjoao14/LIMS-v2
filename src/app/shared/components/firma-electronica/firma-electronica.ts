@@ -20,7 +20,9 @@ import { CertificadoP12StorageService } from '../../../services/documentos/certi
 import Swal from 'sweetalert2';
 
 import {
+  CampoFirmaElectronica,
   DatosFirmaElectronica,
+  ErrorFirmaElectronica,
   PosicionFirmaPdf,
 } from '../../../interfaces/documentos/firma-electronica.interface';
 
@@ -49,6 +51,11 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
   @Input() nombreDocumento = 'permiso.pdf';
   @Input() cargandoPdf = false;
   @Input() procesando = false;
+  /**
+   * Error devuelto por el firmador. Lo muestra el paso al que apunta, para que
+   * el usuario corrija sin salir del modal.
+   */
+  @Input() errorFirma: ErrorFirmaElectronica | null = null;
 
   @Output() cerrar = new EventEmitter<void>();
   @Output() firmar = new EventEmitter<DatosFirmaElectronica>();
@@ -61,6 +68,9 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
 
   @ViewChild('paginaPdf')
   private paginaPdf?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('inputPassword')
+  private inputPassword?: ElementRef<HTMLInputElement>;
 
   paginaActual = 1;
   totalPaginas = 0;
@@ -79,6 +89,13 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
 
   posicionVisual: RectanguloVisual | null = null;
   posicionPdf: PosicionFirmaPdf | null = null;
+
+  /*
+   * Copia local del `errorFirma` recibido. El componente necesita poder
+   * borrarlo en cuanto el usuario corrige el dato señalado, y un `@Input` no
+   * se muta: el padre sigue siendo el dueño de lo que envía.
+   */
+  errorMostrado: ErrorFirmaElectronica | null = null;
 
   private pdfDocument: any = null;
   private pdfLoadingTask: any = null;
@@ -138,6 +155,39 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
     if (changes['pdfBlob'] || (changes['mostrar'] && this.mostrar)) {
       this.programarCargaPdf();
     }
+
+    if (changes['errorFirma']) {
+      this.recibirErrorFirma();
+    }
+  }
+
+  /**
+   * Un error de contraseña deja el campo listo para reescribirla: seleccionado
+   * y con el foco puesto. Los demás solo se muestran en su paso.
+   */
+  private recibirErrorFirma(): void {
+    this.errorMostrado = this.errorFirma;
+
+    if (this.errorFirma?.campo !== 'password') {
+      return;
+    }
+
+    setTimeout(() => {
+      const campo = this.inputPassword?.nativeElement;
+      campo?.focus();
+      campo?.select();
+    });
+  }
+
+  /** El error deja de tener sentido apenas el usuario toca lo que se le señaló. */
+  limpiarErrorDe(campo: CampoFirmaElectronica): void {
+    if (this.errorMostrado?.campo === campo) {
+      this.errorMostrado = null;
+    }
+  }
+
+  hayErrorEn(campo: CampoFirmaElectronica): boolean {
+    return this.errorMostrado?.campo === campo;
   }
 
   ngOnDestroy(): void {
@@ -289,7 +339,9 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
 
       const anchoDisponible = Math.max(320, this.visorPdf.nativeElement.clientWidth - 36);
 
-      const escalaAjuste = Math.min(1.7, Math.max(0.45, anchoDisponible / viewportBase.width));
+      // El tope alto deja que una hoja A4 aproveche todo el ancho del visor
+      // ensanchado; sin él el ajuste se quedaba corto y la letra salía pequeña.
+      const escalaAjuste = Math.min(2.4, Math.max(0.45, anchoDisponible / viewportBase.width));
 
       const escala = escalaAjuste * zoomObjetivo;
       const viewport = pagina.getViewport({ scale: escala });
@@ -406,6 +458,9 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
     ) {
       return;
     }
+
+    // Reubicar la firma responde a un error de posición: deja de aplicar.
+    this.limpiarErrorDe('posicion');
 
     const rectPagina = this.paginaPdf.nativeElement.getBoundingClientRect();
     const anchoVisual = this.anchoFirmaPdf * this.viewport.scale;
@@ -576,9 +631,15 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
 
   private async procesarArchivoP12(archivo: File): Promise<void> {
     this.errorArchivo = '';
+    this.errorMostrado = null;
 
     if (!archivo.name.toLowerCase().endsWith('.p12')) {
       this.errorArchivo = 'Solo se permiten certificados en formato .p12.';
+      return;
+    }
+
+    if (archivo.size === 0) {
+      this.errorArchivo = 'El archivo .p12 está vacío. Selecciona un certificado válido.';
       return;
     }
 
@@ -677,15 +738,59 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
     }
   }
 
+  /**
+   * Lo que todavía falta para poder firmar, en el orden de los pasos.
+   *
+   * Es la misma lista que evalúa `puedeFirmar()`, pero en texto: el botón
+   * deshabilitado no explica por qué lo está, y esto sí.
+   */
+  requisitosPendientes(): string[] {
+    const faltantes: string[] = [];
+
+    if (!this.posicionPdf) {
+      faltantes.push('ubicar la firma en el documento');
+    }
+
+    if (!this.archivoP12Base64) {
+      faltantes.push('seleccionar el certificado .p12');
+    }
+
+    if (!this.passwordP12.trim()) {
+      faltantes.push('ingresar la contraseña del certificado');
+    }
+
+    return faltantes;
+  }
+
+  /** Motivo por el que el botón está bloqueado, para el `title` del botón. */
+  motivoBloqueo(): string {
+    if (this.procesando) {
+      return 'Firmando el documento...';
+    }
+
+    if (this.errorPdf) {
+      return 'No se puede firmar: el documento no se pudo cargar.';
+    }
+
+    if (this.cargandoPdf || this.pdfCargandoInterno || this.renderizandoPagina) {
+      return 'Espera a que termine de cargar el documento.';
+    }
+
+    const faltantes = this.requisitosPendientes();
+
+    return faltantes.length ? `Falta ${faltantes.join(', ')}.` : 'Firmar el documento';
+  }
+
   puedeFirmar(): boolean {
     return Boolean(
-      this.archivoP12Base64 &&
-      this.passwordP12.trim() &&
-      this.posicionPdf &&
+      this.requisitosPendientes().length === 0 &&
       !this.procesando &&
       !this.pdfCargandoInterno &&
       !this.renderizandoPagina &&
-      !this.cargandoPdf,
+      !this.cargandoPdf &&
+      // Sin documento a la vista no hay nada que firmar: la posición guardada
+      // correspondería a un render que falló.
+      !this.errorPdf,
     );
   }
 
@@ -693,6 +798,8 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
     if (!this.puedeFirmar() || !this.posicionPdf) {
       return;
     }
+
+    this.errorMostrado = null;
 
     this.firmar.emit({
       archivoP12Base64: this.archivoP12Base64,
@@ -733,6 +840,7 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
 
     this.arrastrandoArchivo = false;
     this.errorArchivo = '';
+    this.errorMostrado = null;
     this.errorPdf = '';
     this.renderizandoPagina = false;
 

@@ -168,7 +168,8 @@
 
           <div
             class="posicion-resumen"
-            [class.completa]="!!posicionPdf"
+            [class.completa]="!!posicionPdf && !hayErrorEn('posicion')"
+            [class.con-error]="hayErrorEn('posicion')"
           >
             @if (posicionPdf) {
               <i class="fa-solid fa-location-dot"></i>
@@ -193,6 +194,13 @@
             }
           </div>
 
+          @if (hayErrorEn('posicion')) {
+            <p class="mensaje-error">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              {{ errorMostrado?.mensaje }}
+            </p>
+          }
+
           <div class="paso">
             <span>2</span>
             <div>
@@ -204,7 +212,8 @@
           <div
             class="zona-archivo"
             [class.arrastrando]="arrastrandoArchivo"
-            [class.cargado]="!!archivoP12Base64"
+            [class.cargado]="!!archivoP12Base64 && !hayErrorEn('certificado')"
+            [class.con-error]="hayErrorEn('certificado')"
             (dragover)="onDragOver($event)"
             (dragleave)="onDragLeave($event)"
             (drop)="onDrop($event)"
@@ -261,6 +270,13 @@
             </p>
           }
 
+          @if (hayErrorEn('certificado')) {
+            <p class="mensaje-error">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              {{ errorMostrado?.mensaje }}
+            </p>
+          }
+
           <div class="paso paso-password">
             <span>3</span>
             <div>
@@ -269,14 +285,20 @@
             </div>
           </div>
 
-          <div class="campo-password">
+          <div
+            class="campo-password"
+            [class.con-error]="hayErrorEn('password')"
+          >
             <i class="fa-solid fa-key"></i>
 
             <input
+              #inputPassword
               [type]="mostrarPassword ? 'text' : 'password'"
               [(ngModel)]="passwordP12"
               placeholder="Ingrese la contraseña del certificado"
               autocomplete="new-password"
+              [attr.aria-invalid]="hayErrorEn('password')"
+              (ngModelChange)="limpiarErrorDe('password')"
               (keyup.enter)="confirmarFirma()"
             />
 
@@ -298,6 +320,25 @@
             </button>
           </div>
 
+          @if (hayErrorEn('password') || hayErrorEn('general')) {
+            <p class="mensaje-error error-firma">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              {{ errorMostrado?.mensaje }}
+            </p>
+          }
+
+          @if (!procesando && requisitosPendientes().length) {
+            <p class="requisitos-pendientes">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>
+                Para firmar falta
+                @for (requisito of requisitosPendientes(); track requisito; let ultimo = $last) {
+                  <strong>{{ requisito }}</strong>{{ ultimo ? '.' : ', ' }}
+                }
+              </span>
+            </p>
+          }
+
           <div class="acciones-finales">
             <button
               type="button"
@@ -312,6 +353,7 @@
               type="button"
               class="boton-firmar"
               [disabled]="!puedeFirmar()"
+              [title]="motivoBloqueo()"
               (click)="confirmarFirma()"
             >
               @if (procesando) {

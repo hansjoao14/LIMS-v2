@@ -33,7 +33,11 @@ import {
   PlanMuestreoService,
 } from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 import { PlanMuestreoStore } from '../model/plan-muestreo.store';
-import { DatosFirmaElectronica } from '../../../interfaces/documentos/firma-electronica.interface';
+import {
+  CampoFirmaElectronica,
+  DatosFirmaElectronica,
+  ErrorFirmaElectronica,
+} from '../../../interfaces/documentos/firma-electronica.interface';
 
 @Component({
   selector: 'app-plan-muestreo-lista',
@@ -89,6 +93,20 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   procesandoFirma = false;
   planFirmando: ReportPlanMuestreo | null = null;
   pdfFirmaBlob: Blob | null = null;
+  errorFirma: ErrorFirmaElectronica | null = null;
+
+  /**
+   * Códigos que el firmador devuelve para algo que el usuario puede corregir
+   * sin salir del modal, y el paso al que corresponde cada uno. Lo que no está
+   * acá (plan sin autorizar, PDF ausente, fallo del firmador) no se arregla
+   * reintentando: eso cierra el modal y se avisa por toast.
+   */
+  private readonly camposPorCodigoFirma: Record<string, CampoFirmaElectronica> = {
+    CERTIFICADO_INVALIDO: 'password',
+    PASSWORD_REQUERIDA: 'password',
+    CERTIFICADO_VACIO: 'certificado',
+    POSICION_FIRMA_INVALIDA: 'posicion',
+  };
 
   showPdfModal = false;
   isPdfCargando = false;
@@ -372,6 +390,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
 
     this.planFirmando = plan;
     this.pdfFirmaBlob = null;
+    this.errorFirma = null;
     this.cargandoPdfFirma = true;
     this.procesandoFirma = false;
     this.mostrarModalFirma = true;
@@ -406,6 +425,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
     const plan = this.planFirmando;
     const usuario = this.authService.currentUser();
 
+    this.errorFirma = null;
     this.procesandoFirma = true;
 
     this.planMuestreoService
@@ -432,12 +452,37 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
           }),
         error: (error) =>
           this.zone.run(() => {
-            const mensaje =
-              error?.error?.message ||
-              'No se pudo firmar el documento. Revisa el certificado y su contraseña.';
-            this.toastrAlert.showError(mensaje, 'Error de firma');
+            this.mostrarErrorDeFirma(error);
           }),
       });
+  }
+
+  /**
+   * Un error de contraseña o de posición se muestra dentro del modal, junto al
+   * paso que hay que corregir: cerrarlo obligaría a volver a cargar el PDF y a
+   * reubicar la firma solo por haberse equivocado al teclear. El resto son
+   * condiciones del documento que no cambian por reintentar, y esos sí cierran.
+   */
+  private mostrarErrorDeFirma(error: unknown): void {
+    const respuesta = (error as { error?: { message?: string; code?: string } })?.error;
+
+    const mensaje =
+      respuesta?.message || 'No se pudo firmar el documento. Revisa el certificado y su contraseña.';
+
+    const campo = respuesta?.code ? this.camposPorCodigoFirma[respuesta.code] : undefined;
+
+    // Sin código no se puede clasificar (típicamente un fallo de red): se deja
+    // en el modal como error general, porque reintentar sí tiene sentido.
+    if (campo || !respuesta?.code) {
+      this.errorFirma = { mensaje, campo: campo ?? 'general' };
+      return;
+    }
+
+    // `finalize` corre después de este handler, así que la bandera sigue en
+    // alto y la guarda de `cerrarFirma()` bloquearía el cierre.
+    this.procesandoFirma = false;
+    this.cerrarFirma();
+    this.toastrAlert.showError(mensaje, 'Error de firma');
   }
 
   cerrarFirma(): void {
@@ -447,6 +492,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
     this.cargandoPdfFirma = false;
     this.pdfFirmaBlob = null;
     this.planFirmando = null;
+    this.errorFirma = null;
   }
 
   nombreDocumentoFirma(): string {
