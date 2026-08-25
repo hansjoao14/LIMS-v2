@@ -22,7 +22,6 @@ import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.const
 import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.utils';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
-import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 
 const ESTADO_FINALIZADO = 2023;
@@ -33,7 +32,7 @@ const ESTADOS_FINALIZADOS = [ESTADO_FINALIZADO, 3];
 
 @Component({
   selector: 'app-orden-trabajo-in-situ-lista',
-  imports: [CommonModule, TableSkeleton, PaginationComponent, PdfViewerComponent],
+  imports: [CommonModule, TableSkeleton, PaginationComponent],
   templateUrl: './orden-trabajo-in-situ-lista.html',
 })
 export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
@@ -41,6 +40,16 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
   // La tabla ya no ofrece "Editar", pero el flujo de edición del formulario
   // sigue cableado: basta con volver a emitir este evento para reactivarlo.
   @Output() editar = new EventEmitter<ReportOrden>();
+  /*
+   * El PDF lo abre el padre, no esta lista.
+   *
+   * El visor es `position: fixed` y el padre envuelve esta tabla en un
+   * `.animate-in`, cuya animación retiene un `transform`; un ancestro con
+   * transform se vuelve containing block y el visor quedaría anclado a esa
+   * caja en lugar del viewport, sin ocupar la pantalla completa. Por eso el
+   * `<app-pdf-viewer>` se declara fuera de ese wrapper y la lista solo avisa.
+   */
+  @Output() imprimir = new EventEmitter<ReportOrden>();
 
   loading = true;
   ordenes: ReportOrden[] = [];
@@ -52,11 +61,6 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
 
   openMenuId: string | null = null;
   procesandoId: string | null = null;
-
-  showPdfModal = false;
-  isPdfCargando = false;
-  pdfPreviewBlob: Blob | null = null;
-  pdfNombre = 'orden-trabajo.pdf';
 
   private readonly destroy$ = new Subject<void>();
 
@@ -227,31 +231,6 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
   imprimirOrden(orden: ReportOrden): void {
     if (!this.puedeImprimir(orden)) return;
 
-    this.showPdfModal = true;
-    this.isPdfCargando = true;
-    this.pdfPreviewBlob = null;
-    this.pdfNombre = `${orden.num_secuencial ?? 'orden-trabajo'}.pdf`;
-
-    this.ordenTrabajoService
-      .getPdfOrden(orden.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (blob) =>
-          this.zone.run(() => {
-            this.pdfPreviewBlob = blob;
-            this.isPdfCargando = false;
-          }),
-        error: () =>
-          this.zone.run(() => {
-            this.showPdfModal = false;
-            this.isPdfCargando = false;
-            this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
-          }),
-      });
-  }
-
-  cerrarPdf(): void {
-    this.showPdfModal = false;
-    this.pdfPreviewBlob = null;
+    this.imprimir.emit(orden);
   }
 }

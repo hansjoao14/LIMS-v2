@@ -8,33 +8,13 @@
 
 .slide-in-from-bottom-4 {
   transform: translateY(1rem);
-  animation-name: animateInSlide;
 }
 
 .slide-in-from-right-4 {
   transform: translateX(1rem);
-  animation-name: animateInSlide;
 }
 
-/*
- * El fade no toca `transform`, y no es un detalle cosmético.
- *
- * Con `forwards`, un `transform: translate(0)` en el fotograma final se retiene
- * para siempre, y un elemento con transform distinto de `none` se vuelve
- * containing block de sus descendientes `position: fixed`. El visor de PDF
- * (`fixed inset-0`) se anclaba a esta caja en vez de al viewport y salía
- * recortado al área del contenido en lugar de a pantalla completa.
- * `ESTANDARES.md` §5.3 describe la misma trampa para los menús contextuales.
- *
- * El slide sí necesita transform, así que conserva su propia animación.
- */
 @keyframes animateIn {
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes animateInSlide {
   to {
     opacity: 1;
     transform: translate(0);

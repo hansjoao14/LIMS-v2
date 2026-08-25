@@ -220,13 +220,3 @@
 @if (openMenuId !== null) {
   <div class="fixed inset-0 z-40" (click)="closeMenu()"></div>
 }
-
-<app-pdf-viewer
-  [visible]="showPdfModal"
-  [loading]="isPdfCargando"
-  [pdfBlob]="pdfPreviewBlob"
-  [nombreArchivo]="pdfNombre"
-  titulo="Orden de Trabajo In Situ"
-  (closed)="cerrarPdf()"
->
-</app-pdf-viewer>

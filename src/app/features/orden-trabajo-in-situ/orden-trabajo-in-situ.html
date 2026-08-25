@@ -15,6 +15,7 @@
         <app-orden-trabajo-in-situ-lista
           (nuevaOrden)="irAFormulario()"
           (editar)="onEditar($event)"
+          (imprimir)="imprimirOrden($event)"
         />
       }
 
@@ -29,3 +30,15 @@
     </div>
   </div>
 </div>
+
+<!-- Fuera del `.animate-in`: su transform haría de containing block y el visor,
+     que es `position: fixed`, no llegaría a ocupar la pantalla completa. -->
+<app-pdf-viewer
+  [visible]="showPdfModal"
+  [loading]="isPdfCargando"
+  [pdfBlob]="pdfPreviewBlob"
+  [nombreArchivo]="pdfNombre"
+  titulo="Orden de Trabajo In Situ"
+  (closed)="cerrarPdf()"
+>
+</app-pdf-viewer>
