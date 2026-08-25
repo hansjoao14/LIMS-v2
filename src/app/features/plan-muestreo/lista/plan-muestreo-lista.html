@@ -405,10 +405,10 @@
 <app-pdf-viewer
   [visible]="showPdfModal"
   [loading]="isPdfCargando"
-  [pdfUrl]="pdfPreviewUrl"
+  [pdfBlob]="pdfPreviewBlob"
+  [nombreArchivo]="pdfNombre"
   titulo="Plan de Muestreo"
   (closed)="cerrarPdf()"
-  (downloaded)="descargarPdf()"
 >
 </app-pdf-viewer>
 

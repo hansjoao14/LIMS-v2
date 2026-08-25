@@ -11,7 +11,6 @@ import {
   computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject, takeUntil, firstValueFrom, forkJoin, finalize } from 'rxjs';
 import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
 import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.utils';
@@ -55,8 +54,8 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
 
   showPdfModal = false;
   isPdfCargando = false;
-  pdfPreviewUrl: SafeResourceUrl | null = null;
-  private pdfBlobUrl: string | null = null;
+  pdfPreviewBlob: Blob | null = null;
+  readonly pdfNombre = 'orden-movilizacion.pdf';
 
   openMenuId: string | null = null;
 
@@ -99,7 +98,6 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
     private authService: AuthService,
     private zone: NgZone,
     private toastrAlert: ToastrAlertService,
-    private sanitizer: DomSanitizer,
     private alertService: AlertService,
   ) {}
 
@@ -116,9 +114,6 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.pdfBlobUrl) {
-      URL.revokeObjectURL(this.pdfBlobUrl);
-    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -389,19 +384,14 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
   imprimirRegistro(record: ContraloriaRecord): void {
     this.showPdfModal = true;
     this.isPdfCargando = true;
-    this.pdfPreviewUrl = null;
-    if (this.pdfBlobUrl) {
-      URL.revokeObjectURL(this.pdfBlobUrl);
-      this.pdfBlobUrl = null;
-    }
+    this.pdfPreviewBlob = null;
     this.solicitudService
       .getPdfVehiculo(record.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (blob) =>
           this.zone.run(() => {
-            this.pdfBlobUrl = URL.createObjectURL(blob);
-            this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
+            this.pdfPreviewBlob = blob;
             this.isPdfCargando = false;
           }),
         error: () =>
@@ -414,18 +404,6 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
 
   cerrarPdf(): void {
     this.showPdfModal = false;
-    this.pdfPreviewUrl = null;
-    if (this.pdfBlobUrl) {
-      URL.revokeObjectURL(this.pdfBlobUrl);
-      this.pdfBlobUrl = null;
-    }
-  }
-
-  descargarPdf(): void {
-    if (!this.pdfBlobUrl) return;
-    const a = document.createElement('a');
-    a.href = this.pdfBlobUrl;
-    a.download = 'orden-movilizacion.pdf';
-    a.click();
+    this.pdfPreviewBlob = null;
   }
 }

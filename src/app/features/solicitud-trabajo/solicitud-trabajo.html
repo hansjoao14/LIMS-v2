@@ -210,133 +210,14 @@
   </div>
 }
 
-@if (showPdfFinal) {
-  <div
-    class="fixed inset-0 z-[110] flex flex-col bg-slate-900/95 backdrop-blur-sm animate-in fade-in"
-  >
-    <!-- Toolbar -->
-    <div class="flex items-center justify-between px-6 py-3 bg-[#1e3a8a] shadow-lg flex-shrink-0">
-      <div class="flex items-center gap-3">
-        <!-- Badge de éxito -->
-        <div
-          class="flex items-center gap-2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-3.5 w-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2.5"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-          Solicitud Generada
-        </div>
-        <span class="text-white font-bold text-sm uppercase tracking-wide">
-          ReportSolicitud
-          @if (secuencialAsignado) {
-            — <span class="font-mono text-green-300">{{ secuencialAsignado }}</span>
-          }
-        </span>
-      </div>
-      <div class="flex items-center gap-2">
-        <button
-          type="button"
-          (click)="descargarPdf()"
-          [disabled]="!pdfPreviewUrl"
-          class="flex items-center gap-2 bg-white text-[#1e3a8a] font-bold text-xs px-4 py-2 rounded-lg shadow hover:bg-slate-100 disabled:opacity-40 transition-colors"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-            />
-          </svg>
-          Descargar PDF
-        </button>
-        <button
-          type="button"
-          (click)="showPdfFinal = false"
-          class="flex items-center gap-1.5 border border-white/40 text-white font-bold text-xs px-4 py-2 rounded-lg hover:bg-white/10 transition-colors"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-          Cerrar
-        </button>
-      </div>
-    </div>
-
-    <!-- PDF viewer -->
-    <div class="flex-1 relative">
-      @if (isPdfCargando) {
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-800">
-          <span
-            class="animate-spin h-12 w-12 border-4 border-[#3b82f6] border-t-transparent rounded-full"
-          ></span>
-          <p class="text-sm font-medium text-slate-300 uppercase tracking-widest">
-            Generando documento...
-          </p>
-        </div>
-      } @else if (pdfPreviewUrl) {
-        <iframe
-          [src]="pdfPreviewUrl"
-          class="w-full h-full border-0 bg-white"
-          type="application/pdf"
-        ></iframe>
-      } @else {
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-800">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-16 w-16 text-slate-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          <p class="text-slate-400 text-sm">No se pudo cargar el documento</p>
-          <button
-            type="button"
-            (click)="abrirPdfFinal()"
-            class="text-xs font-bold text-blue-400 hover:text-blue-300 uppercase tracking-wide"
-          >
-            Reintentar
-          </button>
-        </div>
-      }
-    </div>
-  </div>
-}
+<app-pdf-viewer
+  [visible]="showPdfFinal"
+  [loading]="isPdfCargando"
+  [pdfBlob]="pdfPreviewBlob"
+  [nombreArchivo]="pdfNombreFinal"
+  titulo="Solicitud Generada"
+  (closed)="cerrarPdfFinal()"
+/>
 
 @if (showMapModal) {
   <div

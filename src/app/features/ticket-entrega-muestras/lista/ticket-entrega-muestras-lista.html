@@ -404,9 +404,9 @@
 <app-pdf-viewer
   [visible]="showPdfModal"
   [loading]="isPdfCargando"
-  [pdfUrl]="pdfPreviewUrl"
+  [pdfBlob]="pdfPreviewBlob"
+  [nombreArchivo]="pdfNombre"
   titulo="Ticket de Entrega de Muestras"
   (closed)="cerrarPdf()"
-  (downloaded)="descargarPdf()"
 >
 </app-pdf-viewer>

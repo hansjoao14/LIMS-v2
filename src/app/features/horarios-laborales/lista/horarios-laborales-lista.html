@@ -336,9 +336,9 @@
 <app-pdf-viewer
   [visible]="showPdfModal"
   [loading]="isPdfCargando"
-  [pdfUrl]="pdfPreviewUrl"
+  [pdfBlob]="pdfPreviewBlob"
+  [nombreArchivo]="pdfNombre"
   titulo="Programación de Vehículo"
   (closed)="cerrarPdf()"
-  (downloaded)="descargarPdf()"
 >
 </app-pdf-viewer>

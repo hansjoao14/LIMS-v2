@@ -1,5 +1,4 @@
 import { Component, NgZone, OnDestroy, OnInit, AfterViewChecked } from '@angular/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
   FormBuilder,
   FormGroup,
@@ -49,6 +48,7 @@ import { ReportSolicitudService } from '../../services/solicitudes/lista-solicit
 import { AuthService } from '../auth/service/auth-service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { AlertService } from '../../services/alert.service';
+import { PdfViewerComponent } from '../../shared/components/pdf-viewer/pdf-viewer';
 
 type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
 
@@ -62,6 +62,7 @@ type MotivoFlujo = '' | 'seguimiento' | 'denuncia' | 'licenciamiento';
     Step3CatalogoComponent,
     Step4ConfirmacionComponent,
     PageHeader,
+    PdfViewerComponent,
   ],
   templateUrl: './solicitud-trabajo.html',
   styleUrls: ['./solicitud-trabajo.css'],
@@ -84,10 +85,13 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   showConfidencialidadModal = false;
 
   // ── PDF preview ──────────────────────────────────────────────────────────
-  pdfPreviewUrl: SafeResourceUrl | null = null;
+  pdfPreviewBlob: Blob | null = null;
   isPdfCargando = false;
   showPdfFinal = false;
-  private pdfBlobUrl: string | null = null;
+
+  get pdfNombreFinal(): string {
+    return `ReportSolicitud-${this.solicitudRegistradaId ?? 'documento'}.pdf`;
+  }
 
   // ── Modo edición ─────────────────────────────────────────────────────────
   modoEdicion = false;
@@ -147,7 +151,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     private zone: NgZone,
     private route: ActivatedRoute,
     private authService: AuthService,
-    private sanitizer: DomSanitizer,
     private alertService: AlertService,
   ) {
     this.form = this.fb.group({
@@ -180,7 +183,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
 
   ngOnDestroy(): void {
     this.closeMap();
-    this.revocarBlobUrl();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -729,21 +731,6 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     this.showConfidencialidadModal = true;
   }
 
-  descargarPdf(): void {
-    if (!this.pdfBlobUrl) return;
-    const a = document.createElement('a');
-    a.href = this.pdfBlobUrl;
-    a.download = `ReportSolicitud-${this.solicitudRegistradaId ?? 'documento'}.pdf`;
-    a.click();
-  }
-
-  private revocarBlobUrl(): void {
-    if (this.pdfBlobUrl) {
-      URL.revokeObjectURL(this.pdfBlobUrl);
-      this.pdfBlobUrl = null;
-    }
-  }
-
   // Ejecuta un paso de guardado del flujo de confirmación (step2, step3,
   // finalización). Si falla, apaga isGuardando y muestra errorMsg; devuelve
   // false para que el llamador corte la cadena sin ejecutar los pasos
@@ -808,8 +795,7 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
   abrirPdfFinal(): void {
     this.showPdfFinal = true;
     this.isPdfCargando = true;
-    this.pdfPreviewUrl = null;
-    this.revocarBlobUrl();
+    this.pdfPreviewBlob = null;
 
     if (!this.solicitudRegistradaId) {
       this.isPdfCargando = false;
@@ -821,14 +807,18 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (blob) => {
-          this.pdfBlobUrl = URL.createObjectURL(blob);
-          this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
+          this.pdfPreviewBlob = blob;
           this.isPdfCargando = false;
         },
         error: () => {
           this.isPdfCargando = false;
         },
       });
+  }
+
+  cerrarPdfFinal(): void {
+    this.showPdfFinal = false;
+    this.pdfPreviewBlob = null;
   }
 
   // ── Mapa ─────────────────────────────────────────────────────────────────

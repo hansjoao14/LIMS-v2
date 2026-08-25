@@ -2,7 +2,6 @@ import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
@@ -62,9 +61,8 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   // ── Visor de PDF ─────────────────────────────────────────────────────────
   showPdfModal = false;
   isPdfCargando = false;
-  pdfPreviewUrl: SafeResourceUrl | null = null;
-  private pdfBlobUrl: string | null = null;
-  private pdfNombre = 'solicitud.pdf';
+  pdfPreviewBlob: Blob | null = null;
+  pdfNombre = 'solicitud.pdf';
 
   readonly COLOR_PRIMARIO = '#1d2b64';
   readonly fechaActual = new Date();
@@ -97,7 +95,6 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
     private alertService: AlertService,
     private toastrAlert: ToastrAlertService,
     private zone: NgZone,
-    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -120,7 +117,6 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.revocarPdf();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -164,8 +160,7 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
     if (!this.esAutorizado(doc)) return;
     this.showPdfModal = true;
     this.isPdfCargando = true;
-    this.pdfPreviewUrl = null;
-    this.revocarPdf();
+    this.pdfPreviewBlob = null;
     this.pdfNombre = `${doc.num_secuencial ?? 'solicitud'}.pdf`;
 
     this.solicitudService
@@ -174,8 +169,7 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
       .subscribe({
         next: (blob) =>
           this.zone.run(() => {
-            this.pdfBlobUrl = URL.createObjectURL(blob);
-            this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
+            this.pdfPreviewBlob = blob;
             this.isPdfCargando = false;
           }),
         error: () =>
@@ -188,22 +182,7 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
 
   cerrarPdf(): void {
     this.showPdfModal = false;
-    this.pdfPreviewUrl = null;
-    this.revocarPdf();
-  }
-
-  descargarPdf(): void {
-    if (!this.pdfBlobUrl) return;
-    const a = document.createElement('a');
-    a.href = this.pdfBlobUrl;
-    a.download = this.pdfNombre;
-    a.click();
-  }
-
-  private revocarPdf(): void {
-    if (!this.pdfBlobUrl) return;
-    URL.revokeObjectURL(this.pdfBlobUrl);
-    this.pdfBlobUrl = null;
+    this.pdfPreviewBlob = null;
   }
 
   cargarPagina(page: number): void {

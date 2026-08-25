@@ -2,7 +2,6 @@ import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EstadoOrden, alternarOrden, iconoOrden } from '../../../core/utils/orden-tabla.utils';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { Subject, finalize, takeUntil } from 'rxjs';
 
@@ -34,7 +33,7 @@ import {
   PlanMuestreoService,
 } from '../../../services/solicitudes/plan-muestreo/plan-muestreo.service';
 import { PlanMuestreoStore } from '../model/plan-muestreo.store';
-import { DatosFirmaElectronica } from '../../../interfaces/solicitudes/plan-muestreo/firma-plan-muestreo.interface';
+import { DatosFirmaElectronica } from '../../../interfaces/documentos/firma-electronica.interface';
 
 @Component({
   selector: 'app-plan-muestreo-lista',
@@ -93,9 +92,8 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
 
   showPdfModal = false;
   isPdfCargando = false;
-  pdfPreviewUrl: SafeResourceUrl | null = null;
-  private pdfBlobUrl: string | null = null;
-  private pdfNombre = 'plan-muestreo.pdf';
+  pdfPreviewBlob: Blob | null = null;
+  pdfNombre = 'plan-muestreo.pdf';
 
   private readonly destroy$ = new Subject<void>();
 
@@ -132,7 +130,6 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
     private alertService: AlertService,
     private toastrAlert: ToastrAlertService,
     private zone: NgZone,
-    private sanitizer: DomSanitizer,
     private store: PlanMuestreoStore,
     private authService: AuthService,
   ) {}
@@ -154,7 +151,6 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.revocarPdf();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -387,7 +383,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
      * anteriores.
      */
     this.planMuestreoService
-      .getPdfFirmado(plan.id)
+      .getPdfDocumento(plan.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (blob) =>
@@ -463,18 +459,22 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
   imprimirPlan(plan: ReportPlanMuestreo): void {
     this.showPdfModal = true;
     this.isPdfCargando = true;
-    this.pdfPreviewUrl = null;
-    this.revocarPdf();
+    this.pdfPreviewBlob = null;
     this.pdfNombre = `${plan.num_secuencial ?? 'plan-muestreo'}.pdf`;
 
+    /*
+     * Imprimir usa el mismo documento que firmar, no una regeneración de
+     * api_reportes. Además de verse idénticos, la primera impresión de un plan
+     * autorizado es la que archiva el PDF: a partir de ahí ese archivo es el
+     * documento oficial y ya no cambia.
+     */
     this.planMuestreoService
-      .getPdfPlanMuestreo(plan.id)
+      .getPdfDocumento(plan.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (blob) =>
           this.zone.run(() => {
-            this.pdfBlobUrl = URL.createObjectURL(blob);
-            this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
+            this.pdfPreviewBlob = blob;
             this.isPdfCargando = false;
           }),
         error: () =>
@@ -487,22 +487,7 @@ export class PlanMuestreoLista implements OnInit, OnDestroy {
 
   cerrarPdf(): void {
     this.showPdfModal = false;
-    this.pdfPreviewUrl = null;
-    this.revocarPdf();
-  }
-
-  descargarPdf(): void {
-    if (!this.pdfBlobUrl) return;
-    const a = document.createElement('a');
-    a.href = this.pdfBlobUrl;
-    a.download = this.pdfNombre;
-    a.click();
-  }
-
-  private revocarPdf(): void {
-    if (!this.pdfBlobUrl) return;
-    URL.revokeObjectURL(this.pdfBlobUrl);
-    this.pdfBlobUrl = null;
+    this.pdfPreviewBlob = null;
   }
 
   // El asistente arranca siempre en blanco: se descarta cualquier borrador que

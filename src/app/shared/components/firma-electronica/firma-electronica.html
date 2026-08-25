@@ -1,289 +1,330 @@
 @if (mostrar) {
-  <!-- Visor de documento fullscreen (ui-standards.md §12) -->
   <div
-    class="fixed inset-0 z-[110] flex flex-col bg-slate-900/95 backdrop-blur-sm animate-in fade-in"
-    (click)="cerrarDesdeFondo($event)"
+    class="firma-backdrop"
+    role="presentation"
+    (mousedown)="cerrarDesdeFondo($event)"
   >
-    <!-- Toolbar -->
-    <div
-      class="flex items-center justify-between gap-4 px-6 py-3 bg-[#1e3a8a] shadow-lg flex-shrink-0"
+    <section
+      class="firma-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="firma-titulo"
+      (mousedown)="detenerClick($event)"
     >
-      <div class="min-w-0">
-        <h3 class="text-sm font-bold text-white uppercase tracking-wide truncate">
-          Firmar electrónicamente
-        </h3>
-        <p class="text-[11px] text-blue-200 truncate">{{ nombreDocumento }}</p>
-      </div>
-
-      <div class="flex items-center gap-2">
-        @if (totalPaginas > 0) {
-          <div class="flex items-center gap-1 mr-2">
-            <button
-              type="button"
-              title="Página anterior"
-              [disabled]="paginaActual <= 1 || renderizando"
-              (click)="cambiarPagina(-1)"
-              class="h-8 w-8 flex items-center justify-center rounded text-white/90 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              &#8249;
-            </button>
-            <span class="text-xs text-white/90 tabular-nums px-1">
-              {{ paginaActual }} / {{ totalPaginas }}
-            </span>
-            <button
-              type="button"
-              title="Página siguiente"
-              [disabled]="paginaActual >= totalPaginas || renderizando"
-              (click)="cambiarPagina(1)"
-              class="h-8 w-8 flex items-center justify-center rounded text-white/90 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              &#8250;
-            </button>
-          </div>
-
-          <div class="flex items-center gap-1 mr-2">
-            <button
-              type="button"
-              title="Alejar"
-              (click)="cambiarZoom(-0.2)"
-              class="h-8 w-8 flex items-center justify-center rounded text-white/90 hover:bg-white/10"
-            >
-              &minus;
-            </button>
-            <span class="text-xs text-white/90 tabular-nums w-10 text-center">
-              {{ (zoom * 100).toFixed(0) }}%
-            </span>
-            <button
-              type="button"
-              title="Acercar"
-              (click)="cambiarZoom(0.2)"
-              class="h-8 w-8 flex items-center justify-center rounded text-white/90 hover:bg-white/10"
-            >
-              +
-            </button>
-          </div>
-        }
+      <header class="firma-header">
+        <div>
+          <h2 id="firma-titulo">Firma Electrónica en Línea</h2>
+          <p>
+            Firma directamente usando un certificado digital en archivo
+            <strong>.p12</strong>.
+          </p>
+        </div>
 
         <button
           type="button"
-          title="Cerrar"
+          class="cerrar-modal"
+          aria-label="Cerrar"
           [disabled]="procesando"
           (click)="solicitarCierre()"
-          class="text-white/80 hover:text-red-300 text-2xl leading-none px-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          &times;
+          ×
         </button>
-      </div>
-    </div>
+      </header>
 
-    <!-- Cuerpo: visor + panel -->
-    <div class="flex-1 flex flex-col lg:flex-row min-h-0" (click)="$event.stopPropagation()">
-      <!-- Visor. El contenedor externo es el marco posicionado; el interno es
-           el que scrollea. Así el indicador de carga se superpone al documento
-           en vez de empujarlo a un costado, y no se desplaza con el scroll. -->
-      <div class="flex-1 relative min-h-0">
-        @if (cargandoPdf || renderizando) {
-          <div
-            class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-slate-900/60 text-white/80 pointer-events-none"
-          >
-            <span
-              class="animate-spin h-8 w-8 border-2 border-white/70 border-t-transparent rounded-full"
-            ></span>
-            <p class="text-xs uppercase tracking-wide">Cargando documento...</p>
-          </div>
-        } @else if (errorPdf) {
-          <div class="absolute inset-0 z-20 flex items-center justify-center">
-            <p class="text-sm text-red-300">{{ errorPdf }}</p>
-          </div>
-        }
+      <div class="firma-contenido">
+        <section class="visor-columna">
+          <div class="visor-toolbar">
+            <div class="documento-nombre" [title]="nombreDocumento">
+              <i class="fa-regular fa-file-pdf"></i>
+              <span>{{ nombreDocumento }}</span>
+            </div>
 
-        <div #visorPdf class="absolute inset-0 overflow-auto custom-scroll p-4 flex justify-center">
-          <!-- La hoja se mantiene en el DOM aunque esté cargando: el canvas debe
-             existir para que pdf.js pueda dibujar sobre él. -->
-          <div
-            #paginaPdf
-            class="relative shadow-2xl bg-white self-start"
-            [class.hidden]="cargandoPdf || errorPdf || totalPaginas === 0"
-            [class.cursor-crosshair]="!renderizando"
-            (click)="seleccionarPosicion($event)"
-          >
-            <canvas #pdfCanvas class="block"></canvas>
-
-            @if (posicionVisual) {
-              <div
-                class="absolute border-2 border-dashed border-[#1e3a8a] bg-blue-500/10 flex items-center justify-center select-none"
-                [class.cursor-grab]="!arrastrandoFirma"
-                [class.cursor-grabbing]="arrastrandoFirma"
-                [style.left.px]="posicionVisual.left"
-                [style.top.px]="posicionVisual.top"
-                [style.width.px]="posicionVisual.width"
-                [style.height.px]="posicionVisual.height"
-                (pointerdown)="iniciarArrastre($event)"
-                (pointermove)="moverFirma($event)"
-                (pointerup)="terminarArrastre()"
-                (pointercancel)="terminarArrastre()"
-                (click)="$event.stopPropagation()"
+            <div class="toolbar-controles">
+              <button
+                type="button"
+                title="Página anterior"
+                [disabled]="
+                  paginaActual <= 1 ||
+                  pdfCargandoInterno ||
+                  renderizandoPagina
+                "
+                (click)="cambiarPagina(-1)"
               >
-                <span class="text-[10px] font-bold text-[#1e3a8a] uppercase tracking-wide">
-                  Firma aquí
-                </span>
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+
+              <span class="contador-paginas">
+                {{ paginaActual }} / {{ totalPaginas || 1 }}
+              </span>
+
+              <button
+                type="button"
+                title="Página siguiente"
+                [disabled]="
+                  paginaActual >= totalPaginas ||
+                  pdfCargandoInterno ||
+                  renderizandoPagina
+                "
+                (click)="cambiarPagina(1)"
+              >
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+
+              <span class="separador"></span>
+
+              <button
+                type="button"
+                title="Alejar"
+                [disabled]="zoom <= 0.6 || renderizandoPagina"
+                (click)="cambiarZoom(-0.1)"
+              >
+                <i class="fa-solid fa-minus"></i>
+              </button>
+
+              <span class="zoom-valor">
+                {{ zoom * 100 | number: '1.0-0' }}%
+              </span>
+
+              <button
+                type="button"
+                title="Acercar"
+                [disabled]="zoom >= 2 || renderizandoPagina"
+                (click)="cambiarZoom(0.1)"
+              >
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+          </div>
+
+          <div #visorPdf class="visor-pdf">
+            @if (cargandoPdf || pdfCargandoInterno || renderizandoPagina) {
+              <div class="estado-visor">
+                <span class="spinner"></span>
+                <strong>Cargando documento...</strong>
               </div>
             }
+
+            @if (errorPdf) {
+              <div class="estado-visor error">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <strong>{{ errorPdf }}</strong>
+              </div>
+            }
+
+            <div
+              #paginaPdf
+              class="pagina-pdf"
+              [class.oculta]="
+                cargandoPdf ||
+                pdfCargandoInterno ||
+                !!errorPdf
+              "
+              (click)="seleccionarPosicion($event)"
+              (pointermove)="moverFirma($event)"
+              (pointerup)="terminarArrastreFirma()"
+              (pointercancel)="terminarArrastreFirma()"
+            >
+              <canvas #pdfCanvas></canvas>
+
+              @if (
+                posicionVisual &&
+                posicionPdf?.pagina === paginaActual
+              ) {
+                <div
+                  class="marca-firma"
+                  [class.arrastrando]="arrastrandoFirma"
+                  [style.left.px]="posicionVisual.left"
+                  [style.top.px]="posicionVisual.top"
+                  [style.width.px]="posicionVisual.width"
+                  [style.height.px]="posicionVisual.height"
+                  (pointerdown)="iniciarArrastreFirma($event)"
+                  (click)="detenerClick($event)"
+                >
+                  <i class="fa-solid fa-pen-nib"></i>
+                  <span>Firma aquí</span>
+                  <small>Arrastra para mover</small>
+                </div>
+              }
+            </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Panel lateral -->
-      <div
-        class="w-full lg:w-[360px] lg:flex-shrink-0 bg-white flex flex-col border-t lg:border-t-0 lg:border-l border-slate-200 max-h-[45vh] lg:max-h-none"
-      >
-        <div class="overflow-y-auto px-6 py-4 flex-1 custom-scroll space-y-5">
-          <!-- Paso 1: posición -->
-          <div>
-            <p class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wide mb-2">
-              1. Ubicación de la firma
-            </p>
+          <div class="ayuda-posicion">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>
+              Haz clic sobre el documento y luego arrastra el recuadro
+              hasta la ubicación exacta donde deseas firmar.
+            </span>
+          </div>
+        </section>
 
+        <aside class="formulario-columna">
+          <div class="paso">
+            <span>1</span>
+            <div>
+              <strong>Ubica la firma</strong>
+              <small>Selecciona la página y posición en el PDF.</small>
+            </div>
+          </div>
+
+          <div
+            class="posicion-resumen"
+            [class.completa]="!!posicionPdf"
+          >
             @if (posicionPdf) {
-              <div class="rounded border border-green-200 bg-green-50 px-3 py-2">
-                <p class="text-xs text-green-800 font-semibold">
-                  Página {{ posicionPdf.pagina }} · seleccionada
-                </p>
-                <p class="text-[11px] text-green-700 mt-0.5">
-                  Arrastra el recuadro para ajustarla.
-                </p>
+              <i class="fa-solid fa-location-dot"></i>
+              <div>
+                <strong>
+                  Firma ubicada en la página
+                  {{ posicionPdf.pagina }}
+                </strong>
+                <small>
+                  X: {{ posicionPdf.x }} ·
+                  Y: {{ posicionPdf.y }} ·
+                  {{ posicionPdf.ancho }} ×
+                  {{ posicionPdf.alto }} pt
+                </small>
               </div>
             } @else {
-              <div class="rounded border border-slate-200 bg-slate-50 px-3 py-2">
-                <p class="text-xs text-slate-600">
-                  Haz clic sobre el documento donde quieras que aparezca tu firma.
-                </p>
+              <i class="fa-regular fa-hand-pointer"></i>
+              <div>
+                <strong>Posición pendiente</strong>
+                <small>Haz clic en el documento para continuar.</small>
               </div>
             }
           </div>
 
-          <!-- Paso 2: certificado -->
-          <div>
-            <p class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wide mb-2">
-              2. Certificado digital
-            </p>
+          <div class="paso">
+            <span>2</span>
+            <div>
+              <strong>Selecciona el certificado digital (.p12)</strong>
+              <small>El certificado se guarda en este navegador; la contraseña nunca.</small>
+            </div>
+          </div>
 
-            @if (nombreArchivoP12) {
-              <div
-                class="flex items-center justify-between gap-2 rounded border border-slate-200 bg-slate-50 px-3 py-2"
-              >
-                <div class="min-w-0">
-                  <p class="text-xs font-semibold text-slate-700 truncate">
-                    {{ nombreArchivoP12 }}
-                  </p>
-                  <p class="text-[11px] text-slate-500">Guardado en este navegador</p>
-                </div>
+          <div
+            class="zona-archivo"
+            [class.arrastrando]="arrastrandoArchivo"
+            [class.cargado]="!!archivoP12Base64"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+          >
+            <input
+              #selectorArchivo
+              type="file"
+              accept=".p12"
+              hidden
+              (change)="seleccionarArchivo($event)"
+            />
+
+            @if (archivoP12Base64) {
+              <i class="fa-solid fa-file-circle-check icono-principal"></i>
+              <strong>Certificado seleccionado</strong>
+              <span class="archivo-nombre">
+                {{ nombreArchivoP12 }}
+              </span>
+
+              <div class="acciones-archivo">
                 <button
                   type="button"
-                  title="Eliminar certificado"
-                  (click)="quitarCertificado()"
-                  class="text-slate-400 hover:text-red-500 text-lg leading-none shrink-0"
+                  (click)="selectorArchivo.click()"
                 >
-                  &times;
+                  Cambiar
+                </button>
+                <button
+                  type="button"
+                  class="quitar"
+                  (click)="limpiarArchivo()"
+                >
+                  Quitar
                 </button>
               </div>
             } @else {
-              <label
-                class="flex flex-col items-center justify-center gap-1 rounded border-2 border-dashed px-3 py-5 cursor-pointer transition-colors"
-                [ngClass]="arrastrandoArchivo ? 'border-[#1e3a8a] bg-blue-50' : 'border-slate-300'"
-                (dragover)="alArrastrarSobre($event)"
-                (dragleave)="alSalirArrastre($event)"
-                (drop)="alSoltarArchivo($event)"
-              >
-                <span class="text-xs font-semibold text-slate-700"> Arrastra tu archivo .p12 </span>
-                <span class="text-[11px] text-slate-500">o haz clic para buscarlo</span>
-                <input
-                  type="file"
-                  accept=".p12"
-                  class="hidden"
-                  (change)="seleccionarArchivo($event)"
-                />
-              </label>
-            }
+              <i class="fa-solid fa-file-shield icono-principal"></i>
+              <strong>ARRASTRA AQUÍ O SUBE UN ARCHIVO (.p12)</strong>
+              <span>Máximo 10 MB</span>
 
-            @if (errorArchivo) {
-              <p class="text-[11px] text-red-600 mt-1.5">{{ errorArchivo }}</p>
-            }
-          </div>
-
-          <!-- Paso 3: contraseña -->
-          <div>
-            <p class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wide mb-2">
-              3. Contraseña del certificado
-            </p>
-
-            <div class="relative">
-              <input
-                [type]="mostrarPassword ? 'text' : 'password'"
-                [(ngModel)]="passwordP12"
-                [disabled]="procesando"
-                autocomplete="off"
-                placeholder="Contraseña del .p12"
-                class="w-full border border-slate-300 rounded px-3 py-2 pr-16 text-sm focus:outline-none focus:border-[#1e3a8a]"
-              />
               <button
                 type="button"
-                (click)="mostrarPassword = !mostrarPassword"
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-slate-500 hover:text-[#1e3a8a] uppercase"
+                class="elegir-archivo"
+                (click)="selectorArchivo.click()"
               >
-                {{ mostrarPassword ? 'Ocultar' : 'Ver' }}
+                ESCOGER UN ARCHIVO
               </button>
-            </div>
-
-            <p class="text-[11px] text-slate-500 mt-1.5">No se guarda: se pide en cada firma.</p>
+            }
           </div>
 
-          <!-- Paso 4: cargo -->
-          <div>
-            <p class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wide mb-2">
-              4. Cargo <span class="font-normal normal-case text-slate-400">(opcional)</span>
+          @if (errorArchivo) {
+            <p class="mensaje-error">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              {{ errorArchivo }}
             </p>
+          }
+
+          <div class="paso paso-password">
+            <span>3</span>
+            <div>
+              <strong>Ingresa la contraseña</strong>
+              <small>La contraseña se envía únicamente al firmador.</small>
+            </div>
+          </div>
+
+          <div class="campo-password">
+            <i class="fa-solid fa-key"></i>
 
             <input
-              type="text"
-              [(ngModel)]="cargo"
-              [disabled]="procesando"
-              maxlength="120"
-              placeholder="Ej. Responsable de Laboratorio"
-              class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a8a]"
+              [type]="mostrarPassword ? 'text' : 'password'"
+              [(ngModel)]="passwordP12"
+              placeholder="Ingrese la contraseña del certificado"
+              autocomplete="new-password"
+              (keyup.enter)="confirmarFirma()"
             />
-          </div>
-        </div>
 
-        <!-- Footer -->
-        <div class="px-6 py-3 border-t border-gray-200 flex-shrink-0">
-          <div class="flex gap-3">
             <button
               type="button"
+              [attr.aria-label]="
+                mostrarPassword
+                  ? 'Ocultar contraseña'
+                  : 'Mostrar contraseña'
+              "
+              (click)="mostrarPassword = !mostrarPassword"
+            >
+              <i
+                class="fa-solid"
+                [ngClass]="
+                  mostrarPassword ? 'fa-eye-slash' : 'fa-eye'
+                "
+              ></i>
+            </button>
+          </div>
+
+          <div class="acciones-finales">
+            <button
+              type="button"
+              class="boton-regresar"
               [disabled]="procesando"
               (click)="solicitarCierre()"
-              class="flex-1 border border-gray-300 text-slate-700 font-bold uppercase text-xs py-3 rounded hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Cancelar
+              REGRESAR
             </button>
+
             <button
               type="button"
+              class="boton-firmar"
               [disabled]="!puedeFirmar()"
               (click)="confirmarFirma()"
-              class="flex-1 bg-[#0f172a] text-white font-bold uppercase text-xs py-3 rounded hover:bg-[#1e293b] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               @if (procesando) {
-                <span
-                  class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"
-                ></span>
-                Firmando...
+                <span class="spinner pequeno"></span>
+                FIRMANDO...
               } @else {
-                Firmar
+                <i class="fa-solid fa-signature"></i>
+                FIRMAR
               }
             </button>
           </div>
-        </div>
+        </aside>
       </div>
-    </div>
+    </section>
   </div>
 }

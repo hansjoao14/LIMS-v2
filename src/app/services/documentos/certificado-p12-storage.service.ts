@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { CertificadoP12Guardado } from '../../../interfaces/solicitudes/plan-muestreo/certificado-p12.interface';
+import { CertificadoP12Guardado } from '../../interfaces/documentos/certificado-p12.interface';
 
 /**
  * Guarda el certificado .p12 en el navegador de quien firma, para no obligarlo

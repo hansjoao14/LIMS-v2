@@ -1,5 +1,4 @@
 import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { EstadoOrden, alternarOrden, iconoOrden } from '../../../core/utils/orden-tabla.utils';
 import { FormsModule } from '@angular/forms';
@@ -88,9 +87,8 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
   // ── PDF ──────────────────────────────────────────────────────────────────
   showPdfModal = false;
   isPdfCargando = false;
-  pdfPreviewUrl: SafeResourceUrl | null = null;
-  private pdfBlobUrl: string | null = null;
-  private pdfNombre = 'ticket-entrega.pdf';
+  pdfPreviewBlob: Blob | null = null;
+  pdfNombre = 'ticket-entrega.pdf';
 
   private readonly destroy$ = new Subject<void>();
 
@@ -141,7 +139,6 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
     private toastrAlert: ToastrAlertService,
     private zone: NgZone,
     private authService: AuthService,
-    private sanitizer: DomSanitizer,
     private reportFormularioService: ReportFormularioService,
   ) {}
 
@@ -162,7 +159,6 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.revocarPdf();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -396,8 +392,7 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
 
     this.showPdfModal = true;
     this.isPdfCargando = true;
-    this.pdfPreviewUrl = null;
-    this.revocarPdf();
+    this.pdfPreviewBlob = null;
     this.pdfNombre = `${this.etiquetaTicket(ticket)}.pdf`;
 
     this.ticketEntregaService
@@ -406,8 +401,7 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
       .subscribe({
         next: (blob) =>
           this.zone.run(() => {
-            this.pdfBlobUrl = URL.createObjectURL(blob);
-            this.pdfPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfBlobUrl);
+            this.pdfPreviewBlob = blob;
             this.isPdfCargando = false;
           }),
         error: () =>
@@ -421,21 +415,6 @@ export class TicketEntregaMuestrasLista implements OnInit, OnDestroy {
 
   cerrarPdf(): void {
     this.showPdfModal = false;
-    this.pdfPreviewUrl = null;
-    this.revocarPdf();
-  }
-
-  descargarPdf(): void {
-    if (!this.pdfBlobUrl) return;
-    const a = document.createElement('a');
-    a.href = this.pdfBlobUrl;
-    a.download = this.pdfNombre;
-    a.click();
-  }
-
-  private revocarPdf(): void {
-    if (!this.pdfBlobUrl) return;
-    URL.revokeObjectURL(this.pdfBlobUrl);
-    this.pdfBlobUrl = null;
+    this.pdfPreviewBlob = null;
   }
 }

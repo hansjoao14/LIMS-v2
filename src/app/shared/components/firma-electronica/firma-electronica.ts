@@ -5,26 +5,30 @@ import {
   EventEmitter,
   HostListener,
   Input,
-  NgZone,
   OnChanges,
   OnDestroy,
   OnInit,
   Output,
   SimpleChanges,
+  NgZone,
   ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
+import { CertificadoP12StorageService } from '../../../services/documentos/certificado-p12-storage.service';
 import Swal from 'sweetalert2';
 
 import {
   DatosFirmaElectronica,
   PosicionFirmaPdf,
-} from '../../../interfaces/solicitudes/plan-muestreo/firma-plan-muestreo.interface';
-import { CertificadoP12StorageService } from '../../../services/solicitudes/plan-muestreo/certificado-p12-storage.service';
+} from '../../../interfaces/documentos/firma-electronica.interface';
 
-/** Recuadro de la firma en coordenadas de pantalla (CSS), no del PDF. */
+/*
+ * Los tipos no se declaran acá: en este repo todos los contratos viven en
+ * `src/app/interfaces/` y los componentes los importan (ver CLAUDE.md).
+ */
+
 interface RectanguloVisual {
   left: number;
   top: number;
@@ -32,89 +36,81 @@ interface RectanguloVisual {
   height: number;
 }
 
-/**
- * Modal para firmar electrónicamente un PDF.
- *
- * Renderiza el documento con pdf.js, deja elegir dónde va la firma haciendo
- * clic (y ajustarla arrastrando), y emite el certificado junto con la posición
- * ya convertida al sistema de coordenadas del PDF.
- *
- * No conoce ningún endpoint ni al usuario logueado: recibe un Blob y emite los
- * datos de la firma. Eso lo hace reutilizable para los otros documentos del
- * flujo (orden de trabajo, ticket de entrega) sin tocarlo.
- */
 @Component({
   selector: 'app-firma-electronica',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './firma-electronica.html',
+  styleUrls: ['./firma-electronica.scss'],
 })
 export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy {
   @Input() mostrar = false;
   @Input() pdfBlob: Blob | null = null;
-  @Input() nombreDocumento = 'documento.pdf';
-  /** El padre está cargando el PDF desde el API. */
+  @Input() nombreDocumento = 'permiso.pdf';
   @Input() cargandoPdf = false;
-  /** El padre está enviando la firma al backend. */
   @Input() procesando = false;
 
   @Output() cerrar = new EventEmitter<void>();
   @Output() firmar = new EventEmitter<DatosFirmaElectronica>();
 
-  @ViewChild('pdfCanvas') private pdfCanvas?: ElementRef<HTMLCanvasElement>;
-  @ViewChild('visorPdf') private visorPdf?: ElementRef<HTMLDivElement>;
-  @ViewChild('paginaPdf') private paginaPdf?: ElementRef<HTMLDivElement>;
+  @ViewChild('pdfCanvas')
+  private pdfCanvas?: ElementRef<HTMLCanvasElement>;
+
+  @ViewChild('visorPdf')
+  private visorPdf?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('paginaPdf')
+  private paginaPdf?: ElementRef<HTMLDivElement>;
 
   paginaActual = 1;
   totalPaginas = 0;
   zoom = 1;
 
-  renderizando = false;
+  pdfCargandoInterno = false;
+  renderizandoPagina = false;
   errorPdf = '';
 
   archivoP12Base64 = '';
   nombreArchivoP12 = '';
   passwordP12 = '';
-  cargo = '';
   mostrarPassword = false;
   arrastrandoArchivo = false;
   errorArchivo = '';
 
   posicionVisual: RectanguloVisual | null = null;
   posicionPdf: PosicionFirmaPdf | null = null;
-  arrastrandoFirma = false;
-
-  /** Tamaño por defecto del recuadro, en puntos del PDF. */
-  private readonly ANCHO_FIRMA = 170;
-  private readonly ALTO_FIRMA = 50;
-
-  private readonly LIMITE_BYTES_P12 = 10 * 1024 * 1024;
 
   private pdfDocument: any = null;
+  private pdfLoadingTask: any = null;
   private viewport: any = null;
   private renderTask: any = null;
   private blobCargado: Blob | null = null;
-  private vistaLista = false;
-
-  /**
-   * Cada carga de PDF se numera. Si el usuario abre otro documento antes de que
-   * termine el anterior, la carga vieja se descarta al volver y no pisa a la
-   * nueva.
-   */
+  private vistaInicializada = false;
   private tokenCarga = 0;
+  /**
+   * Identifica la última página/zoom solicitados.
+   *
+   * `getPage()` es asíncrono. Si el usuario avanza varias páginas rápido,
+   * una petición anterior puede terminar después y empezar a pintar sobre el
+   * mismo canvas que la nueva. El resultado es una hoja incompleta: primero se
+   * ven fondos y tablas, pero faltan textos, logos, notas o firmas.
+   */
+  private tokenRender = 0;
 
+  /** Listeners sueltos que hay que soltar al destruir el componente. */
+  private readonly alDestruir: Array<() => void> = [];
+
+  arrastrandoFirma = false;
   private offsetArrastreX = 0;
   private offsetArrastreY = 0;
+
+  private readonly anchoFirmaPdf = 170;
+  private readonly altoFirmaPdf = 50;
 
   constructor(
     private certificadoStorage: CertificadoP12StorageService,
     private zone: NgZone,
   ) {
-    /*
-     * El worker se sirve desde assets. `angular.json` lo copia de
-     * node_modules/pdfjs-dist en cada build, así que no queda una copia
-     * desactualizada en el repo.
-     */
     if (typeof document !== 'undefined') {
       GlobalWorkerOptions.workerSrc = new URL(
         'assets/pdfjs/pdf.worker.min.mjs',
@@ -124,78 +120,87 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
   }
 
   ngOnInit(): void {
-    void this.recuperarCertificadoGuardado();
+    void this.cargarCertificadoGuardado();
   }
-
   ngAfterViewInit(): void {
-    this.vistaLista = true;
-    this.programarCarga();
+    this.vistaInicializada = true;
+    this.programarCargaPdf();
   }
 
-  ngOnChanges(cambios: SimpleChanges): void {
-    if (cambios['mostrar'] && !this.mostrar) {
-      this.limpiarFormulario();
-      this.destruirDocumento();
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['mostrar'] && !this.mostrar) {
+      this.tokenCarga++;
+      this.reiniciarFormulario();
+      this.destruirDocumentoPdf();
       return;
     }
 
-    if (cambios['pdfBlob'] || (cambios['mostrar'] && this.mostrar)) {
-      this.programarCarga();
+    if (changes['pdfBlob'] || (changes['mostrar'] && this.mostrar)) {
+      this.programarCargaPdf();
     }
   }
 
   ngOnDestroy(): void {
     this.tokenCarga++;
-    this.destruirDocumento();
+    this.destruirDocumentoPdf();
+    this.alDestruir.forEach((soltar) => soltar());
+    this.alDestruir.length = 0;
   }
 
   @HostListener('document:keydown.escape')
-  alPresionarEscape(): void {
+  onEscape(): void {
     if (this.mostrar && !this.procesando) {
       this.solicitarCierre();
     }
   }
 
-  // ── Render del PDF ────────────────────────────────────────────────────────
+  private programarCargaPdf(): void {
+    if (!this.vistaInicializada || !this.mostrar || !this.pdfBlob) {
+      return;
+    }
 
-  /**
-   * El `setTimeout` deja que Angular pinte el `@if` del modal antes de buscar
-   * el canvas: sin eso, `@ViewChild` todavía es undefined la primera vez.
-   */
-  private programarCarga(): void {
-    if (!this.vistaLista || !this.mostrar || !this.pdfBlob) return;
-    setTimeout(() => void this.cargarPdf());
+    setTimeout(() => {
+      void this.cargarPdf();
+    });
   }
 
   private async cargarPdf(): Promise<void> {
-    if (!this.pdfBlob || !this.pdfCanvas || this.blobCargado === this.pdfBlob) return;
+    if (!this.pdfBlob || !this.pdfCanvas || this.blobCargado === this.pdfBlob) {
+      return;
+    }
 
-    const token = ++this.tokenCarga;
+    const tokenActual = ++this.tokenCarga;
 
-    this.renderizando = true;
+    this.pdfCargandoInterno = true;
     this.errorPdf = '';
-    this.destruirDocumento(false);
+    this.destruirDocumentoPdf(false);
 
     try {
       const buffer = await this.pdfBlob.arrayBuffer();
-      const documento = await getDocument({ data: new Uint8Array(buffer) }).promise;
+      const tareaCarga = getDocument({
+        data: new Uint8Array(buffer),
+      });
+      this.pdfLoadingTask = tareaCarga;
 
-      if (token !== this.tokenCarga) {
-        // Llegó tarde: ya se pidió otro documento. Se libera y se descarta.
-        void documento.loadingTask.destroy();
+      const documento = await tareaCarga.promise;
+
+      if (tokenActual !== this.tokenCarga) {
+        await tareaCarga.destroy();
+        if (this.pdfLoadingTask === tareaCarga) this.pdfLoadingTask = null;
         return;
       }
 
       /*
-       * A partir de acá se toca estado que el template lee, y hay que hacerlo
-       * dentro de la zona de Angular.
+       * Dentro de la zona de Angular.
        *
        * pdf.js resuelve sus promesas desde un Web Worker, fuera de la zona, así
-       * que asignar `totalPaginas` o `renderizando` a secas no dispara la
-       * detección de cambios. El canvas igual se ve —lo pinta pdf.js por su
-       * cuenta, sin pasar por Angular— y eso confunde: parece que cargó pero la
-       * barra de páginas no aparece y el spinner no se va hasta que un clic
-       * fuerza el repintado.
+       * que asignar `totalPaginas` a secas no dispara la detección de cambios.
+       * El canvas igual se dibuja —eso lo hace pdf.js sin pasar por Angular— y
+       * por eso confunde: el documento aparece pero la interfaz sigue mostrando
+       * "Cargando documento..." y "1 / 1", con el estado real ya actualizado por
+       * debajo.
+       *
+       * En el proyecto del que viene este componente no hacía falta; acá sí.
        */
       this.zone.run(() => {
         this.pdfDocument = documento;
@@ -209,160 +214,281 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
 
       await this.renderizarPagina();
     } catch (error) {
-      console.error('No se pudo renderizar el PDF:', error);
-      this.zone.run(() => (this.errorPdf = 'No se pudo mostrar el documento PDF.'));
+      if (tokenActual === this.tokenCarga && (error as { name?: string })?.name !== 'AbortException') {
+        console.error('No se pudo renderizar el PDF:', error);
+        this.zone.run(() => (this.errorPdf = 'No se pudo visualizar el documento PDF.'));
+      }
     } finally {
-      if (token === this.tokenCarga) {
-        this.zone.run(() => (this.renderizando = false));
+      if (tokenActual === this.tokenCarga) {
+        this.zone.run(() => (this.pdfCargandoInterno = false));
       }
     }
   }
 
   async renderizarPagina(): Promise<void> {
-    if (!this.pdfDocument || !this.pdfCanvas || !this.visorPdf) return;
+    if (!this.pdfDocument || !this.pdfCanvas || !this.visorPdf) {
+      return;
+    }
+
+    const tokenActual = ++this.tokenRender;
+    const paginaObjetivo = this.paginaActual;
+    const zoomObjetivo = this.zoom;
+    let tareaDeEsteRender: any = null;
+    this.zone.run(() => {
+      this.renderizandoPagina = true;
+      this.errorPdf = '';
+    });
+
+    /*
+     * No se dibuja con la pestaña oculta.
+     *
+     * pdf.js avanza el render por tandas encadenadas con
+     * requestAnimationFrame, y el navegador lo suspende en las pestañas que no
+     * están visibles. Un render arrancado ahí se queda clavado en la primera
+     * operación: la promesa nunca resuelve y el "Cargando documento..." no se
+     * apaga nunca. Esperar a que la pestaña esté visible lo convierte en algo
+     * que se resuelve solo al volver.
+     */
+    await this.esperarPestanaVisible();
+
+    if (tokenActual !== this.tokenRender) {
+      return;
+    }
 
     try {
-      this.renderTask?.cancel();
+      if (this.renderTask) {
+        /*
+         * Cada tarea pinta en su propio canvas temporal. Por eso se puede
+         * cancelar una solicitud vieja sin esperar su promesa: nunca comparte
+         * el lienzo visible con la página nueva.
+         */
+        const anterior = this.renderTask;
+        try {
+          anterior.cancel();
+        } catch {
+          // Ya terminó o ya estaba cancelado.
+        }
+        if (this.renderTask === anterior) {
+          this.renderTask = null;
+        }
+      }
 
-      const pagina = await this.pdfDocument.getPage(this.paginaActual);
-      const base = pagina.getViewport({ scale: 1 });
+      if (tokenActual !== this.tokenRender) {
+        return;
+      }
 
-      // La hoja se ajusta al ancho disponible, con topes para que no quede
-      // ilegible en pantallas chicas ni gigante en monitores anchos.
+      const pagina = await this.pdfDocument.getPage(paginaObjetivo);
+
+      // Una navegación más reciente ganó mientras getPage() resolvía. Esta
+      // página vieja no debe tocar dimensiones ni contexto del canvas.
+      if (tokenActual !== this.tokenRender) {
+        return;
+      }
+
+      const viewportBase = pagina.getViewport({ scale: 1 });
+
       const anchoDisponible = Math.max(320, this.visorPdf.nativeElement.clientWidth - 36);
-      const escalaAjuste = Math.min(1.7, Math.max(0.45, anchoDisponible / base.width));
 
-      this.viewport = pagina.getViewport({ scale: escalaAjuste * this.zoom });
+      const escalaAjuste = Math.min(1.7, Math.max(0.45, anchoDisponible / viewportBase.width));
 
-      const canvas = this.pdfCanvas.nativeElement;
-      const contexto = canvas.getContext('2d');
-      if (!contexto) throw new Error('No se pudo obtener el contexto del canvas.');
+      const escala = escalaAjuste * zoomObjetivo;
+      const viewport = pagina.getViewport({ scale: escala });
+      this.viewport = viewport;
 
-      // En pantallas retina se dibuja al doble de resolución y se escala por
-      // CSS, si no el texto del PDF se ve borroso.
+      /*
+       * pdf.js no vuelve a pintar directamente sobre el canvas que Angular
+       * mantiene en el DOM. En Chromium, reutilizar ese mismo canvas al pasar
+       * de página puede dejar RenderTask.promise pendiente para siempre. Se
+       * renderiza en un lienzo nuevo, aislado, y solo al completarse se copia
+       * el bitmap al canvas visible de una sola vez.
+       */
+      const canvasTemporal = document.createElement('canvas');
+      const contextoTemporal = canvasTemporal.getContext('2d');
+
+      if (!contextoTemporal) {
+        throw new Error('No fue posible obtener el contexto del canvas.');
+      }
+
       const densidad = Math.min(window.devicePixelRatio || 1, 2);
 
-      canvas.width = Math.floor(this.viewport.width * densidad);
-      canvas.height = Math.floor(this.viewport.height * densidad);
-      canvas.style.width = `${Math.floor(this.viewport.width)}px`;
-      canvas.style.height = `${Math.floor(this.viewport.height)}px`;
+      canvasTemporal.width = Math.floor(viewport.width * densidad);
+      canvasTemporal.height = Math.floor(viewport.height * densidad);
 
-      this.renderTask = pagina.render({
-        canvasContext: contexto,
-        viewport: this.viewport,
+      const parametrosRender: any = {
+        canvasContext: contextoTemporal,
+        viewport,
         transform: densidad !== 1 ? [densidad, 0, 0, densidad, 0, 0] : undefined,
-      });
+      };
 
-      await this.renderTask.promise;
+      const tareaActual = pagina.render(parametrosRender);
+      tareaDeEsteRender = tareaActual;
+      this.renderTask = tareaActual;
+      await tareaActual.promise;
 
-      // Igual que en cargarPdf: el render termina fuera de la zona de Angular,
-      // así que el reposicionamiento del recuadro se hace dentro.
-      this.zone.run(() => {
-        // Al cambiar de página o zoom, el recuadro se vuelve a ubicar a partir
-        // de las coordenadas del PDF, que son las que no cambian.
-        this.reubicarMarcador();
-      });
+      if (tokenActual !== this.tokenRender) {
+        return;
+      }
+
+      const canvasVisible = this.pdfCanvas.nativeElement;
+      canvasVisible.width = canvasTemporal.width;
+      canvasVisible.height = canvasTemporal.height;
+      canvasVisible.style.width = `${Math.floor(viewport.width)}px`;
+      canvasVisible.style.height = `${Math.floor(viewport.height)}px`;
+
+      const contextoVisible = canvasVisible.getContext('2d');
+      if (!contextoVisible) {
+        throw new Error('No fue posible actualizar el canvas visible.');
+      }
+
+      contextoVisible.clearRect(0, 0, canvasVisible.width, canvasVisible.height);
+      contextoVisible.drawImage(canvasTemporal, 0, 0);
+
+      this.zone.run(() => this.actualizarMarcadorDesdePdf());
     } catch (error: any) {
-      if (error?.name !== 'RenderingCancelledException') {
+      if (
+        tokenActual === this.tokenRender &&
+        error?.name !== 'RenderingCancelledException'
+      ) {
         console.error('Error renderizando la página:', error);
-        this.zone.run(() => (this.errorPdf = 'No se pudo mostrar la página seleccionada.'));
+        this.zone.run(() => (this.errorPdf = 'No se pudo renderizar la página seleccionada.'));
+      }
+    } finally {
+      // Es indispensable soltar también las tareas completadas. Si queda la
+      // referencia de la página 1, el siguiente cambio intenta cancelarla y
+      // puede quedar esperando una promesa que pdf.js ya cerró internamente.
+      if (this.renderTask === tareaDeEsteRender) {
+        this.renderTask = null;
+      }
+
+      if (tokenActual === this.tokenRender) {
+        this.zone.run(() => (this.renderizandoPagina = false));
       }
     }
   }
 
   cambiarPagina(direccion: number): void {
-    const destino = this.paginaActual + direccion;
-    if (destino < 1 || destino > this.totalPaginas || this.renderizando) return;
+    const nuevaPagina = this.paginaActual + direccion;
 
-    this.paginaActual = destino;
+    if (
+      nuevaPagina < 1 ||
+      nuevaPagina > this.totalPaginas ||
+      this.pdfCargandoInterno ||
+      this.renderizandoPagina
+    ) {
+      return;
+    }
+
+    this.paginaActual = nuevaPagina;
     void this.renderizarPagina();
   }
 
   cambiarZoom(delta: number): void {
-    const nuevo = Number(Math.min(2, Math.max(0.6, this.zoom + delta)).toFixed(2));
-    if (nuevo === this.zoom) return;
+    if (this.renderizandoPagina) {
+      return;
+    }
 
-    this.zoom = nuevo;
+    const nuevoZoom = Number(Math.min(2, Math.max(0.6, this.zoom + delta)).toFixed(2));
+
+    if (nuevoZoom === this.zoom) {
+      return;
+    }
+
+    this.zoom = nuevoZoom;
     void this.renderizarPagina();
   }
 
-  // ── Posición de la firma ──────────────────────────────────────────────────
+  seleccionarPosicion(event: MouseEvent): void {
+    if (
+      !this.viewport ||
+      !this.paginaPdf ||
+      this.pdfCargandoInterno ||
+      this.renderizandoPagina
+    ) {
+      return;
+    }
 
-  /** Clic en la hoja: centra el recuadro donde se hizo clic. */
-  seleccionarPosicion(evento: MouseEvent): void {
-    if (!this.viewport || !this.paginaPdf || this.renderizando) return;
+    const rectPagina = this.paginaPdf.nativeElement.getBoundingClientRect();
+    const anchoVisual = this.anchoFirmaPdf * this.viewport.scale;
+    const altoVisual = this.altoFirmaPdf * this.viewport.scale;
 
-    const hoja = this.paginaPdf.nativeElement.getBoundingClientRect();
-    const ancho = this.ANCHO_FIRMA * this.viewport.scale;
-    const alto = this.ALTO_FIRMA * this.viewport.scale;
+    const left = this.limitar(
+      event.clientX - rectPagina.left - anchoVisual / 2,
+      0,
+      this.viewport.width - anchoVisual,
+    );
+
+    const top = this.limitar(
+      event.clientY - rectPagina.top - altoVisual / 2,
+      0,
+      this.viewport.height - altoVisual,
+    );
 
     this.posicionVisual = {
-      left: this.limitar(evento.clientX - hoja.left - ancho / 2, 0, this.viewport.width - ancho),
-      top: this.limitar(evento.clientY - hoja.top - alto / 2, 0, this.viewport.height - alto),
-      width: ancho,
-      height: alto,
+      left,
+      top,
+      width: anchoVisual,
+      height: altoVisual,
     };
 
     this.actualizarPosicionPdf();
   }
 
-  iniciarArrastre(evento: PointerEvent): void {
-    if (!this.posicionVisual || !this.paginaPdf) return;
+  iniciarArrastreFirma(event: PointerEvent): void {
+    if (!this.posicionVisual || !this.paginaPdf) {
+      return;
+    }
 
-    evento.preventDefault();
-    evento.stopPropagation();
+    event.preventDefault();
+    event.stopPropagation();
 
-    const hoja = this.paginaPdf.nativeElement.getBoundingClientRect();
+    const rectPagina = this.paginaPdf.nativeElement.getBoundingClientRect();
 
     this.arrastrandoFirma = true;
-    this.offsetArrastreX = evento.clientX - hoja.left - this.posicionVisual.left;
-    this.offsetArrastreY = evento.clientY - hoja.top - this.posicionVisual.top;
+    this.offsetArrastreX = event.clientX - rectPagina.left - this.posicionVisual.left;
+    this.offsetArrastreY = event.clientY - rectPagina.top - this.posicionVisual.top;
 
-    // Con pointer capture el arrastre sigue funcionando aunque el cursor se
-    // salga del recuadro.
-    (evento.currentTarget as HTMLElement).setPointerCapture(evento.pointerId);
+    const elemento = event.currentTarget as HTMLElement;
+    elemento.setPointerCapture(event.pointerId);
   }
 
-  moverFirma(evento: PointerEvent): void {
+  moverFirma(event: PointerEvent): void {
     if (!this.arrastrandoFirma || !this.posicionVisual || !this.paginaPdf || !this.viewport) {
       return;
     }
 
-    evento.preventDefault();
+    event.preventDefault();
 
-    const hoja = this.paginaPdf.nativeElement.getBoundingClientRect();
+    const rectPagina = this.paginaPdf.nativeElement.getBoundingClientRect();
+
+    const left = this.limitar(
+      event.clientX - rectPagina.left - this.offsetArrastreX,
+      0,
+      this.viewport.width - this.posicionVisual.width,
+    );
+
+    const top = this.limitar(
+      event.clientY - rectPagina.top - this.offsetArrastreY,
+      0,
+      this.viewport.height - this.posicionVisual.height,
+    );
 
     this.posicionVisual = {
       ...this.posicionVisual,
-      left: this.limitar(
-        evento.clientX - hoja.left - this.offsetArrastreX,
-        0,
-        this.viewport.width - this.posicionVisual.width,
-      ),
-      top: this.limitar(
-        evento.clientY - hoja.top - this.offsetArrastreY,
-        0,
-        this.viewport.height - this.posicionVisual.height,
-      ),
+      left,
+      top,
     };
 
     this.actualizarPosicionPdf();
   }
 
-  terminarArrastre(): void {
+  terminarArrastreFirma(): void {
     this.arrastrandoFirma = false;
   }
 
-  /**
-   * Pasa el recuadro de coordenadas de pantalla a coordenadas del PDF.
-   *
-   * Se convierten las cuatro esquinas y se toma el mínimo/máximo en vez de
-   * convertir solo la esquina superior izquierda: el viewport puede venir
-   * rotado (una página apaisada), y ahí "arriba-izquierda" en pantalla no es la
-   * misma esquina que en el PDF.
-   */
   private actualizarPosicionPdf(): void {
-    if (!this.viewport || !this.posicionVisual) return;
+    if (!this.viewport || !this.posicionVisual) {
+      return;
+    }
 
     const { left, top, width, height } = this.posicionVisual;
 
@@ -373,87 +499,99 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
       this.viewport.convertToPdfPoint(left + width, top + height),
     ];
 
-    const xs = esquinas.map((punto: number[]) => punto[0]);
-    const ys = esquinas.map((punto: number[]) => punto[1]);
+    const valoresX = esquinas.map((punto: number[]) => punto[0]);
+    const valoresY = esquinas.map((punto: number[]) => punto[1]);
 
-    const minX = Math.min(...xs);
-    const minY = Math.min(...ys);
+    const minimoX = Math.min(...valoresX);
+    const maximoX = Math.max(...valoresX);
+    const minimoY = Math.min(...valoresY);
+    const maximoY = Math.max(...valoresY);
 
     this.posicionPdf = {
       pagina: this.paginaActual,
-      x: this.redondear(minX),
-      y: this.redondear(minY),
-      ancho: this.redondear(Math.max(...xs) - minX),
-      alto: this.redondear(Math.max(...ys) - minY),
+      x: this.redondear(minimoX),
+      y: this.redondear(minimoY),
+      ancho: this.redondear(maximoX - minimoX),
+      alto: this.redondear(maximoY - minimoY),
     };
   }
 
-  /** Camino inverso: del PDF a la pantalla, tras cambiar de página o zoom. */
-  private reubicarMarcador(): void {
+  private actualizarMarcadorDesdePdf(): void {
     if (!this.viewport || !this.posicionPdf || this.posicionPdf.pagina !== this.paginaActual) {
       this.posicionVisual = null;
       return;
     }
 
-    const { x, y, ancho, alto } = this.posicionPdf;
+    const posicion = this.posicionPdf;
 
-    const superior = this.viewport.convertToViewportPoint(x, y + alto);
-    const inferior = this.viewport.convertToViewportPoint(x + ancho, y);
+    const superiorIzquierda = this.viewport.convertToViewportPoint(
+      posicion.x,
+      posicion.y + posicion.alto,
+    );
+
+    const inferiorDerecha = this.viewport.convertToViewportPoint(
+      posicion.x + posicion.ancho,
+      posicion.y,
+    );
 
     this.posicionVisual = {
-      left: Math.min(superior[0], inferior[0]),
-      top: Math.min(superior[1], inferior[1]),
-      width: Math.abs(inferior[0] - superior[0]),
-      height: Math.abs(inferior[1] - superior[1]),
+      left: Math.min(superiorIzquierda[0], inferiorDerecha[0]),
+      top: Math.min(superiorIzquierda[1], inferiorDerecha[1]),
+      width: Math.abs(inferiorDerecha[0] - superiorIzquierda[0]),
+      height: Math.abs(inferiorDerecha[1] - superiorIzquierda[1]),
     };
   }
 
-  // ── Certificado ───────────────────────────────────────────────────────────
-
-  seleccionarArchivo(evento: Event): void {
-    const input = evento.target as HTMLInputElement;
+  seleccionarArchivo(event: Event): void {
+    const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0];
 
-    if (archivo) void this.procesarArchivoP12(archivo);
+    if (archivo) {
+      void this.procesarArchivoP12(archivo);
+    }
 
-    // Se limpia para que elegir el mismo archivo otra vez vuelva a disparar el
-    // change.
     input.value = '';
   }
 
-  alArrastrarSobre(evento: DragEvent): void {
-    evento.preventDefault();
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
     this.arrastrandoArchivo = true;
   }
 
-  alSalirArrastre(evento: DragEvent): void {
-    evento.preventDefault();
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
     this.arrastrandoArchivo = false;
   }
 
-  alSoltarArchivo(evento: DragEvent): void {
-    evento.preventDefault();
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
     this.arrastrandoArchivo = false;
 
-    const archivo = evento.dataTransfer?.files?.[0];
-    if (archivo) void this.procesarArchivoP12(archivo);
+    const archivo = event.dataTransfer?.files?.[0];
+
+    if (archivo) {
+      void this.procesarArchivoP12(archivo);
+    }
   }
 
   private async procesarArchivoP12(archivo: File): Promise<void> {
     this.errorArchivo = '';
 
     if (!archivo.name.toLowerCase().endsWith('.p12')) {
-      this.errorArchivo = 'Solo se aceptan certificados con extensión .p12';
+      this.errorArchivo = 'Solo se permiten certificados en formato .p12.';
       return;
     }
 
-    if (archivo.size > this.LIMITE_BYTES_P12) {
-      this.errorArchivo = 'El certificado no puede superar los 10 MB.';
+    const limiteBytes = 10 * 1024 * 1024;
+
+    if (archivo.size > limiteBytes) {
+      this.errorArchivo = 'El archivo .p12 no puede superar los 10 MB.';
       return;
     }
 
     try {
-      const base64 = await this.aBase64(archivo);
+      const base64 = await this.convertirArchivoABase64(archivo);
+
       await this.certificadoStorage.guardar(archivo.name, base64);
 
       this.archivoP12Base64 = base64;
@@ -463,59 +601,30 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
       void Swal.fire({
         icon: 'success',
         title: 'Certificado guardado',
-        text: 'El certificado quedó guardado en este navegador. La contraseña se pide en cada firma.',
+        text: 'El certificado .p12 quedó guardado en este navegador. La contraseña deberá ingresarse en cada firma.',
         timer: 2600,
         showConfirmButton: false,
       });
     } catch (error) {
       console.error('No se pudo guardar el certificado:', error);
+
       this.errorArchivo = 'No se pudo leer o guardar el certificado seleccionado.';
+
       this.archivoP12Base64 = '';
       this.nombreArchivoP12 = '';
       this.passwordP12 = '';
     }
   }
 
-  async quitarCertificado(): Promise<void> {
-    const { isConfirmed } = await Swal.fire({
-      icon: 'warning',
-      title: '¿Eliminar certificado?',
-      text: 'El archivo .p12 se borrará de este navegador.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#64748b',
-    });
-
-    if (!isConfirmed) return;
-
-    try {
-      await this.certificadoStorage.eliminar();
-
-      this.archivoP12Base64 = '';
-      this.nombreArchivoP12 = '';
-      this.passwordP12 = '';
-    } catch (error) {
-      console.error('No se pudo eliminar el certificado:', error);
-      void Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo eliminar el certificado guardado.',
-        confirmButtonColor: '#1e3a8a',
-      });
-    }
-  }
-
-  private aBase64(archivo: File): Promise<string> {
+  private convertirArchivoABase64(archivo: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const lector = new FileReader();
 
       lector.onload = () => {
-        const resultado = String(lector.result ?? '');
-        // readAsDataURL devuelve 'data:...;base64,XXXX'; el backend acepta
-        // ambas formas, pero se guarda el Base64 pelado.
-        resolve(resultado.includes(',') ? resultado.split(',')[1] : resultado);
+        const resultado = String(lector.result || '');
+        const base64 = resultado.includes(',') ? resultado.split(',')[1] : resultado;
+
+        resolve(base64);
       };
 
       lector.onerror = () => reject(lector.error);
@@ -523,20 +632,50 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
     });
   }
 
-  private async recuperarCertificadoGuardado(): Promise<void> {
-    try {
-      const certificado = await this.certificadoStorage.obtener();
-      if (!certificado) return;
+  async limpiarArchivo(): Promise<void> {
+    const resultado = await Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar certificado?',
+      text: 'El archivo .p12 será eliminado de este navegador.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+    });
 
-      this.archivoP12Base64 = certificado.base64;
-      this.nombreArchivoP12 = certificado.nombre;
+    if (!resultado.isConfirmed) {
+      return;
+    }
+
+    try {
+      await this.certificadoStorage.eliminar();
+
+      this.archivoP12Base64 = '';
+      this.nombreArchivoP12 = '';
+      this.passwordP12 = '';
+
+      this.posicionVisual = null;
+      this.posicionPdf = null;
+
+      void Swal.fire({
+        icon: 'success',
+        title: 'Certificado eliminado',
+        text: 'El certificado fue eliminado del navegador.',
+        timer: 1800,
+        showConfirmButton: false,
+      });
     } catch (error) {
-      // No es bloqueante: el usuario puede volver a elegir el archivo.
-      console.error('No se pudo recuperar el certificado guardado:', error);
+      console.error('No se pudo eliminar el certificado:', error);
+
+      void Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo eliminar el certificado guardado.',
+        confirmButtonColor: '#243b83',
+      });
     }
   }
-
-  // ── Acciones ──────────────────────────────────────────────────────────────
 
   puedeFirmar(): boolean {
     return Boolean(
@@ -544,45 +683,58 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
       this.passwordP12.trim() &&
       this.posicionPdf &&
       !this.procesando &&
-      !this.renderizando &&
+      !this.pdfCargandoInterno &&
+      !this.renderizandoPagina &&
       !this.cargandoPdf,
     );
   }
 
   confirmarFirma(): void {
-    if (!this.puedeFirmar() || !this.posicionPdf) return;
+    if (!this.puedeFirmar() || !this.posicionPdf) {
+      return;
+    }
 
     this.firmar.emit({
       archivoP12Base64: this.archivoP12Base64,
       passwordP12: this.passwordP12,
-      cargo: this.cargo.trim() || undefined,
-      posicionFirma: { ...this.posicionPdf },
+      posicionFirma: {
+        ...this.posicionPdf,
+      },
     });
   }
 
   solicitarCierre(): void {
-    if (this.procesando) return;
+    if (this.procesando) {
+      return;
+    }
+
     this.cerrar.emit();
   }
 
-  cerrarDesdeFondo(evento: MouseEvent): void {
-    if (evento.target === evento.currentTarget) this.solicitarCierre();
+  cerrarDesdeFondo(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.solicitarCierre();
+    }
   }
 
-  // ── Utilidades ────────────────────────────────────────────────────────────
+  detenerClick(event: MouseEvent): void {
+    event.stopPropagation();
+  }
 
-  /**
-   * Al cerrar se borra la contraseña y la posición, pero **no** el certificado:
-   * ese vive en IndexedDB justamente para no volver a pedirlo en cada firma.
-   */
-  private limpiarFormulario(): void {
+  private reiniciarFormulario(): void {
+    /*
+     * El certificado no se elimina porque está almacenado
+     * en IndexedDB.
+     */
+
+    // La contraseña siempre se borra.
     this.passwordP12 = '';
     this.mostrarPassword = false;
-    this.cargo = '';
 
     this.arrastrandoArchivo = false;
     this.errorArchivo = '';
     this.errorPdf = '';
+    this.renderizandoPagina = false;
 
     this.posicionVisual = null;
     this.posicionPdf = null;
@@ -592,25 +744,55 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
     this.zoom = 1;
   }
 
-  private destruirDocumento(limpiarBlob = true): void {
+  private destruirDocumentoPdf(limpiarBlob: boolean = true): void {
+    // Invalida también los getPage() que sigan pendientes y que todavía no
+    // hayan creado una RenderTask cancelable.
+    this.tokenRender++;
+    this.renderizandoPagina = false;
+
     if (this.renderTask) {
       try {
         this.renderTask.cancel();
-      } catch {
-        // Cancelar un render ya terminado lanza; no hay nada que hacer.
+      } catch (error) {
+        console.debug('No se pudo cancelar el renderizado:', error);
       }
+
       this.renderTask = null;
     }
 
-    if (this.pdfDocument) {
-      // `destroy()` vive en el loadingTask, no en el proxy del documento: es lo
-      // que libera al worker, no solo la caché de páginas (`cleanup()`).
-      void this.pdfDocument.loadingTask?.destroy();
-      this.pdfDocument = null;
+    const tareaCarga = this.pdfLoadingTask ?? this.pdfDocument?.loadingTask;
+    this.pdfLoadingTask = null;
+    this.pdfDocument = null;
+
+    if (tareaCarga) {
+      void tareaCarga.destroy().catch((error: unknown) =>
+        console.debug('No se pudo destruir el worker del PDF:', error),
+      );
     }
 
     this.viewport = null;
-    if (limpiarBlob) this.blobCargado = null;
+
+    if (limpiarBlob) {
+      this.blobCargado = null;
+    }
+  }
+
+  /** Resuelve cuando la pestaña está visible; de inmediato si ya lo está. */
+  private esperarPestanaVisible(): Promise<void> {
+    if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      const alCambiar = () => {
+        if (document.visibilityState !== 'visible') return;
+        document.removeEventListener('visibilitychange', alCambiar);
+        resolve();
+      };
+
+      document.addEventListener('visibilitychange', alCambiar);
+      this.alDestruir.push(() => document.removeEventListener('visibilitychange', alCambiar));
+    });
   }
 
   private limitar(valor: number, minimo: number, maximo: number): number {
@@ -619,5 +801,27 @@ export class FirmaElectronicaComponent implements OnInit, AfterViewInit, OnChang
 
   private redondear(valor: number): number {
     return Number(valor.toFixed(2));
+  }
+
+  private async cargarCertificadoGuardado(): Promise<void> {
+    try {
+      const certificado = await this.certificadoStorage.obtener();
+
+      if (!certificado) {
+        return;
+      }
+
+      this.archivoP12Base64 = certificado.base64;
+      this.nombreArchivoP12 = certificado.nombre;
+    } catch (error) {
+      console.error('No se pudo recuperar el certificado guardado:', error);
+
+      void Swal.fire({
+        icon: 'warning',
+        title: 'Certificado no recuperado',
+        text: 'No se pudo recuperar el certificado almacenado en este navegador.',
+        confirmButtonColor: '#243b83',
+      });
+    }
   }
 }

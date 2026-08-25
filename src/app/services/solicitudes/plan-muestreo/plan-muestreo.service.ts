@@ -25,6 +25,17 @@ import {
   FirmarPlanMuestreoResponse,
 } from '../../../interfaces/solicitudes/plan-muestreo/firma-plan-muestreo.interface';
 
+/**
+ * Todas las respuestas de `api_solicitud` vienen envueltas por un interceptor
+ * del backend. Hay que sacar `data` o el consumidor recibe el sobre en vez del
+ * contenido — y falla en silencio, porque el sobre también es un objeto válido.
+ */
+interface RespuestaApi<T> {
+  message: string;
+  success: boolean;
+  data: T;
+}
+
 // Identificador con el que el backend genera el secuencial del plan de
 // muestreo (la orden in situ usa ORD_AIR / ORD_RDO).
 export const IDENTIFICADOR_SECUENCIAL_PLAN_MUESTREO = 'PM';
@@ -76,22 +87,17 @@ export class PlanMuestreoService {
       .pipe(map((res) => res.data));
   }
 
-  getPdfPlanMuestreo(id: string): Observable<Blob> {
-    return this.http.get(`${this.apiReportes}/report-solicitud/pdf-plan-muestreo/${id}`, {
-      responseType: 'blob',
-    });
-  }
-
   /**
-   * PDF del plan tal como está almacenado, **con las firmas estampadas**.
+   * Documento del plan: el MISMO archivo para imprimir y para firmar.
    *
-   * No confundir con `getPdfPlanMuestreo`: ese lo pide a `api_reportes`, que lo
-   * regenera desde la base en cada llamada y por lo tanto nunca trae firmas.
-   * Este sale de `api_solicitud`, que devuelve el archivo congelado al
-   * autorizar el plan. Para firmar y para ver un documento ya firmado hay que
-   * usar este.
+   * La primera vez que se pide el PDF de un plan autorizado, el backend lo
+   * genera y lo archiva; después devuelve siempre ese, con las firmas que haya
+   * acumulado. Por eso imprimir y firmar muestran exactamente lo mismo.
+   *
+   * Este endpoint reemplaza la antigua regeneración de `api_reportes`, que no
+   * preservaba firmas y podía producir bytes distintos entre llamadas.
    */
-  getPdfFirmado(id: string): Observable<Blob> {
+  getPdfDocumento(id: string): Observable<Blob> {
     return this.http.get(`${this.apiSolicitud}/plan-muestreo/${id}/pdf`, {
       responseType: 'blob',
     });
@@ -102,16 +108,18 @@ export class PlanMuestreoService {
     id: string,
     payload: FirmarPlanMuestreoPayload,
   ): Observable<FirmarPlanMuestreoResponse> {
-    return this.http.post<FirmarPlanMuestreoResponse>(
-      `${this.apiSolicitud}/plan-muestreo/${id}/firmar`,
-      payload,
-    );
+    return this.http
+      .post<RespuestaApi<FirmarPlanMuestreoResponse>>(
+        `${this.apiSolicitud}/plan-muestreo/${id}/firmar`,
+        payload,
+      )
+      .pipe(map((res) => res.data));
   }
 
   /** Bitácora: quién firmó el documento, con qué cargo y cuándo. */
   getFirmasPlan(id: string): Observable<FirmaPlanMuestreo[]> {
-    return this.http.get<FirmaPlanMuestreo[]>(
-      `${this.apiSolicitud}/plan-muestreo/${id}/firmas`,
-    );
+    return this.http
+      .get<RespuestaApi<FirmaPlanMuestreo[]>>(`${this.apiSolicitud}/plan-muestreo/${id}/firmas`)
+      .pipe(map((res) => res.data ?? []));
   }
 }
