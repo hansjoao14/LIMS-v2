@@ -16,6 +16,7 @@
           (nuevaOrden)="irAFormulario()"
           (editar)="onEditar($event)"
           (imprimir)="imprimirOrden($event)"
+          (firmar)="abrirFirma($event)"
         />
       }
 
@@ -42,3 +43,16 @@
   (closed)="cerrarPdf()"
 >
 </app-pdf-viewer>
+
+<!-- Modal de firma electrónica. Va acá y no en la lista por lo mismo que el
+     visor: es `position: fixed` y el `.animate-in` lo confinaría. -->
+<app-firma-electronica
+  [mostrar]="mostrarModalFirma"
+  [pdfBlob]="pdfFirmaBlob"
+  [nombreDocumento]="nombreDocumentoFirma()"
+  [cargandoPdf]="cargandoPdfFirma"
+  [procesando]="procesandoFirma"
+  [errorFirma]="errorFirma"
+  (cerrar)="cerrarFirma()"
+  (firmar)="confirmarFirma($event)"
+/>

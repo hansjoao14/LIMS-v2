@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { RespuestaApi } from '../../../interfaces/comunes/respuesta-api.interface';
 
 // Contrato de POST /plan-muestreo/create-detalle: mismo esquema que la orden
 // de trabajo in situ (cabecera + detalle de ensayos + respuestas del
@@ -24,17 +25,6 @@ import {
   FirmarPlanMuestreoPayload,
   FirmarPlanMuestreoResponse,
 } from '../../../interfaces/solicitudes/plan-muestreo/firma-plan-muestreo.interface';
-
-/**
- * Todas las respuestas de `api_solicitud` vienen envueltas por un interceptor
- * del backend. Hay que sacar `data` o el consumidor recibe el sobre en vez del
- * contenido — y falla en silencio, porque el sobre también es un objeto válido.
- */
-interface RespuestaApi<T> {
-  message: string;
-  success: boolean;
-  data: T;
-}
 
 // Identificador con el que el backend genera el secuencial del plan de
 // muestreo (la orden in situ usa ORD_AIR / ORD_RDO).

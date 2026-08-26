@@ -50,6 +50,8 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
    * `<app-pdf-viewer>` se declara fuera de ese wrapper y la lista solo avisa.
    */
   @Output() imprimir = new EventEmitter<ReportOrden>();
+  /** Firmar abre el mismo modal compartido, hospedado también por el padre. */
+  @Output() firmar = new EventEmitter<ReportOrden>();
 
   loading = true;
   ordenes: ReportOrden[] = [];
@@ -232,5 +234,20 @@ export class OrdenTrabajoInSituLista implements OnInit, OnDestroy {
     if (!this.puedeImprimir(orden)) return;
 
     this.imprimir.emit(orden);
+  }
+
+  /**
+   * Firmar depende del estado del documento, no del rol: lo que acredita la
+   * identidad es el certificado .p12, no el perfil en el sistema. La condición
+   * es la misma que para imprimir, porque se firma ese mismo PDF congelado.
+   */
+  puedeFirmar(orden: ReportOrden): boolean {
+    return this.puedeImprimir(orden);
+  }
+
+  firmarOrden(orden: ReportOrden): void {
+    if (!this.puedeFirmar(orden)) return;
+
+    this.firmar.emit(orden);
   }
 }

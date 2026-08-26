@@ -1,7 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
+import {
+  FirmarOrdenTrabajoPayload,
+  FirmarOrdenTrabajoResponse,
+  FirmaOrdenTrabajo,
+} from '../../../interfaces/solicitudes/orden-trabajo/firma-orden-trabajo.interface';
+import { RespuestaApi } from '../../../interfaces/comunes/respuesta-api.interface';
 
 export interface OrdenTrabajoPayload {
   solicitud_id: string;
@@ -81,7 +88,6 @@ export interface FinalizarOrdenPayload {
 @Injectable({ providedIn: 'root' })
 export class OrdenTrabajoService {
   private readonly apiSolicitud = environment.api_solicitud;
-  private readonly apiReportes = environment.api_reportes;
 
   constructor(private http: HttpClient) {}
 
@@ -97,11 +103,39 @@ export class OrdenTrabajoService {
     return this.http.post<any>(`${this.apiSolicitud}/orden-trabajo/finalizar`, payload);
   }
 
-  /** Orden de trabajo in situ en PDF, generada por api_reportes. */
+  /**
+   * PDF de la orden. Sale de `api_solicitud` y no de `api_reportes` a
+   * propósito: este devuelve el archivo congelado **con las firmas que ya
+   * tenga**, mientras que el de reportes lo regenera desde cero y siempre viene
+   * sin firmar. Imprimir y firmar tienen que ver exactamente el mismo
+   * documento.
+   */
   getPdfOrden(id: string): Observable<Blob> {
-    return this.http.get(`${this.apiReportes}/report-solicitud/pdf-orden/${id}`, {
+    return this.http.get(`${this.apiSolicitud}/orden-trabajo/${id}/pdf`, {
       responseType: 'blob',
     });
+  }
+
+  /** Estampa una firma electrónica sobre el PDF congelado. */
+  firmarOrden(
+    id: string,
+    payload: FirmarOrdenTrabajoPayload,
+  ): Observable<FirmarOrdenTrabajoResponse> {
+    return this.http
+      .post<RespuestaApi<FirmarOrdenTrabajoResponse>>(
+        `${this.apiSolicitud}/orden-trabajo/${id}/firmar`,
+        payload,
+      )
+      .pipe(map((res) => res.data));
+  }
+
+  /** Bitácora: quién firmó el documento, con qué cargo y cuándo. */
+  getFirmasOrden(id: string): Observable<FirmaOrdenTrabajo[]> {
+    return this.http
+      .get<RespuestaApi<FirmaOrdenTrabajo[]>>(
+        `${this.apiSolicitud}/orden-trabajo/${id}/firmas`,
+      )
+      .pipe(map((res) => res.data ?? []));
   }
 
   deshabilitarOrden(id: string): Observable<any> {
