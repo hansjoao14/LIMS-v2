@@ -321,14 +321,18 @@
           </div>
 
           @if (hayErrorEn('password') || hayErrorEn('general')) {
-            <p class="mensaje-error error-firma">
+            <p
+              class="mensaje-error mt-2.5 px-2.5 py-2 font-semibold bg-[#fef2f2] border border-[#fecaca] rounded-md"
+            >
               <i class="fa-solid fa-circle-exclamation"></i>
               {{ errorMostrado?.mensaje }}
             </p>
           }
 
           @if (!procesando && requisitosPendientes().length) {
-            <p class="requisitos-pendientes">
+            <p
+              class="flex items-start gap-1.5 mt-2.5 ml-[35px] px-2.5 py-2 text-[11px] leading-[1.45] text-[#92400e] bg-[#fffbeb] border border-[#fde68a] rounded-md"
+            >
               <i class="fa-solid fa-circle-info"></i>
               <span>
                 Para firmar falta
