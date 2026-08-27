@@ -41,6 +41,8 @@ export interface Pregunta {
   hidden: boolean;
   num_caracter: number | null;
   ayuda: string | null;
+  /** Catálogo del que salen las opciones; permite releerlo con sus `valor`. */
+  catalogo_id?: number | null;
   catalogos: CatalogoItem[] | null;
   jornada_laboral_item: JornadaItem[] | null;
   atributo_id: string | null; // ID de la pregunta de la que depende

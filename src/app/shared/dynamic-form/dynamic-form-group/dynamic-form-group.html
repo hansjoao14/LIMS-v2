@@ -120,6 +120,17 @@
             </div>
           }
 
+          @case ('fecha') {
+            <input
+              type="date"
+              [formControlName]="campo.key"
+              [readonly]="campo.readonly"
+              class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+              [class.border-red-500]="esCampoInvalido(campo.key)"
+              [class.bg-red-50]="esCampoInvalido(campo.key)"
+            />
+          }
+
           @case ('toggle') {
             <div class="flex items-center gap-2">
               <ng-container *ngTemplateOutlet="interruptor; context: { $implicit: campo }" />

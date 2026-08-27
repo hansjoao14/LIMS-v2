@@ -72,6 +72,10 @@ export class DynamicFormGroupComponent {
    * coma flotante (0.1 + 0.2 = 0.30000000000000004).
    */
   sumar(campo: DynamicField, delta: number): void {
+    // Un campo de solo lectura no se altera con los botones: su valor lo pone
+    // el feature (por ejemplo un error calculado a partir de otra respuesta).
+    if (campo.readonly) return;
+
     const control = this.control(campo.key);
     if (!control) return;
     const actual = Number(control.value ?? 0);

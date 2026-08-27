@@ -10,7 +10,7 @@ import { CatalogoItem, Pregunta } from './dynamic-form.types';
  * por `DynamicFormConfig`; aquí no se quema nada de ningún feature.
  */
 
-export type DynamicControlType = 'texto' | 'textarea' | 'numero' | 'select' | 'toggle';
+export type DynamicControlType = 'texto' | 'textarea' | 'numero' | 'select' | 'toggle' | 'fecha';
 
 /** Layouts que sabe renderizar `<app-dynamic-form-group>`. */
 export type DynamicLayoutBase = 'campos' | 'toggles' | 'toggles-2col';
@@ -130,6 +130,16 @@ export function construirGrupos(
       porGrupo.set(key, campos);
     });
 
+  /*
+   * Un `grupo_numerico` constante en todo el paso no ordena nada: significa que
+   * el backend no informó posiciones (el formulario 2087 manda 0 en las 24
+   * preguntas). Se descarta para que mande el `orden` de la configuración; con
+   * posiciones reales —como el 2019, que trae 34 distintas— esto no se activa.
+   */
+  if (new Set(posicionGrupo.values()).size <= 1) {
+    posicionGrupo.clear();
+  }
+
   // Las tarjetas estáticas existen aunque no tengan preguntas visibles.
   for (const key of config.gruposEstaticos?.[seccion] ?? []) {
     if (!porGrupo.has(key)) porGrupo.set(key, []);
@@ -173,6 +183,10 @@ export function toCampo(pregunta: Pregunta): DynamicField {
 export function resolverControlType(pregunta: Pregunta): DynamicControlType {
   if (pregunta.tipo_respuesta === 'Boolean') return 'toggle';
   if (pregunta.tipo_respuesta === 'Selección Simple') return 'select';
+  // Sin este caso las fechas caían al `<input type="text">` del default y se
+  // tecleaban a mano. Lo estrena el formulario de calibración (2087); ningún
+  // otro formulario en producción trae preguntas de tipo Fecha.
+  if (pregunta.tipo_respuesta === 'Fecha') return 'fecha';
   if (pregunta.is_text_area) return 'textarea';
   if (pregunta.tipo_respuesta === 'Numerico') return 'numero';
   return 'texto';
