@@ -23,8 +23,34 @@
         [fields]="fields"
         [editingRecordId]="editingRecord?.id ?? null"
         (editar)="onEditar($event)"
+        (imprimir)="onImprimir($event)"
+        (firmar)="abrirFirma($event)"
       />
 
     </div>
   </div>
 </div>
+
+<!-- Fuera del wrapper `.animate-in`: su transform lo convertiría en el
+     containing block de los modales, que son `position: fixed`, y quedarían
+     encerrados en esa caja en vez de ocupar la pantalla.
+     (CLAUDE.md, "Imprimir un documento" / "Firma electrónica", regla 2) -->
+<app-pdf-viewer
+  [visible]="showPdfModal"
+  [loading]="isPdfCargando"
+  [pdfBlob]="pdfPreviewBlob"
+  [nombreArchivo]="pdfNombre"
+  titulo="Orden de Movilización"
+  (closed)="cerrarPdf()"
+/>
+
+<app-firma-electronica
+  [mostrar]="mostrarModalFirma"
+  [pdfBlob]="pdfFirmaBlob"
+  [nombreDocumento]="nombreDocumentoFirma()"
+  [cargandoPdf]="cargandoPdfFirma"
+  [procesando]="procesandoFirma"
+  [errorFirma]="errorFirma"
+  (cerrar)="cerrarFirma()"
+  (firmar)="confirmarFirma($event)"
+/>

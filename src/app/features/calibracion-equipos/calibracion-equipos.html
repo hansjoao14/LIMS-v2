@@ -14,6 +14,7 @@
         <app-calibracion-equipos-lista
           (nuevaCalibracion)="irAFormulario()"
           (editar)="onEditar($event)"
+          (imprimir)="onImprimir($event)"
         />
       }
 
@@ -28,3 +29,15 @@
     </div>
   </div>
 </div>
+
+<!-- Fuera del wrapper `.animate-in`: su transform lo convertiría en el
+     containing block del modal y el PDF quedaría encerrado en esa caja en vez
+     de ocupar la pantalla. (CLAUDE.md, "Imprimir un documento") -->
+<app-pdf-viewer
+  [visible]="showPdfModal"
+  [loading]="isPdfCargando"
+  [pdfBlob]="pdfPreviewBlob"
+  [nombreArchivo]="pdfNombre"
+  titulo="Verificación Intermedia de Calibradores Acústicos"
+  (closed)="cerrarPdf()"
+/>

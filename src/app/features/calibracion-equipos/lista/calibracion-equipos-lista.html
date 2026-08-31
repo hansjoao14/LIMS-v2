@@ -157,7 +157,7 @@
                           </svg>
                         </button>
                       }
-                      @if (canEdit() || canDelete()) {
+                      @if (canEdit() || canDelete() || tieneDocumento(item)) {
                         <div class="relative">
                           <button
                             type="button"
@@ -222,6 +222,34 @@
                                   </svg>
                                   Eliminar
                                 </button>
+                              }
+
+                              <!-- Imprimir va en el menú ⋮, no como botón
+                                   directo (ESTANDARES.md §5.2), y solo si el
+                                   documento existe: nace al autorizar. -->
+                              @if (tieneDocumento(item)) {
+                                <div class="border-t border-slate-100 mt-1 pt-1">
+                                  <button
+                                    type="button"
+                                    (click)="imprimirCalibracion(item)"
+                                    class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50"
+                                  >
+                                    <svg
+                                      class="h-3.5 w-3.5 shrink-0"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                                      />
+                                    </svg>
+                                    Imprimir
+                                  </button>
+                                </div>
                               }
                             </div>
                           }

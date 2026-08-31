@@ -41,6 +41,12 @@ const ESTADO_RECHAZADO = 51;
 export class CalibracionEquiposLista implements OnInit, OnDestroy {
   @Output() nuevaCalibracion = new EventEmitter<void>();
   @Output() editar = new EventEmitter<CalibracionEquipo>();
+  /*
+   * Imprimir lo resuelve el padre: el visor es `position: fixed` y el wrapper
+   * `.animate-in` lo confinaría a su caja (CLAUDE.md, "Imprimir un documento").
+   * Acá solo se avisa qué fila se quiere imprimir.
+   */
+  @Output() imprimir = new EventEmitter<CalibracionEquipo>();
 
   loading = true;
   calibraciones: CalibracionEquipo[] = [];
@@ -104,6 +110,22 @@ export class CalibracionEquiposLista implements OnInit, OnDestroy {
 
   estaRechazada(item: CalibracionEquipo): boolean {
     return item.ctestado_id === ESTADO_RECHAZADO;
+  }
+
+  /**
+   * El documento existe recién cuando la verificación se autoriza: ahí recibe
+   * su N° Formulario y deja de poder cambiar. Una pendiente no tiene qué
+   * imprimir, y el backend rechaza la descarga con CALIBRACION_NO_AUTORIZADA.
+   */
+  tieneDocumento(item: CalibracionEquipo): boolean {
+    return this.estaAutorizada(item) && item.estado === true;
+  }
+
+  imprimirCalibracion(item: CalibracionEquipo): void {
+    if (!this.tieneDocumento(item)) return;
+
+    this.imprimir.emit(item);
+    this.closeMenu();
   }
 
   constructor(

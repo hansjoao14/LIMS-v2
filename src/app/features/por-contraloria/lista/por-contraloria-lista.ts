@@ -25,7 +25,6 @@ import {
 import { FieldConfig } from '../../solicitud-trabajo/model/solicitud-trabajo.model';
 import { AuthService } from '../../auth/service/auth-service';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
-import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 
@@ -36,7 +35,7 @@ type ContraloriaRecord = { id: string } & Record<string, unknown>;
 
 @Component({
   selector: 'app-por-contraloria-lista',
-  imports: [CommonModule, PaginationComponent, PdfViewerComponent, TableSkeleton],
+  imports: [CommonModule, PaginationComponent, TableSkeleton],
   templateUrl: './por-contraloria-lista.html',
 })
 export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
@@ -44,6 +43,14 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
   @Input() fields: FieldConfig[] = [];
   @Input() editingRecordId: string | null = null;
   @Output() editar = new EventEmitter<ContraloriaRecord>();
+  /*
+   * Imprimir y firmar los resuelve el padre: los dos modales son
+   * `position: fixed` y el wrapper `.animate-in` —que vive en la plantilla del
+   * padre— los confinaría a su caja (CLAUDE.md, "Imprimir un documento", tabla
+   * de variantes). Acá solo se avisa sobre qué fila se pidió la acción.
+   */
+  @Output() imprimir = new EventEmitter<ContraloriaRecord>();
+  @Output() firmar = new EventEmitter<ContraloriaRecord>();
 
   private todasSolicitudes: ContraloriaRecord[] = [];
   solicitudes: ContraloriaRecord[] = [];
@@ -51,11 +58,6 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
   currentPage = 1;
   loadingTabla = false;
   readonly PAGE_SIZE = 10;
-
-  showPdfModal = false;
-  isPdfCargando = false;
-  pdfPreviewBlob: Blob | null = null;
-  readonly pdfNombre = 'orden-movilizacion.pdf';
 
   openMenuId: string | null = null;
 
@@ -381,29 +383,29 @@ export class PorContraloriaLista implements OnInit, OnChanges, OnDestroy {
       });
   }
 
-  imprimirRegistro(record: ContraloriaRecord): void {
-    this.showPdfModal = true;
-    this.isPdfCargando = true;
-    this.pdfPreviewBlob = null;
-    this.solicitudService
-      .getPdfVehiculo(record.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (blob) =>
-          this.zone.run(() => {
-            this.pdfPreviewBlob = blob;
-            this.isPdfCargando = false;
-          }),
-        error: () =>
-          this.zone.run(() => {
-            this.isPdfCargando = false;
-            this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
-          }),
-      });
+  /**
+   * El PDF nace al autorizar, así que un registro pendiente no tiene qué
+   * imprimir ni qué firmar. También se exige que esté vigente: sobre uno dado
+   * de baja el backend responde `SOLICITUD_DADA_DE_BAJA` y ofrecer el botón
+   * solo sirve para que el usuario choque contra el error.
+   */
+  tieneDocumento(record: ContraloriaRecord): boolean {
+    const sol = record['_solicitud'] as ReportSolicitud | undefined;
+    return sol?.ctestado_id === ESTADO_AUTORIZADO && sol?.estado_logico_solicitud === true;
   }
 
-  cerrarPdf(): void {
-    this.showPdfModal = false;
-    this.pdfPreviewBlob = null;
+  /**
+   * Firmar depende del estado del documento, no del rol: lo que acredita la
+   * identidad es el certificado .p12, no el perfil en el sistema. La condición
+   * es la misma que para imprimir, porque se firma ese mismo PDF congelado.
+   */
+  puedeFirmar(record: ContraloriaRecord): boolean {
+    return this.tieneDocumento(record);
+  }
+
+  firmarRegistro(record: ContraloriaRecord): void {
+    if (!this.puedeFirmar(record)) return;
+
+    this.firmar.emit(record);
   }
 }

@@ -278,6 +278,21 @@ export class CalibracionEquiposService {
     );
   }
 
+  /**
+   * PDF del F-PEE-11-02. Sale de `api_reportes` porque calibración todavía no
+   * congela ni firma su documento: no hay un archivo archivado que devolver, se
+   * regenera en cada llamada.
+   *
+   * Si algún día se le suma firma electrónica, esta llamada tiene que pasar a
+   * `{api_solicitud}/calibracion/:id/pdf` — el congelado, con las firmas
+   * estampadas. Ver "Imprimir un documento" en el CLAUDE.md del front.
+   */
+  getPdfCalibracion(id: string): Observable<Blob> {
+    return this.http.get(`${this.apiReportes}/report-solicitud/pdf-calibracion/${id}`, {
+      responseType: 'blob',
+    });
+  }
+
   /** Baja lógica: la verificación queda con `estado = 0`, no se borra. */
   deshabilitarCalibracion(id: string): Observable<void> {
     return this.http.patch<void>(`${this.apiSolicitud}/calibracion/${id}/disable`, {});
