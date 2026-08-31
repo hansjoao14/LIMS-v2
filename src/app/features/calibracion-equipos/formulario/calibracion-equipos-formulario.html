@@ -247,9 +247,9 @@
           <span
             class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"
           ></span>
-          Registrando...
+          {{ modoEdicion ? 'Actualizando...' : 'Registrando...' }}
         } @else {
-          REGISTRAR
+          {{ modoEdicion ? 'ACTUALIZAR' : 'REGISTRAR' }}
         }
       </button>
     </div>

@@ -44,7 +44,20 @@ export class PdfViewerComponent implements OnChanges, OnDestroy {
     if (!this.visible || !this.pdfBlob) return;
 
     this.objectUrl = URL.createObjectURL(this.pdfBlob);
-    this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.objectUrl);
+
+    /*
+     * Sin esto el visor del navegador abre el PDF en su zoom por defecto
+     * ("automático"), que en una pantalla alta deja la hoja A4 diminuta en el
+     * centro. El fragmento son los PDF Open Parameters: `view=FitH` es el
+     * estándar y lo entiende Chrome/Edge, `zoom=page-width` es el equivalente
+     * de pdf.js (Firefox). El que no reconoce el suyo lo ignora.
+     *
+     * Va solo en la URL del iframe: `objectUrl` se queda limpio para el botón
+     * de descargar.
+     */
+    this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+      `${this.objectUrl}#view=FitH&zoom=page-width`,
+    );
   }
 
   private revocarUrl(): void {

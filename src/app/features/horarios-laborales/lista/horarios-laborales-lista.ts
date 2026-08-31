@@ -25,7 +25,6 @@ import {
 import { FieldConfig } from '../../solicitud-trabajo/model/solicitud-trabajo.model';
 import { AuthService } from '../../auth/service/auth-service';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
-import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer';
 import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 
@@ -36,7 +35,7 @@ type VehiculoRecord = { id: string } & Record<string, unknown>;
 
 @Component({
   selector: 'app-horarios-laborales-lista',
-  imports: [CommonModule, PaginationComponent, PdfViewerComponent, TableSkeleton],
+  imports: [CommonModule, PaginationComponent, TableSkeleton],
   templateUrl: './horarios-laborales-lista.html',
 })
 export class HorariosLaboralesLista implements OnInit, OnChanges, OnDestroy {
@@ -44,6 +43,12 @@ export class HorariosLaboralesLista implements OnInit, OnChanges, OnDestroy {
   @Input() fields: FieldConfig[] = [];
   @Input() editingRecordId: string | null = null;
   @Output() editar = new EventEmitter<VehiculoRecord>();
+  /*
+   * Imprimir lo resuelve el padre: el visor es `position: fixed` y el wrapper
+   * `.animate-in` del padre lo confinaría a su caja (CLAUDE.md, "Imprimir un
+   * documento"). Acá solo se avisa qué fila se quiere imprimir.
+   */
+  @Output() imprimir = new EventEmitter<VehiculoRecord>();
 
   private todasSolicitudes: VehiculoRecord[] = [];
   solicitudes: VehiculoRecord[] = [];
@@ -52,10 +57,6 @@ export class HorariosLaboralesLista implements OnInit, OnChanges, OnDestroy {
   loadingTabla = false;
   readonly PAGE_SIZE = 10;
 
-  showPdfModal = false;
-  isPdfCargando = false;
-  pdfPreviewBlob: Blob | null = null;
-  readonly pdfNombre = 'programacion-vehiculo.pdf';
 
   openMenuId: string | null = null;
 
@@ -313,32 +314,6 @@ export class HorariosLaboralesLista implements OnInit, OnChanges, OnDestroy {
             this.toastrAlert.showError('No se pudo rechazar el registro.', 'Error'),
           ),
       });
-  }
-
-  imprimirRegistro(record: VehiculoRecord): void {
-    this.showPdfModal = true;
-    this.isPdfCargando = true;
-    this.pdfPreviewBlob = null;
-    this.solicitudService
-      .getPdfVehiculo(record.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (blob) =>
-          this.zone.run(() => {
-            this.pdfPreviewBlob = blob;
-            this.isPdfCargando = false;
-          }),
-        error: () =>
-          this.zone.run(() => {
-            this.isPdfCargando = false;
-            this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
-          }),
-      });
-  }
-
-  cerrarPdf(): void {
-    this.showPdfModal = false;
-    this.pdfPreviewBlob = null;
   }
 
   private parseFecha(fecha: string): Date | null {

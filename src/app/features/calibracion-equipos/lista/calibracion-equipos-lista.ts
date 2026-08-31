@@ -12,16 +12,18 @@ import { Subject, takeUntil, finalize } from 'rxjs';
 
 import { CalibracionEquiposService } from '../../../services/calibracion-equipos/calibracion-equipos.service';
 import { CalibracionEquipo } from '../../../interfaces/calibracion-equipos/calibracion-equipos.interface';
+import { PaginationMeta } from '../../../interfaces/catalogos/catalogo.interface';
 import { AuthService } from '../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../services/toastr.service';
 import { AlertService } from '../../../services/alert.service';
 import { AppRole, MenuKey, hasPermission } from '../../../core/utils/roles.constans';
 import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.utils';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 
 @Component({
   selector: 'app-calibracion-equipos-lista',
-  imports: [CommonModule, TableSkeleton],
+  imports: [CommonModule, TableSkeleton, PaginationComponent],
   templateUrl: './calibracion-equipos-lista.html',
 })
 export class CalibracionEquiposLista implements OnInit, OnDestroy {
@@ -30,6 +32,10 @@ export class CalibracionEquiposLista implements OnInit, OnDestroy {
 
   loading = true;
   calibraciones: CalibracionEquipo[] = [];
+
+  readonly PAGE_SIZE = 10;
+  currentPage = 1;
+  meta: PaginationMeta | null = null;
 
   openMenuId: string | null = null;
   procesandoId: string | null = null;
@@ -78,18 +84,28 @@ export class CalibracionEquiposLista implements OnInit, OnDestroy {
   }
 
   cargarDatos(): void {
+    this.irAPagina(this.currentPage);
+  }
+
+  irAPagina(page: number): void {
     this.loading = true;
+    this.currentPage = page;
+
     this.calibracionService
-      .getCalibraciones()
+      .getCalibraciones(page, this.PAGE_SIZE)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.calibraciones = data;
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-        },
+        next: ({ data, meta }) =>
+          this.zone.run(() => {
+            this.calibraciones = data;
+            this.meta = meta;
+            this.loading = false;
+          }),
+        error: () =>
+          this.zone.run(() => {
+            this.loading = false;
+            this.toastrAlert.showError('No se pudieron cargar las verificaciones.', 'Error');
+          }),
       });
   }
 

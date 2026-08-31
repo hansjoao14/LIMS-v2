@@ -1,10 +1,23 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, forkJoin, map, of, shareReplay } from 'rxjs';
+import { Apollo } from 'apollo-angular';
+import { Observable, firstValueFrom, forkJoin, map, shareReplay } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { CalibracionEquipo } from '../../interfaces/calibracion-equipos/calibracion-equipos.interface';
-import { ItemCatalogo } from '../../interfaces/catalogos/catalogo.interface';
+import {
+  CalibracionEquipoCollectionResponse,
+  CalibracionesPage,
+  CrearCalibracionPayload,
+  FinalizarCalibracionPayload,
+  FinalizarCalibracionResponse,
+  RespuestaCalibracion,
+  RespuestaCalibracionCollectionResponse,
+} from '../../interfaces/calibracion-equipos/calibracion-equipos.interface';
+import { ItemCatalogo, PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
+import {
+  GET_COLLECTION_REPORT_CALIBRACION,
+  GET_RESPUESTAS_CALIBRACION,
+} from '../../graphql/calibracion-equipos/report-calibracion.queries';
 import { CatalogoService } from '../catalogo.service';
 import { FormularioLaboratorio } from '../../shared/dynamic-form';
 import {
@@ -12,8 +25,26 @@ import {
   CATALOGO_VALOR_PL,
 } from '../../features/calibracion-equipos/model/calibracion-equipos-form.model';
 
+/** Cliente Apollo de api-reportes, donde viven las colecciones del módulo. */
+const CLIENT_REPORTES = 'reportes';
+
 /** Formulario dinámico "Verificación Intermedia de Calibradores Acústicos". */
 export const TIPO_FORMULARIO_CALIBRACION = 2087;
+
+/**
+ * Secuencial del formulario 2087 (`PARA_SECUENCIAL.identificador_secu`). De él
+ * sale el "N° Formulario" que se asigna al registrar la verificación.
+ */
+export const IDENTIFICADOR_SECUENCIAL_CALIBRACION = 'cion-test';
+
+/** Estado "Creado": con el que queda la verificación al numerarla. */
+const ESTADO_CREADO = 388;
+
+/*
+ * TODO: entidad quemada, igual que en `por-contraloria` y `horarios-laborales`.
+ * El perfil del usuario todavía no trae el establecimiento al que pertenece.
+ */
+export const ENTIDAD_CALIBRACION = 'F9687983-F6CF-4706-9004-A1B793E3A987';
 
 /** Nivel de referencia de cada patrón, tal como está definido en catálogo. */
 export interface ValoresReferencia {
@@ -24,8 +55,10 @@ export interface ValoresReferencia {
 @Injectable({ providedIn: 'root' })
 export class CalibracionEquiposService {
   private readonly http = inject(HttpClient);
+  private readonly apollo = inject(Apollo);
   private readonly catalogoService = inject(CatalogoService);
   private readonly apiReportes = environment.api_reportes;
+  private readonly apiSolicitud = environment.api_solicitud;
 
   private formulario$?: Observable<FormularioLaboratorio>;
   private referencias$?: Observable<ValoresReferencia>;
@@ -103,16 +136,102 @@ export class CalibracionEquiposService {
     return this.referencias$;
   }
 
-  /*
-   * TODO(backend): no existe endpoint ni tabla para las verificaciones. El
-   * listado y el guardado quedan en espera de `api-laboratorio`; hasta
-   * entonces la lista se pinta vacía y registrar no persiste.
+  // ── Guardado ─────────────────────────────────────────────────────────────
+
+  /**
+   * Registra una verificación: cabecera y respuestas en una sola llamada
+   * (`create-detalle`, igual que plan-muestreo) y después el secuencial, que es
+   * lo que asigna el "N° Formulario".
+   *
+   * Devuelve el número asignado.
    */
-  getCalibraciones(): Observable<CalibracionEquipo[]> {
-    return of([]);
+  async registrarVerificacion(payload: CrearCalibracionPayload): Promise<string | null> {
+    const creada = await firstValueFrom(
+      this.http.post<{ data?: { calibracion?: { id?: string } } }>(
+        `${this.apiSolicitud}/calibracion/create-detalle`,
+        payload,
+      ),
+    );
+
+    const idCalibracion = creada?.data?.calibracion?.id ?? null;
+    if (!idCalibracion) {
+      throw new Error('La API no devolvió el identificador de la verificación');
+    }
+
+    const finalizada = await firstValueFrom(
+      this.http.post<{ data?: FinalizarCalibracionResponse[] }>(
+        `${this.apiSolicitud}/calibracion/finalizar`,
+        {
+          idCalibracion,
+          identificadorSecuencial: IDENTIFICADOR_SECUENCIAL_CALIBRACION,
+          ctestado: ESTADO_CREADO,
+        } as FinalizarCalibracionPayload,
+      ),
+    );
+
+    return finalizada?.data?.[0]?.secuencialAsignado ?? null;
   }
 
-  deshabilitarCalibracion(_id: string): Observable<void> {
-    return of(undefined);
+  /**
+   * Guarda los cambios de una verificación: la cabecera por un lado y el
+   * formulario completo por otro. `update-many` da de baja las respuestas
+   * anteriores e inserta las nuevas, así que se manda todo el formulario.
+   */
+  async actualizarVerificacion(
+    idCalibracion: string,
+    payload: CrearCalibracionPayload,
+  ): Promise<void> {
+    const { ctformulario_id, usuario_id, entidad_id, ...cabecera } = payload.calibracion;
+
+    await firstValueFrom(
+      this.http.put(`${this.apiSolicitud}/calibracion/${idCalibracion}`, cabecera),
+    );
+
+    await firstValueFrom(
+      this.http.put(
+        `${this.apiSolicitud}/calibracion/valor-calibracion/update-many/${idCalibracion}`,
+        { valorCalibracion: payload.valorCalibracion },
+      ),
+    );
+  }
+
+  /** Baja lógica: la verificación queda con `estado = 0`, no se borra. */
+  deshabilitarCalibracion(id: string): Observable<void> {
+    return this.http.patch<void>(`${this.apiSolicitud}/calibracion/${id}/disable`, {});
+  }
+
+  // ── Consultas ────────────────────────────────────────────────────────────
+
+  /**
+   * Listado paginado. Sale de `REPORTES.vw_calibracion_report` a través de su
+   * colección GraphQL, como manda el estándar de listados: acá no se compone
+   * ninguna fila ni se pagina en memoria.
+   */
+  getCalibraciones(page: number, limit: number): Observable<CalibracionesPage> {
+    return this.apollo
+      .use(CLIENT_REPORTES)
+      .query<{ collectionReportCalibracion: CalibracionEquipoCollectionResponse }>({
+        query: GET_COLLECTION_REPORT_CALIBRACION,
+        variables: { page, take: limit },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(
+        map((result) => ({
+          data: result.data?.collectionReportCalibracion?.data ?? [],
+          meta: result.data?.collectionReportCalibracion?.meta as PaginationMeta,
+        })),
+      );
+  }
+
+  /** Respuestas guardadas de una verificación, para precargarlas al editar. */
+  getRespuestas(idCalibracion: string): Observable<RespuestaCalibracion[]> {
+    return this.apollo
+      .use(CLIENT_REPORTES)
+      .query<{ collectionReportValorCalibracion: RespuestaCalibracionCollectionResponse }>({
+        query: GET_RESPUESTAS_CALIBRACION,
+        variables: { idCalibracion },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(map((result) => result.data?.collectionReportValorCalibracion?.data ?? []));
   }
 }

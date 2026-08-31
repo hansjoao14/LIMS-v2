@@ -11,13 +11,22 @@ import {
   HorariosLaboralesFormulario, FormularioReadyEvent,
 } from './formulario/horarios-laborales-formulario';
 import { HorariosLaboralesLista } from './lista/horarios-laborales-lista';
+import { PdfViewerComponent } from '../../shared/components/pdf-viewer/pdf-viewer';
+import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
+import { ToastrAlertService } from '../../services/toastr.service';
 
 type VehiculoRecord = { id: string } & Record<string, unknown>;
 
 @Component({
   selector: 'app-horarios-laborales',
   standalone: true,
-  imports: [CommonModule, PageHeader, HorariosLaboralesFormulario, HorariosLaboralesLista],
+  imports: [
+    CommonModule,
+    PageHeader,
+    HorariosLaboralesFormulario,
+    HorariosLaboralesLista,
+    PdfViewerComponent,
+  ],
   templateUrl: './horarios-laborales.html',
   styleUrls: ['./horarios-laborales.css'],
 })
@@ -31,6 +40,13 @@ export class HorariosLaborales implements OnInit, OnDestroy {
 
   formulario: ReportFormulario | null = null;
   fechaEmision: Date | null = null;
+
+  // Estado del visor de PDF. Vive acá y no en la lista porque el modal se
+  // declara fuera del `.animate-in`, que está en esta plantilla.
+  showPdfModal = false;
+  isPdfCargando = false;
+  pdfPreviewBlob: Blob | null = null;
+  readonly pdfNombre = 'programacion-vehiculo.pdf';
 
   private readonly destroy$ = new Subject<void>();
 
@@ -47,6 +63,8 @@ export class HorariosLaborales implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private reportFormularioService: ReportFormularioService,
+    private solicitudService: SolicitudService,
+    private toastrAlert: ToastrAlertService,
   ) {}
 
   ngOnInit(): void {
@@ -86,5 +104,30 @@ export class HorariosLaborales implements OnInit, OnDestroy {
 
   onCancelado(): void {
     this.editingRecord = null;
+  }
+
+  onImprimir(record: VehiculoRecord): void {
+    this.showPdfModal = true;
+    this.isPdfCargando = true;
+    this.pdfPreviewBlob = null;
+
+    this.solicitudService
+      .getPdfVehiculo(record.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) => {
+          this.pdfPreviewBlob = blob;
+          this.isPdfCargando = false;
+        },
+        error: () => {
+          this.isPdfCargando = false;
+          this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
+        },
+      });
+  }
+
+  cerrarPdf(): void {
+    this.showPdfModal = false;
+    this.pdfPreviewBlob = null;
   }
 }

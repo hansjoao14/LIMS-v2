@@ -82,15 +82,17 @@
                       class="text-[10px] font-bold px-2 py-0.5 rounded border border-green-400 text-green-700 bg-green-50"
                       >CUMPLE</span
                     >
-                  } @else {
+                  } @else if (item.evaluacion === 'NO CUMPLE') {
                     <span
                       class="text-[10px] font-bold px-2 py-0.5 rounded border border-red-300 text-red-600 bg-red-50"
                       >NO CUMPLE</span
                     >
+                  } @else {
+                    <span class="text-xs text-slate-400">—</span>
                   }
                 </td>
                 <td class="px-3 py-2.5 border-r border-slate-100 text-xs text-slate-500">
-                  {{ +item.creado_en | date: 'dd/MM/yyyy' }}
+                  {{ item.creado_en | date: 'dd/MM/yyyy' }}
                 </td>
                 @if (hasAnyAction) {
                   <td class="px-2 py-2.5 text-center">
@@ -184,6 +186,15 @@
       </table>
     </div>
   </div>
+
+  <app-pagination
+    [meta]="meta"
+    [currentPage]="currentPage"
+    [itemsShown]="calibraciones.length"
+    itemLabel="verificaciones"
+    (pageChange)="irAPagina($event)"
+  >
+  </app-pagination>
 </div>
 
 @if (openMenuId !== null) {

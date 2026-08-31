@@ -998,6 +998,26 @@ const payload = {
 };
 ```
 
+#### Dónde aterrizan los datos
+
+**Un módulo con pantalla propia se guarda en sus propias tablas y con su propio módulo REST.** Así se viene trabajando y así se sigue: es el patrón de `plan-muestreo`, `orden-trabajo-in-situ`, `ticket-entrega-muestras` y `calibracion-equipos`. Cuatro piezas, siempre las mismas:
+
+| Pieza | Qué es | Ejemplo (`calibracion-equipos`) |
+|---|---|---|
+| **Tabla de cabecera** | Lo que no sale del formulario dinámico: responsable, fechas, resultado, secuencial, `ctestado_id` del flujo y `estado` de baja lógica | `SOLICITUD.SOLI_CALIBRACION` |
+| **Tabla de valores** | Una fila por respuesta: `<entidad>_id` + `atributo_formulario_id` + las columnas `valor_*` | `SOLICITUD.SOLI_VALOR_CALIBRACION` |
+| **Módulo REST** en `api-solicitud` | `controller` + `service` + `repository/`, calcado de `modules/plan-muestreo` | `POST /calibracion/create-detalle` (cabecera + respuestas en una transacción), `PUT /calibracion/:id`, `PUT /calibracion/valor-calibracion/update-many/:id`, `PATCH /calibracion/:id/disable`, `POST /calibracion/finalizar` |
+| **Vistas de reportes** | Una para el listado y otra para las respuestas (la precarga al editar), expuestas como colección GraphQL | `REPORTES.vw_calibracion_report` y `REPORTES.vw_valor_calibracion_report` |
+
+Reglas que se desprenden:
+
+- **Lo que se lista, ordena o filtra va como columna de la cabecera, no como respuesta del EAV.** En calibración, `fecha_verificacion` y `evaluacion` son columnas justamente por eso: como respuestas habría que pivotear para poder ordenar por ellas.
+- **Escribir es REST; leer es la vista.** El REST de `api-solicitud` solo crea, actualiza y da de baja; la tabla de la pantalla sale de `REPORTES.vw_<modulo>_report` como colección GraphQL paginada en servidor. Receta completa en `faq-monorepo/CLAUDE.md`, "Listados del front".
+- **Editar no borra respuestas:** `update-many` da de baja las vigentes (`estado = 0`) e inserta las nuevas, y la vista filtra por `estado = 1`. Así queda el histórico de lo que se respondió.
+- **El secuencial tiene su propio SP** (`SOLICITUD.sp_generar_secuencial_<entidad>`), calcado de `sp_generar_secuencial_solicitud`, y el front manda el `identificador_secu` como constante del servicio.
+
+> **Deuda conocida:** `por-contraloria` y `horarios-laborales` no tienen tablas propias — reutilizan `SOLI_SOLICITUD` + `SOLI_VALOR_SOLICITUD` con los endpoints genéricos de `solicitud` y `valor-solicitud`, y además pivotean el EAV en el front (`agruparPorSolicitud` + `getValoresByTipoFormulario`), sin paginación de servidor. Es el patrón viejo: **no calcarlo en un módulo nuevo**. Al tocar cualquiera de los dos, migrarlo a este.
+
 ### 7.9 Validación de estado del campo
 
 **Detección de campo inválido:**

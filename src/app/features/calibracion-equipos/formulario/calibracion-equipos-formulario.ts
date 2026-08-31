@@ -3,6 +3,7 @@ import {
   Input,
   Output,
   EventEmitter,
+  NgZone,
   OnInit,
   OnDestroy,
   inject,
@@ -10,20 +11,30 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Subject, forkJoin, takeUntil } from 'rxjs';
+import { Subject, forkJoin, of, takeUntil } from 'rxjs';
 
 import { AuthService } from '../../auth/service/auth-service';
 import { ToastrAlertService } from '../../../services/toastr.service';
-import { CalibracionEquiposService } from '../../../services/calibracion-equipos/calibracion-equipos.service';
-import { CalibracionEquipo } from '../../../interfaces/calibracion-equipos/calibracion-equipos.interface';
+import {
+  CalibracionEquiposService,
+  ENTIDAD_CALIBRACION,
+  TIPO_FORMULARIO_CALIBRACION,
+} from '../../../services/calibracion-equipos/calibracion-equipos.service';
+import {
+  CalibracionEquipo,
+  CrearCalibracionPayload,
+  RespuestaCalibracion,
+} from '../../../interfaces/calibracion-equipos/calibracion-equipos.interface';
 import { LoadingComponent } from '../../../shared/components/loading/loading';
 import {
   DynamicField,
   DynamicFormGroupComponent,
   DynamicGroup,
   aplicarDependencias,
+  camposDe,
   construirGrupos,
   generarControles,
+  toValorDinamico,
 } from '../../../shared/dynamic-form';
 import {
   CALIBRACION_FORM_CONFIG,
@@ -67,6 +78,7 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
   private toastrAlert = inject(ToastrAlertService);
   private calibracionService = inject(CalibracionEquiposService);
   private fb = inject(FormBuilder);
+  private zone = inject(NgZone);
   private readonly destroy$ = new Subject<void>();
 
   form: FormGroup = this.fb.group({});
@@ -100,7 +112,8 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.editingRecord?.fecha_verificacion) {
-      this.fechaVerificacion = this.editingRecord.fecha_verificacion;
+      // Viaje de vuelta: la vista la devuelve ISO y el input la quiere yyyy-MM-dd.
+      this.fechaVerificacion = this.editingRecord.fecha_verificacion.slice(0, 10);
     }
 
     const { id } = this.authService.currentUser();
@@ -108,10 +121,15 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
     forkJoin({
       formulario: this.calibracionService.getFormulario(id),
       referencias: this.calibracionService.getValoresReferencia(),
+      // Al editar, las respuestas guardadas se piden junto con el schema para
+      // no pintar el formulario vacío y repoblarlo después.
+      respuestas: this.editingRecord
+        ? this.calibracionService.getRespuestas(this.editingRecord.id)
+        : of([] as RespuestaCalibracion[]),
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: ({ formulario, referencias }) => {
+        next: ({ formulario, referencias, respuestas }) => {
           this.referencias[CAMPO_ERROR_PC] = referencias.pc;
           this.referencias[CAMPO_ERROR_PL] = referencias.pl;
 
@@ -126,6 +144,7 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
           this.cargarFechasDeCatalogo();
           this.escucharSelecciones();
           this.escucharLecturas();
+          this.precargarRespuestas(respuestas);
           this.loading = false;
         },
         error: () => {
@@ -136,6 +155,32 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
           );
         },
       });
+  }
+
+  /**
+   * Repuebla el formulario con lo que se guardó. Los valores viajan con
+   * `emitEvent`: así se recalculan los errores y las fechas de catálogo, que
+   * son campos derivados y no se toman del registro.
+   */
+  private precargarRespuestas(respuestas: RespuestaCalibracion[]): void {
+    if (!respuestas.length) return;
+
+    const porNombre = new Map(respuestas.map((r) => [r.atributo_formulario_nombre, r]));
+
+    const patch: Record<string, unknown> = {};
+    for (const campo of camposDe(this.grupos)) {
+      const respuesta = porNombre.get(campo.key);
+      if (!respuesta) continue;
+
+      if (campo.controlType === 'select') {
+        patch[campo.key] = respuesta.valor_catalogo ?? '';
+      } else if (campo.controlType === 'toggle') {
+        patch[campo.key] = !!respuesta.valor_booleano;
+      } else {
+        patch[campo.key] = respuesta.valor_texto ?? respuesta.valor_fecha ?? '';
+      }
+    }
+    this.form.patchValue(patch);
   }
 
   ngOnDestroy(): void {
@@ -416,22 +461,85 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
     return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
   }
 
-  registrar(): void {
+  /**
+   * Payload de la verificación: la cabecera con lo que no sale del formulario
+   * dinámico (analista, fecha y evaluación son columnas propias de
+   * SOLI_CALIBRACION) y una respuesta por pregunta renderizada.
+   */
+  private construirPayload(): CrearCalibracionPayload {
+    const valores = this.form.getRawValue();
+    const { id: usuarioId } = this.authService.currentUser();
+
+    return {
+      calibracion: {
+        ctformulario_id: TIPO_FORMULARIO_CALIBRACION,
+        usuario_id: usuarioId,
+        entidad_id: ENTIDAD_CALIBRACION,
+        /*
+         * El input da "yyyy-MM-dd" y Prisma exige ISO-8601 completo: sin esto
+         * responde 400 "premature end of input. Expected ISO-8601 DateTime".
+         * `new Date('yyyy-MM-dd')` se interpreta como medianoche UTC, así que
+         * el día no se corre. Mismo criterio que `fecha_recepcion` en
+         * ticket-entrega y `fecha_emision` en admin-formularios.
+         */
+        fecha_verificacion: new Date(this.fechaVerificacion).toISOString(),
+        evaluacion: this.evaluacion,
+        observaciones: (valores[CAMPO_OBSERVACIONES] as string) || null,
+      },
+      valorCalibracion: camposDe(this.grupos)
+        .filter((campo) => !campo.hidden)
+        .map((campo) => toValorDinamico(campo, valores[campo.key])),
+    };
+  }
+
+  async registrar(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.toastrAlert.showError('Completa los campos obligatorios.', 'Campos requeridos');
       return;
     }
 
-    /*
-     * TODO(backend): no hay endpoint ni tabla donde persistir la verificación.
-     * Se avisa al usuario en vez de simular un guardado exitoso, que dejaría
-     * creer que el registro quedó grabado.
-     */
-    this.toastrAlert.showError(
-      'El registro todavía no está disponible: falta el servicio de verificaciones.',
-      'No se pudo registrar',
-    );
+    if (!this.fechaVerificacion) {
+      this.toastrAlert.showError('Indica la fecha de verificación.', 'Campos requeridos');
+      return;
+    }
+
+    this.saving = true;
+    const payload = this.construirPayload();
+
+    try {
+      if (this.editingRecord) {
+        await this.calibracionService.actualizarVerificacion(this.editingRecord.id, payload);
+        this.avisarGuardado('El registro ha sido actualizado correctamente.', '¡Actualizado!');
+        return;
+      }
+
+      const secuencial = await this.calibracionService.registrarVerificacion(payload);
+
+      this.avisarGuardado(
+        secuencial
+          ? `La verificación ${secuencial} ha sido registrada correctamente.`
+          : 'La verificación ha sido registrada correctamente.',
+        '¡Guardado!',
+      );
+    } catch {
+      this.zone.run(() => {
+        this.saving = false;
+        this.toastrAlert.showError('No se pudo guardar el registro.', 'Error');
+      });
+    }
+  }
+
+  /*
+   * El guardado resuelve fuera de la zona de Angular: sin `zone.run` el toast y
+   * el cambio de vista no se pintan.
+   */
+  private avisarGuardado(mensaje: string, titulo: string): void {
+    this.zone.run(() => {
+      this.saving = false;
+      this.toastrAlert.showSuccess(mensaje, titulo);
+      this.guardado.emit();
+    });
   }
 
   cancelar(): void {
