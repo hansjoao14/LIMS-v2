@@ -114,10 +114,10 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
   // Calibración de equipos F-PEE-11-02
   [MenuKey.CALIBRACION_EQUIPOS]: {
     [AppRole.ANALISTA_CALIDAD]: ['ver'],
-    [AppRole.RESPONSABLE_LAB]: ['ver', 'editar', 'crear', 'eliminar'],
+    [AppRole.RESPONSABLE_LAB]: ['ver', 'editar', 'crear', 'eliminar', 'autorizar', 'rechazar'],
     [AppRole.ANALISTA_CAMPO]: ['ver'],
     [AppRole.ANALISTA_LAB]: ['ver', 'editar', 'crear'],
-    [AppRole.ADMIN]: ['ver', 'editar', 'crear', 'eliminar'],
+    [AppRole.ADMIN]: ['ver', 'editar', 'crear', 'eliminar', 'autorizar', 'rechazar'],
   },
 
   // Administración de catálogos e ítems

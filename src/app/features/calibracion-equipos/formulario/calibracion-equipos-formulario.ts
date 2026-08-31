@@ -514,12 +514,14 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
         return;
       }
 
-      const secuencial = await this.calibracionService.registrarVerificacion(payload);
+      await this.calibracionService.registrarVerificacion(payload);
 
+      /*
+       * No se menciona ningún N° Formulario: el registro queda en Pendiente y
+       * se numera recién al autorizarlo, desde el listado.
+       */
       this.avisarGuardado(
-        secuencial
-          ? `La verificación ${secuencial} ha sido registrada correctamente.`
-          : 'La verificación ha sido registrada correctamente.',
+        'La verificación ha sido registrada y queda pendiente de autorización.',
         '¡Guardado!',
       );
     } catch {

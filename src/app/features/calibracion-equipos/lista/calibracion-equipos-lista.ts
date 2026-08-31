@@ -21,6 +21,18 @@ import { abrirMenuHaciaArriba } from '../../../core/utils/dropdown-position.util
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 
+/**
+ * Estados del flujo (catálogo "Estado de Registro"). Una verificación nace en
+ * Pendiente —es el default de SOLI_CALIBRACION— y de ahí sale hacia Autorizado
+ * o Rechazado, en una sola vía.
+ *
+ * El N° Formulario se asigna al autorizar, no al guardar: lo hace el SP
+ * `sp_generar_secuencial_calibracion` junto con el cambio de estado.
+ */
+const ESTADO_PENDIENTE = 2;
+const ESTADO_AUTORIZADO = 387;
+const ESTADO_RECHAZADO = 51;
+
 @Component({
   selector: 'app-calibracion-equipos-lista',
   imports: [CommonModule, TableSkeleton, PaginationComponent],
@@ -62,8 +74,36 @@ export class CalibracionEquiposLista implements OnInit, OnDestroy {
     return role ? hasPermission(MenuKey.CALIBRACION_EQUIPOS, role, 'crear') : false;
   });
 
+  canAutorizar = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.CALIBRACION_EQUIPOS, role, 'autorizar') : false;
+  });
+
+  canRechazar = computed(() => {
+    const role = this.userAppRole();
+    return role ? hasPermission(MenuKey.CALIBRACION_EQUIPOS, role, 'rechazar') : false;
+  });
+
   get hasAnyAction(): boolean {
-    return this.canEdit() || this.canDelete();
+    return this.canEdit() || this.canDelete() || this.canAutorizar() || this.canRechazar();
+  }
+
+  /**
+   * Autorizar y rechazar salen solo de "Pendiente" y sobre un registro vigente:
+   * la transición es de una sola vía. El backend revalida, pero ofrecer el
+   * botón sobre algo ya resuelto solo sirve para que el usuario choque contra
+   * el error.
+   */
+  estaPendiente(item: CalibracionEquipo): boolean {
+    return item.ctestado_id === ESTADO_PENDIENTE && item.estado === true;
+  }
+
+  estaAutorizada(item: CalibracionEquipo): boolean {
+    return item.ctestado_id === ESTADO_AUTORIZADO;
+  }
+
+  estaRechazada(item: CalibracionEquipo): boolean {
+    return item.ctestado_id === ESTADO_RECHAZADO;
   }
 
   constructor(
@@ -124,6 +164,79 @@ export class CalibracionEquiposLista implements OnInit, OnDestroy {
 
   editarCalibracion(item: CalibracionEquipo): void {
     this.editar.emit(item);
+  }
+
+  async autorizarCalibracion(item: CalibracionEquipo): Promise<void> {
+    if (!this.estaPendiente(item)) return;
+
+    const confirmado = await this.alertService.confirm({
+      icon: 'question',
+      title: '¿Autorizar verificación?',
+      text: 'Se aprobará la verificación y se le asignará su N° Formulario.',
+      confirmButtonColor: '#16a34a',
+      confirmButtonText: 'Sí, autorizar',
+    });
+    if (!confirmado) return;
+
+    this.procesandoId = item.id;
+    this.calibracionService
+      .autorizarCalibracion(item.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
+        }),
+      )
+      .subscribe({
+        next: (secuencial) =>
+          this.zone.run(() => {
+            this.toastrAlert.showSuccess(
+              secuencial
+                ? `Verificación autorizada con el N° ${secuencial}.`
+                : 'Verificación autorizada correctamente.',
+              '¡Autorizado!',
+            );
+            this.cargarDatos();
+          }),
+        error: () =>
+          this.zone.run(() =>
+            this.toastrAlert.showError('No se pudo autorizar la verificación.', 'Error'),
+          ),
+      });
+  }
+
+  async rechazarCalibracion(item: CalibracionEquipo): Promise<void> {
+    if (!this.estaPendiente(item)) return;
+
+    const confirmado = await this.alertService.confirm({
+      icon: 'warning',
+      title: '¿Rechazar verificación?',
+      text: 'La verificación quedará rechazada y no recibirá N° Formulario.',
+      confirmButtonColor: '#d33',
+      confirmButtonText: 'Sí, rechazar',
+    });
+    if (!confirmado) return;
+
+    this.procesandoId = item.id;
+    this.calibracionService
+      .rechazarCalibracion(item.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoId = null;
+        }),
+      )
+      .subscribe({
+        next: () =>
+          this.zone.run(() => {
+            this.toastrAlert.showWarning('Verificación rechazada.', 'Rechazado');
+            this.cargarDatos();
+          }),
+        error: () =>
+          this.zone.run(() =>
+            this.toastrAlert.showError('No se pudo rechazar la verificación.', 'Error'),
+          ),
+      });
   }
 
   async eliminarCalibracion(item: CalibracionEquipo): Promise<void> {

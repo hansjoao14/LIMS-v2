@@ -37,8 +37,19 @@ export const TIPO_FORMULARIO_CALIBRACION = 2087;
  */
 export const IDENTIFICADOR_SECUENCIAL_CALIBRACION = 'cion-test';
 
-/** Estado "Creado": con el que queda la verificación al numerarla. */
-const ESTADO_CREADO = 388;
+/**
+ * "Autorizado" del catálogo Estado de Registro. Calibración sigue la convención
+ * del resto del sistema (solicitudes, horarios laborales, por contraloría) y no
+ * la del flujo de muestreo, que graba 2023 — ver "Estados del flujo" en el
+ * CLAUDE.md del monorepo.
+ *
+ * Es el estado con el que la verificación recibe su N° Formulario: el
+ * secuencial se asigna al autorizar, no al guardar.
+ */
+const ESTADO_AUTORIZADO = 387;
+
+/** "Rechazado". Una verificación rechazada no llega a numerarse. */
+const ESTADO_RECHAZADO = 51;
 
 /*
  * TODO: entidad quemada, igual que en `por-contraloria` y `horarios-laborales`.
@@ -140,12 +151,17 @@ export class CalibracionEquiposService {
 
   /**
    * Registra una verificación: cabecera y respuestas en una sola llamada
-   * (`create-detalle`, igual que plan-muestreo) y después el secuencial, que es
-   * lo que asigna el "N° Formulario".
+   * (`create-detalle`, igual que plan-muestreo).
    *
-   * Devuelve el número asignado.
+   * **No asigna el N° Formulario.** La verificación nace en "Pendiente" (2, el
+   * default de la tabla) y sin secuencial; el número se asigna al autorizarla,
+   * que es cuando el registro pasa a ser oficial. Antes se llamaba a
+   * `finalizar` acá mismo, así que todo registro nacía numerado aunque nadie lo
+   * hubiera revisado.
+   *
+   * Devuelve el id de la verificación creada.
    */
-  async registrarVerificacion(payload: CrearCalibracionPayload): Promise<string | null> {
+  async registrarVerificacion(payload: CrearCalibracionPayload): Promise<string> {
     const creada = await firstValueFrom(
       this.http.post<{ data?: { calibracion?: { id?: string } } }>(
         `${this.apiSolicitud}/calibracion/create-detalle`,
@@ -158,18 +174,41 @@ export class CalibracionEquiposService {
       throw new Error('La API no devolvió el identificador de la verificación');
     }
 
-    const finalizada = await firstValueFrom(
-      this.http.post<{ data?: FinalizarCalibracionResponse[] }>(
+    return idCalibracion;
+  }
+
+  /**
+   * Autoriza la verificación: le asigna el N° Formulario y la deja en
+   * "Autorizado", en una sola operación.
+   *
+   * Las dos cosas van juntas porque las hace el mismo SP
+   * (`sp_generar_secuencial_calibracion`), que numera y cambia el estado dentro
+   * de la misma transacción: no puede quedar un registro autorizado sin número
+   * ni uno numerado sin autorizar.
+   *
+   * Devuelve el número asignado.
+   */
+  autorizarCalibracion(idCalibracion: string): Observable<string | null> {
+    return this.http
+      .post<{ data?: FinalizarCalibracionResponse[] }>(
         `${this.apiSolicitud}/calibracion/finalizar`,
         {
           idCalibracion,
           identificadorSecuencial: IDENTIFICADOR_SECUENCIAL_CALIBRACION,
-          ctestado: ESTADO_CREADO,
+          ctestado: ESTADO_AUTORIZADO,
         } as FinalizarCalibracionPayload,
-      ),
-    );
+      )
+      .pipe(map((res) => res?.data?.[0]?.secuencialAsignado ?? null));
+  }
 
-    return finalizada?.data?.[0]?.secuencialAsignado ?? null;
+  /**
+   * Rechaza la verificación. No pasa por el SP del secuencial a propósito: un
+   * registro rechazado no consume un número de formulario.
+   */
+  rechazarCalibracion(idCalibracion: string): Observable<void> {
+    return this.http.put<void>(`${this.apiSolicitud}/calibracion/${idCalibracion}`, {
+      ctestado_id: ESTADO_RECHAZADO,
+    });
   }
 
   /**
