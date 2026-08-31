@@ -49,6 +49,11 @@ export class HorariosLaboralesLista implements OnInit, OnChanges, OnDestroy {
    * documento"). Acá solo se avisa qué fila se quiere imprimir.
    */
   @Output() imprimir = new EventEmitter<VehiculoRecord>();
+  /**
+   * Firmar abre el modal compartido, que también hospeda el padre y por el
+   * mismo motivo que el visor: es `position: fixed`.
+   */
+  @Output() firmar = new EventEmitter<VehiculoRecord>();
 
   private todasSolicitudes: VehiculoRecord[] = [];
   solicitudes: VehiculoRecord[] = [];
@@ -367,6 +372,32 @@ export class HorariosLaboralesLista implements OnInit, OnChanges, OnDestroy {
     return Array.from(groups.entries())
       .sort(([, a], [, b]) => a.sortKey - b.sortKey)
       .map(([groupKey, { diaLabel, items }]) => ({ groupKey, diaLabel, items }));
+  }
+
+  /**
+   * El PDF nace al autorizar, así que un registro pendiente no tiene qué
+   * imprimir ni qué firmar. También se exige que esté vigente: sobre un
+   * registro dado de baja el backend responde `SOLICITUD_DADA_DE_BAJA` y
+   * ofrecer el botón solo sirve para que el usuario choque contra el error.
+   */
+  tieneDocumento(record: VehiculoRecord): boolean {
+    const sol = record['_solicitud'] as ReportSolicitud | undefined;
+    return sol?.ctestado_id === ESTADO_AUTORIZADO && sol?.estado_logico_solicitud === true;
+  }
+
+  /**
+   * Firmar depende del estado del documento, no del rol: lo que acredita la
+   * identidad es el certificado .p12, no el perfil en el sistema. La condición
+   * es la misma que para imprimir, porque se firma ese mismo PDF congelado.
+   */
+  puedeFirmar(record: VehiculoRecord): boolean {
+    return this.tieneDocumento(record);
+  }
+
+  firmarRegistro(record: VehiculoRecord): void {
+    if (!this.puedeFirmar(record)) return;
+
+    this.firmar.emit(record);
   }
 
   getFieldValue(record: VehiculoRecord, key: string): unknown {

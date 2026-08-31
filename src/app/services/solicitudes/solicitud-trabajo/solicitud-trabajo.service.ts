@@ -10,6 +10,12 @@ import {
   SolicitudPayload,
   FinalizarSolicitudPayload,
 } from '../../../interfaces/solicitudes/solicitud-trabajo/solicitud.interface';
+import {
+  FirmaSolicitud,
+  FirmarSolicitudPayload,
+  FirmarSolicitudResponse,
+} from '../../../interfaces/solicitudes/solicitud-trabajo/firma-solicitud.interface';
+import { RespuestaApi } from '../../../interfaces/comunes/respuesta-api.interface';
 
 export type {
   ValorSolicitudItem,
@@ -98,6 +104,43 @@ export class SolicitudService {
     return this.http.get(`${this.api_reportes}/report-solicitud/pdf-vehiculo/${solicitudId}`, {
       responseType: 'blob',
     });
+  }
+
+  /**
+   * PDF **congelado** de la solicitud. Sale de `api_solicitud` y no de
+   * `api_reportes` a propósito: este devuelve el archivo archivado **con las
+   * firmas que ya tenga**, mientras que el de reportes lo regenera desde cero y
+   * siempre viene sin firmar. Imprimir y firmar tienen que ver exactamente el
+   * mismo documento.
+   *
+   * Sirve para los dos estados: si la solicitud todavía no está autorizada no
+   * hay nada congelado y el backend arma el PDF al vuelo sin guardarlo, así que
+   * también funciona como preview.
+   */
+  getPdfDocumentoSolicitud(solicitudId: string): Observable<Blob> {
+    return this.http.get(`${this.api_solicitud}/solicitud/${solicitudId}/pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  /** Estampa una firma electrónica sobre el PDF congelado. */
+  firmarSolicitud(
+    id: string,
+    payload: FirmarSolicitudPayload,
+  ): Observable<FirmarSolicitudResponse> {
+    return this.http
+      .post<RespuestaApi<FirmarSolicitudResponse>>(
+        `${this.api_solicitud}/solicitud/${id}/firmar`,
+        payload,
+      )
+      .pipe(map((res) => res.data));
+  }
+
+  /** Bitácora: quién firmó el documento, con qué cargo y cuándo. */
+  getFirmasSolicitud(id: string): Observable<FirmaSolicitud[]> {
+    return this.http
+      .get<RespuestaApi<FirmaSolicitud[]>>(`${this.api_solicitud}/solicitud/${id}/firmas`)
+      .pipe(map((res) => res.data ?? []));
   }
 
   createSolicitud(payload: any): Observable<any> {

@@ -24,6 +24,7 @@
         [editingRecordId]="editingRecord?.id ?? null"
         (editar)="onEditar($event)"
         (imprimir)="onImprimir($event)"
+        (firmar)="abrirFirma($event)"
       />
 
     </div>
@@ -40,4 +41,17 @@
   [nombreArchivo]="pdfNombre"
   titulo="Programación de Vehículo"
   (closed)="cerrarPdf()"
+/>
+
+<!-- Modal de firma electrónica. Va acá y no en la lista por lo mismo que el
+     visor: es `position: fixed` y el `.animate-in` lo confinaría a su caja. -->
+<app-firma-electronica
+  [mostrar]="mostrarModalFirma"
+  [pdfBlob]="pdfFirmaBlob"
+  [nombreDocumento]="nombreDocumentoFirma()"
+  [cargandoPdf]="cargandoPdfFirma"
+  [procesando]="procesandoFirma"
+  [errorFirma]="errorFirma"
+  (cerrar)="cerrarFirma()"
+  (firmar)="confirmarFirma($event)"
 />

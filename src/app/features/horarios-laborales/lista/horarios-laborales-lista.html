@@ -206,7 +206,34 @@
                             </svg>
                           </button>
                         }
-                        @if (canEdit() || canDelete() || $any(sol['ctestado_id']) === 387) {
+                        <!-- Firmar: acción primaria, botón directo (ESTANDARES.md
+                             §5.2). Solo con la solicitud autorizada y vigente,
+                             que es cuando existe el PDF congelado sobre el que
+                             se estampa la firma. -->
+                        @if (puedeFirmar(sol)) {
+                          <button
+                            type="button"
+                            title="Firmar electrónicamente"
+                            (click)="firmarRegistro(sol)"
+                            [disabled]="procesandoId === sol.id"
+                            class="h-8 w-8 flex items-center justify-center rounded bg-[#0f172a] text-white hover:bg-[#1e293b] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                          >
+                            <svg
+                              class="h-3.5 w-3.5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                              />
+                            </svg>
+                          </button>
+                        }
+                        @if (canEdit() || canDelete() || tieneDocumento(sol)) {
                           <div class="relative">
                             <button
                               type="button"
@@ -272,7 +299,7 @@
                                     Eliminar
                                   </button>
                                 }
-                                @if ($any(sol['ctestado_id']) === 387) {
+                                @if (tieneDocumento(sol)) {
                                   <div class="border-t border-slate-100 mt-1 pt-1">
                                     <button
                                       type="button"

@@ -20,7 +20,13 @@ export interface FirmarOrdenTrabajoPayload extends DatosFirmaElectronica {
 /** Una firma ya estampada, como la devuelve la bitácora. */
 export interface FirmaOrdenTrabajo {
   id: string;
-  orden_trabajo_id: string;
+  /**
+   * La bitácora es una sola tabla para todos los formatos
+   * (SOLI_DOCUMENTO_FIRMA), así que el documento se identifica con el par
+   * tipo + id, no con una columna por entidad.
+   */
+  tipo_documento: 'ORDEN_TRABAJO';
+  documento_id: string;
   usuario_id: string;
   nombre_firmante: string;
   cargo?: string | null;

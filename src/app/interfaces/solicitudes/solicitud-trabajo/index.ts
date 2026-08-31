@@ -2,6 +2,7 @@ export * from './ensayo.interface';
 export * from './entidad.interface';
 export * from './establecimiento-usuario.interface';
 export * from './establecimiento.interface';
+export * from './firma-solicitud.interface';
 export * from './integracion.interface';
 export * from './report-catalogo-ensayo-item.interface';
 export * from './solicitud.interface';
