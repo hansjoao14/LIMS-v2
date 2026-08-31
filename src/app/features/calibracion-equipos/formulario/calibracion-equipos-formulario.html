@@ -60,7 +60,99 @@
   } @else {
     <!-- Tarjetas del formulario dinámico (schema 2087) -->
     <form [formGroup]="form" class="space-y-6">
-      @for (grupo of grupos; track grupo.key) {
+      @for (grupo of gruposEquipo; track grupo.key) {
+        <app-dynamic-form-group [grupo]="grupo" [plantillaLayout]="layoutsPropios" />
+      }
+
+      <!-- Detalles de fechas de los equipos.
+           Las fechas salían dentro de la tarjeta de cada equipo; el F-PEE-11-02
+           las agrupa aparte, en acústicos y ambientales. El dato no cambió:
+           sigue viniendo del catálogo al elegir el equipo y sigue siendo de solo
+           lectura. -->
+      <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+        <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+          <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">
+            Detalles de fechas de los equipos
+          </h4>
+        </div>
+
+        <div class="p-5 space-y-6">
+          @for (bloque of gruposFechas; track bloque.titulo) {
+            <div>
+              <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">
+                {{ bloque.titulo }}
+              </p>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                @for (tarjeta of bloque.tarjetas; track tarjeta.key) {
+                  <div
+                    class="border border-slate-200 rounded-lg p-4 bg-white flex flex-col items-center text-center gap-2"
+                  >
+                    <div
+                      class="h-11 w-11 flex items-center justify-center rounded-lg bg-slate-50 border border-slate-200 text-[#1e3a8a] shrink-0"
+                    >
+                      <svg
+                        class="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.5"
+                          [attr.d]="tarjeta.icono"
+                        />
+                      </svg>
+                    </div>
+
+                    <p class="text-[11px] font-bold text-[#1e3a8a] uppercase leading-tight">
+                      {{ tarjeta.titulo }}
+                    </p>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">
+                      Última calibración
+                    </p>
+
+                    @if (vigencia(tarjeta.key); as v) {
+                      <span
+                        class="text-xs font-bold px-2.5 py-1 rounded border whitespace-nowrap"
+                        [class.border-green-400]="!v.vencida"
+                        [class.text-green-700]="!v.vencida"
+                        [class.bg-green-50]="!v.vencida"
+                        [class.border-red-400]="v.vencida"
+                        [class.text-red-700]="v.vencida"
+                        [class.bg-red-50]="v.vencida"
+                        [title]="v.texto"
+                        >{{ fechaMostrada(tarjeta.key) }}</span
+                      >
+                      <!-- El aviso de vigencia se conserva: el color solo dice
+                           si venció, no cuánto le queda. -->
+                      <p
+                        class="text-[10px] leading-tight"
+                        [class.text-red-600]="v.vencida"
+                        [class.text-slate-400]="!v.vencida"
+                      >
+                        {{ v.texto }}
+                      </p>
+                    } @else {
+                      <span
+                        class="text-xs font-bold px-2.5 py-1 rounded border border-slate-200 bg-slate-50 text-slate-400 whitespace-nowrap"
+                        >—</span
+                      >
+                      <p class="text-[10px] text-slate-400 italic leading-tight">
+                        Selecciona el equipo
+                      </p>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      @for (grupo of gruposComplementarios; track grupo.key) {
         <app-dynamic-form-group [grupo]="grupo" [plantillaLayout]="layoutsPropios" />
       }
 
@@ -88,38 +180,6 @@
                 }
               </select>
             </div>
-          </div>
-        }
-
-        <!-- Fechas: vienen del catálogo del equipo, con su aviso de vigencia -->
-        @if (fechasDe(grupo).length) {
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @for (campo of fechasDe(grupo); track campo.id) {
-              <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
-                <p class="text-[10px] font-bold text-[#1e3a8a] uppercase tracking-wider mb-1">
-                  {{ campo.label }}
-                </p>
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-sm font-semibold text-slate-700">
-                    {{ fechaMostrada(campo.key) }}
-                  </span>
-                  @if (vigencia(campo.key); as v) {
-                    <span
-                      class="text-[10px] font-bold px-2 py-0.5 rounded border whitespace-nowrap"
-                      [class.border-green-400]="!v.vencida"
-                      [class.text-green-700]="!v.vencida"
-                      [class.bg-green-50]="!v.vencida"
-                      [class.border-red-400]="v.vencida"
-                      [class.text-red-700]="v.vencida"
-                      [class.bg-red-50]="v.vencida"
-                      >{{ v.texto }}</span
-                    >
-                  } @else {
-                    <span class="text-[10px] text-slate-400 italic">Selecciona el equipo</span>
-                  }
-                </div>
-              </div>
-            }
           </div>
         }
 

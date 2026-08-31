@@ -10,6 +10,11 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+    // La tabla de factores de corrección del F-PEE-11-02 es un JSON
+    // estático que se importa y se empaqueta con la app: son 66 filas de
+    // referencia y el cálculo de la tolerancia es síncrono, así que no
+    // vale la pena servirlo como asset y pedirlo por HTTP.
+    "resolveJsonModule": true,
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",

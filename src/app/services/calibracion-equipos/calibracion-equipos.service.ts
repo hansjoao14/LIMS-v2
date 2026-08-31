@@ -14,6 +14,8 @@ import {
   RespuestaCalibracionCollectionResponse,
 } from '../../interfaces/calibracion-equipos/calibracion-equipos.interface';
 import { ItemCatalogo, PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
+import { FactorCorreccion } from '../../interfaces/calibracion-equipos/factor-correccion.interface';
+import FACTORES_DE_CORRECCION from '../../data/factores_de_correccion.json';
 import {
   GET_COLLECTION_REPORT_CALIBRACION,
   GET_RESPUESTAS_CALIBRACION,
@@ -62,6 +64,17 @@ export interface ValoresReferencia {
   pc: number | null;
   pl: number | null;
 }
+
+/**
+ * Tabla de factores de corrección indexada por su clave de búsqueda.
+ *
+ * Se arma una sola vez al cargar el módulo: son 66 filas que no cambian en
+ * ejecución, así que un `Map` evita recorrer el arreglo en cada tecleo de la
+ * lectura observada.
+ */
+const FACTORES_POR_CLAVE = new Map<string, FactorCorreccion>(
+  (FACTORES_DE_CORRECCION as FactorCorreccion[]).map((factor) => [factor.id, factor]),
+);
 
 @Injectable({ providedIn: 'root' })
 export class CalibracionEquiposService {
@@ -145,6 +158,37 @@ export class CalibracionEquiposService {
     }
 
     return this.referencias$;
+  }
+
+  /**
+   * Tolerancia del patrón de laboratorio, desde la tabla de factores de
+   * corrección. Es el `VLOOKUP` del formato:
+   *
+   *     =IFERROR(VLOOKUP(YEAR(E17) & E15 & ROUND(E24,0),
+   *                      'Factores de corrección'!$F$4:$L$70, 5, 0),
+   *              "INGRESE MEDICIONES")
+   *
+   *     E17 = fecha de última calibración del SONÓMETRO  → de ahí sale el año
+   *     E15 = código del PATRÓN DE LABORATORIO (PL)
+   *     E24 = lectura observada PC, redondeada a entero  → el nivel verificado
+   *
+   * La quinta columna del rango `F:L` es `tolerancia`, que es justo el quinto
+   * campo de cada fila del JSON después de `id` (fca, fcd, fcmax, **tolerancia**,
+   * histeresis, incertidumbre).
+   *
+   * Devuelve `null` cuando no hay coincidencia — el equivalente del
+   * `IFERROR`—, que es lo que el formulario muestra como "INGRESE MEDICIONES".
+   */
+  buscarTolerancia(params: {
+    /** Año de la última calibración del sonómetro. */
+    anio: number;
+    /** Código del patrón de laboratorio, p. ej. `A-21-45`. */
+    equipoPl: string;
+    /** Nivel verificado, ya redondeado a entero. */
+    nivel: number;
+  }): number | null {
+    const clave = `${params.anio}${params.equipoPl}${params.nivel}`;
+    return FACTORES_POR_CLAVE.get(clave)?.tolerancia ?? null;
   }
 
   // ── Guardado ─────────────────────────────────────────────────────────────

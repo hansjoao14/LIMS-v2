@@ -40,6 +40,9 @@ import {
   CALIBRACION_FORM_CONFIG,
   CAMPO_ERROR_PC,
   CAMPO_ERROR_PL,
+  CAMPO_COD_PATRON,
+  CAMPO_COD_SONOMETRO,
+  CAMPO_FECHA_SONOMETRO,
   CAMPO_LECTURA_PC,
   CAMPO_LECTURA_PL,
   CAMPO_OBSERVACIONES,
@@ -48,6 +51,8 @@ import {
   DIAS_VIGENCIA_CALIBRACION,
   FECHAS_ESTACION,
   FECHA_POR_EQUIPO,
+  GRUPOS_FECHAS,
+  LAYOUT_COMPLEMENTARIOS,
   SECCION_CALIBRACION,
 } from '../model/calibracion-equipos-form.model';
 
@@ -144,6 +149,7 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
           this.cargarFechasDeCatalogo();
           this.escucharSelecciones();
           this.escucharLecturas();
+          this.escucharTolerancia();
           this.precargarRespuestas(respuestas);
           this.loading = false;
         },
@@ -197,6 +203,8 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
       ...Object.keys(FECHAS_ESTACION),
       CAMPO_ERROR_PC,
       CAMPO_ERROR_PL,
+      // Sale de la tabla de factores de corrección, no del teclado.
+      CAMPO_TOLERANCIA,
     ]);
 
     for (const grupo of this.grupos) {
@@ -252,6 +260,9 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
         this.form.get(campoFecha)?.setValue(this.aIsoDate(fecha), { emitEvent: false });
       }
     }
+
+    // La fecha del sonómetro entra en la clave de búsqueda de la tolerancia.
+    this.refrescarTolerancia();
 
     const idEstacion = Number(this.form.get(CAMPO_COD_ESTACION)?.value);
     if (!idEstacion) return;
@@ -309,8 +320,18 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
   }
 
   /**
-   * El error de cada patrón es la diferencia entre la lectura observada y el
-   * valor definido en catálogo para ese nivel.
+   * El error de cada patrón es la diferencia **en valor absoluto** entre el
+   * nivel de referencia del catálogo y la lectura observada:
+   *
+   *     Excel:  =IF(E24="","",ABS(114-E24))
+   *     acá:    lectura vacía → null;  si no → |referencia - observada|
+   *
+   * El error es una magnitud, no una dirección: mide cuánto se aparta la
+   * lectura del patrón, y da igual si se aparta por arriba o por abajo. Sin el
+   * valor absoluto salía negativo (lectura 2 sobre 114 daba -112 en vez de 112).
+   *
+   * El 114 no está quemado como en la planilla: sale de los catálogos 1021 (PL)
+   * y 1022 (PC), así que el patrón se puede recalibrar sin tocar el front.
    *
    * Se marcan `readonly` y no `disabled`: `aplicarDependencias` se resuscribe a
    * cada cambio del formulario y vuelve a habilitar todo campo visible, así que
@@ -334,11 +355,114 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
         const desviacion =
           observada === null || referencia === null
             ? null
-            : Number((observada - referencia).toFixed(2));
+            : Number(Math.abs(referencia - observada).toFixed(2));
 
         controlError.setValue(desviacion, { emitEvent: false });
       });
     }
+  }
+
+  /**
+   * La tolerancia no se teclea: sale de la tabla de factores de corrección,
+   * buscada por la combinación de tres campos del formulario.
+   *
+   *     Excel (E28):
+   *       =IFERROR(VLOOKUP(YEAR(E17) & E15 & ROUND(E24,0),
+   *                        'Factores de corrección'!$F$4:$L$70, 5, 0),
+   *                "INGRESE MEDICIONES")
+   *
+   * Los tres campos son de bloques distintos de la pantalla, y ninguno es el
+   * obvio: el año sale de la fecha del **sonómetro** (no la del patrón), el
+   * equipo es el **patrón de laboratorio**, y el nivel es la lectura observada
+   * del **PC** redondeada. Cambiar cualquiera de los tres recalcula.
+   *
+   * Sin coincidencia se deja el control vacío: la plantilla lo muestra como
+   * "INGRESE MEDICIONES", igual que el `IFERROR` del formato.
+   */
+  private escucharTolerancia(): void {
+    if (!this.form.get(CAMPO_TOLERANCIA)) return;
+
+    /*
+     * Se escucha el SELECTOR del sonómetro, no solo su campo de fecha.
+     *
+     * La fecha es derivada: la rellena `escucharSelecciones()` con
+     * `emitEvent: false` para no disparar la cadena de dependencias, así que
+     * suscribirse solo a ella no sirve — no emite nunca. Sin el selector acá, si
+     * el sonómetro se elige último (o se cambia después) la tolerancia se queda
+     * con el valor viejo o vacía, aunque los tres datos estén completos.
+     *
+     * `escucharSelecciones()` se suscribe antes que este método, así que cuando
+     * corre este handler la fecha ya está puesta en el formulario. La fecha se
+     * mantiene en la lista para el camino de edición, donde llega por
+     * `patchValue` y sí emite.
+     */
+    const disparadores = [
+      CAMPO_COD_SONOMETRO,
+      CAMPO_FECHA_SONOMETRO,
+      CAMPO_COD_PATRON,
+      CAMPO_LECTURA_PC,
+    ]
+      .map((key) => this.form.get(key))
+      .filter((c): c is NonNullable<typeof c> => !!c);
+
+    for (const disparador of disparadores) {
+      disparador.valueChanges
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(() => this.refrescarTolerancia());
+    }
+
+    // Al editar, los tres valores llegan de una sola vez con `patchValue`: sin
+    // esta primera pasada la tolerancia quedaría vacía hasta tocar algo.
+    this.refrescarTolerancia();
+  }
+
+  /**
+   * Vuelve a resolver la tolerancia y la escribe en el formulario.
+   *
+   * Se llama desde las suscripciones y también desde `recalcularFechas()`,
+   * porque ese camino rellena las fechas con `emitEvent: false` cuando el
+   * catálogo llega después de que el usuario ya eligió el equipo: sin esto la
+   * tolerancia se quedaría vacía justo en ese caso.
+   */
+  private refrescarTolerancia(): void {
+    this.form
+      .get(CAMPO_TOLERANCIA)
+      ?.setValue(this.calcularTolerancia(), { emitEvent: false });
+  }
+
+  private calcularTolerancia(): number | null {
+    const valores = this.form.getRawValue();
+
+    // El año sale de la fecha del sonómetro, guardada como `yyyy-MM-dd`.
+    const anio = Number(String(valores[CAMPO_FECHA_SONOMETRO] ?? '').slice(0, 4));
+
+    /*
+     * El selector guarda el id del ítem de catálogo (2101), pero la tabla de
+     * factores se indexa por el código visible del equipo ('A-21-45'), que es
+     * lo que muestra la celda E15 del formato. Hay que traducirlo.
+     */
+    const equipoPl = this.nombreDeOpcion(CAMPO_COD_PATRON, valores[CAMPO_COD_PATRON]);
+
+    const lecturaPc = this.aNumero(valores[CAMPO_LECTURA_PC]);
+
+    if (!anio || !equipoPl || lecturaPc === null) return null;
+
+    return this.calibracionService.buscarTolerancia({
+      anio,
+      equipoPl,
+      // `ROUND(E24,0)`: el nivel de la tabla es entero (94, 114…).
+      nivel: Math.round(lecturaPc),
+    });
+  }
+
+  /** Código visible de la opción elegida en un selector de catálogo. */
+  private nombreDeOpcion(key: string, valor: unknown): string | null {
+    if (valor === null || valor === undefined || valor === '') return null;
+
+    const opcion = this.campoPorKey(key)?.opciones.find(
+      (o) => String(o.id) === String(valor),
+    );
+    return opcion?.nombre ?? null;
   }
 
   // ── Consultas para la plantilla ──────────────────────────────────────────
@@ -363,9 +487,25 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
   }
 
   /** Fechas del grupo (vienen de catálogo, se muestran en solo lectura). */
-  fechasDe(grupo: { campos: DynamicField[] }): DynamicField[] {
-    const claves = new Set([...Object.values(FECHA_POR_EQUIPO), ...Object.keys(FECHAS_ESTACION)]);
-    return grupo.campos.filter((c) => claves.has(c.key));
+  /**
+   * Bloques del apartado "Detalles de fechas de los equipos".
+   *
+   * Las fechas se sacaron de la tarjeta de cada equipo y se juntaron acá, que
+   * es como las pide el F-PEE-11-02: primero los códigos de todos los equipos y
+   * después sus fechas, agrupadas en acústicos y ambientales. El dato es el
+   * mismo de antes —sale del catálogo al elegir el equipo y no se teclea—, solo
+   * cambió dónde y cómo se muestra.
+   */
+  readonly gruposFechas = GRUPOS_FECHAS;
+
+  /** Tarjetas de equipo (llevan los selectores), en su orden de configuración. */
+  get gruposEquipo(): DynamicGroup[] {
+    return this.grupos.filter((g) => g.layout !== LAYOUT_COMPLEMENTARIOS);
+  }
+
+  /** Checklist y observaciones: van después del bloque de fechas. */
+  get gruposComplementarios(): DynamicGroup[] {
+    return this.grupos.filter((g) => g.layout === LAYOUT_COMPLEMENTARIOS);
   }
 
   /** Resto de campos del grupo: lecturas, errores, tolerancia, catálogos SI/NO. */
@@ -382,12 +522,23 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
   }
 
   esCalculado(key: string): boolean {
-    return key === CAMPO_ERROR_PC || key === CAMPO_ERROR_PL;
+    return key === CAMPO_ERROR_PC || key === CAMPO_ERROR_PL || key === CAMPO_TOLERANCIA;
   }
 
   valorMostrado(key: string): string {
     const valor = this.form.getRawValue()[key];
-    return valor === null || valor === '' || valor === undefined ? '—' : `${valor} dB`;
+
+    if (valor === null || valor === '' || valor === undefined) {
+      /*
+       * La tolerancia se busca en la tabla de factores; que no haya valor
+       * significa que falta alguno de los tres datos de la búsqueda o que esa
+       * combinación no está tabulada. Es el `IFERROR` del formato, y ahí dice
+       * exactamente esto.
+       */
+      return key === CAMPO_TOLERANCIA ? 'INGRESE MEDICIONES' : '—';
+    }
+
+    return `${valor} dB`;
   }
 
   fechaMostrada(key: string): string {
@@ -426,16 +577,43 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
   }
 
   /**
-   * El equipo cumple cuando el error del patrón de laboratorio cae dentro de su
-   * tolerancia. Es el criterio del formulario: solo interviene el PL.
+   * El equipo cumple cuando **los dos** errores caen por debajo de la tolerancia
+   * del patrón de laboratorio:
+   *
+   *     Excel (E29):  =IF(AND(E26<E28, E27<E28), "CUMPLE", "NO CUMPLE")
+   *                        E26 = error PC   E27 = error PL   E28 = tolerancia
+   *
+   * Dos detalles del criterio que son fáciles de perder:
+   *
+   *  - **Intervienen el PC y el PL**, no solo uno. Basta con que cualquiera de
+   *    los dos se pase para que el equipo no cumpla.
+   *  - La comparación es estricta (`<`, no `<=`): un error **exactamente igual**
+   *    a la tolerancia da NO CUMPLE. Con 0,5 dB de tolerancia, un error de
+   *    0,5 dB no pasa.
+   *
+   * Sin los tres valores no se evalúa nada y el campo queda vacío, en vez de
+   * dar por buena una verificación a medio llenar. (Excel trataría la celda
+   * vacía como 0 y devolvería CUMPLE, que no es lo que se quiere en pantalla.)
+   *
+   * El `Math.abs` quedó redundante desde que el error se calcula en valor
+   * absoluto, pero se mantiene a propósito: al editar una verificación vieja se
+   * precarga el error tal como se guardó, y los registros anteriores al arreglo
+   * tienen el valor con signo (-112 en vez de 112). Sin esto, uno de esos daría
+   * CUMPLE por comparar un negativo contra la tolerancia.
    */
   get evaluacion(): 'CUMPLE' | 'NO CUMPLE' | null {
-    const tolerancia = this.aNumero(this.form.getRawValue()[CAMPO_TOLERANCIA]);
-    const errorPl = this.aNumero(this.form.getRawValue()[CAMPO_ERROR_PL]);
+    const valores = this.form.getRawValue();
+    const tolerancia = this.aNumero(valores[CAMPO_TOLERANCIA]);
+    const errorPc = this.aNumero(valores[CAMPO_ERROR_PC]);
+    const errorPl = this.aNumero(valores[CAMPO_ERROR_PL]);
 
-    if (tolerancia === null || errorPl === null) return null;
+    if (tolerancia === null || errorPc === null || errorPl === null) return null;
 
-    return Math.abs(errorPl) <= tolerancia ? 'CUMPLE' : 'NO CUMPLE';
+    const dentroDeTolerancia = (error: number): boolean => Math.abs(error) < tolerancia;
+
+    return dentroDeTolerancia(errorPc) && dentroDeTolerancia(errorPl)
+      ? 'CUMPLE'
+      : 'NO CUMPLE';
   }
 
   private campoPorKey(key: string): DynamicField | undefined {
