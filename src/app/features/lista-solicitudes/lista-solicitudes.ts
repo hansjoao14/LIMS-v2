@@ -1,8 +1,7 @@
 import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil, firstValueFrom } from 'rxjs';
+import { Subject, finalize, takeUntil, firstValueFrom } from 'rxjs';
 
 import { ReportSolicitudService } from '../../services/solicitudes/lista-solicitudes/report-solicitud.service';
 import { SolicitudService } from '../../services/solicitudes/solicitud-trabajo/solicitud-trabajo.service';
@@ -19,6 +18,12 @@ import { AlertService } from '../../services/alert.service';
 import { ToastrAlertService } from '../../services/toastr.service';
 import { abrirMenuHaciaArriba } from '../../core/utils/dropdown-position.utils';
 import { PdfViewerComponent } from '../../shared/components/pdf-viewer/pdf-viewer';
+import { FirmaElectronicaComponent } from '../../shared/components/firma-electronica/firma-electronica';
+import {
+  CampoFirmaElectronica,
+  DatosFirmaElectronica,
+  ErrorFirmaElectronica,
+} from '../../interfaces/documentos/firma-electronica.interface';
 
 const ESTADO_PENDIENTE = 2;
 const ESTADO_AUTORIZADO = 387;
@@ -28,22 +33,38 @@ const ESTADO_AUTORIZADO = 387;
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     PaginationComponent,
     PageHeader,
     TableSkeleton,
     PdfViewerComponent,
+    FirmaElectronicaComponent,
   ],
   templateUrl: './lista-solicitudes.html',
   styleUrls: ['./lista-solicitudes.css'],
 })
 export class ListaSolicitudes implements OnInit, OnDestroy {
-  // ── Firma ────────────────────────────────────────────────────────────────
-  viewingSignature = false;
+  // ── Firma electrónica ────────────────────────────────────────────────────
+  // El modal es el compartido (`shared/components/firma-electronica`), no una
+  // copia dentro del feature: acá solo vive su estado.
+  mostrarModalFirma = false;
+  cargandoPdfFirma = false;
+  procesandoFirma = false;
   selectedDoc: ReportSolicitud | null = null;
-  archivoFirma: File | null = null;
-  claveFirma = '';
-  isFirmando = false;
+  pdfFirmaBlob: Blob | null = null;
+  errorFirma: ErrorFirmaElectronica | null = null;
+
+  /**
+   * Códigos que el firmador devuelve para algo que el usuario puede corregir
+   * sin salir del modal, y el paso al que corresponde cada uno. Lo que no está
+   * acá (solicitud sin autorizar, PDF ausente, fallo del firmador) no se
+   * arregla reintentando: eso cierra el modal y se avisa por toast.
+   */
+  private readonly camposPorCodigoFirma: Record<string, CampoFirmaElectronica> = {
+    CERTIFICADO_INVALIDO: 'password',
+    PASSWORD_REQUERIDA: 'password',
+    CERTIFICADO_VACIO: 'certificado',
+    POSICION_FIRMA_INVALIDA: 'posicion',
+  };
 
   // ── Formulario metadata ──────────────────────────────────────────────────
   formulario: ReportFormulario | null = null;
@@ -152,8 +173,13 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   // ── Impresión ────────────────────────────────────────────────────────────
 
   // El PDF solo tiene sentido una vez autorizada la solicitud.
+  /**
+   * El PDF nace al autorizar, así que una solicitud pendiente no tiene qué
+   * imprimir ni qué firmar. También se exige que esté vigente: sobre una dada
+   * de baja el backend responde `SOLICITUD_DADA_DE_BAJA`.
+   */
   esAutorizado(doc: ReportSolicitud): boolean {
-    return doc.ctestado_id === ESTADO_AUTORIZADO;
+    return doc.ctestado_id === ESTADO_AUTORIZADO && doc.estado_logico_solicitud === true;
   }
 
   imprimirSolicitud(doc: ReportSolicitud): void {
@@ -163,8 +189,14 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
     this.pdfPreviewBlob = null;
     this.pdfNombre = `${doc.num_secuencial ?? 'solicitud'}.pdf`;
 
+    /*
+     * El PDF congelado, no el preview de `api_reportes`. Desde que el módulo
+     * firma, imprimir tiene que devolver el mismo archivo que se firmó, con las
+     * firmas estampadas; el de reportes lo regenera y saldría siempre sin
+     * firmar. (CLAUDE.md, "Imprimir un documento": cuál de los dos PDF pedir.)
+     */
     this.solicitudService
-      .getPdfSolicitud(doc.id_solicitud)
+      .getPdfDocumentoSolicitud(doc.id_solicitud)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (blob) =>
@@ -252,58 +284,117 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
     }
   }
 
-  abrirPanelFirma(doc: ReportSolicitud): void {
+  // ── Firma electrónica ────────────────────────────────────────────────────
+
+  abrirFirma(doc: ReportSolicitud): void {
+    if (!this.puedeFirmar(doc)) return;
+
     this.selectedDoc = doc;
-    this.archivoFirma = null;
-    this.claveFirma = '';
-    this.viewingSignature = true;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.pdfFirmaBlob = null;
+    this.errorFirma = null;
+    this.cargandoPdfFirma = true;
+    this.procesandoFirma = false;
+    this.mostrarModalFirma = true;
+
+    /*
+     * El mismo PDF que se imprime: el congelado, que trae las firmas ya
+     * estampadas. Regenerarlo perdería las anteriores.
+     */
+    this.solicitudService
+      .getPdfDocumentoSolicitud(doc.id_solicitud)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) =>
+          this.zone.run(() => {
+            this.pdfFirmaBlob = blob;
+            this.cargandoPdfFirma = false;
+          }),
+        error: () =>
+          this.zone.run(() => {
+            this.cargandoPdfFirma = false;
+            this.cerrarFirma();
+            this.toastrAlert.showError('No se pudo cargar el documento para firmarlo.', 'Error');
+          }),
+      });
   }
 
-  regresarLista(): void {
-    this.viewingSignature = false;
-    this.selectedDoc = null;
+  confirmarFirma(datos: DatosFirmaElectronica): void {
+    if (!this.selectedDoc || this.procesandoFirma) return;
+
+    const doc = this.selectedDoc;
+    const usuario = this.authService.currentUser();
+
+    this.errorFirma = null;
+    this.procesandoFirma = true;
+
+    this.solicitudService
+      .firmarSolicitud(doc.id_solicitud, {
+        ...datos,
+        usuarioId: usuario.id,
+        nombreFirmante: usuario.nombre,
+      })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.procesandoFirma = false;
+        }),
+      )
+      .subscribe({
+        next: (respuesta) =>
+          this.zone.run(() => {
+            this.cerrarFirma();
+            this.toastrAlert.showSuccess(
+              `El documento quedó con ${respuesta.totalFirmas} firma(s).`,
+              '¡Firmado!',
+            );
+          }),
+        error: (error) =>
+          this.zone.run(() => {
+            this.mostrarErrorDeFirma(error);
+          }),
+      });
   }
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
-    const file = input.files[0];
-    if (file.name.toLowerCase().endsWith('.p12')) {
-      this.archivoFirma = file;
-    } else {
-      this.alertService.warning(
-        'Solo se aceptan certificados digitales en formato .p12',
-        'Archivo no válido',
-        undefined,
-        this.COLOR_PRIMARIO,
-      );
-      input.value = '';
-      this.archivoFirma = null;
-    }
-  }
+  /**
+   * Un error de contraseña o de posición se muestra dentro del modal, junto al
+   * paso que hay que corregir: cerrarlo obligaría a volver a cargar el PDF y a
+   * reubicar la firma solo por haberse equivocado al teclear. El resto son
+   * condiciones del documento que no cambian por reintentar, y esos sí cierran.
+   */
+  private mostrarErrorDeFirma(error: unknown): void {
+    const respuesta = (error as { error?: { message?: string; code?: string } })?.error;
 
-  ejecutarFirma(): void {
-    if (!this.archivoFirma || !this.claveFirma) {
-      this.alertService.warning(
-        'Por favor cargue su certificado .p12 e ingrese la contraseña para firmar.',
-        'Datos Incompletos',
-        undefined,
-        this.COLOR_PRIMARIO,
-      );
+    const mensaje =
+      respuesta?.message ||
+      'No se pudo firmar el documento. Revisa el certificado y su contraseña.';
+
+    const campo = respuesta?.code ? this.camposPorCodigoFirma[respuesta.code] : undefined;
+
+    // Sin código no se puede clasificar (típicamente un fallo de red): se deja
+    // en el modal como error general, porque reintentar sí tiene sentido.
+    if (campo || !respuesta?.code) {
+      this.errorFirma = { mensaje, campo: campo ?? 'general' };
       return;
     }
 
-    this.isFirmando = true;
-    setTimeout(async () => {
-      this.isFirmando = false;
-      await this.alertService.successAutoClose(
-        `El documento ${this.selectedDoc?.num_secuencial ?? this.selectedDoc?.id_solicitud} ha sido firmado electrónicamente con éxito.`,
-        '¡Documento Firmado!',
-        3000,
-        this.COLOR_PRIMARIO,
-      );
-      this.regresarLista();
-    }, 1500);
+    // `finalize` corre después de este handler, así que la bandera sigue en
+    // alto y la guarda de `cerrarFirma()` bloquearía el cierre.
+    this.procesandoFirma = false;
+    this.cerrarFirma();
+    this.toastrAlert.showError(mensaje, 'Error de firma');
+  }
+
+  cerrarFirma(): void {
+    if (this.procesandoFirma) return;
+
+    this.mostrarModalFirma = false;
+    this.cargandoPdfFirma = false;
+    this.pdfFirmaBlob = null;
+    this.selectedDoc = null;
+    this.errorFirma = null;
+  }
+
+  nombreDocumentoFirma(): string {
+    return `${this.selectedDoc?.num_secuencial ?? 'solicitud'}.pdf`;
   }
 }
