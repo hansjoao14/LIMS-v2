@@ -616,6 +616,28 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
       : 'NO CUMPLE';
   }
 
+  /**
+   * Por qué la evaluación está vacía, en términos accionables.
+   *
+   * El mensaje anterior ("Registra el error PL y la tolerancia") desorientaba:
+   * la tolerancia no se registra —sale de la tabla de factores— y el criterio
+   * también mira el error PC. Cuando falla la búsqueda de la tolerancia lo
+   * habitual es que la lectura observada PC no caiga en un nivel tabulado
+   * (94 o 114 dB), y eso es lo que hay que corregir.
+   */
+  get motivoSinEvaluacion(): string {
+    const valores = this.form.getRawValue();
+    const faltanLecturas =
+      this.aNumero(valores[CAMPO_ERROR_PC]) === null ||
+      this.aNumero(valores[CAMPO_ERROR_PL]) === null;
+
+    if (faltanLecturas) {
+      return 'Registra las lecturas observadas PC y PL para evaluar';
+    }
+
+    return 'Sin tolerancia: la lectura observada PC no corresponde a un nivel verificable del patrón elegido';
+  }
+
   private campoPorKey(key: string): DynamicField | undefined {
     for (const grupo of this.grupos) {
       const campo = grupo.campos.find((c) => c.key === key);
