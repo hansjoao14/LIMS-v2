@@ -117,18 +117,28 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
    * dos repartos que sorprenden y NO son un error de transcripción:
    *
    *  - Quien crea y edita las verificaciones es el ANALISTA DE CAMPO, no el
-   *    responsable de laboratorio ni el administrador.
-   *  - El ADMINISTRADOR solo ve y elimina: no crea, no edita, no autoriza.
+   *    responsable de laboratorio.
+   *  - El responsable de laboratorio NO crea ni edita: solo autoriza y rechaza.
    *
    * `TECNICO_DIRECCION` no figura en la tabla —su fila está vacía—, así que no
    * tiene ningún acceso a este menú y por eso no aparece acá.
+   *
+   * ⚠️ DESVÍO DELIBERADO DEL F-PG-09: `crear` y `editar` para ADMIN.
+   *
+   * La tabla le da al administrador solo `ver` y `eliminar`. Se le agregaron
+   * las otras dos por necesidad operativa —soporte y pruebas del flujo—, a
+   * pedido explícito. Autorizar y rechazar SÍ se respetan: siguen siendo
+   * exclusivas del responsable de laboratorio, que es donde está el control de
+   * calidad del documento.
+   *
+   * Si el F-PG-09 se actualiza, este desvío se revisa con él.
    */
   [MenuKey.CALIBRACION_EQUIPOS]: {
     [AppRole.ANALISTA_CALIDAD]: ['ver'],
     [AppRole.RESPONSABLE_LAB]: ['ver', 'autorizar', 'rechazar'],
     [AppRole.ANALISTA_CAMPO]: ['ver', 'editar', 'crear'],
     [AppRole.ANALISTA_LAB]: ['ver'],
-    [AppRole.ADMIN]: ['ver', 'eliminar'],
+    [AppRole.ADMIN]: ['ver', 'editar', 'crear', 'eliminar'],
   },
 
   // Administración de catálogos e ítems
