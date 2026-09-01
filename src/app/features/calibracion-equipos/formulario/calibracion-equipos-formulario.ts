@@ -583,17 +583,30 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
    *     Excel (E29):  =IF(AND(E26<E28, E27<E28), "CUMPLE", "NO CUMPLE")
    *                        E26 = error PC   E27 = error PL   E28 = tolerancia
    *
-   * Dos detalles del criterio que son fáciles de perder:
+   * Tres detalles del criterio que son fáciles de perder:
    *
    *  - **Intervienen el PC y el PL**, no solo uno. Basta con que cualquiera de
    *    los dos se pase para que el equipo no cumpla.
    *  - La comparación es estricta (`<`, no `<=`): un error **exactamente igual**
    *    a la tolerancia da NO CUMPLE. Con 0,5 dB de tolerancia, un error de
    *    0,5 dB no pasa.
+   *  - **Sin tolerancia da CUMPLE.** Ver la nota de abajo.
    *
-   * Sin los tres valores no se evalúa nada y el campo queda vacío, en vez de
-   * dar por buena una verificación a medio llenar. (Excel trataría la celda
-   * vacía como 0 y devolvería CUMPLE, que no es lo que se quiere en pantalla.)
+   * ⚠️ SIN TOLERANCIA DA CUMPLE, Y ES A PROPÓSITO
+   *
+   * Cuando la búsqueda en la tabla de factores no encuentra fila, E28 no queda
+   * vacía: contiene el texto "INGRESE MEDICIONES". Y en Excel, al comparar
+   * tipos distintos, **todo número es menor que cualquier texto**, así que las
+   * dos comparaciones dan VERDADERO y la fórmula devuelve CUMPLE.
+   *
+   * No es una regla de calidad: es cómo Excel ordena tipos. Se replica porque
+   * el sistema tiene que dar el mismo resultado que el formato en papel, que es
+   * el que se audita — decisión tomada explícitamente, no un descuido.
+   *
+   * Lo que NO se replica es el extremo de la planilla: con el formulario en
+   * blanco, `"" < "INGRESE MEDICIONES"` también es verdadero y el Excel muestra
+   * CUMPLE sobre una verificación vacía. Acá, sin las dos lecturas la
+   * evaluación queda sin resolver.
    *
    * El `Math.abs` quedó redundante desde que el error se calcula en valor
    * absoluto, pero se mantiene a propósito: al editar una verificación vieja se
@@ -603,11 +616,17 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
    */
   get evaluacion(): 'CUMPLE' | 'NO CUMPLE' | null {
     const valores = this.form.getRawValue();
-    const tolerancia = this.aNumero(valores[CAMPO_TOLERANCIA]);
     const errorPc = this.aNumero(valores[CAMPO_ERROR_PC]);
     const errorPl = this.aNumero(valores[CAMPO_ERROR_PL]);
 
-    if (tolerancia === null || errorPc === null || errorPl === null) return null;
+    // Sin lecturas no hay nada que evaluar todavía.
+    if (errorPc === null || errorPl === null) return null;
+
+    const tolerancia = this.aNumero(valores[CAMPO_TOLERANCIA]);
+
+    // Tolerancia no encontrada: el equivalente de comparar contra el texto
+    // "INGRESE MEDICIONES" en la planilla.
+    if (tolerancia === null) return 'CUMPLE';
 
     const dentroDeTolerancia = (error: number): boolean => Math.abs(error) < tolerancia;
 
@@ -616,26 +635,9 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
       : 'NO CUMPLE';
   }
 
-  /**
-   * Por qué la evaluación está vacía, en términos accionables.
-   *
-   * El mensaje anterior ("Registra el error PL y la tolerancia") desorientaba:
-   * la tolerancia no se registra —sale de la tabla de factores— y el criterio
-   * también mira el error PC. Cuando falla la búsqueda de la tolerancia lo
-   * habitual es que la lectura observada PC no caiga en un nivel tabulado
-   * (94 o 114 dB), y eso es lo que hay que corregir.
-   */
+  /** Qué falta para poder evaluar. Solo se ve mientras falten las lecturas. */
   get motivoSinEvaluacion(): string {
-    const valores = this.form.getRawValue();
-    const faltanLecturas =
-      this.aNumero(valores[CAMPO_ERROR_PC]) === null ||
-      this.aNumero(valores[CAMPO_ERROR_PL]) === null;
-
-    if (faltanLecturas) {
-      return 'Registra las lecturas observadas PC y PL para evaluar';
-    }
-
-    return 'Sin tolerancia: la lectura observada PC no corresponde a un nivel verificable del patrón elegido';
+    return 'Registra las lecturas observadas PC y PL para evaluar';
   }
 
   private campoPorKey(key: string): DynamicField | undefined {
