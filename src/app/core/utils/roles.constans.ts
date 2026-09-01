@@ -112,12 +112,23 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
   },
 
   // Calibración de equipos F-PEE-11-02
+  /*
+   * Tal cual la tabla de control de acceso F-PG-09 para el F-PEE-11-02. Ojo con
+   * dos repartos que sorprenden y NO son un error de transcripción:
+   *
+   *  - Quien crea y edita las verificaciones es el ANALISTA DE CAMPO, no el
+   *    responsable de laboratorio ni el administrador.
+   *  - El ADMINISTRADOR solo ve y elimina: no crea, no edita, no autoriza.
+   *
+   * `TECNICO_DIRECCION` no figura en la tabla —su fila está vacía—, así que no
+   * tiene ningún acceso a este menú y por eso no aparece acá.
+   */
   [MenuKey.CALIBRACION_EQUIPOS]: {
     [AppRole.ANALISTA_CALIDAD]: ['ver'],
-    [AppRole.RESPONSABLE_LAB]: ['ver', 'editar', 'crear', 'eliminar', 'autorizar', 'rechazar'],
-    [AppRole.ANALISTA_CAMPO]: ['ver'],
-    [AppRole.ANALISTA_LAB]: ['ver', 'editar', 'crear'],
-    [AppRole.ADMIN]: ['ver', 'editar', 'crear', 'eliminar', 'autorizar', 'rechazar'],
+    [AppRole.RESPONSABLE_LAB]: ['ver', 'autorizar', 'rechazar'],
+    [AppRole.ANALISTA_CAMPO]: ['ver', 'editar', 'crear'],
+    [AppRole.ANALISTA_LAB]: ['ver'],
+    [AppRole.ADMIN]: ['ver', 'eliminar'],
   },
 
   // Administración de catálogos e ítems
