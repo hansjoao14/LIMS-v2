@@ -75,7 +75,7 @@ export const FECHA_POR_EQUIPO: Record<string, string> = {
   [CAMPO_COD_PATRON]: CAMPO_FECHA_PATRON,
 };
 
-// ── Tarjetas de "Detalles de fechas de los equipos" ─────────────────────────
+// ── Tarjetas de "Fecha de última calibración de los equipos" ────────────────
 
 /** Una tarjeta del bloque de fechas: qué equipo es y con qué icono se pinta. */
 export interface TarjetaFecha {
@@ -108,9 +108,9 @@ const ICONO_HUMEDAD = 'M12 3s6 6.5 6 10.5a6 6 0 11-12 0C6 9.5 12 3 12 3z';
  * Las siete fechas del formulario, en los dos bloques del F-PEE-11-02:
  * los equipos acústicos y las magnitudes de la estación meteorológica.
  *
- * Es la fuente única del bloque "Detalles de fechas de los equipos": el orden
- * de la pantalla es el de este arreglo, y sumar una fecha nueva es agregar una
- * entrada, no tocar la plantilla.
+ * Es la fuente única del bloque "Fecha de última calibración de los equipos":
+ * el orden de la pantalla es el de este arreglo, y sumar una fecha nueva es
+ * agregar una entrada, no tocar la plantilla.
  *
  * Los títulos son los del equipo, no el texto de la pregunta del schema
  * ("Fecha de última calibración EM - humedad"): la tarjeta ya dice "última

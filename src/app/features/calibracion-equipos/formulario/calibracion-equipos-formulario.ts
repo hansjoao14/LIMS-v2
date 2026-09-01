@@ -488,7 +488,7 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
 
   /** Fechas del grupo (vienen de catálogo, se muestran en solo lectura). */
   /**
-   * Bloques del apartado "Detalles de fechas de los equipos".
+   * Bloques del apartado "Fecha de última calibración de los equipos".
    *
    * Las fechas se sacaron de la tarjeta de cada equipo y se juntaron acá, que
    * es como las pide el F-PEE-11-02: primero los códigos de todos los equipos y
