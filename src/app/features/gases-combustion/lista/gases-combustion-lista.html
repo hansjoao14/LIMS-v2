@@ -222,9 +222,34 @@
 
                       @if (hasAnyAction) {
                         <td class="px-2 py-2.5 text-center">
-                          <div class="flex items-center justify-center">
-                            <!-- ESTANDARES.md §5.2: editar y eliminar van en el
-                                 menú ⋮, nunca como botón directo. -->
+                          <div class="flex items-center justify-center gap-1.5">
+                            <!-- ESTANDARES.md §5.2: numerar es la acción
+                                 primaria y va como botón directo; editar y
+                                 eliminar van en el menú ⋮. -->
+                            @if (puedeNumerar(registro)) {
+                              <button
+                                type="button"
+                                title="Numerar la verificación"
+                                (click)="numerar(registro)"
+                                [disabled]="procesandoId === registro.id"
+                                class="h-8 w-8 flex items-center justify-center rounded border border-green-400 text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                              >
+                                <svg
+                                  class="h-3.5 w-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
+                                </svg>
+                              </button>
+                            }
+
                             @if (puedeEditar(registro) || puedeEliminar(registro)) {
                               <div class="relative">
                                 <button
@@ -242,30 +267,25 @@
                                 </button>
 
                                 @if (openMenuId === registro.id) {
-                                  <!-- La capa de cierre va DENTRO del wrapper
-                                       .animate-in: su `transform` la convierte en
-                                       containing block. ESTANDARES.md §5.3. -->
+                                  <!-- ESTANDARES.md §5.3: `absolute` anclado al
+                                       `div.relative` del botón, nunca `fixed`
+                                       con coordenadas. La capa que cierra va al
+                                       final del template, no acá. -->
                                   <div
-                                    class="fixed inset-0 z-40"
-                                    (click)="closeMenu()"
-                                    (keydown.escape)="closeMenu()"
-                                    tabindex="-1"
-                                  ></div>
-
-                                  <div
-                                    class="absolute right-0 z-50 w-44 bg-white border border-slate-200 rounded shadow-lg py-1"
+                                    class="absolute right-0 z-50 w-40 bg-white border border-slate-200 rounded-lg shadow-lg py-1"
+                                    [class.top-full]="!abrirHaciaArriba(i)"
+                                    [class.mt-1]="!abrirHaciaArriba(i)"
                                     [class.bottom-full]="abrirHaciaArriba(i)"
                                     [class.mb-1]="abrirHaciaArriba(i)"
-                                    [class.mt-1]="!abrirHaciaArriba(i)"
                                   >
                                     @if (puedeEditar(registro)) {
                                       <button
                                         type="button"
                                         (click)="editar(registro)"
-                                        class="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                                        class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50 transition-colors"
                                       >
                                         <svg
-                                          class="h-3.5 w-3.5 text-amber-600"
+                                          class="h-3.5 w-3.5 shrink-0"
                                           fill="none"
                                           viewBox="0 0 24 24"
                                           stroke="currentColor"
@@ -285,10 +305,10 @@
                                       <button
                                         type="button"
                                         (click)="eliminar(registro)"
-                                        class="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                                        class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
                                       >
                                         <svg
-                                          class="h-3.5 w-3.5 text-red-600"
+                                          class="h-3.5 w-3.5 shrink-0"
                                           fill="none"
                                           viewBox="0 0 24 24"
                                           stroke="currentColor"
@@ -340,6 +360,13 @@
           (pageChange)="irAPagina($event)"
         />
       </div>
+
+      <!-- ESTANDARES.md §5.3: la capa que cierra el menú va al final del
+           template, dentro del wrapper `.animate-in`, y por debajo del menú
+           (z-40 contra z-50). -->
+      @if (openMenuId !== null) {
+        <div class="fixed inset-0 z-40" (click)="closeMenu()"></div>
+      }
     </div>
   </div>
 </div>

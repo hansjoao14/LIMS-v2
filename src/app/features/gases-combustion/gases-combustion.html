@@ -14,6 +14,31 @@
         [fechaSolicitud]="fechaEmision"
       />
 
+      @if (soloLectura) {
+        <div
+          class="bg-amber-50 border border-amber-200 rounded px-5 py-3 mb-6 flex items-center gap-3"
+        >
+          <svg
+            class="h-5 w-5 text-amber-600 flex-shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0l-7.1 12.25A2 2 0 005 19z"
+            />
+          </svg>
+          <p class="text-xs text-amber-800">
+            Esta hoja ya fue numerada como
+            <span class="font-bold">{{ numSecuencial ?? 'sin número' }}</span>
+            y no admite cambios.
+          </p>
+        </div>
+      }
+
       <form [formGroup]="form">
         <!-- PATRONES: mezcla y oxígeno -->
         <app-patrones-tabla
@@ -21,6 +46,7 @@
           [filas]="patronesMezcla"
           [catalogo]="catalogoDe('mezcla')"
           [cargando]="cargando"
+          [soloLectura]="soloLectura"
           (agregar)="agregarPatronMezcla()"
           (eliminar)="quitarPatronMezcla($event)"
         />
@@ -30,13 +56,15 @@
           [filas]="patronesOxigeno"
           [catalogo]="catalogoDe('oxigeno')"
           [cargando]="cargando"
+          [soloLectura]="soloLectura"
           (agregar)="agregarPatronOxigeno()"
           (eliminar)="quitarPatronOxigeno($event)"
         />
 
-        <!-- Procedimiento, equipo y año: metadata del formulario, no editable -->
+        <!-- Franja del formato: procedimiento y código del equipo. Son fijos
+             del F-PEE-07-01 y salen del catálogo, no son dato de esta hoja. -->
         <div class="bg-white border border-slate-200 rounded shadow-sm p-6 mb-8">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="flex items-start gap-3">
               <div
                 class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-[#1e3a8a] flex-shrink-0"
@@ -53,7 +81,7 @@
               <div class="min-w-0">
                 <p class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Procedimiento</p>
                 <p class="text-sm text-slate-700 break-words">
-                  {{ metadata?.procedimiento ?? '—' }}
+                  {{ catalogos?.procedimiento || '—' }}
                 </p>
               </div>
             </div>
@@ -74,27 +102,8 @@
               <div class="min-w-0">
                 <p class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Código del equipo</p>
                 <p class="text-sm text-slate-700 break-words">
-                  {{ metadata?.codigoEquipo ?? '—' }}
+                  {{ catalogos?.codigoEquipo || '—' }}
                 </p>
-              </div>
-            </div>
-
-            <div class="flex items-start gap-3">
-              <div
-                class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-[#1e3a8a] flex-shrink-0"
-              >
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-              <div class="min-w-0">
-                <p class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Año</p>
-                <p class="text-sm text-slate-700">{{ metadata?.anio ?? '—' }}</p>
               </div>
             </div>
           </div>
@@ -103,7 +112,7 @@
         <!-- CONTROL DE CALIDAD + DEFINICIONES -->
         <app-control-calidad
           [criterios]="criterios"
-          [definiciones]="definiciones"
+          [definiciones]="catalogos?.definiciones ?? []"
           [cargando]="cargando"
         />
 
@@ -118,14 +127,157 @@
               [patrones]="patronesDe(tabla)"
               [criterios]="criterios"
               [cargando]="cargando"
+              [soloLectura]="soloLectura"
               (agregar)="agregarMedicion(indice)"
               (eliminar)="quitarMedicion(indice, $event)"
             />
           }
         }
 
-        <!-- NAVEGACIÓN -->
-        <div class="pt-4 border-t border-slate-300 flex items-center justify-between">
+        <!-- INSPECCIÓN TRIMESTRAL DE LA SONDA -->
+        <app-inspeccion-sonda
+          [filas]="inspecciones"
+          [trimestres]="catalogos?.trimestres ?? []"
+          [diagnosticos]="catalogos?.diagnosticos ?? []"
+          [cargando]="cargando"
+          [soloLectura]="soloLectura"
+          (agregar)="agregarInspeccion()"
+          (eliminar)="quitarInspeccion($event)"
+        />
+
+        <!-- DATOS DE LA VERIFICACIÓN. Van al final, después del detalle: se
+             completan cuando la hoja ya está cargada, no antes. -->
+        <div class="bg-white border border-slate-200 rounded shadow-sm p-6 mb-8">
+          <h3 class="text-sm font-bold text-[#1d2b64] uppercase tracking-wide mb-5">
+            Datos de la verificación
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label for="anio" class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1.5">
+                Año <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="anio"
+                formControlName="anio"
+                type="number"
+                min="2000"
+                max="2100"
+                class="w-full border border-slate-300 px-3 py-2 rounded text-sm bg-white outline-none focus:border-[#1e3a8a] disabled:bg-slate-50 disabled:text-slate-500"
+              />
+            </div>
+
+            <div>
+              <label
+                for="fechaVerificacion"
+                class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1.5"
+              >
+                Fecha de verificación <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="fechaVerificacion"
+                formControlName="fechaVerificacion"
+                type="date"
+                title="Fecha en que se abre la verificación. Cada medición lleva la suya aparte"
+                class="w-full border border-slate-300 px-3 py-2 rounded text-sm bg-white outline-none focus:border-[#1e3a8a] disabled:bg-slate-50 disabled:text-slate-500"
+              />
+            </div>
+
+            <div>
+              <label
+                for="observaciones"
+                class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1.5"
+              >
+                Observaciones
+              </label>
+              <input
+                id="observaciones"
+                formControlName="observaciones"
+                type="text"
+                maxlength="500"
+                placeholder="Observaciones generales de la verificación"
+                class="w-full border border-slate-300 px-3 py-2 rounded text-sm bg-white outline-none focus:border-[#1e3a8a] disabled:bg-slate-50 disabled:text-slate-500"
+              />
+            </div>
+          </div>
+
+          <!-- Los responsables son de la hoja, no de cada medición. Van en solo
+               lectura: hoy no hay endpoint que liste usuarios para elegirlos. -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-slate-200">
+            <div>
+              <p class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1.5">Realizado por</p>
+              <p
+                class="w-full border border-slate-200 bg-slate-50 text-slate-600 px-3 py-2 rounded text-sm"
+                title="El analista que registra la verificación"
+              >
+                {{ form.get('realizadoPorNombre')?.value || '—' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1.5">Revisado por</p>
+              <p
+                class="w-full border border-slate-200 bg-slate-50 text-slate-600 px-3 py-2 rounded text-sm"
+                title="El responsable de laboratorio. Se asigna al revisar la hoja"
+              >
+                {{ form.get('revisadoPorNombre')?.value || 'Pendiente de revisión' }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- AVISOS: las mismas reglas que revalida el backend, adelantadas -->
+        @if (problemas.length > 0) {
+          <div class="bg-amber-50 border border-amber-200 rounded px-5 py-4 mb-6">
+            <div class="flex items-start gap-3">
+              <svg
+                class="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0l-7.1 12.25A2 2 0 005 19z"
+                />
+              </svg>
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-amber-900 uppercase mb-2">
+                  Falta completar {{ problemas.length }}
+                  {{ problemas.length === 1 ? 'cosa' : 'cosas' }}
+                </p>
+                <ul class="space-y-1.5">
+                  @for (problema of problemas; track problema.texto) {
+                    <li class="flex items-start gap-2 text-xs text-amber-900">
+                      <span
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase flex-shrink-0"
+                        [class]="
+                          problema.bloqueaGuardar
+                            ? 'bg-red-100 text-red-700 border border-red-300'
+                            : 'bg-slate-100 text-slate-600 border border-slate-300'
+                        "
+                      >
+                        {{ problema.bloqueaGuardar ? 'Guardar' : 'Numerar' }}
+                      </span>
+                      <span>{{ problema.texto }}</span>
+                    </li>
+                  }
+                </ul>
+                <p class="text-[10px] text-amber-700 mt-2.5">
+                  Lo marcado como «Guardar» impide guardar la hoja. Lo marcado como «Numerar» se
+                  puede dejar para después, pero hay que resolverlo antes de numerarla.
+                </p>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- NAVEGACIÓN. Numerar NO va acá: es una acción de fila y vive en el
+             listado, como el resto de las acciones del sistema
+             (ESTANDARES.md §5.2). -->
+        <div class="pt-4 border-t border-slate-300 flex items-center justify-between gap-3">
           <button
             type="button"
             (click)="volverAlListado()"
@@ -134,10 +286,16 @@
           >
             REGRESAR
           </button>
+
           <button
             type="button"
             (click)="guardar()"
-            [disabled]="cargando || guardando"
+            [disabled]="cargando || guardando || soloLectura || hayBloqueosParaGuardar"
+            [title]="
+              hayBloqueosParaGuardar
+                ? 'Resolvé los avisos marcados como «Guardar» de acá arriba'
+                : 'Guarda la hoja. Numerarla se hace desde el listado'
+            "
             class="bg-[#1e3a8a] text-white px-10 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             @if (guardando) {

@@ -24,24 +24,13 @@ import {
   ORDEN_INICIAL_GASES,
   ReportGasesCombustionService,
 } from '../../../services/gases-combustion/report-gases-combustion.service';
+import {
+  ESTADO_GASES,
+  GasesCombustionService,
+  TIPO_FORMULARIO_GASES,
+} from '../../../services/gases-combustion/gases-combustion.service';
 import { AlertService } from '../../../services/alert.service';
 import { ToastrAlertService } from '../../../services/toastr.service';
-
-/**
- * Estados del catálogo "Estado de Registro" (catalogo_id = 1).
- *
- * Gases de combustión es un registro interno de laboratorio, igual que
- * calibración, así que sigue la convención general y NO la del flujo de
- * muestreo: al numerar queda en "Creado" (388) y al autorizar en "Autorizado"
- * (387). El 2023 "Finalizado Solicitud" es de plan de muestreo, orden de
- * trabajo y ticket de entrega; acá no se usa.
- *
- * @see faq-monorepo/docs/gases-combustion.md §9, "Secuencial y estados"
- */
-const ESTADO_PENDIENTE = 2;
-const ESTADO_CREADO = 388;
-const ESTADO_AUTORIZADO = 387;
-const ESTADO_RECHAZADO = 51;
 
 @Component({
   selector: 'app-gases-combustion-lista',
@@ -53,6 +42,7 @@ const ESTADO_RECHAZADO = 51;
 export class GasesCombustionLista implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly reportService = inject(ReportGasesCombustionService);
+  private readonly gasesService = inject(GasesCombustionService);
   private readonly reportFormularioService = inject(ReportFormularioService);
   private readonly alertService = inject(AlertService);
   private readonly toastr = inject(ToastrAlertService);
@@ -63,7 +53,7 @@ export class GasesCombustionLista implements OnInit, OnDestroy {
    * devuelve el código, la edición y la fecha de emisión de la cabecera. Mismo
    * patrón que la pantalla de registro y que ticket-entrega-muestras.
    */
-  readonly TIPO_FORMULARIO_ID = 2137;
+  readonly TIPO_FORMULARIO_ID = TIPO_FORMULARIO_GASES;
   formulario: ReportFormulario | null = null;
   fechaEmision: Date | null = null;
 
@@ -113,6 +103,12 @@ export class GasesCombustionLista implements OnInit, OnDestroy {
   });
 
   /**
+   * Numerar es la acción que vuelve oficial a la hoja, así que va con el mismo
+   * permiso que editarla: quien puede cargar la verificación es quien la cierra.
+   */
+  canNumerar = computed(() => this.canEditar());
+
+  /**
    * ESTANDARES.md §5.1: la columna de acciones solo existe si hay alguna acción.
    *
    * Acá son solo editar y eliminar, las dos en el menú ⋮ como manda §5.2. No hay
@@ -121,7 +117,15 @@ export class GasesCombustionLista implements OnInit, OnDestroy {
    * diseño. Cuando se confirme, entran como botón directo antes del menú.
    */
   get hasAnyAction(): boolean {
-    return this.canEditar() || this.canEliminar();
+    return this.canEditar() || this.canEliminar() || this.canNumerar();
+  }
+
+  /**
+   * Solo se numera una hoja pendiente y vigente. Una ya numerada no vuelve a
+   * numerarse: el backend la rechaza con `GASES_COMBUSTION_NO_EDITABLE`.
+   */
+  puedeNumerar(registro: ReportGasesCombustion): boolean {
+    return this.canNumerar() && registro.estado && this.esPendiente(registro);
   }
 
   ngOnInit(): void {
@@ -215,19 +219,19 @@ export class GasesCombustionLista implements OnInit, OnDestroy {
   // ── Estado del flujo ─────────────────────────────────────────────────────
 
   esPendiente(registro: ReportGasesCombustion): boolean {
-    return registro.ctestado_id === ESTADO_PENDIENTE;
+    return registro.ctestado_id === ESTADO_GASES.PENDIENTE;
   }
 
   esCreado(registro: ReportGasesCombustion): boolean {
-    return registro.ctestado_id === ESTADO_CREADO;
+    return registro.ctestado_id === ESTADO_GASES.CREADO;
   }
 
   esAutorizado(registro: ReportGasesCombustion): boolean {
-    return registro.ctestado_id === ESTADO_AUTORIZADO;
+    return registro.ctestado_id === ESTADO_GASES.AUTORIZADO;
   }
 
   esRechazado(registro: ReportGasesCombustion): boolean {
-    return registro.ctestado_id === ESTADO_RECHAZADO;
+    return registro.ctestado_id === ESTADO_GASES.RECHAZADO;
   }
 
   etiquetaEstado(registro: ReportGasesCombustion): string {
@@ -272,6 +276,81 @@ export class GasesCombustionLista implements OnInit, OnDestroy {
   editar(registro: ReportGasesCombustion): void {
     this.closeMenu();
     this.router.navigate(['/gases-combustion', registro.id]);
+  }
+
+  /**
+   * Numera la hoja. El backend revisa antes todo lo que después ya no se puede
+   * arreglar —patrones sin el gas que se les midió, pares de lecturas a medias,
+   * mediciones sin veredicto, inspecciones con novedad y sin observaciones— y
+   * corta con un `code` que se traduce acá abajo.
+   *
+   * @see faq-monorepo/docs/gases-combustion.md §10.2
+   */
+  async numerar(registro: ReportGasesCombustion): Promise<void> {
+    this.closeMenu();
+    if (!this.puedeNumerar(registro)) return;
+
+    const confirmado = await this.alertService.confirm({
+      icon: 'warning',
+      title: '¿Numerar la verificación?',
+      text: `Se le asigna el número de formulario a ${this.etiquetaRegistro(registro)} y la hoja deja de ser editable.`,
+      confirmButtonText: 'Sí, numerar',
+    });
+    if (!confirmado) return;
+
+    this.procesandoId = registro.id;
+    this.gasesService
+      .finalizar(registro.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.procesandoId = null)),
+      )
+      .subscribe({
+        next: (respuesta) => {
+          const numero = respuesta?.[0]?.secuencialAsignado;
+          this.toastr.showSuccess(
+            numero ? `La hoja quedó numerada como ${numero}.` : 'La hoja quedó numerada.',
+            'Verificación numerada',
+          );
+          this.cargarRegistros();
+        },
+        error: (error: unknown) => this.mostrarErrorDeNumeracion(error),
+      });
+  }
+
+  /**
+   * Los errores de regla de negocio traen un `code`: se traduce a un mensaje que
+   * dice qué corregir, en vez de mostrar el texto crudo del servidor.
+   */
+  private mostrarErrorDeNumeracion(error: unknown): void {
+    const codigo = (error as { error?: { code?: string } })?.error?.code;
+    const mensaje = (error as { error?: { message?: string } })?.error?.message;
+
+    const conocidos: Record<string, string> = {
+      GASES_COMBUSTION_NO_EDITABLE: 'La hoja ya fue numerada y no admite cambios.',
+      GASES_COMBUSTION_DADO_DE_BAJA: 'La hoja está dada de baja.',
+      GASES_COMBUSTION_SIN_MEDICIONES: 'La hoja no tiene mediciones cargadas.',
+      GASES_COMBUSTION_SECUENCIAL_ERROR:
+        'No se pudo generar el número de formulario. Revisá la configuración del secuencial.',
+      GASES_SP_SECUENCIAL_FALTANTE:
+        'Falta instalar el procedimiento que numera las hojas. Avisá al equipo de base de datos.',
+      GASES_SECUENCIAL_NO_CONFIGURADO:
+        'No hay un secuencial configurado para gases de combustión. Avisá al equipo de base de datos.',
+      GASES_MEDICION_PATRON_SIN_GAS:
+        'Hay una medición contra un patrón que no lleva ese gas: sin la concentración certificada no hay porcentaje de recuperación.',
+      GASES_MEDICION_PAR_INCOMPLETO: 'Hay un par de lecturas a medias: va X1 antes que X2.',
+      GASES_MEDICION_SIN_VEREDICTO:
+        'Hay una medición sin CUMPLE: su promedio no cae en ningún rango de criterio vigente.',
+      GASES_INSPECCION_SIN_OBSERVACIONES:
+        'Una inspección con novedades o con diagnóstico distinto de APROBADA debe registrar observaciones.',
+      GASES_CRITERIO_AMBIGUO:
+        'Los criterios de aceptación están mal parametrizados: hay rangos superpuestos.',
+    };
+
+    this.alertService.error(
+      (codigo && conocidos[codigo]) || mensaje || 'No se pudo numerar la verificación.',
+      'No se pudo numerar',
+    );
   }
 
   async eliminar(registro: ReportGasesCombustion): Promise<void> {

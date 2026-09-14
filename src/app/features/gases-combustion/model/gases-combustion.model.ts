@@ -1,3 +1,5 @@
+import { AbstractControl, ValidationErrors } from '@angular/forms';
+
 import {
   CriterioAceptacion,
   FamiliaPatron,
@@ -108,22 +110,126 @@ export const ETIQUETA_GRUPO_CRITERIO: Record<GrupoCriterio, string> = {
   O2_PORCENTAJE: 'O2 %',
 };
 
+/**
+ * Las cinco condiciones de la inspección trimestral de la sonda.
+ *
+ * Todas se responden sí/no y **el "sí" es la novedad**, no lo normal: la sonda
+ * está bien cuando las cinco dan que no. Por eso el rótulo pregunta por el
+ * problema y no por el estado.
+ *
+ * @see faq-monorepo/docs/gases-combustion.md §7.6
+ */
+export interface CondicionSonda {
+  control: string;
+  etiqueta: string;
+  ayuda: string;
+}
+
+export const CONDICIONES_SONDA: CondicionSonda[] = [
+  {
+    control: 'medidaFluctuaciones',
+    etiqueta: 'Fluctuaciones en la medida',
+    ayuda: 'Marcar si la medida presenta fluctuaciones. Sin marcar = condición normal',
+  },
+  {
+    control: 'termocuplaContacto',
+    etiqueta: 'Termocupla en contacto',
+    ayuda: 'Marcar si la termocupla toca las paredes. Sin marcar = condición adecuada',
+  },
+  {
+    control: 'conexionesFugas',
+    etiqueta: 'Conexiones o fugas',
+    ayuda: 'Marcar si hay conexiones en mal estado o fugas',
+  },
+  {
+    control: 'deformaciones',
+    etiqueta: 'Deformaciones',
+    ayuda: 'Marcar si la sonda presenta deformaciones visibles',
+  },
+  {
+    control: 'marcasUso',
+    etiqueta: 'Marcas de uso',
+    ayuda: 'Marcar si la sonda presenta marcas o desgaste por uso',
+  },
+];
+
 /** Resultado de evaluar una fila contra los criterios de aceptación. */
 export type ResultadoCumple = 'SI' | 'NO' | null;
 
-// ── Cálculos de la hoja ────────────────────────────────────────────────────
-// Las tres columnas grises del formulario impreso (Xmed, r95,45% y %R) no se
-// digitan: salen de X1, X2 y del valor nominal del patrón elegido. CUMPLE sale
-// de compararlas contra la tabla de control de calidad.
+// ── Validadores de las lecturas ────────────────────────────────────────────
+// X1 y X2 son concentraciones medidas: no hay lectura negativa ni lectura que no
+// sea un número. Y no existe una segunda lectura sin la primera — lo dice el
+// CHECK `CK_gases_medicion_pares` de la base, que rechaza la fila entera.
 
-/** XMED — promedio de los dos valores medidos. */
-export function promedio(x1: number | null, x2: number | null): number | null {
-  if (x1 === null || x2 === null) return null;
-  return (x1 + x2) / 2;
+/** Errores que puede devolver `lecturaValida`, para traducirlos en la tabla. */
+export const ERRORES_LECTURA = {
+  noNumerica: 'lecturaNoNumerica',
+  negativa: 'lecturaNegativa',
+} as const;
+
+/**
+ * Una lectura válida es un número finito y no negativo.
+ *
+ * **Vacío pasa**: la fila puede estar a medias mientras el analista carga, y X2
+ * es opcional por diseño —con una sola lectura, Xmed es X1—. Lo que no puede
+ * quedar a medias es el par, y de eso se encarga `parDeLecturas`.
+ */
+export function lecturaValida(control: AbstractControl): ValidationErrors | null {
+  const valor: unknown = control.value;
+  if (valor === null || valor === undefined || valor === '') return null;
+
+  const numero = Number(valor);
+  if (!Number.isFinite(numero)) return { [ERRORES_LECTURA.noNumerica]: true };
+  if (numero < 0) return { [ERRORES_LECTURA.negativa]: true };
+  return null;
 }
 
-/** r95,45% observado — diferencia absoluta entre los dos valores medidos. */
+/**
+ * X2 sin X1 no existe. Va como validador del grupo y no del control porque
+ * necesita ver los dos: el error queda en la fila y la tabla lo pinta sobre X2,
+ * que es el campo que sobra.
+ */
+export function parDeLecturas(grupo: AbstractControl): ValidationErrors | null {
+  const vacio = (valor: unknown) => valor === null || valor === undefined || valor === '';
+  return vacio(grupo.get('x1')?.value) && !vacio(grupo.get('x2')?.value) ? { x2SinX1: true } : null;
+}
+
+// ── Cálculos de la hoja ────────────────────────────────────────────────────
+// Las cuatro columnas grises del formulario impreso (Xmed, r95,45%, R95,45% y
+// %R) no se digitan: salen de X1, X2, del par XR y del valor nominal del patrón
+// elegido. CUMPLE sale de compararlas contra la tabla de control de calidad.
+//
+// ⚠️ Esto es la contraparte de `gases-combustion.criterio.ts` en
+// `api-solicitud`. **Las dos tienen que decir lo mismo**: acá se calcula en
+// vivo para dar respuesta inmediata, pero la fuente de verdad de lo que queda
+// guardado es el backend. Si divergen, la pantalla y lo persistido se
+// contradicen.
+
+/** XMED — promedio de las lecturas; con una sola, es esa misma. */
+export function promedio(x1: number | null, x2: number | null): number | null {
+  if (x1 === null) return null;
+  return x2 === null ? x1 : (x1 + x2) / 2;
+}
+
+/** r95,45% observado — |X2 − X1|. Nulo si falta cualquiera de las dos. */
 export function repetibilidadObservada(x1: number | null, x2: number | null): number | null {
+  if (x1 === null || x2 === null) return null;
+  return Math.abs(x2 - x1);
+}
+
+/**
+ * R95,45% observado — **la misma diferencia que r95,45%**: `|X2 − X1|`.
+ *
+ * No es un copiar y pegar: es lo que declara el encabezado de la tabla de
+ * control de calidad del formato, que escribe la misma fórmula para las dos.
+ * Lo que las distingue no es el cálculo sino el límite contra el que se compara
+ * cada una: repetibilidad máxima en un caso, reproducibilidad máxima en el otro.
+ *
+ * Existe como función propia, y no reusando `repetibilidadObservada`, para que
+ * el día que el formato adopte el par XR1/XR2 que describe el Anexo 08 (§2.4 del
+ * contraste) se cambie acá adentro y nada más.
+ */
+export function reproducibilidadObservada(x1: number | null, x2: number | null): number | null {
   if (x1 === null || x2 === null) return null;
   return Math.abs(x2 - x1);
 }
@@ -131,6 +237,17 @@ export function repetibilidadObservada(x1: number | null, x2: number | null): nu
 /**
  * %R — porcentaje de recuperación: el promedio medido contra la concentración
  * nominal del cilindro patrón (el "valor teórico" de la definición).
+ *
+ * Es la fórmula del libro del Anexo, que busca el cilindro elegido en la tabla
+ * de patrones y toma la columna del gas de esa fila:
+ *
+ *     =IF(B400="";"";E400/VLOOKUP(B400;$A$321:$E$326;4;0))
+ *
+ * Sin patrón elegido no hay valor teórico y la celda queda en blanco, que es el
+ * `null` de acá. El `× 100` no está en la fórmula porque en Excel lo pone el
+ * formato de porcentaje de la celda; se multiplica acá para guardar y comparar
+ * el número tal como lo escriben los criterios de aceptación (90-110, no
+ * 0,90-1,10). El redondeo es solo de presentación.
  */
 export function porcentajeRecuperacion(
   xmed: number | null,
@@ -140,7 +257,13 @@ export function porcentajeRecuperacion(
   return (xmed / valorTeorico) * 100;
 }
 
-/** Fila de criterios cuyo rango contiene al valor, dentro de un grupo. */
+/**
+ * Fila de criterios cuyo rango contiene al valor, dentro de un grupo.
+ *
+ * Devuelve `null` cuando el promedio cae en un hueco entre rangos: los del
+ * formato están escritos 20–50 y 51–100, así que 50,5 no cae en ninguno. Es la
+ * misma decisión del backend, que en ese caso deja el veredicto sin resolver.
+ */
 export function buscarCriterio(
   criterios: CriterioAceptacion[],
   grupo: GrupoCriterio,
@@ -154,42 +277,75 @@ export function buscarCriterio(
   );
 }
 
+/** Lo que hace falta para evaluar una fila, ya calculado. */
+export interface ObservadosMedicion {
+  recuperacion: number | null;
+  repetibilidad: number | null;
+  reproducibilidad: number | null;
+}
+
 /**
- * CUMPLE — la fila pasa cuando la repetibilidad y la reproducibilidad
- * observadas no superan su límite y el %R cae dentro del rango de veracidad.
- * Devuelve `null` mientras falte un dato: la columna se queda vacía en vez de
- * afirmar un "NO" que todavía nadie puede sostener.
+ * CUMPLE — el veredicto de una fila contra su criterio.
+ *
+ * `null` es "no evaluada", que no es lo mismo que "no cumple": la columna se
+ * queda vacía en vez de afirmar un NO que todavía nadie puede sostener. Pasa
+ * cuando falta el dato con el que se evalúa —sin X1 no hay Xmed, sin criterio
+ * no hay contra qué comparar, con el límite en "---" ese gas no se evalúa en
+ * ese rango— o cuando el criterio exige veracidad y no hay patrón con el que
+ * calcular el %R.
+ *
+ * Lo que sí se omite sin anular el veredicto son los criterios que el Anexo
+ * declara opcionales: la repetibilidad cuando no hay X2 y la reproducibilidad
+ * cuando el par XR viene vacío. Se **omiten**, no se dan por buenas.
  */
 export function evaluarCumple(
   criterio: CriterioAceptacion | null,
   gas: GasId,
-  repetibilidad: number | null,
-  reproducibilidad: number | null,
-  recuperacion: number | null,
+  observados: ObservadosMedicion,
 ): ResultadoCumple {
-  if (!criterio || recuperacion === null || repetibilidad === null) return null;
+  if (!criterio) return null;
 
   const limiteRepetibilidad = criterio.repetibilidad[gas] ?? null;
   const limiteReproducibilidad = criterio.reproducibilidad[gas] ?? null;
   const rangoVeracidad: RangoVeracidad | null = criterio.veracidad[gas] ?? null;
-  if (limiteRepetibilidad === null || rangoVeracidad === null) return null;
 
-  const pasaRepetibilidad = repetibilidad <= limiteRepetibilidad;
-  const pasaReproducibilidad =
-    limiteReproducibilidad === null || reproducibilidad === null
-      ? true
-      : reproducibilidad <= limiteReproducibilidad;
-  const pasaVeracidad = recuperacion >= rangoVeracidad.min && recuperacion <= rangoVeracidad.max;
+  // Un límite sin ningún tope es el "---" de la hoja impresa.
+  if (limiteRepetibilidad === null && limiteReproducibilidad === null && rangoVeracidad === null) {
+    return null;
+  }
 
-  return pasaRepetibilidad && pasaReproducibilidad && pasaVeracidad ? 'SI' : 'NO';
+  const evaluaciones: boolean[] = [];
+
+  if (rangoVeracidad !== null) {
+    if (observados.recuperacion === null) return null;
+    evaluaciones.push(
+      observados.recuperacion >= rangoVeracidad.min &&
+        observados.recuperacion <= rangoVeracidad.max,
+    );
+  }
+
+  if (limiteRepetibilidad !== null && observados.repetibilidad !== null) {
+    evaluaciones.push(observados.repetibilidad <= limiteRepetibilidad);
+  }
+
+  if (limiteReproducibilidad !== null && observados.reproducibilidad !== null) {
+    evaluaciones.push(observados.reproducibilidad <= limiteReproducibilidad);
+  }
+
+  // Un criterio con topes pero ninguno aplicable a lo que se digitó tampoco
+  // tiene veredicto.
+  if (evaluaciones.length === 0) return null;
+
+  return evaluaciones.every(Boolean) ? 'SI' : 'NO';
 }
 
 /** Concentración nominal del patrón elegido para ese gas. */
 export function valorTeoricoDe(
   patrones: FilaPatron[],
-  patronId: string,
+  cilindroId: number | null,
   gas: GasId,
 ): number | null {
-  const patron = patrones.find((fila) => fila.patronId === patronId);
+  if (cilindroId === null) return null;
+  const patron = patrones.find((fila) => fila.cilindroId === cilindroId);
   return patron?.valores[gas] ?? null;
 }

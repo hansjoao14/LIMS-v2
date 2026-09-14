@@ -129,7 +129,12 @@
                           [disabled]="procesandoId === item.id"
                           class="h-8 w-8 flex items-center justify-center rounded border border-green-400 text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
                         >
-                          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg
+                            class="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
                             <path
                               stroke-linecap="round"
                               stroke-linejoin="round"
@@ -147,7 +152,12 @@
                           [disabled]="procesandoId === item.id"
                           class="h-8 w-8 flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
                         >
-                          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg
+                            class="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
                             <path
                               stroke-linecap="round"
                               stroke-linejoin="round"
@@ -163,7 +173,8 @@
                             type="button"
                             title="Más acciones"
                             (click)="toggleMenu(item.id, $event)"
-                            class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 transition-colors shrink-0"
+                            [disabled]="procesandoId === item.id"
+                            class="h-8 w-8 flex items-center justify-center rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
                           >
                             <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                               <path
@@ -231,7 +242,7 @@
                                 <div class="border-t border-slate-100 mt-1 pt-1">
                                   <button
                                     type="button"
-                                    (click)="imprimirCalibracion(item)"
+                                    (click)="imprimirCalibracion(item); closeMenu()"
                                     class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50"
                                   >
                                     <svg

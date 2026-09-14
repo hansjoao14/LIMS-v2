@@ -1,32 +1,28 @@
-import { Injectable } from '@angular/core';
-import { Observable, delay, map, of } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { Apollo } from 'apollo-angular';
+import { Observable, map } from 'rxjs';
 
 import { EstadoOrden } from '../../core/utils/orden-tabla.utils';
+import { PaginationMeta } from '../../interfaces/catalogos/catalogo.interface';
 import {
   CampoBusquedaGases,
   CampoOrdenGases,
+  CollectionResponse,
   ReportGasesCombustion,
   ReportGasesCombustionPage,
 } from '../../interfaces/gases-combustion/report-gases-combustion.interface';
-import { LISTADO_MOCK } from './gases-combustion.mock';
+import { GET_COLLECTION_REPORT_GASES_COMBUSTION } from '../../graphql/gases-combustion/gases-combustion.queries';
+import { GasesCombustionService } from './gases-combustion.service';
+
+const CLIENTE_REPORTES = 'reportes';
 
 /**
- * Listado de Gases de Combustión.
+ * Orden inicial del listado: lo último verificado primero.
  *
- * ⚠️ Estado: la vista `REPORTES.vw_gases_combustion_report` y su colección
- * GraphQL todavía no existen — los scripts 01 a 04 están escritos pero sin
- * correr. Mientras tanto este servicio pagina, filtra y ordena el mock **en
- * memoria**, imitando lo que va a hacer el servidor, para que el componente ya
- * quede escrito contra la forma definitiva.
- *
- * Al conectar el backend se reemplaza el cuerpo de `getRegistros` por el
- * `apollo.use('reportes').query(...)` de siempre, calcado de
- * `ReportTicketEntregaService`: el componente no cambia.
- *
- * @see faq-monorepo/docs/gases-combustion.md §8, "Vistas de reportes"
+ * Por `fecha_verificacion` y no por `num_secuencial`: el número recién se
+ * asigna al numerar la hoja, así que las pendientes lo tienen en NULL y
+ * quedarían al final, justo las que hay que atender.
  */
-
-/** Orden inicial del listado: lo último verificado primero. */
 export const ORDEN_INICIAL_GASES: EstadoOrden<CampoOrdenGases> = {
   campo: 'fecha_verificacion',
   direccion: 'DESC',
@@ -35,93 +31,68 @@ export const ORDEN_INICIAL_GASES: EstadoOrden<CampoOrdenGases> = {
 /** Columnas de fecha: al ordenarlas por primera vez arrancan en DESC. */
 export const CAMPOS_FECHA_GASES: readonly CampoOrdenGases[] = ['fecha_verificacion'];
 
+/**
+ * Listado de hojas de verificación de gases de combustión.
+ *
+ * Va por GraphQL contra `api-reportes`, igual que el resto de los listados; la
+ * escritura vive en `GasesCombustionService`. La baja lógica se delega ahí en
+ * vez de duplicar la llamada REST.
+ */
 @Injectable({ providedIn: 'root' })
 export class ReportGasesCombustionService {
-  /** Latencia simulada. Desaparece junto con el mock. */
-  private readonly LATENCIA_MOCK = 300;
+  private readonly apollo = inject(Apollo);
+  private readonly gasesService = inject(GasesCombustionService);
 
+  /**
+   * Una página del listado. `campo` y `busqueda` son el buscador: se filtra por
+   * UN campo a la vez porque el WhereInput no expone `OR`. El filtro va en el
+   * `where` del servidor para no romper la paginación.
+   */
   getRegistros(
-    page: number,
-    take: number,
-    campo: CampoBusquedaGases,
-    busqueda: string,
-    orden: EstadoOrden<CampoOrdenGases>,
+    page = 1,
+    take = 10,
+    campo: CampoBusquedaGases | null = null,
+    busqueda = '',
+    orden: EstadoOrden<CampoOrdenGases> = ORDEN_INICIAL_GASES,
   ): Observable<ReportGasesCombustionPage> {
-    // return this.apollo
-    //   .use('reportes')
-    //   .query<{ collectionReportGasesCombustion: ReportGasesCombustionCollectionResponse }>({
-    //     query: GET_COLLECTION_REPORT_GASES_COMBUSTION,
-    //     variables: { page, take, campo, busqueda, orderBy: { [orden.campo]: orden.direccion } },
-    //     fetchPolicy: 'network-only',
-    //   })
-    //   .pipe(map((r) => ({ ... })));
+    const termino = busqueda.trim();
 
-    return of(LISTADO_MOCK).pipe(
-      delay(this.LATENCIA_MOCK),
-      map((todos) => this.paginarEnMemoria(todos, page, take, campo, busqueda, orden)),
-    );
+    return this.apollo
+      .use(CLIENTE_REPORTES)
+      .query<{ collectionReportGasesCombustion: CollectionResponse<ReportGasesCombustion> }>({
+        query: GET_COLLECTION_REPORT_GASES_COMBUSTION,
+        variables: {
+          q: {
+            where: {
+              // La vista no filtra el estado: lo expone como columna. Sin esta
+              // condición, una hoja dada de baja seguiría apareciendo.
+              estado: { equals: true },
+              // La clave solo se agrega si hay texto: `contains: null` lo
+              // rechaza Prisma ("Argument `contains` must not be null").
+              ...(campo && termino ? { [campo]: { contains: termino } } : {}),
+            },
+            pagination: { page, take },
+            orderBy: { [orden.campo]: orden.direccion },
+          },
+        },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(
+        map((resultado) => {
+          const coleccion = resultado.data?.collectionReportGasesCombustion;
+          return {
+            data: coleccion?.data ?? [],
+            meta: (coleccion?.meta ?? null) as PaginationMeta | null,
+          };
+        }),
+      );
   }
 
   /**
-   * Baja lógica. Es REST contra `api-solicitud`, no GraphQL: la colección solo
-   * lee. Sigue el patrón `disable<Entidad>` del resto del sistema.
+   * Baja lógica. Es REST contra `api-solicitud`: la colección solo lee. Sigue
+   * el patrón `disable<Entidad>` del resto del sistema.
    */
-  darDeBaja(id: string): Observable<void> {
-    // return this.http.patch<void>(`${environment.api_solicitud}/gases-combustion/${id}/disable`, {});
-    return of(undefined).pipe(delay(this.LATENCIA_MOCK));
-  }
-
-  /**
-   * Filtra, ordena y corta la página como lo haría el servidor.
-   *
-   * Vive acá y no en el componente a propósito: el componente tiene que estar
-   * escrito como si la paginación siempre hubiera sido de servidor, para que
-   * conectarlo no lo toque. Este método entero se borra con el mock.
-   */
-  private paginarEnMemoria(
-    todos: ReportGasesCombustion[],
-    page: number,
-    take: number,
-    campo: CampoBusquedaGases,
-    busqueda: string,
-    orden: EstadoOrden<CampoOrdenGases>,
-  ): ReportGasesCombustionPage {
-    const termino = busqueda.trim().toLowerCase();
-
-    const filtrados = todos.filter((fila) => {
-      if (!fila.estado) return false;
-      if (!termino) return true;
-      return String(fila[campo] ?? '')
-        .toLowerCase()
-        .includes(termino);
-    });
-
-    const signo = orden.direccion === 'ASC' ? 1 : -1;
-    const ordenados = [...filtrados].sort((a, b) => {
-      const va = a[orden.campo] ?? '';
-      const vb = b[orden.campo] ?? '';
-      if (va === vb) return 0;
-      return va > vb ? signo : -signo;
-    });
-
-    const total = ordenados.length;
-    const lastPage = Math.max(1, Math.ceil(total / take));
-    const actual = Math.min(page, lastPage);
-    const desde = (actual - 1) * take;
-
-    return {
-      data: ordenados.slice(desde, desde + take),
-      meta: {
-        total,
-        totalPages: lastPage,
-        page: actual,
-        limit: take,
-        skip: desde,
-        hasPrevPage: actual > 1,
-        hasNextPage: actual < lastPage,
-        prevPage: actual > 1 ? actual - 1 : null,
-        nextPage: actual < lastPage ? actual + 1 : null,
-      },
-    };
+  darDeBaja(id: string): Observable<unknown> {
+    return this.gasesService.darDeBaja(id);
   }
 }
