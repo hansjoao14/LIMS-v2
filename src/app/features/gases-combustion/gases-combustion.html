@@ -1,0 +1,156 @@
+<div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
+  <div class="max-w-7xl mx-auto">
+    <div class="animate-in fade-in">
+      <app-page-header
+        breadcrumbSection="Gases de combustión"
+        title="Registro de Verificación - Gases de Combustión"
+        [subtitle]="
+          registroId
+            ? 'Estás editando una verificación ya registrada'
+            : 'Aquí podrás registrar los datos de verificación de gases de combustión'
+        "
+        [codigoFormulario]="formulario?.descripcion ?? null"
+        [edicion]="formulario?.version ?? null"
+        [fechaSolicitud]="fechaEmision"
+      />
+
+      <form [formGroup]="form">
+        <!-- PATRONES: mezcla y oxígeno -->
+        <app-patrones-tabla
+          [config]="tablaMezcla"
+          [filas]="patronesMezcla"
+          [catalogo]="catalogoDe('mezcla')"
+          [cargando]="cargando"
+          (agregar)="agregarPatronMezcla()"
+          (eliminar)="quitarPatronMezcla($event)"
+        />
+
+        <app-patrones-tabla
+          [config]="tablaOxigeno"
+          [filas]="patronesOxigeno"
+          [catalogo]="catalogoDe('oxigeno')"
+          [cargando]="cargando"
+          (agregar)="agregarPatronOxigeno()"
+          (eliminar)="quitarPatronOxigeno($event)"
+        />
+
+        <!-- Procedimiento, equipo y año: metadata del formulario, no editable -->
+        <div class="bg-white border border-slate-200 rounded shadow-sm p-6 mb-8">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="flex items-start gap-3">
+              <div
+                class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-[#1e3a8a] flex-shrink-0"
+              >
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <p class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Procedimiento</p>
+                <p class="text-sm text-slate-700 break-words">
+                  {{ metadata?.procedimiento ?? '—' }}
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+              <div
+                class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-[#1e3a8a] flex-shrink-0"
+              >
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"
+                  />
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <p class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Código del equipo</p>
+                <p class="text-sm text-slate-700 break-words">
+                  {{ metadata?.codigoEquipo ?? '—' }}
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+              <div
+                class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-[#1e3a8a] flex-shrink-0"
+              >
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <p class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">Año</p>
+                <p class="text-sm text-slate-700">{{ metadata?.anio ?? '—' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTROL DE CALIDAD + DEFINICIONES -->
+        <app-control-calidad
+          [criterios]="criterios"
+          [definiciones]="definiciones"
+          [cargando]="cargando"
+        />
+
+        <!-- MEDICIONES: una tabla por gas -->
+        <h3 class="text-sm font-bold text-[#1d2b64] uppercase tracking-wide mb-3">Mediciones</h3>
+
+        @for (tabla of tablasMediciones; track tabla.gas; let indice = $index) {
+          @if (bloques.length > indice) {
+            <app-mediciones-tabla
+              [config]="tabla"
+              [bloque]="bloqueDe(indice)"
+              [patrones]="patronesDe(tabla)"
+              [criterios]="criterios"
+              [cargando]="cargando"
+              (agregar)="agregarMedicion(indice)"
+              (eliminar)="quitarMedicion(indice, $event)"
+            />
+          }
+        }
+
+        <!-- NAVEGACIÓN -->
+        <div class="pt-4 border-t border-slate-300 flex items-center justify-between">
+          <button
+            type="button"
+            (click)="volverAlListado()"
+            [disabled]="guardando"
+            class="border border-slate-300 text-slate-600 bg-white px-10 py-2.5 rounded text-sm font-bold hover:bg-slate-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            REGRESAR
+          </button>
+          <button
+            type="button"
+            (click)="guardar()"
+            [disabled]="cargando || guardando"
+            class="bg-[#1e3a8a] text-white px-10 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            @if (guardando) {
+              <span
+                class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"
+              ></span>
+              GUARDANDO...
+            } @else {
+              GUARDAR
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

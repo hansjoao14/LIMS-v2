@@ -20,6 +20,7 @@ export enum MenuKey {
   PLAN_MUESTREO = 'PLAN_MUESTREO',
   TICKET_ENTREGA_MUESTRAS = 'TICKET_ENTREGA_MUESTRAS',
   CALIBRACION_EQUIPOS = 'CALIBRACION_EQUIPOS',
+  GASES_COMBUSTION = 'GASES_COMBUSTION',
   ADMIN_CATALOGOS = 'ADMIN_CATALOGOS',
   ADMIN_ENSAYOS = 'ADMIN_ENSAYOS',
   SECUENCIAL = 'SECUENCIAL',
@@ -141,6 +142,22 @@ export const MENU_PERMISSIONS: Record<MenuKey, Partial<Record<AppRole, Action[]>
     [AppRole.ADMIN]: ['ver', 'editar', 'crear', 'eliminar'],
   },
 
+  /*
+   * Registro de verificación de gases de combustión F-PEE-07-01.
+   *
+   * TODO(permisos): copiado de CALIBRACION_EQUIPOS como punto de partida —
+   * son el mismo tipo de documento (verificación intermedia de un equipo) y
+   * el mismo reparto: registra el analista de campo, autoriza el responsable
+   * de laboratorio. Ajustar contra la tabla F-PG-09 del formato cuando esté.
+   */
+  [MenuKey.GASES_COMBUSTION]: {
+    [AppRole.ANALISTA_CALIDAD]: ['ver'],
+    [AppRole.RESPONSABLE_LAB]: ['ver', 'autorizar', 'rechazar'],
+    [AppRole.ANALISTA_CAMPO]: ['ver', 'editar', 'crear'],
+    [AppRole.ANALISTA_LAB]: ['ver'],
+    [AppRole.ADMIN]: ['ver', 'editar', 'crear', 'eliminar'],
+  },
+
   // Administración de catálogos e ítems
   [MenuKey.ADMIN_CATALOGOS]: {
     [AppRole.ADMIN]: ['ver', 'editar', 'crear', 'eliminar'],
@@ -179,6 +196,8 @@ export const RoleAccess = {
   TICKET_ENTREGA_MUESTRAS: rolesWithAccess(MenuKey.TICKET_ENTREGA_MUESTRAS),
   TICKET_ENTREGA_MUESTRAS_CREAR: rolesWithAction(MenuKey.TICKET_ENTREGA_MUESTRAS, 'crear'),
   CALIBRACION_EQUIPOS: rolesWithAccess(MenuKey.CALIBRACION_EQUIPOS),
+  GASES_COMBUSTION: rolesWithAccess(MenuKey.GASES_COMBUSTION),
+  GASES_COMBUSTION_CREAR: rolesWithAction(MenuKey.GASES_COMBUSTION, 'crear'),
   ADMIN_CATALOGOS: rolesWithAccess(MenuKey.ADMIN_CATALOGOS),
   ADMIN_ENSAYOS: rolesWithAccess(MenuKey.ADMIN_ENSAYOS),
   SECUENCIAL: rolesWithAccess(MenuKey.SECUENCIAL),

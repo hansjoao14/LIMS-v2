@@ -126,6 +126,37 @@ export const featuresRoutes: Routes = [
     data: { title: 'Calibración de Equipos', requiredRoles: RoleAccess.CALIBRACION_EQUIPOS },
   },
   {
+    path: 'gases-combustion',
+    loadComponent: () =>
+      import('./gases-combustion/lista/gases-combustion-lista').then((m) => m.GasesCombustionLista),
+    canActivate: [canActivateWithRealmRoles],
+    data: {
+      title: 'Registro de Verificación - Gases de Combustión',
+      requiredRoles: RoleAccess.GASES_COMBUSTION,
+    },
+  },
+  {
+    path: 'gases-combustion/nuevo',
+    loadComponent: () =>
+      import('./gases-combustion/gases-combustion').then((m) => m.GasesCombustion),
+    canActivate: [canActivateWithRealmRoles],
+    data: {
+      title: 'Gases de Combustión - Nueva Verificación',
+      requiredRoles: RoleAccess.GASES_COMBUSTION_CREAR,
+    },
+  },
+  {
+    // Editar. Va después de 'nuevo' para que ese literal gane sobre el :id.
+    path: 'gases-combustion/:id',
+    loadComponent: () =>
+      import('./gases-combustion/gases-combustion').then((m) => m.GasesCombustion),
+    canActivate: [canActivateWithRealmRoles],
+    data: {
+      title: 'Gases de Combustión - Editar Verificación',
+      requiredRoles: RoleAccess.GASES_COMBUSTION_CREAR,
+    },
+  },
+  {
     path: 'admin-catalogos',
     loadComponent: () => import('./admin-catalogos/admin-catalogos').then((m) => m.AdminCatalogos),
     canActivate: [canActivateWithRealmRoles],

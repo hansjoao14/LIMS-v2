@@ -1,0 +1,148 @@
+<h3 class="text-sm font-bold text-[#1d2b64] uppercase tracking-wide mb-3">Control de calidad</h3>
+
+<div class="border border-slate-200 rounded overflow-hidden bg-white mb-8">
+  <div class="overflow-x-auto custom-scroll min-h-[200px]">
+    <table class="w-full text-sm border-collapse table-fixed min-w-[1180px]">
+      <colgroup>
+        <col class="w-[130px]" />
+        <col class="w-[90px]" />
+        <col class="w-[90px]" />
+        @for (bloque of bloquesDeColumnas; track bloque) {
+          @for (gas of gases; track gas.gas) {
+            <col class="w-[73px]" />
+          }
+        }
+      </colgroup>
+
+      <thead>
+        <!-- Cabecera de grupos: criterios | repetibilidad | reproducibilidad | veracidad -->
+        <tr class="border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider">
+          <th colspan="3" class="px-3 py-3 border-r border-slate-200 bg-slate-100 text-slate-600">
+            Criterios de aceptación
+          </th>
+          <th colspan="4" class="px-3 py-3 border-r border-slate-200 bg-indigo-50 text-indigo-900">
+            Repetibilidad (máx)
+            <span class="block font-medium normal-case text-[10px] text-indigo-700 mt-0.5">
+              r95,45% = |X2 − X1|
+            </span>
+          </th>
+          <th colspan="4" class="px-3 py-3 border-r border-slate-200 bg-amber-50 text-amber-900">
+            Reproducibilidad (máx)
+            <span class="block font-medium normal-case text-[10px] text-amber-700 mt-0.5">
+              R95,45% = |X2 − X1|
+            </span>
+          </th>
+          <th colspan="4" class="px-3 py-3 bg-slate-100 text-slate-600">
+            Veracidad
+            <span class="block font-medium normal-case text-[10px] text-slate-500 mt-0.5">
+              %R = (valor obtenido / valor teórico) × 100
+            </span>
+          </th>
+        </tr>
+
+        <!-- Cabecera de columnas: rango + un gas por bloque -->
+        <tr
+          class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
+        >
+          <th colspan="3" class="px-3 py-2.5 border-r border-slate-200 text-center">Rango</th>
+          @for (gas of gases; track gas.gas) {
+            <th class="px-2 py-2.5 border-r border-slate-100 text-center">{{ gas.etiqueta }}</th>
+          }
+          @for (gas of gases; track gas.gas) {
+            <th class="px-2 py-2.5 border-r border-slate-100 text-center">{{ gas.etiqueta }}</th>
+          }
+          @for (gas of gases; track gas.gas; let ultimo = $last) {
+            <th
+              class="px-2 py-2.5 text-center"
+              [class.border-r]="!ultimo"
+              [class.border-slate-100]="!ultimo"
+            >
+              {{ gas.etiqueta }}
+            </th>
+          }
+        </tr>
+      </thead>
+
+      <tbody appTableSkeleton [rows]="cargando() ? 5 : 0" [cols]="15"></tbody>
+
+      <tbody>
+        @if (!cargando()) {
+          @for (grupo of grupos(); track grupo.grupo) {
+            @for (criterio of grupo.filas; track criterio.id; let primero = $first) {
+              <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors">
+                @if (primero) {
+                  <td
+                    [attr.rowspan]="grupo.filas.length"
+                    class="px-2 py-2 border-r border-slate-200 bg-slate-50 text-center text-[10px] font-bold text-[#1e3a8a] uppercase"
+                  >
+                    {{ grupo.etiqueta }}
+                  </td>
+                }
+                <td class="px-2 py-2 border-r border-slate-100 text-center text-xs text-slate-600">
+                  {{ criterio.desde }}
+                </td>
+                <td class="px-2 py-2 border-r border-slate-200 text-center text-xs text-slate-600">
+                  {{ criterio.hasta }}
+                </td>
+
+                @for (gas of gases; track gas.gas) {
+                  <td
+                    class="px-2 py-2 border-r border-slate-100 text-center text-xs text-slate-600"
+                  >
+                    {{ textoLimite(criterio.repetibilidad[gas.gas]) }}
+                  </td>
+                }
+                @for (gas of gases; track gas.gas) {
+                  <td
+                    class="px-2 py-2 border-r border-slate-100 text-center text-xs text-slate-600"
+                  >
+                    {{ textoLimite(criterio.reproducibilidad[gas.gas]) }}
+                  </td>
+                }
+                @for (gas of gases; track gas.gas; let ultimo = $last) {
+                  <td
+                    class="px-2 py-2 text-center text-xs text-slate-600"
+                    [class.border-r]="!ultimo"
+                    [class.border-slate-100]="!ultimo"
+                  >
+                    {{ textoVeracidad(criterio, gas.gas) }}
+                  </td>
+                }
+              </tr>
+            }
+          } @empty {
+            <tr>
+              <td colspan="15" class="p-10 text-slate-400 italic text-center">
+                No hay criterios de aceptación configurados.
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- DEFINICIONES -->
+<section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-8">
+  <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+    <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Definiciones</h4>
+  </div>
+  <div class="p-5 bg-white space-y-2">
+    @if (cargando()) {
+      <app-loading />
+    } @else {
+      @for (definicion of definiciones(); track definicion.id) {
+        <p
+          class="border border-slate-200 bg-slate-50 rounded px-4 py-2.5 text-xs text-slate-600 text-center"
+        >
+          {{ definicion.texto }}
+        </p>
+      } @empty {
+        <p class="text-slate-400 italic text-center text-xs py-4">
+          No hay definiciones registradas.
+        </p>
+      }
+    }
+  </div>
+</section>

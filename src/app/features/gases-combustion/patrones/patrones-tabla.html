@@ -1,0 +1,139 @@
+<h3 class="text-sm font-bold text-[#1d2b64] uppercase tracking-wide mb-3">
+  {{ config().titulo }}
+</h3>
+
+<div class="border border-slate-200 rounded overflow-hidden bg-white mb-8">
+  <div class="overflow-x-auto custom-scroll min-h-[200px]">
+    <table class="w-full text-sm border-collapse table-fixed" [style.min-width.px]="anchoMinimo()">
+      <colgroup>
+        <col [style.width.px]="anchoNumero" />
+        <col [style.width.px]="anchoCodigo" />
+        @for (columna of config().columnas; track columna.gas) {
+          <col [style.width.px]="anchoValor" />
+        }
+        <col [style.width.px]="anchoAcciones" />
+      </colgroup>
+
+      <thead>
+        <tr
+          class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-200 tracking-wider"
+        >
+          <th class="px-3 py-2.5 border-r border-slate-100 text-center">No.</th>
+          <th class="px-3 py-2.5 border-r border-slate-100 text-center">Código / Vencimiento</th>
+          @for (columna of config().columnas; track columna.gas) {
+            <th class="px-3 py-2.5 border-r border-slate-100 text-center">
+              {{ columna.etiqueta }}
+            </th>
+          }
+          <th class="px-2 py-2.5 text-center">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody
+        appTableSkeleton
+        [rows]="cargando() ? 4 : 0"
+        [cols]="totalColumnas()"
+        [actionButtons]="1"
+      ></tbody>
+
+      <!-- Cada fila abre su propio `formGroup`: el contenedor de la tabla no
+           necesita uno, y así el componente no depende de dónde cuelgue el
+           FormArray en el formulario del padre. -->
+      <tbody>
+        @if (!cargando()) {
+          @for (fila of filas().controls; track $index) {
+            <tr
+              class="border-b border-slate-200 hover:bg-slate-50 transition-colors"
+              [formGroup]="$any(fila)"
+            >
+              <td class="px-3 py-2 border-r border-slate-100">
+                <select
+                  formControlName="patronId"
+                  (change)="onPatronSeleccionado($index, $any($event.target).value)"
+                  class="w-full border border-slate-300 px-2 py-1.5 rounded text-xs bg-white outline-none focus:border-[#1e3a8a]"
+                >
+                  <option value="">—</option>
+                  @for (patron of catalogo(); track patron.id) {
+                    <option [value]="patron.id">{{ patron.etiqueta }}</option>
+                  }
+                </select>
+              </td>
+
+              <td class="px-3 py-2 border-r border-slate-100">
+                <input
+                  formControlName="codigoVencimiento"
+                  type="text"
+                  placeholder="Código / dd-mm-aa"
+                  class="w-full border border-slate-300 px-2 py-1.5 rounded text-xs text-center bg-white outline-none focus:border-[#1e3a8a]"
+                />
+              </td>
+
+              <ng-container formGroupName="valores">
+                @for (columna of config().columnas; track columna.gas) {
+                  <td class="px-3 py-2 border-r border-slate-100">
+                    <input
+                      [formControlName]="columna.gas"
+                      type="number"
+                      step="any"
+                      class="w-full border border-slate-300 px-2 py-1.5 rounded text-xs text-center bg-white outline-none focus:border-[#1e3a8a]"
+                    />
+                  </td>
+                }
+              </ng-container>
+
+              <td class="px-2 py-2 text-center">
+                <button
+                  type="button"
+                  (click)="eliminar.emit($index)"
+                  title="Quitar patrón"
+                  class="h-8 w-8 inline-flex items-center justify-center rounded border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                >
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td
+                [attr.colspan]="totalColumnas() + 1"
+                class="p-10 text-slate-400 italic text-center"
+              >
+                Aún no hay patrones registrados.
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+
+      <tfoot>
+        <tr class="bg-slate-50 border-t border-slate-200">
+          <td [attr.colspan]="totalColumnas() + 1" class="px-3 py-2.5">
+            <button
+              type="button"
+              (click)="agregar.emit()"
+              [disabled]="cargando()"
+              class="inline-flex items-center gap-2 bg-[#1e3a8a] text-white px-4 py-1.5 rounded text-[11px] font-bold hover:bg-[#2541b2] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              AGREGAR PATRÓN
+            </button>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>

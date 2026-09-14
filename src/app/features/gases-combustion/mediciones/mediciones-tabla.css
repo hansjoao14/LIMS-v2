@@ -1,0 +1,72 @@
+:host {
+  display: block;
+}
+
+/* Cada gas tiene su color en la hoja impresa: es lo que permite ubicar de un
+   vistazo en cuál de las cuatro tablas está parado el analista. Se resuelve con
+   variables sobre `data-gas` en vez de clases de Tailwind armadas en TypeScript,
+   que el escáner del bundle no puede garantizar. */
+.bloque-gas[data-gas='CO'] {
+  --gas-fuerte: #fed7aa;
+  --gas-suave: #fff7ed;
+  --gas-texto: #9a3412;
+  --gas-borde: #fdba74;
+}
+
+.bloque-gas[data-gas='SO2'] {
+  --gas-fuerte: #bbf7d0;
+  --gas-suave: #f0fdf4;
+  --gas-texto: #166534;
+  --gas-borde: #86efac;
+}
+
+.bloque-gas[data-gas='NO'] {
+  --gas-fuerte: #ddd6fe;
+  --gas-suave: #f5f3ff;
+  --gas-texto: #5b21b6;
+  --gas-borde: #c4b5fd;
+}
+
+.bloque-gas[data-gas='O2'] {
+  --gas-fuerte: #bfdbfe;
+  --gas-suave: #eff6ff;
+  --gas-texto: #1e40af;
+  --gas-borde: #93c5fd;
+}
+
+.bloque-gas {
+  border-color: var(--gas-borde);
+}
+
+.gas-titulo {
+  background: var(--gas-fuerte);
+  color: var(--gas-texto);
+}
+
+/* Franja de columnas medidas y calculadas (X1 … %R). */
+.gas-columna {
+  background: var(--gas-suave);
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 1px #1e3a8a;
+}

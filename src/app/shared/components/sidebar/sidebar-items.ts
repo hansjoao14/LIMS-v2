@@ -11,6 +11,7 @@ import { PlanMuestreoIcon } from '../../../ui/icons/plan-muestreo-icon/plan-mues
 import { TicketMuestrasIcon } from '../../../ui/icons/ticket-muestras-icon/ticket-muestras-icon';
 import { AccesoAutorizado } from '../../../ui/icons/acceso-autorizado/acceso-autorizado';
 import { CalibracionEquiposIcon } from '../../../ui/icons/calibracion-equipos-icon/calibracion-equipos-icon';
+import { GasesCombustionIcon } from '../../../ui/icons/gases-combustion-icon/gases-combustion-icon';
 import { BookIcon } from '../../../ui/icons/book-icon/book-icon';
 import { FlaskIcon } from '../../../ui/icons/flask-icon/flask-icon';
 import { SecuencialIcon } from '../../../ui/icons/secuencial-icon/secuencial-icon';
@@ -110,6 +111,12 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     label: 'Calibración de equipos',
     icon: CalibracionEquiposIcon,
     requiredRoles: RoleAccess.CALIBRACION_EQUIPOS,
+  },
+  {
+    path: '/gases-combustion',
+    label: 'Gases de combustión',
+    icon: GasesCombustionIcon,
+    requiredRoles: RoleAccess.GASES_COMBUSTION,
   },
   {
     label: 'Configuración',
