@@ -116,8 +116,12 @@ export class GasesCombustionLista implements OnInit, OnDestroy {
    * flujo de aprobación para este formato y está como pregunta abierta en el
    * diseño. Cuando se confirme, entran como botón directo antes del menú.
    */
+  /**
+   * Siempre hay al menos una acción: ver la hoja. Quien entra al listado puede
+   * abrirla, aunque no tenga permiso para editarla.
+   */
   get hasAnyAction(): boolean {
-    return this.canEditar() || this.canEliminar() || this.canNumerar();
+    return true;
   }
 
   /**
@@ -222,19 +226,21 @@ export class GasesCombustionLista implements OnInit, OnDestroy {
     return registro.ctestado_id === ESTADO_GASES.PENDIENTE;
   }
 
-  esCreado(registro: ReportGasesCombustion): boolean {
-    return registro.ctestado_id === ESTADO_GASES.CREADO;
-  }
-
-  esAutorizado(registro: ReportGasesCombustion): boolean {
-    return registro.ctestado_id === ESTADO_GASES.AUTORIZADO;
+  esFinalizado(registro: ReportGasesCombustion): boolean {
+    return registro.ctestado_id === ESTADO_GASES.FINALIZADO;
   }
 
   esRechazado(registro: ReportGasesCombustion): boolean {
     return registro.ctestado_id === ESTADO_GASES.RECHAZADO;
   }
 
+  /**
+   * El catálogo lo nombra "Finalizado Solicitud", pero acá el sufijo no aporta:
+   * ya se sabe que la fila es una hoja de verificación. Mismo criterio que
+   * `ticket-entrega-muestras-lista.ts` y `plan-muestreo-lista.ts`.
+   */
   etiquetaEstado(registro: ReportGasesCombustion): string {
+    if (this.esFinalizado(registro)) return 'Finalizado';
     return registro.ctestado_nombre ?? 'Pendiente';
   }
 
@@ -258,13 +264,21 @@ export class GasesCombustionLista implements OnInit, OnDestroy {
     return (registro.mediciones_no_cumplen ?? 0) > 0;
   }
 
-  /** Una hoja ya autorizada no se edita ni se da de baja. */
+  /**
+   * Editar solo mientras la hoja está pendiente: una vez numerada es un
+   * documento oficial y el backend corta con `GASES_COMBUSTION_NO_EDITABLE`.
+   */
   puedeEditar(registro: ReportGasesCombustion): boolean {
-    return this.canEditar() && !this.esAutorizado(registro);
+    return this.canEditar() && this.esPendiente(registro);
   }
 
+  /**
+   * Dar de baja NO depende del estado: el endpoint la acepta en cualquiera, y
+   * una hoja numerada por error tiene que poder retirarse del listado. Es lo
+   * mismo que hace calibración. No borra nada: es baja lógica.
+   */
   puedeEliminar(registro: ReportGasesCombustion): boolean {
-    return this.canEliminar() && !this.esAutorizado(registro);
+    return this.canEliminar();
   }
 
   // ── Acciones ─────────────────────────────────────────────────────────────
@@ -274,6 +288,23 @@ export class GasesCombustionLista implements OnInit, OnDestroy {
   }
 
   editar(registro: ReportGasesCombustion): void {
+    this.abrir(registro);
+  }
+
+  /**
+   * Abre la hoja en modo lectura. Es la misma pantalla y la misma ruta que
+   * editar: el formulario decide si se puede tocar según el estado, así que una
+   * hoja numerada se muestra completa pero bloqueada.
+   *
+   * Se ofrece cuando editar no está disponible —hoja ya numerada, o sin permiso
+   * de edición—; con las dos juntas, el menú tendría dos entradas que hacen lo
+   * mismo.
+   */
+  ver(registro: ReportGasesCombustion): void {
+    this.abrir(registro);
+  }
+
+  private abrir(registro: ReportGasesCombustion): void {
     this.closeMenu();
     this.router.navigate(['/gases-combustion', registro.id]);
   }

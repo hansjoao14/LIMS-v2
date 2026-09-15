@@ -77,14 +77,21 @@ export const TIPO_FORMULARIO_GASES = 2137;
 export const IDENTIFICADOR_SECUENCIAL_GASES = 'RVGC';
 
 /**
- * Estados del catálogo "Estado de Registro" (catalogo_id = 1). Gases sigue la
- * convención general, no la del flujo de muestreo: al numerar queda en "Creado"
- * y al autorizar en "Autorizado".
+ * Estados del catálogo "Estado de Registro" (catalogo_id = 1).
+ *
+ * Al numerar la hoja queda **directo en "Finalizado Solicitud" (2023)**, que es
+ * la convención de los documentos que se numeran en el sistema: la misma de
+ * plan de muestreo, orden de trabajo y ticket de entrega. No pasa por "Creado"
+ * (388) ni por "Autorizado" (387): no hay un paso de aprobación intermedio.
+ *
+ * El catálogo tiene tres estados que dicen "Finalizado" —3, 52 y 2023—; el que
+ * usa el sistema para esto es el 2023, y el front lo muestra como "Finalizado"
+ * a secas: el sufijo "Solicitud" no aporta cuando ya se sabe que la fila es una
+ * hoja de verificación.
  */
 export const ESTADO_GASES = {
   PENDIENTE: 2,
-  CREADO: 388,
-  AUTORIZADO: 387,
+  FINALIZADO: 2023,
   RECHAZADO: 51,
 } as const;
 
@@ -455,7 +462,7 @@ export class GasesCombustionService {
     const payload: FinalizarGasesPayload = {
       idGasesCombustion: id,
       identificadorSecuencial: IDENTIFICADOR_SECUENCIAL_GASES,
-      ctestado: ESTADO_GASES.CREADO,
+      ctestado: ESTADO_GASES.FINALIZADO,
     };
     return this.http.post<FinalizarGasesResponse[]>(`${this.baseUrl}/finalizar`, payload);
   }
