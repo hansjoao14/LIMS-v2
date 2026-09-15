@@ -72,9 +72,9 @@ export const TIPO_FORMULARIO_GASES = 2137;
  * con el `@identificador` del script `04_sp_secuencial_gases_combustion.sql` o
  * el SP corta con "No existe un secuencial configurado para el identificador
  * indicado". Con el formato que hoy tiene esa fila, la hoja queda numerada como
- * `SOLI_GASES-00002-2026`.
+ * `RVGC-00002-2026`.
  */
-export const IDENTIFICADOR_SECUENCIAL_GASES = 'SOLI_GASES';
+export const IDENTIFICADOR_SECUENCIAL_GASES = 'RVGC';
 
 /**
  * Estados del catálogo "Estado de Registro" (catalogo_id = 1). Gases sigue la

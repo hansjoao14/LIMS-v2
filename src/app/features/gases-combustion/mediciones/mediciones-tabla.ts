@@ -154,9 +154,20 @@ export class MedicionesTabla {
 
   // ── Formato ──────────────────────────────────────────────────────────────
 
+  /**
+   * Decimales de las columnas calculadas: Xmed, r95,45% y R95,45%.
+   *
+   * Dos para los cuatro gases, sin excepción. El redondeo es **de
+   * presentación**: el veredicto, el %R y la búsqueda del criterio se resuelven
+   * con el valor exacto, igual que en `textoPorcentaje`. Importa en los bordes,
+   * donde un valor que la pantalla escribe redondeado puede caer del otro lado
+   * de un límite.
+   */
+  private readonly DECIMALES_CALCULADOS = 2;
+
   /** Un cálculo sin datos suficientes se muestra vacío, no como cero. */
-  texto(valor: number | null, decimales = this.config().decimales): string {
-    return valor === null ? '—' : valor.toFixed(decimales);
+  texto(valor: number | null): string {
+    return valor === null ? '—' : valor.toFixed(this.DECIMALES_CALCULADOS);
   }
 
   /**

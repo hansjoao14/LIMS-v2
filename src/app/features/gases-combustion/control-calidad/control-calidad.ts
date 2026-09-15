@@ -8,7 +8,11 @@ import {
 } from '../../../interfaces/gases-combustion/gases-combustion.interface';
 import { LoadingComponent } from '../../../shared/components/loading/loading';
 import { TableSkeleton } from '../../../ui/table-skeleton/table-skeleton';
-import { ETIQUETA_GRUPO_CRITERIO, GASES_CONTROL_CALIDAD } from '../model/gases-combustion.model';
+import {
+  ETIQUETA_GRUPO_CRITERIO,
+  GASES_CONTROL_CALIDAD,
+  ORDEN_GRUPOS_CRITERIO,
+} from '../model/gases-combustion.model';
 
 /** Criterios de un grupo de rangos, con su rótulo ya resuelto. */
 interface GrupoDeCriterios {
@@ -41,7 +45,15 @@ export class ControlCalidad {
   /** Los tres bloques de columnas: repetibilidad, reproducibilidad y veracidad. */
   readonly bloquesDeColumnas = [1, 2, 3];
 
-  /** Agrupa los rangos para poder rotular el grupo con un `rowspan`. */
+  /**
+   * Agrupa los rangos para poder rotular el grupo con un `rowspan`.
+   *
+   * El orden de los grupos lo fija `ORDEN_GRUPOS_CRITERIO`, no el de llegada:
+   * los criterios vienen ordenados por rango ascendente y así el oxígeno —6 a
+   * 18— quedaría antes que la mezcla —20 a 1000—, al revés que en el formato
+   * impreso. Dentro de cada grupo sí manda el orden de llegada, que ya es por
+   * rango.
+   */
   readonly grupos = computed<GrupoDeCriterios[]>(() => {
     const porGrupo = new Map<GrupoCriterio, CriterioAceptacion[]>();
     for (const criterio of this.criterios()) {
@@ -49,10 +61,16 @@ export class ControlCalidad {
       filas.push(criterio);
       porGrupo.set(criterio.grupo, filas);
     }
-    return [...porGrupo.entries()].map(([grupo, filas]) => ({
+
+    const conocidos = ORDEN_GRUPOS_CRITERIO.filter((grupo) => porGrupo.has(grupo));
+    // Un grupo que no esté en la lista igual se pinta, al final: es preferible
+    // a que desaparezca de la tabla sin que nadie se entere.
+    const resto = [...porGrupo.keys()].filter((grupo) => !conocidos.includes(grupo));
+
+    return [...conocidos, ...resto].map((grupo) => ({
       grupo,
-      etiqueta: ETIQUETA_GRUPO_CRITERIO[grupo],
-      filas,
+      etiqueta: ETIQUETA_GRUPO_CRITERIO[grupo] ?? grupo,
+      filas: porGrupo.get(grupo) ?? [],
     }));
   });
 

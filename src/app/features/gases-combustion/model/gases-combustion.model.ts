@@ -39,8 +39,6 @@ export interface ConfigTablaMediciones {
   familia: FamiliaPatron;
   /** Grupo de criterios contra el que se evalúa CUMPLE. */
   grupoCriterio: GrupoCriterio;
-  /** Decimales con los que se muestran los valores calculados. */
-  decimales: number;
 }
 
 /** MEZCLA, ppm — un cilindro certificado para NO, CO y SO2. */
@@ -64,6 +62,9 @@ export const TABLA_PATRONES_OXIGENO: ConfigTablaPatrones = {
 /**
  * Las cuatro tablas de mediciones, en el orden de la hoja impresa. El O2 usa
  * los patrones de oxígeno y su propio grupo de criterios.
+ *
+ * Los decimales no se configuran por gas: **todas las columnas calculadas van
+ * con dos**, y eso vive en `DECIMALES_CALCULADOS` de la tabla de mediciones.
  */
 export const TABLAS_MEDICIONES: ConfigTablaMediciones[] = [
   {
@@ -71,28 +72,24 @@ export const TABLAS_MEDICIONES: ConfigTablaMediciones[] = [
     titulo: 'CO, ppm',
     familia: 'mezcla',
     grupoCriterio: 'MEZCLA_PPM',
-    decimales: 2,
   },
   {
     gas: 'SO2',
     titulo: 'SO2, ppm',
     familia: 'mezcla',
     grupoCriterio: 'MEZCLA_PPM',
-    decimales: 2,
   },
   {
     gas: 'NO',
     titulo: 'NO, ppm',
     familia: 'mezcla',
     grupoCriterio: 'MEZCLA_PPM',
-    decimales: 2,
   },
   {
     gas: 'O2',
     titulo: 'O2, %',
     familia: 'oxigeno',
     grupoCriterio: 'O2_PORCENTAJE',
-    decimales: 3,
   },
 ];
 
@@ -109,6 +106,16 @@ export const ETIQUETA_GRUPO_CRITERIO: Record<GrupoCriterio, string> = {
   MEZCLA_PPM: 'Mezcla ppm',
   O2_PORCENTAJE: 'O2 %',
 };
+
+/**
+ * Orden de los grupos en la tabla de control de calidad: mezcla arriba, oxígeno
+ * abajo, como en el formato impreso.
+ *
+ * Va explícito porque los criterios llegan ordenados por `desde` ascendente, y
+ * los rangos de oxígeno —6 a 18— son más chicos que los de mezcla —20 a 1000—:
+ * dejarlos en el orden de llegada pone el O2 primero.
+ */
+export const ORDEN_GRUPOS_CRITERIO: GrupoCriterio[] = ['MEZCLA_PPM', 'O2_PORCENTAJE'];
 
 /**
  * Las cinco condiciones de la inspección trimestral de la sonda.
