@@ -157,6 +157,16 @@ export const featuresRoutes: Routes = [
     },
   },
   {
+  path: 'control-bienes',
+  loadComponent: () =>
+    import('./control-bienes/control-bienes').then((m) => m.ControlBienes),
+  canActivate: [canActivateWithRealmRoles],
+  data: {
+    title: 'Bienes Muebles',
+    requiredRoles: RoleAccess.CONTROL_BIENES_MUEBLES,
+  },
+},
+  {
     path: 'admin-catalogos',
     loadComponent: () => import('./admin-catalogos/admin-catalogos').then((m) => m.AdminCatalogos),
     canActivate: [canActivateWithRealmRoles],

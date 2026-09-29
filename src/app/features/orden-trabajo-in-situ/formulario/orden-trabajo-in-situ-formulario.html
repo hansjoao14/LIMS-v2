@@ -360,140 +360,134 @@
       </div>
     </div>
 
-    <!-- Section: campos del formulario dinámico "Orden de Trabajo In Situ"
-         (docs/formularios-dinamicos-estandar.md). Siempre visible: su
-         contenido y visibilidad los controla la API (estado/hidden), no el
-         tipo de ensayo — el backend puede agregar o quitar preguntas sin
-         requerir cambios en esta plantilla. -->
-    <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-8">
-      <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
-        <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Datos de la Orden</h4>
-      </div>
-      <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-        @if (loadingCamposOperativos) {
-          <div class="col-span-full text-sm text-slate-400 italic">Cargando formulario...</div>
-        }
+    <!--
+      DATOS DE LA ORDEN
+      Solo aplica a solicitudes de Ruido.
+      Los campos siguen siendo dinámicos y provienen de la API.
+      Observaciones se excluye de esta sección y se presenta aparte.
+    -->
+    @if (solicitudSeleccionada && esRuido) {
+      <section
+        class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-8 animate-in fade-in"
+      >
+        <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+          <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">Datos de la Orden</h4>
+        </div>
 
-        @for (field of visibleCamposOperativos; track field.id) {
-          <div class="flex flex-col">
-            <label
-              class="block text-[11px] font-bold uppercase mb-1"
-              [class.text-red-600]="form.get(field.key)?.invalid && form.get(field.key)?.touched"
-              [class.text-[#1e3a8a]]="
-                !(form.get(field.key)?.invalid && form.get(field.key)?.touched)
-              "
+        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+          @if (loadingCamposOperativos) {
+            <div class="col-span-full text-sm text-slate-400 italic">
+              Cargando formulario...
+            </div>
+          }
+
+          @for (field of camposDatosOrden; track field.id) {
+            <div
+              class="flex flex-col"
+              [class.md:col-span-2]="field.controlType === 'textarea'"
             >
-              {{ field.label }}
-              @if (field.required) {
-                <span class="text-red-500">*</span>
-              }
-            </label>
-
-            @if (field.controlType === 'select') {
-              <select
-                [formControl]="getOperativoControl(field.key)"
-                class="w-full border bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                [class.border-red-400]="
+              <label
+                class="block text-[11px] font-bold uppercase mb-1"
+                [class.text-red-600]="
                   form.get(field.key)?.invalid && form.get(field.key)?.touched
                 "
-                [class.border-slate-300]="
+                [class.text-[#1e3a8a]]="
                   !(form.get(field.key)?.invalid && form.get(field.key)?.touched)
                 "
               >
-                <option value="">Seleccione...</option>
-                @for (opt of field.options; track opt.id) {
-                  <option [value]="opt.id">{{ opt.nombre }}</option>
+                {{ field.label }}
+                @if (field.required) {
+                  <span class="text-red-500">*</span>
                 }
-              </select>
-            } @else {
-              <input
-                [formControl]="getOperativoControl(field.key)"
-                class="w-full border bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                [class.border-red-400]="
-                  form.get(field.key)?.invalid && form.get(field.key)?.touched
-                "
-                [class.border-slate-300]="
-                  !(form.get(field.key)?.invalid && form.get(field.key)?.touched)
-                "
-                [maxlength]="field.maxLength ?? 250"
-                [placeholder]="field.placeholder"
-              />
-            }
+              </label>
 
-            @if (form.get(field.key)?.invalid && form.get(field.key)?.touched) {
-              <span class="text-red-500 text-[11px] mt-1">Este campo es obligatorio.</span>
-            }
-          </div>
-        }
-      </div>
-    </section>
+              @if (field.controlType === 'select') {
+                <select
+                  [formControl]="getOperativoControl(field.key)"
+                  class="w-full border bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                  [class.border-red-400]="
+                    form.get(field.key)?.invalid && form.get(field.key)?.touched
+                  "
+                  [class.border-slate-300]="
+                    !(form.get(field.key)?.invalid && form.get(field.key)?.touched)
+                  "
+                >
+                  <option value="">Seleccione...</option>
+                  @for (opt of field.options; track opt.id) {
+                    <option [value]="opt.id">{{ opt.nombre }}</option>
+                  }
+                </select>
+              } @else if (field.controlType === 'textarea') {
+                <textarea
+                  [formControl]="getOperativoControl(field.key)"
+                  rows="4"
+                  class="w-full border bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors resize-y"
+                  [class.border-red-400]="
+                    form.get(field.key)?.invalid && form.get(field.key)?.touched
+                  "
+                  [class.border-slate-300]="
+                    !(form.get(field.key)?.invalid && form.get(field.key)?.touched)
+                  "
+                  [maxlength]="field.maxLength ?? 500"
+                  [placeholder]="field.placeholder"
+                ></textarea>
+              } @else {
+                <input
+                  [formControl]="getOperativoControl(field.key)"
+                  class="w-full border bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+                  [class.border-red-400]="
+                    form.get(field.key)?.invalid && form.get(field.key)?.touched
+                  "
+                  [class.border-slate-300]="
+                    !(form.get(field.key)?.invalid && form.get(field.key)?.touched)
+                  "
+                  [maxlength]="field.maxLength ?? 250"
+                  [placeholder]="field.placeholder"
+                />
+              }
 
-    <!-- Section: Dirección/Teléfono PCA — solo visible cuando se selecciona
-         Ruido (id=91). No forman parte del formulario dinámico. -->
-    @if (tipoEnsayoId === 91) {
-      <section
-        class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-8 animate-in fade-in"
-        formGroupName="usoSuelo"
-      >
-        <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
-          <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">
-            Punto Crítico de Afectación (PCA)
-          </h4>
-        </div>
-        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="flex flex-col">
-            <label
-              class="block text-[11px] font-bold uppercase mb-1"
-              [class.text-red-600]="
-                form.get('usoSuelo.direccionPca')?.invalid &&
-                form.get('usoSuelo.direccionPca')?.touched
-              "
-              [class.text-[#1e3a8a]]="
-                !(
-                  form.get('usoSuelo.direccionPca')?.invalid &&
-                  form.get('usoSuelo.direccionPca')?.touched
-                )
-              "
-            >
-              Dirección PCA <span class="text-red-500">*</span>
-            </label>
-            <input
-              formControlName="direccionPca"
-              class="w-full border bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-              [class.border-red-400]="
-                form.get('usoSuelo.direccionPca')?.invalid &&
-                form.get('usoSuelo.direccionPca')?.touched
-              "
-              [class.border-slate-300]="
-                !(
-                  form.get('usoSuelo.direccionPca')?.invalid &&
-                  form.get('usoSuelo.direccionPca')?.touched
-                )
-              "
-              placeholder="Ej: Av. Eloy Alfaro N43-185 y José Queri"
-              maxlength="128"
-            />
-            @if (
-              form.get('usoSuelo.direccionPca')?.invalid &&
-              form.get('usoSuelo.direccionPca')?.touched
-            ) {
-              <span class="text-red-500 text-[11px] mt-1">Este campo es obligatorio.</span>
-            }
-          </div>
-
-          <div class="flex flex-col">
-            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1"
-              >Teléfono PCA</label
-            >
-            <input
-              formControlName="telefonoPca"
-              class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-              placeholder="Ej: 098483595"
-              maxlength="10"
-            />
-          </div>
+              @if (form.get(field.key)?.invalid && form.get(field.key)?.touched) {
+                <span class="text-red-500 text-[11px] mt-1">
+                  Este campo es obligatorio.
+                </span>
+              }
+            </div>
+          }
         </div>
       </section>
+    }
+
+    <!--
+      OBSERVACIONES
+      Campo independiente y opcional.
+      Se muestra para cualquier solicitud seleccionada, tanto Ruido como Emisiones.
+    -->
+    @if (solicitudSeleccionada) {
+      @if (campoObservaciones; as field) {
+        <section
+          class="border border-slate-200 rounded-sm overflow-hidden shadow-sm mb-8 animate-in fade-in"
+        >
+          <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+            <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">
+              Observaciones
+            </h4>
+          </div>
+
+          <div class="p-5">
+            <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+              {{ field.label }}
+            </label>
+
+            <textarea
+              [formControl]="getOperativoControl(field.key)"
+              rows="4"
+              class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors resize-y"
+              [maxlength]="field.maxLength ?? 500"
+              [placeholder]="field.placeholder"
+            ></textarea>
+          </div>
+        </section>
+      }
     }
 
     <!-- Notas -->
@@ -522,7 +516,7 @@
       <button
         type="button"
         (click)="guardar()"
-        [disabled]="saving"
+        [disabled]="saving || loadingDetalle || !solicitudSeleccionada"
         class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
       >
         @if (saving) {

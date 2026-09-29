@@ -50,8 +50,7 @@ export class MedicionesTabla {
   readonly criterios = input.required<CriterioAceptacion[]>();
   readonly cargando = input(false);
   readonly soloLectura = input(false);
-
-  readonly agregar = output<void>();
+	readonly agregar = output<void>();
   readonly eliminar = output<number>();
 
   get filas(): FormArray {
@@ -97,10 +96,22 @@ export class MedicionesTabla {
     });
   }
 
-  /** Criterio de aceptación del rango en el que cae el promedio medido. */
+  /** Criterio de aceptación del rango correspondiente al valor certificado del patrón. */
   private criterioDe(fila: AbstractControl): CriterioAceptacion | null {
-    return buscarCriterio(this.criterios(), this.config().grupoCriterio, this.xmed(fila));
+  const valorTeorico = this.valorTeorico(fila);
+
+  if (valorTeorico === null) {
+    return null;
   }
+
+  const valorParaRango = Math.round(valorTeorico);
+
+  return buscarCriterio(
+    this.criterios(),
+    this.config().grupoCriterio,
+    valorParaRango,
+  );
+}
 
   /**
    * Por qué una fila quedó sin veredicto.
@@ -126,7 +137,8 @@ export class MedicionesTabla {
     if (this.criterioDe(fila) === null) {
       return {
         corto: 'Fuera de rango',
-        largo: `El promedio no cae en ningún rango de criterio vigente. Así no se puede numerar la hoja`,
+        largo:
+          'La concentración certificada del patrón no cae en ningún rango de Control de Calidad vigente.',
       };
     }
     return {

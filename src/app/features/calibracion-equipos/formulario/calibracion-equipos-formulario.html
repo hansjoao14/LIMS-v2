@@ -6,20 +6,16 @@
         Información de Verificación:
       </h4>
     </div>
+
     <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="flex items-center gap-3 border border-slate-200 rounded p-3 bg-slate-50">
-        <div
-          class="flex-shrink-0 w-8 h-8 rounded-full bg-[#1e3a8a] flex items-center justify-center"
-        >
+        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-[#1e3a8a] flex items-center justify-center">
           <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         </div>
+
         <div>
           <p class="text-[10px] font-bold text-[#1e3a8a] uppercase tracking-wider">
             Nombre del Analista
@@ -29,289 +25,333 @@
       </div>
 
       <div class="flex items-center gap-3 border border-slate-200 rounded p-3 bg-slate-50">
-        <div
-          class="flex-shrink-0 w-8 h-8 rounded-full bg-[#1e3a8a] flex items-center justify-center"
-        >
+        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-[#1e3a8a] flex items-center justify-center">
           <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2v12a2 2 0 002 2z" />
           </svg>
         </div>
+
         <div class="flex-1">
           <p class="text-[10px] font-bold text-[#1e3a8a] uppercase tracking-wider">
             Fecha de Verificación
           </p>
-          <input
-            type="date"
-            [(ngModel)]="fechaVerificacion"
-            class="mt-0.5 text-sm font-semibold text-slate-700 border-none bg-transparent outline-none w-full"
-          />
+          <input type="date" [(ngModel)]="fechaVerificacion"
+            class="mt-0.5 text-sm font-semibold text-slate-700 border-none bg-transparent outline-none w-full" />
         </div>
       </div>
     </div>
   </section>
 
   @if (loading) {
-    <app-loading />
+  <app-loading />
   } @else {
-    <!-- Tarjetas del formulario dinámico (schema 2087) -->
-    <form [formGroup]="form" class="space-y-6">
-      @for (grupo of gruposEquipo; track grupo.key) {
-        <app-dynamic-form-group [grupo]="grupo" [plantillaLayout]="layoutsPropios" />
-      }
+  <form [formGroup]="form" class="space-y-8">
+    <!--
+        Renderer genérico de un campo dinámico. La sección y el orden los manda
+        la configuración de BD; esta plantilla solo decide cómo pintar el tipo
+        de control sin alterar su posición.
+      -->
+    <ng-template #campoGenerico let-campo>
+      @if (campo; as campoSeguro) {
+        @if (!campoSeguro.hidden) {
+          <div class="flex flex-col" [ngClass]="campoSeguro.key === 'observaciones' ? 'md:col-span-2' : ''">
+            <label class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1.5">
+              {{ campoSeguro.label }}
+              @if (campoSeguro.required) {
+                <span class="text-red-500">*</span>
+              }
+            </label>
 
-      <!-- Fecha de última calibración de los equipos.
-           Las fechas salían dentro de la tarjeta de cada equipo; el F-PEE-11-02
-           las agrupa aparte, en acústicos y ambientales. El dato no cambió:
-           sigue viniendo del catálogo al elegir el equipo y sigue siendo de solo
-           lectura. -->
-      <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
-        <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
-          <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">
-            Fecha de última calibración de los equipos
-          </h4>
-        </div>
-
-        <div class="p-5 space-y-6">
-          @for (bloque of gruposFechas; track bloque.titulo) {
-            <div>
-              <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">
-                {{ bloque.titulo }}
-              </p>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                @for (tarjeta of bloque.tarjetas; track tarjeta.key) {
-                  <div
-                    class="border border-slate-200 rounded-lg p-4 bg-white flex flex-col items-center text-center gap-2"
-                  >
-                    <div
-                      class="h-11 w-11 flex items-center justify-center rounded-lg bg-slate-50 border border-slate-200 text-[#1e3a8a] shrink-0"
-                    >
-                      <svg
-                        class="h-6 w-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.5"
-                          [attr.d]="tarjeta.icono"
-                        />
-                      </svg>
-                    </div>
-
-                    <p class="text-[11px] font-bold text-[#1e3a8a] uppercase leading-tight">
-                      {{ tarjeta.titulo }}
-                    </p>
-                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">
-                      Última calibración
-                    </p>
-
-                    @if (vigencia(tarjeta.key); as v) {
-                      <span
-                        class="text-xs font-bold px-2.5 py-1 rounded border whitespace-nowrap"
-                        [class.border-green-400]="!v.vencida"
-                        [class.text-green-700]="!v.vencida"
-                        [class.bg-green-50]="!v.vencida"
-                        [class.border-red-400]="v.vencida"
-                        [class.text-red-700]="v.vencida"
-                        [class.bg-red-50]="v.vencida"
-                        [title]="v.texto"
-                        >{{ fechaMostrada(tarjeta.key) }}</span
-                      >
-                      <!-- El aviso de vigencia se conserva: el color solo dice
-                           si venció, no cuánto le queda. -->
-                      <p
-                        class="text-[10px] leading-tight"
-                        [class.text-red-600]="v.vencida"
-                        [class.text-slate-400]="!v.vencida"
-                      >
-                        {{ v.texto }}
-                      </p>
-                    } @else {
-                      <span
-                        class="text-xs font-bold px-2.5 py-1 rounded border border-slate-200 bg-slate-50 text-slate-400 whitespace-nowrap"
-                        >—</span
-                      >
-                      <p class="text-[10px] text-slate-400 italic leading-tight">
-                        Selecciona el equipo
-                      </p>
-                    }
-                  </div>
-                }
+            @if (esCalculado(campoSeguro.key)) {
+              <div
+                class="w-full border border-slate-200 bg-slate-50 text-slate-600 p-2.5 rounded text-sm font-semibold min-h-10">
+                {{ valorMostrado(campoSeguro.key) }}
               </div>
-            </div>
-          }
-        </div>
-      </section>
-
-      @for (grupo of gruposComplementarios; track grupo.key) {
-        <app-dynamic-form-group [grupo]="grupo" [plantillaLayout]="layoutsPropios" />
-      }
-
-      <!-- Layouts propios del módulo. Van DENTRO del <form> para que
-         formControlName encuentre el [formGroup] en su injector. -->
-    <ng-template #layoutsPropios let-grupo>
-      <div class="p-5 space-y-5">
-        <!-- Selector del equipo: de él salen las fechas de calibración -->
-        @if (selectorDe(grupo); as selector) {
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div class="flex flex-col">
-              <label class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1.5">
-                {{ selector.label }}
-                @if (selector.required) {
-                  <span class="text-red-500">*</span>
-                }
-              </label>
-              <select
-                [formControlName]="selector.key"
-                class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-              >
-                <option value="">Selecciona el equipo</option>
-                @for (opcion of selector.opciones; track opcion.id) {
+            } @else if (campoSeguro.controlType === 'select') {
+              <select [formControlName]="campoSeguro.key"
+                class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors">
+                <option value="">Seleccione...</option>
+                @for (opcion of campoSeguro.opciones; track opcion.id) {
                   <option [value]="opcion.id">{{ opcion.nombre }}</option>
                 }
               </select>
-            </div>
-          </div>
-        }
-
-        <!-- Lecturas, errores, tolerancia y catálogos SI/NO del bloque -->
-        @if (camposCapturables(grupo).length) {
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            @for (campo of camposCapturables(grupo); track campo.id) {
-              <div class="flex flex-col">
-                <label class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1.5">
-                  {{ campo.label }}
-                  @if (campo.required) {
-                    <span class="text-red-500">*</span>
-                  }
-                </label>
-
-                @if (esCalculado(campo.key)) {
-                  <div
-                    class="w-full border border-slate-200 bg-slate-50 text-slate-600 p-2.5 rounded text-sm font-semibold"
-                  >
-                    {{ valorMostrado(campo.key) }}
-                  </div>
-                } @else if (campo.controlType === 'select') {
-                  <select
-                    [formControlName]="campo.key"
-                    class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                  >
-                    <option value="">Seleccione...</option>
-                    @for (opcion of campo.opciones; track opcion.id) {
-                      <option [value]="opcion.id">{{ opcion.nombre }}</option>
-                    }
-                  </select>
-                } @else {
-                  <input
-                    type="number"
-                    step="any"
-                    [formControlName]="campo.key"
-                    [placeholder]="campo.placeholder || 'Ingrese el valor'"
-                    class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
-                  />
-                }
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Evaluación y observaciones cierran el bloque complementario -->
-        @if (grupo.layout === 'complementarios') {
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-200">
-            <div class="flex flex-col">
-              <label class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1.5">
-                Evaluación:
+            } @else if (campoSeguro.controlType === 'toggle') {
+              <label class="inline-flex items-center gap-2 min-h-10 cursor-pointer">
+                <input type="checkbox" [formControlName]="campoSeguro.key"
+                  class="h-4 w-4 rounded border-slate-300 text-[#1e3a8a]" />
+                <span class="text-sm text-slate-600">
+                  {{ form.get(campoSeguro.key)?.value ? 'Sí' : 'No' }}
+                </span>
               </label>
-              <div class="flex items-center gap-2">
-                @if (evaluacion === 'CUMPLE') {
-                  <span
-                    class="text-sm font-bold text-green-700 px-3 py-1 rounded border border-green-400 bg-green-50 flex items-center gap-1.5"
-                  >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2.5"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    CUMPLE
-                  </span>
-                } @else if (evaluacion === 'NO CUMPLE') {
-                  <span
-                    class="text-sm font-bold text-red-600 px-3 py-1 rounded border border-red-300 bg-red-50 flex items-center gap-1.5"
-                  >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2.5"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                    NO CUMPLE
-                  </span>
-                } @else {
-                  <span class="text-sm text-slate-400 italic">
-                    {{ motivoSinEvaluacion }}
-                  </span>
-                }
-              </div>
-            </div>
-
-            @if (campo(grupo, 'observaciones'); as obs) {
-              <div class="flex flex-col md:col-span-2">
-                <label class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1.5">
-                  {{ obs.label }}
-                </label>
-                <textarea
-                  [formControlName]="obs.key"
-                  rows="3"
-                  class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white text-slate-700 transition-colors"
-                ></textarea>
-              </div>
+            } @else if (campoSeguro.controlType === 'textarea') {
+              <textarea [formControlName]="campoSeguro.key" rows="3" [readonly]="campoSeguro.readonly"
+                [placeholder]="campoSeguro.placeholder || ''"
+                class="w-full border border-slate-300 rounded p-3 text-sm resize-none outline-none focus:border-[#1e3a8a] bg-white text-slate-700 transition-colors"></textarea>
+            } @else if (campoSeguro.controlType === 'fecha') {
+              <input type="date" [formControlName]="campoSeguro.key" [readonly]="campoSeguro.readonly"
+                class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors" />
+            } @else if (campoSeguro.controlType === 'numero') {
+              <input type="number" step="any" [formControlName]="campoSeguro.key" [readonly]="campoSeguro.readonly"
+                [placeholder]="campoSeguro.placeholder || 'Ingrese el valor'"
+                class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors" />
+            } @else {
+              <input type="text" [formControlName]="campoSeguro.key" [readonly]="campoSeguro.readonly"
+                [placeholder]="campoSeguro.placeholder || 'Ingrese el valor'"
+                class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors" />
             }
           </div>
+        }
+      }
+    </ng-template>
+
+    <!-- ─── SECCIÓN 1: CÓDIGOS / CAMPOS CONFIGURADOS EN BD ───────────── -->
+    <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+      <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+        <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">
+          {{ tituloSeccion(1) }}
+        </h4>
+      </div>
+
+      <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+        @for (campo of camposCodigosVista; track $index) {
+        @if (campo; as campoSeguro) {
+        @if (!campoSeguro.hidden) {
+        <div class="flex flex-col">
+          <label class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1.5" [for]="campoSeguro.key">
+            {{ campoSeguro.label }}
+
+            @if (campoSeguro.required) {
+            <span class="text-red-500">*</span>
+            }
+          </label>
+
+          @if (campoSeguro.controlType === 'select') {
+          <select [id]="campoSeguro.key" [formControlName]="campoSeguro.key"
+            class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors">
+            <option value="">Selecciona el equipo</option>
+
+            @for (opcion of campoSeguro.opciones; track opcion.id) {
+            <option [value]="opcion.id">
+              {{ opcion.nombre }}
+            </option>
+            }
+          </select>
+          } @else {
+          <input [id]="campoSeguro.key" [type]="campoSeguro.controlType === 'numero' ? 'number' : 'text'"
+            [formControlName]="campoSeguro.key"
+            class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors" />
+          }
+        </div>
+        }
+        }
         }
       </div>
-    </ng-template>
-    </form>
+    </section>
 
-    <!-- ─── BOTONES (ui-standards.md §9) ──────────────────────────────── -->
-    <div class="flex justify-between pt-6 mt-6 border-t border-slate-300">
-      <button
-        type="button"
-        (click)="cancelar()"
-        class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all"
-      >
-        REGRESAR
-      </button>
+    <!-- ─── SECCIÓN 2: FECHAS ─────────────────────────────────────────── -->
+    <section>
+      <div class="mb-5">
+        <h4 class="font-bold text-[#1e3a8a] text-sm uppercase tracking-wide">
+          {{ tituloSeccion(2) }}
+        </h4>
+      </div>
 
-      <button
-        type="button"
-        (click)="registrar()"
-        [disabled]="saving"
-        class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
-      >
-        @if (saving) {
-          <span
-            class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"
-          ></span>
-          {{ modoEdicion ? 'Actualizando...' : 'Registrando...' }}
-        } @else {
-          {{ modoEdicion ? 'ACTUALIZAR' : 'REGISTRAR' }}
+      <div class="space-y-9">
+        @for (bloque of gruposFechasVista; track bloque.titulo) {
+        <div>
+          <p class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider mb-4">
+            {{ bloque.titulo }}
+          </p>
+
+          @if (bloque.titulo === 'Acústicos') {
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            @for (tarjeta of bloque.tarjetas; track tarjeta.key) {
+            <div
+              class="border border-slate-200 rounded-lg px-4 py-6 bg-white shadow-sm flex flex-col items-center text-center gap-2 min-h-44 justify-center">
+              <div class="h-14 w-14 flex items-center justify-center text-[#1e3a8a]">
+                <svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" [attr.d]="tarjeta.icono" />
+                </svg>
+              </div>
+
+              <p class="text-xs font-bold text-[#1e3a8a] uppercase leading-tight">
+                {{ tarjeta.titulo }}
+              </p>
+              <p class="text-[10px] text-slate-400 uppercase tracking-wider">
+                Última calibración
+              </p>
+
+              @if (vigencia(tarjeta.key); as v) {
+              <span class="text-xs font-bold px-2.5 py-1 rounded border whitespace-nowrap"
+                [class.border-green-400]="!v.vencida" [class.text-green-700]="!v.vencida"
+                [class.bg-green-50]="!v.vencida" [class.border-red-400]="v.vencida" [class.text-red-700]="v.vencida"
+                [class.bg-red-50]="v.vencida" [title]="v.texto">
+                {{ fechaMostrada(tarjeta.key) }}
+              </span>
+              <p class="text-[10px] leading-tight" [class.text-red-600]="v.vencida" [class.text-slate-400]="!v.vencida">
+                {{ v.texto }}
+              </p>
+              } @else {
+              <span
+                class="text-xs font-bold px-2.5 py-1 rounded border border-slate-200 bg-slate-50 text-slate-400 whitespace-nowrap">
+                —
+              </span>
+              <p class="text-[10px] text-slate-400 italic leading-tight">
+                Selecciona el equipo
+              </p>
+              }
+            </div>
+            }
+          </div>
+          } @else {
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            @for (tarjeta of bloque.tarjetas; track tarjeta.key) {
+            <div
+              class="border border-slate-200 rounded-lg px-4 py-6 bg-white shadow-sm flex flex-col items-center text-center gap-2 min-h-44 justify-center">
+              <div class="h-14 w-14 flex items-center justify-center text-[#1e3a8a]">
+                <svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" [attr.d]="tarjeta.icono" />
+                </svg>
+              </div>
+
+              <p class="text-xs font-bold text-[#1e3a8a] uppercase leading-tight">
+                {{ tarjeta.titulo }}
+              </p>
+              <p class="text-[10px] text-slate-400 uppercase tracking-wider">
+                Última calibración
+              </p>
+
+              @if (vigencia(tarjeta.key); as v) {
+              <span class="text-xs font-bold px-2.5 py-1 rounded border whitespace-nowrap"
+                [class.border-green-400]="!v.vencida" [class.text-green-700]="!v.vencida"
+                [class.bg-green-50]="!v.vencida" [class.border-red-400]="v.vencida" [class.text-red-700]="v.vencida"
+                [class.bg-red-50]="v.vencida" [title]="v.texto">
+                {{ fechaMostrada(tarjeta.key) }}
+              </span>
+              <p class="text-[10px] leading-tight" [class.text-red-600]="v.vencida" [class.text-slate-400]="!v.vencida">
+                {{ v.texto }}
+              </p>
+              } @else {
+              <span
+                class="text-xs font-bold px-2.5 py-1 rounded border border-slate-200 bg-slate-50 text-slate-400 whitespace-nowrap">
+                —
+              </span>
+              <p class="text-[10px] text-slate-400 italic leading-tight">
+                Selecciona el equipo
+              </p>
+              }
+            </div>
+            }
+          </div>
+          }
+        </div>
         }
-      </button>
-    </div>
+      </div>
+
+      @if (camposFechasAdicionalesVista.length > 0) {
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5 mt-6">
+        @for (campo of camposFechasAdicionalesVista; track campo.key) {
+        <ng-container *ngTemplateOutlet="campoGenerico; context: { $implicit: campo }"></ng-container>
+        }
+      </div>
+      }
+    </section>
+
+    <!-- ─── SECCIÓN 3: ASEGURAMIENTO ─────────────────────────────────── -->
+    <section>
+      <div class="mb-4">
+        <h4 class="font-bold text-[#1e3a8a] text-sm uppercase tracking-wide">
+          {{ tituloSeccion(3) }}
+        </h4>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
+        @for (campo of camposAseguramientoVista; track campo.key) {
+        <ng-container *ngTemplateOutlet="campoGenerico; context: { $implicit: campo }"></ng-container>
+        }
+
+        <div class="flex flex-col">
+          <label class="text-[11px] font-bold text-[#1e3a8a] uppercase mb-1.5">
+            Evaluación:
+          </label>
+
+          <div class="min-h-10 flex items-center">
+            @if (evaluacion === 'CUMPLE') {
+            <span
+              class="text-sm font-bold text-green-700 px-3 py-1 rounded border border-green-400 bg-green-50 flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+              CUMPLE
+            </span>
+            } @else if (evaluacion === 'NO CUMPLE') {
+            <span
+              class="text-sm font-bold text-red-600 px-3 py-1 rounded border border-red-300 bg-red-50 flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              NO CUMPLE
+            </span>
+            } @else {
+            <span class="text-sm text-slate-400 italic">
+              {{ motivoSinEvaluacion }}
+            </span>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── SECCIÓN 4: CHECKLIST / OBSERVACIONES ─────────────────────── -->
+    <section>
+      <div class="mb-4">
+        <h4 class="font-bold text-[#1e3a8a] text-sm uppercase tracking-wide">
+          {{ tituloSeccion(4) }}
+        </h4>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
+        @for (campo of camposChecklistVista; track campo.key) {
+        <ng-container *ngTemplateOutlet="campoGenerico; context: { $implicit: campo }"></ng-container>
+        }
+      </div>
+    </section>
+
+    <!-- ─── SECCIONES NUEVAS CONFIGURADAS DESDE ADMINISTRACIÓN ──────── -->
+    @for (seccion of seccionesAdicionales; track seccion) {
+    <section class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+      <div class="bg-[#f8fafc] border-b border-slate-200 px-5 py-3">
+        <h4 class="font-bold text-[#1e3a8a] text-sm uppercase">
+          {{ tituloSeccion(seccion) }}
+        </h4>
+      </div>
+
+      <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
+        @for (campo of camposDeSeccion(seccion); track campo.key) {
+        <ng-container *ngTemplateOutlet="campoGenerico; context: { $implicit: campo }"></ng-container>
+        }
+      </div>
+    </section>
+    }
+  </form>
+
+  <!-- ─── BOTONES ───────────────────────────────────────────────────── -->
+  <div class="flex justify-between pt-6 mt-6 border-t border-slate-300">
+    <button type="button" (click)="cancelar()"
+      class="bg-white border border-slate-300 text-slate-700 px-8 py-2.5 rounded text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">
+      REGRESAR
+    </button>
+
+    <button type="button" (click)="registrar()" [disabled]="saving"
+      class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-sm font-bold shadow-md hover:bg-[#2541b2] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
+      @if (saving) {
+      <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+      {{ modoEdicion ? 'Actualizando...' : 'Registrando...' }}
+      } @else {
+      {{ modoEdicion ? 'ACTUALIZAR' : 'REGISTRAR' }}
+      }
+    </button>
+  </div>
   }
 </div>

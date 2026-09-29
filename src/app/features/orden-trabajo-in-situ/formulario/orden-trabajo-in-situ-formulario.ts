@@ -78,6 +78,13 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   tipoEnsayoId: number | null = null;
   tipoEnsayoNombre = '';
 
+  /**
+   * Indica si la solicitud seleccionada corresponde a Ruido.
+   * No depende de un id ambiental fijo: se deriva del número ST-R-...
+   * y, como respaldo, del nombre de la matriz/ambiente recibido por la API.
+   */
+  esRuido = false;
+
   panelAbierto = false;
   loadingBusqueda = false;
   private todasSolicitudes: ReportSolicitud[] = [];
@@ -98,6 +105,13 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   // FORMULARIO_OPERATIVO_ID). Se renderizan y validan igual que en
   // solicitud-trabajo.ts (docs/formularios-dinamicos-estandar.md).
   camposOperativos: FieldConfig[] = [];
+
+  // Vista derivada del formulario dinámico:
+  // - camposDatosOrden: todos los campos visibles excepto Observaciones.
+  // - campoObservaciones: Observaciones independiente y opcional.
+  camposDatosOrden: FieldConfig[] = [];
+  campoObservaciones: FieldConfig | null = null;
+
   loadingCamposOperativos = true;
 
   private readonly destroy$ = new Subject<void>();
@@ -145,7 +159,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       }),
       ensayos: this.fb.array([]),
       usoSuelo: this.fb.group({
-        direccionPca: ['', Validators.required],
+        direccionPca: [''],
         telefonoPca: [''],
       }),
     });
@@ -178,8 +192,21 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
             .filter((p) => p.estado !== false)
             .map((p) => this.toFieldConfigOperativo(p))
             .sort((a, b) => a.order - b.order);
+
+console.table(
+  this.camposOperativos.map((field) => ({
+    campo: field.label,
+    key: field.key,
+    obligatorio: field.required,
+    oculto: field.hidden,
+  })),
+);
+
+
+
           this.generateOperativoControls();
           this.applyOperativoDependencyLogic();
+          this.actualizarCamposOperativosVista();
           this.loadingCamposOperativos = false;
           if (this.modoEdicion && this.editingRecord) {
             this.precargarValoresOperativos(this.editingRecord.solicitud_id);
@@ -201,7 +228,9 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       controlType: this.resolveControlTypeOperativo(pregunta),
       section: 'operador',
       placeholder: typeof pregunta.ayuda === 'string' ? pregunta.ayuda : '',
-      required: pregunta.obligatorio,
+      required: this.normalizarTexto(pregunta.nombre) === 'observaciones'
+        ? false
+        : pregunta.obligatorio,
       readonly: pregunta.readonly,
       hidden: pregunta.hidden,
       maxLength: typeof pregunta.num_caracter === 'number' ? pregunta.num_caracter : null,
@@ -210,13 +239,49 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       scheduleItems: pregunta.jornada_laboral_item ?? [],
       dependsOn: pregunta.atributo_id
         ? {
-            fieldId: String(pregunta.atributo_id),
-            triggerValue: String(pregunta.item_catalogo_id ?? ''),
-          }
+          fieldId: String(pregunta.atributo_id),
+          triggerValue: String(pregunta.item_catalogo_id ?? ''),
+        }
         : undefined,
       integrations: { sri: false, civil: false, iess: false },
       source: pregunta,
     };
+  }
+
+  private normalizarTexto(valor: string | null | undefined): string {
+    return (valor ?? '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+  private esCampoObservaciones(field: FieldConfig): boolean {
+    return this.normalizarTexto(field.key) === 'observaciones';
+  }
+
+  private actualizarCamposOperativosVista(): void {
+    const visibles = this.camposOperativos.filter((field) => !field.hidden);
+
+    this.camposDatosOrden = visibles.filter(
+      (field) => !this.esCampoObservaciones(field),
+    );
+
+    this.campoObservaciones =
+      visibles.find((field) => this.esCampoObservaciones(field)) ?? null;
+  }
+
+  private campoOperativoAplica(field: FieldConfig): boolean {
+    return this.esCampoObservaciones(field) || this.esRuido;
+  }
+
+  private determinarEsRuido(
+    numeroSolicitud: string | null | undefined,
+    nombreAmbiente: string | null | undefined,
+  ): boolean {
+    const numero = (numeroSolicitud ?? '').trim().toUpperCase();
+    const ambiente = (nombreAmbiente ?? '').trim().toLowerCase();
+
+    return numero.startsWith('ST-R-') || ambiente.includes('ruido');
   }
 
   private resolveControlTypeOperativo(pregunta: Pregunta): FieldConfig['controlType'] {
@@ -273,6 +338,8 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       control.setValidators(this.buildOperativoValidators(field, hidden));
       control.updateValueAndValidity({ emitEvent: false });
     }
+
+    this.actualizarCamposOperativosVista();
   }
 
   // Precarga los valores previamente guardados (ValorSolicitudItem) del
@@ -352,6 +419,13 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
     this.panelAbierto = false;
     this.ensayosArray.clear();
     this.operadorAtributos = [];
+
+    // Determinar inmediatamente si la solicitud es de Ruido.
+    this.esRuido = this.determinarEsRuido(
+      sol.num_secuencial,
+      null,
+    );
+
     this.cargarDetalle();
   }
 
@@ -376,10 +450,17 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
     const f = detalle.formularios?.[0];
     if (!f) return;
 
-    // El tipo de ensayo (Físico-Químico=90 / Ruido=91) ya no se selecciona
-    // manualmente: se deriva del propio detalle de la solicitud.
-    this.tipoEnsayoId = f.tabla_ensayos?.[0]?.id_ambiental ?? null;
-    this.tipoEnsayoNombre = f.tabla_ensayos?.[0]?.ensayo_nombre ?? '';
+    // El ambiente/tipo se deriva del propio detalle de la solicitud.
+    // No se usa un id ambiental fijo para identificar Ruido.
+    const grupoEnsayo = f.tabla_ensayos?.[0];
+
+    this.tipoEnsayoId = grupoEnsayo?.id_ambiental ?? null;
+    this.tipoEnsayoNombre = grupoEnsayo?.ensayo_nombre ?? '';
+
+    this.esRuido = this.determinarEsRuido(
+      f.num_secuencial_solicitud,
+      grupoEnsayo?.nombre_ambiental,
+    );
 
     const attr = (nombre: string) =>
       f.atributos?.find((a) => a.nombre_atributo_formulario === nombre)?.valor_texto ?? '';
@@ -387,8 +468,8 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
     const fechaEmision = f.fecha_emision_solicitud ? new Date(f.fecha_emision_solicitud) : null;
     const fechaMaxima = fechaEmision
       ? new Date(new Date(fechaEmision).setDate(fechaEmision.getDate() + 15))
-          .toISOString()
-          .split('T')[0]
+        .toISOString()
+        .split('T')[0]
       : '';
 
     this.form.patchValue({
@@ -444,6 +525,10 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
     this.modoEdicion = true;
     this.tipoEnsayoId = orden.ctambiente_id;
     this.tipoEnsayoNombre = orden.ctambiente_nombre ?? '';
+    this.esRuido = this.determinarEsRuido(
+      orden.solicitud_num_secuencial,
+      orden.ctambiente_nombre,
+    );
 
     const fechaEmision = orden.creado_en
       ? new Date(+orden.creado_en).toISOString().split('T')[0]
@@ -502,6 +587,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
     this.solicitudSeleccionada = null;
     this.tipoEnsayoId = null;
     this.tipoEnsayoNombre = '';
+    this.esRuido = false;
     this.busqueda = '';
     this.operadorAtributos = [];
     this.form.reset();
@@ -528,7 +614,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   private async guardarValoresOperativos(solicitudId: string): Promise<void> {
     const raw = this.form.getRawValue();
     const valorSolicitud: ValorSolicitudItem[] = this.camposOperativos
-      .filter((f) => !f.hidden)
+      .filter((f) => !f.hidden && this.campoOperativoAplica(f))
       .map((f) => {
         const value = raw[f.key];
         const esSelect = f.controlType === 'select';
@@ -560,7 +646,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
   // dentro del mismo payload como valorOrdenTrabajo, no en una llamada aparte.
   private buildValorOrdenTrabajo(raw: Record<string, any>): ValorOrdenTrabajoPayload[] {
     return this.camposOperativos
-      .filter((f) => !f.hidden)
+      .filter((f) => !f.hidden && this.campoOperativoAplica(f))
       .map((f) => {
         const value = raw[f.key];
         const esSelect = f.controlType === 'select';
@@ -594,11 +680,17 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       return;
     }
 
-    // Los campos del formulario dinámico son siempre visibles (su
-    // obligatoriedad la define la API), sin importar el tipo de ensayo.
-    this.camposOperativos.forEach((f) => this.form.get(f.key)?.markAsTouched());
-    const dinamicosInvalidos = this.camposOperativos.some(
-      (f) => !f.hidden && this.form.get(f.key)?.invalid,
+    // Observaciones aplica a Ruido y Emisiones y es opcional.
+    // Los demás campos dinámicos pertenecen a "Datos de la Orden"
+    // y solo aplican cuando la solicitud es de Ruido.
+    const camposAplicables = this.camposOperativos.filter(
+      (f) => !f.hidden && this.campoOperativoAplica(f),
+    );
+
+    camposAplicables.forEach((f) => this.form.get(f.key)?.markAsTouched());
+
+    const dinamicosInvalidos = camposAplicables.some(
+      (f) => this.form.get(f.key)?.invalid,
     );
     if (dinamicosInvalidos) {
       this.toastrAlert.showWarning(
@@ -608,20 +700,7 @@ export class OrdenTrabajoInSituFormulario implements OnInit, OnChanges, OnDestro
       return;
     }
 
-    // Dirección PCA solo aplica (y es obligatoria) para ensayos de Ruido.
-    if (this.tipoEnsayoId === 91) {
-      const usoSuelo = this.form.get('usoSuelo') as FormGroup;
-      usoSuelo.markAllAsTouched();
-      if (usoSuelo.get('direccionPca')?.invalid) {
-        this.toastrAlert.showWarning(
-          'Complete todos los campos obligatorios antes de guardar.',
-          'Requerido',
-        );
-        return;
-      }
-    }
-
-    this.saving = true;
+   this.saving = true;
     const raw = this.form.getRawValue();
     const { id: userId } = this.authService.currentUser();
 

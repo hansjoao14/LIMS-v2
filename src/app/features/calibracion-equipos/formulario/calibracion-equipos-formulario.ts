@@ -28,7 +28,6 @@ import {
 import { LoadingComponent } from '../../../shared/components/loading/loading';
 import {
   DynamicField,
-  DynamicFormGroupComponent,
   DynamicGroup,
   aplicarDependencias,
   camposDe,
@@ -42,6 +41,7 @@ import {
   CAMPO_ERROR_PL,
   CAMPO_COD_PATRON,
   CAMPO_COD_SONOMETRO,
+  CAMPO_COD_CALIBRADOR,
   CAMPO_FECHA_SONOMETRO,
   CAMPO_LECTURA_PC,
   CAMPO_LECTURA_PL,
@@ -52,8 +52,12 @@ import {
   FECHAS_ESTACION,
   FECHA_POR_EQUIPO,
   GRUPOS_FECHAS,
-  LAYOUT_COMPLEMENTARIOS,
+  SECCION_CODIGOS,
+  SECCION_FECHAS,
+  SECCION_ASEGURAMIENTO,
+  SECCION_CHECKLIST,
   SECCION_CALIBRACION,
+  SECCION_FALLBACK_POR_CAMPO,
 } from '../model/calibracion-equipos-form.model';
 
 /** Estado de vigencia de una calibración, para el aviso junto a la fecha. */
@@ -69,7 +73,6 @@ export interface VigenciaCalibracion {
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    DynamicFormGroupComponent,
     LoadingComponent,
   ],
   templateUrl: './calibracion-equipos-formulario.html',
@@ -88,6 +91,17 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
 
   form: FormGroup = this.fb.group({});
   grupos: DynamicGroup[] = [];
+
+  /** Secciones realmente presentes en el schema, ya normalizadas y ordenadas. */
+  seccionesFormulario: number[] = [];
+
+  /**
+   * Metadata original administrada en BD, indexada por nombre del campo.
+   * Se conserva fuera de DynamicField porque `construirGrupos()` transforma
+   * el schema y no debemos depender de que `source.seccion` permanezca intacto.
+   */
+  private readonly seccionPorCampo = new Map<string, number>();
+  private readonly ordenPorCampo = new Map<string, number>();
 
   loading = true;
   saving = false;
@@ -138,10 +152,69 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
           this.referencias[CAMPO_ERROR_PC] = referencias.pc;
           this.referencias[CAMPO_ERROR_PL] = referencias.pl;
 
+          const preguntas = (formulario.preguntas ?? []).map((pregunta) => {
+            const raw = pregunta.seccion;
+            const seccionBD = Number(raw);
+
+            const tieneSeccionBD =
+              raw !== null &&
+              raw !== undefined &&
+              String(raw).trim() !== '' &&
+              Number.isFinite(seccionBD) &&
+              seccionBD > 0;
+
+            return {
+              ...pregunta,
+              // La sección configurada en BD siempre gana. El mapa se usa
+              // únicamente como fallback para atributos todavía sin sección.
+              seccion: tieneSeccionBD
+                ? seccionBD
+                : (SECCION_FALLBACK_POR_CAMPO[pregunta.nombre] ?? SECCION_CALIBRACION),
+            };
+          });
+
+          // Conserva la sección y el orden exactamente como quedaron
+          // normalizados desde BD (o fallback si BD no trae sección).
+          this.seccionPorCampo.clear();
+          this.ordenPorCampo.clear();
+
+          for (const pregunta of preguntas) {
+            this.seccionPorCampo.set(pregunta.nombre, Number(pregunta.seccion));
+            this.ordenPorCampo.set(pregunta.nombre, Number(pregunta.orden ?? 0));
+          }
+
+          this.seccionesFormulario = [
+            ...new Set(
+              preguntas
+                .map((pregunta) => Number(pregunta.seccion))
+                .filter((seccion) => Number.isFinite(seccion) && seccion > 0),
+            ),
+          ].sort((a, b) => a - b);
+
+          /**
+ * IMPORTANTE:
+ * El motor dynamic-form de Calibradores históricamente trabaja como un
+ * formulario de una sola pantalla/sección.
+ *
+ * Las secciones administradas en BD (1, 2, 3, 4, ...)
+ * determinan únicamente la ubicación visual de los campos.
+ *
+ * Para construir TODOS los controles sin perder atributos de las
+ * secciones 3, 4 o futuras, se entrega al motor una copia con sección 1.
+ */
+          const preguntasMotor = preguntas.map((pregunta) => ({
+            ...pregunta,
+            seccion: SECCION_CALIBRACION,
+          }));
+
           this.grupos = construirGrupos(
-            formulario.preguntas ?? [],
+            preguntasMotor,
             SECCION_CALIBRACION,
             CALIBRACION_FORM_CONFIG,
+          );
+
+          this.grupos = this.seccionesFormulario.flatMap((seccion) =>
+            construirGrupos(preguntas, seccion, CALIBRACION_FORM_CONFIG),
           );
           this.marcarDerivados();
           generarControles(this.form, this.grupos);
@@ -467,58 +540,87 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
 
   // ── Consultas para la plantilla ──────────────────────────────────────────
 
-  campo(grupo: { campos: DynamicField[] }, key: string): DynamicField | undefined {
-    return grupo.campos.find((c) => c.key === key);
+  /** Campos de una sección, siempre respetando `seccion` y `orden` de BD. */
+  camposDeSeccion(seccion: number): DynamicField[] {
+    return camposDe(this.grupos)
+      .filter(
+        (campo): campo is DynamicField =>
+          !!campo && this.seccionPorCampo.get(campo.key) === seccion,
+      )
+      .sort(
+        (a, b) =>
+          (this.ordenPorCampo.get(a.key) ?? 0) -
+          (this.ordenPorCampo.get(b.key) ?? 0),
+      );
   }
 
-  /** Campos del grupo que la plantilla no coloca en un sitio propio. */
-  camposSueltos(grupo: { campos: DynamicField[] }, colocados: string[]): DynamicField[] {
-    const puestos = new Set(colocados);
-    return grupo.campos.filter((c) => !puestos.has(c.key));
+  get camposCodigosVista(): DynamicField[] {
+    return this.camposDeSeccion(SECCION_CODIGOS);
   }
 
-  /** Selector de equipo del grupo, si lo tiene. */
-  selectorDe(grupo: { campos: DynamicField[] }): DynamicField | undefined {
-    return grupo.campos.find((c) => c.controlType === 'select' && this.esSelectorEquipo(c.key));
+  get camposAseguramientoVista(): DynamicField[] {
+    return this.camposDeSeccion(SECCION_ASEGURAMIENTO);
   }
 
-  private esSelectorEquipo(key: string): boolean {
-    return key in FECHA_POR_EQUIPO || key === CAMPO_COD_ESTACION;
+  get camposChecklistVista(): DynamicField[] {
+    return this.camposDeSeccion(SECCION_CHECKLIST);
   }
 
-  /** Fechas del grupo (vienen de catálogo, se muestran en solo lectura). */
   /**
-   * Bloques del apartado "Fecha de última calibración de los equipos".
-   *
-   * Las fechas se sacaron de la tarjeta de cada equipo y se juntaron acá, que
-   * es como las pide el F-PEE-11-02: primero los códigos de todos los equipos y
-   * después sus fechas, agrupadas en acústicos y ambientales. El dato es el
-   * mismo de antes —sale del catálogo al elegir el equipo y no se teclea—, solo
-   * cambió dónde y cómo se muestra.
+   * Campos de la sección de fechas que no forman parte de las siete tarjetas
+   * especializadas. Permite incorporar atributos nuevos sin tocar la plantilla.
    */
-  readonly gruposFechas = GRUPOS_FECHAS;
-
-  /** Tarjetas de equipo (llevan los selectores), en su orden de configuración. */
-  get gruposEquipo(): DynamicGroup[] {
-    return this.grupos.filter((g) => g.layout !== LAYOUT_COMPLEMENTARIOS);
+  get camposFechasAdicionalesVista(): DynamicField[] {
+    const clavesTarjeta = new Set(GRUPOS_FECHAS.flatMap((grupo) => grupo.tarjetas.map((t) => t.key)));
+    return this.camposDeSeccion(SECCION_FECHAS).filter((campo) => !clavesTarjeta.has(campo.key));
   }
 
-  /** Checklist y observaciones: van después del bloque de fechas. */
-  get gruposComplementarios(): DynamicGroup[] {
-    return this.grupos.filter((g) => g.layout === LAYOUT_COMPLEMENTARIOS);
+  /**
+   * Tarjetas de fechas visibles en la sección 2, ordenadas por el `orden` de BD.
+   * El metadata GRUPOS_FECHAS conserva únicamente título e icono.
+   */
+  get gruposFechasVista() {
+    return GRUPOS_FECHAS
+      .map((grupo) => ({
+        ...grupo,
+        tarjetas: grupo.tarjetas
+          .filter(
+            (tarjeta) =>
+              this.seccionPorCampo.get(tarjeta.key) === SECCION_FECHAS,
+          )
+          .sort(
+            (a, b) =>
+              (this.ordenPorCampo.get(a.key) ?? 0) -
+              (this.ordenPorCampo.get(b.key) ?? 0),
+          ),
+      }))
+      .filter((grupo) => grupo.tarjetas.length > 0);
   }
 
-  /** Resto de campos del grupo: lecturas, errores, tolerancia, catálogos SI/NO. */
-  camposCapturables(grupo: { campos: DynamicField[] }): DynamicField[] {
-    const derivados = new Set([
-      ...Object.values(FECHA_POR_EQUIPO),
-      ...Object.keys(FECHAS_ESTACION),
+  /** Secciones distintas de las cuatro base; se renderizan de forma genérica. */
+  get seccionesAdicionales(): number[] {
+    const base = new Set([
+      SECCION_CODIGOS,
+      SECCION_FECHAS,
+      SECCION_ASEGURAMIENTO,
+      SECCION_CHECKLIST,
     ]);
-    const selector = this.selectorDe(grupo)?.key;
+    return this.seccionesFormulario.filter((seccion) => !base.has(seccion));
+  }
 
-    return grupo.campos.filter(
-      (c) => !derivados.has(c.key) && c.key !== selector && c.key !== CAMPO_OBSERVACIONES,
-    );
+  tituloSeccion(seccion: number): string {
+    switch (seccion) {
+      case SECCION_CODIGOS:
+        return 'Códigos de Equipos e Instrumentos de Monitoreo';
+      case SECCION_FECHAS:
+        return 'Detalles de Fechas de los Equipos';
+      case SECCION_ASEGURAMIENTO:
+        return 'Aseguramiento de la Validez de Resultados';
+      case SECCION_CHECKLIST:
+        return 'Checklist';
+      default:
+        return `Sección ${seccion}`;
+    }
   }
 
   esCalculado(key: string): boolean {
@@ -570,10 +672,10 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
     return restantes > 0
       ? { vencida: false, dias: restantes, texto: `La calibración vence en ${restantes} días` }
       : {
-          vencida: true,
-          dias: Math.abs(restantes),
-          texto: `Calibración vencida hace ${Math.abs(restantes)} días`,
-        };
+        vencida: true,
+        dias: Math.abs(restantes),
+        texto: `Calibración vencida hace ${Math.abs(restantes)} días`,
+      };
   }
 
   /**
@@ -618,6 +720,18 @@ export class CalibracionEquiposFormulario implements OnInit, OnDestroy {
     const valores = this.form.getRawValue();
     const errorPc = this.aNumero(valores[CAMPO_ERROR_PC]);
     const errorPl = this.aNumero(valores[CAMPO_ERROR_PL]);
+    const lecturaPc = this.aNumero(valores[CAMPO_LECTURA_PC]);
+    const lecturaPl = this.aNumero(valores[CAMPO_LECTURA_PL]);
+
+    // No evaluar mientras PC y PL no tengan valores mayores que cero.
+    if (
+      lecturaPc === null ||
+      lecturaPl === null ||
+      lecturaPc <= 0 ||
+      lecturaPl <= 0
+    ) {
+      return null;
+    }
 
     // Sin lecturas no hay nada que evaluar todavía.
     if (errorPc === null || errorPl === null) return null;

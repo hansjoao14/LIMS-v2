@@ -521,6 +521,11 @@ export class GasesCombustionService {
           : null,
         x1: this.numero(fila.x1),
         x2: this.numero(fila.x2),
+        observaciones: fila.observaciones ?? '',
+        realizadoPorId: fila.realizado_por_id,
+        realizadoPorNombre: fila.realizado_por_nombre?.trim() ?? '',
+        revisadoPorId: fila.revisado_por_id,
+        revisadoPorNombre: fila.revisado_por_nombre?.trim() ?? '',
         cumple: fila.cumple,
       });
       porGas.set(gas, filas);
@@ -542,6 +547,10 @@ export class GasesCombustionService {
       marcasUso: fila.marcas_uso,
       ctdiagnosticoId: fila.ctdiagnostico_id,
       observaciones: fila.observaciones ?? '',
+      realizadoPorId: fila.realizado_por_id,
+      realizadoPorNombre: fila.realizado_por_nombre?.trim() ?? '',
+      revisadoPorId: fila.revisado_por_id,
+      revisadoPorNombre: fila.revisado_por_nombre?.trim() ?? '',
     };
   }
 
@@ -666,10 +675,9 @@ export class GasesCombustionService {
           fecha_medicion: this.aISO(fila.fecha),
           x1: this.aDecimal(fila.x1),
           x2: this.aDecimal(fila.x2),
-          // Los responsables son de la hoja, no de la fila: el mismo par va en
-          // todas. En la base siguen siendo columna de cada medición.
-          realizado_por_id: registro.realizadoPorId,
-          revisado_por_id: registro.revisadoPorId,
+          observaciones: fila.observaciones || null,
+          realizado_por_id: fila.realizadoPorId,
+          revisado_por_id: fila.revisadoPorId,
           orden: indice,
         });
       });
@@ -692,8 +700,8 @@ export class GasesCombustionService {
         marcas_uso: fila.marcasUso,
         ctdiagnostico_id: fila.ctdiagnosticoId,
         observaciones: fila.observaciones || null,
-        realizado_por_id: registro.realizadoPorId,
-        revisado_por_id: registro.revisadoPorId,
+        realizado_por_id: fila.realizadoPorId,
+        revisado_por_id: fila.revisadoPorId,
         orden: indice,
       }));
   }

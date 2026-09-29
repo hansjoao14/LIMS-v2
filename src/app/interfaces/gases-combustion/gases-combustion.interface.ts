@@ -137,11 +137,12 @@ export interface MedicionGas {
   cilindroId: number | null;
   x1: number | null;
   x2: number | null;
-  /**
-   * Las observaciones NO son de la medición: en el formato son de la hoja y se
-   * piden una sola vez, en la cabecera. La columna sigue en la tabla y queda
-   * nula.
-   */
+  /** Datos propios de esta medición. */
+  observaciones: string;
+  realizadoPorId: string | null;
+  realizadoPorNombre: string;
+  revisadoPorId: string | null;
+  revisadoPorNombre: string;
   /** Veredicto que persistió el backend. La tabla lo recalcula en vivo. */
   cumple: boolean | null;
 }
@@ -165,6 +166,10 @@ export interface InspeccionSonda {
   marcasUso: boolean | null;
   ctdiagnosticoId: number | null;
   observaciones: string;
+  realizadoPorId: string | null;
+  realizadoPorNombre: string;
+  revisadoPorId: string | null;
+  revisadoPorNombre: string;
 }
 
 /** Registro completo con el que se precarga la pantalla. */
@@ -252,12 +257,10 @@ export interface GasesMedicionPayload {
   x1: string | null;
   x2: string | null;
   /**
-   * Cuatro columnas de la tabla NO viajan y quedan nulas, porque el formato en
-   * uso no las pide: `observaciones` —son de la hoja, se piden una sola vez en
-   * la cabecera—, el par `xr1`/`xr2` y `estado_celdas`/`estado_filtros`.
-   * R95,45% tampoco viaja: **se deriva de X1 y X2** igual que r95,45%, y la
-   * vista la calcula en `rr_observada`.
+   * `xr1`/`xr2`, `estado_celdas`/`estado_filtros` y R95,45% no viajan desde
+   * esta pantalla. Las observaciones y responsables sí pertenecen a cada fila.
    */
+  observaciones: string | null;
   realizado_por_id: string | null;
   revisado_por_id: string | null;
   orden: number;

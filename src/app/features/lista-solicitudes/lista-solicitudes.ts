@@ -1,4 +1,4 @@
-import { Component, NgZone, OnDestroy, OnInit, computed } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Subject, finalize, takeUntil, firstValueFrom } from 'rxjs';
@@ -24,9 +24,11 @@ import {
   DatosFirmaElectronica,
   ErrorFirmaElectronica,
 } from '../../interfaces/documentos/firma-electronica.interface';
+import { FirmaSolicitud } from '../../interfaces/solicitudes/solicitud-trabajo/firma-solicitud.interface';
 
 const ESTADO_PENDIENTE = 2;
 const ESTADO_AUTORIZADO = 387;
+const ESTADO_CREADO = 388;
 
 @Component({
   selector: 'app-lista-solicitudes',
@@ -52,6 +54,13 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   selectedDoc: ReportSolicitud | null = null;
   pdfFirmaBlob: Blob | null = null;
   errorFirma: ErrorFirmaElectronica | null = null;
+
+  /**
+   * Firmas persistidas en backend por solicitud.
+   * Mientras una solicitud no tenga su bitácora cargada, no se habilita la
+   * acción de firma para evitar ofrecer una firma duplicada.
+   */
+  private firmasPorSolicitud: Record<string, FirmaSolicitud[]> = {};
 
   /**
    * Códigos que el firmador devuelve para algo que el usuario puede corregir
@@ -90,22 +99,45 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   // ── Permisos ─────────────────────────────────────────────────────────────
-  private userAppRole = computed<AppRole | null>(() => {
+  /**
+   * Se resuelve el rol en cada evaluación.
+   *
+   * No se usa `computed()` porque `userProfile()` no es una señal reactiva;
+   * si el rol todavía no estaba disponible en la primera evaluación,
+   * `computed()` podía conservar `null` y dejar ocultas las acciones.
+   */
+  private userAppRole(): AppRole | null {
     const roles = this.authService.userProfile()?.roles ?? [];
-    return (Object.values(AppRole) as AppRole[]).find((r) => roles.includes(r)) ?? null;
-  });
 
-  canEdit = computed(() => {
+    return (
+      (Object.values(AppRole) as AppRole[]).find((role) =>
+        roles.includes(role),
+      ) ?? null
+    );
+  }
+
+  canEdit(): boolean {
     const role = this.userAppRole();
-    return role ? hasPermission(MenuKey.LISTA_SOLICITUDES, role, 'editar') : false;
-  });
+    return role
+      ? hasPermission(MenuKey.LISTA_SOLICITUDES, role, 'editar')
+      : false;
+  }
 
-  canDelete = computed(() => {
+  canDelete(): boolean {
     const role = this.userAppRole();
-    return role ? hasPermission(MenuKey.LISTA_SOLICITUDES, role, 'eliminar') : false;
-  });
+    return role
+      ? hasPermission(MenuKey.LISTA_SOLICITUDES, role, 'eliminar')
+      : false;
+  }
 
-  canFirmar = computed(() => this.userAppRole() === AppRole.RESPONSABLE_LAB);
+  canFirmar(): boolean {
+    const role = this.userAppRole();
+
+    return (
+      role === AppRole.TECNICO_DIRECCION ||
+      role === AppRole.RESPONSABLE_LAB
+    );
+  }
 
   constructor(
     private reportSolicitudService: ReportSolicitudService,
@@ -161,13 +193,198 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
     return doc.ctestado_id === ESTADO_PENDIENTE && this.canEdit();
   }
 
-  // Firmar es la acción primaria: queda como botón directo, fuera del menú.
+  /**
+   * Matriz funcional de firma:
+   *
+   * TECNICO_DIRECCION
+   * - Creado + no ha firmado  => mostrar.
+   * - Creado + ya firmó       => ocultar.
+   * - Autorizado              => ocultar.
+   *
+   * RESPONSABLE_LAB
+   * - Creado                  => ocultar.
+   * - Autorizado + no firmó   => mostrar.
+   * - Autorizado + ya firmó   => ocultar.
+   *
+   * La única fuente de verdad sobre las firmas es la bitácora del backend.
+   */
   puedeFirmar(doc: ReportSolicitud): boolean {
-    return doc.ctestado_id === ESTADO_AUTORIZADO && this.canFirmar();
+    const firmas = this.firmasPorSolicitud[doc.id_solicitud];
+
+    if (firmas === undefined) {
+      return false;
+    }
+
+    if (this.esTecnicoDireccion()) {
+      return (
+        Number(doc.ctestado_id) === ESTADO_CREADO &&
+        firmas.length === 0
+      );
+    }
+
+    if (this.esResponsableLaboratorio()) {
+      return (
+        Number(doc.ctestado_id) === ESTADO_AUTORIZADO &&
+        !this.usuarioActualYaFirmo(firmas)
+      );
+    }
+
+    return false;
   }
 
+  private rolesUsuario(): string[] {
+    const roles = new Set<string>();
+
+    for (const role of this.authService.userProfile()?.roles ?? []) {
+      roles.add(String(role).trim().toLowerCase());
+    }
+
+    const payload = this.getTokenPayload();
+    const realmRoles = payload?.['realm_access']?.['roles'];
+
+    if (Array.isArray(realmRoles)) {
+      for (const role of realmRoles) {
+        roles.add(String(role).trim().toLowerCase());
+      }
+    }
+
+    return [...roles];
+  }
+
+  private esTecnicoDireccion(): boolean {
+    const roles = this.rolesUsuario();
+
+    return (
+      roles.includes(AppRole.TECNICO_DIRECCION) ||
+      roles.includes('tecnico_direccion') ||
+      roles.includes('tecnico_direccion_unidad')
+    );
+  }
+
+  private esResponsableLaboratorio(): boolean {
+    const roles = this.rolesUsuario();
+
+    return (
+      roles.includes(AppRole.RESPONSABLE_LAB) ||
+      roles.includes('responsable_lab') ||
+      roles.includes('responsable_laboratorio')
+    );
+  }
+
+  private usuarioActualYaFirmo(firmas: FirmaSolicitud[]): boolean {
+    const idsUsuario = new Set<string>();
+
+    const idActual = String(this.authService.currentUser()?.id ?? '')
+      .trim()
+      .toLowerCase();
+
+    if (idActual) {
+      idsUsuario.add(idActual);
+    }
+
+    const subToken = String(this.getTokenPayload()?.['sub'] ?? '')
+      .trim()
+      .toLowerCase();
+
+    if (subToken) {
+      idsUsuario.add(subToken);
+    }
+
+    const nombreUsuario = this.normalizarTexto(
+      this.authService.currentUser()?.nombre ?? '',
+    );
+
+    return firmas.some((firma) => {
+      const firmaUsuarioId = String(firma.usuario_id ?? '')
+        .trim()
+        .toLowerCase();
+
+      if (firmaUsuarioId && idsUsuario.has(firmaUsuarioId)) {
+        return true;
+      }
+
+      const nombreFirmante = this.normalizarTexto(
+        firma.nombre_firmante ?? '',
+      );
+
+      return (
+        nombreUsuario.length > 0 &&
+        nombreFirmante.length > 0 &&
+        nombreFirmante === nombreUsuario
+      );
+    });
+  }
+
+  private normalizarTexto(valor: string): string {
+    return String(valor ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+  }
+
+  private getTokenPayload(): Record<string, any> | null {
+    const token = this.authService.rawAccessToken;
+
+    if (!token) {
+      return null;
+    }
+
+    try {
+      const payload = token.split('.')[1];
+
+      if (!payload) {
+        return null;
+      }
+
+      const base64 = payload
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+
+      const padded = base64.padEnd(
+        base64.length + ((4 - (base64.length % 4)) % 4),
+        '=',
+      );
+
+      return JSON.parse(window.atob(padded));
+    } catch {
+      return null;
+    }
+  }
+
+  private cargarFirmasSolicitud(doc: ReportSolicitud): void {
+    delete this.firmasPorSolicitud[doc.id_solicitud];
+
+    this.solicitudService
+      .getFirmasSolicitud(doc.id_solicitud)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (firmas) =>
+          this.zone.run(() => {
+            this.firmasPorSolicitud = {
+              ...this.firmasPorSolicitud,
+              [doc.id_solicitud]: firmas ?? [],
+            };
+
+            this.solicitudes = [...this.solicitudes];
+          }),
+        error: (error) => {
+          console.error(
+            'Error consultando firmas:',
+            doc.num_secuencial,
+            error,
+          );
+
+          delete this.firmasPorSolicitud[doc.id_solicitud];
+        },
+      });
+  }
+
+
+  // Pendiente: menú con Editar. Autorizado: menú con Imprimir.
   tieneMenu(doc: ReportSolicitud): boolean {
-    return this.puedeEditar(doc) || this.canDelete() || this.esAutorizado(doc);
+    return this.puedeEditar(doc) || this.esAutorizado(doc);
   }
 
   // ── Impresión ────────────────────────────────────────────────────────────
@@ -184,29 +401,34 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
 
   imprimirSolicitud(doc: ReportSolicitud): void {
     if (!this.esAutorizado(doc)) return;
-    this.showPdfModal = true;
-    this.isPdfCargando = true;
-    this.pdfPreviewBlob = null;
-    this.pdfNombre = `${doc.num_secuencial ?? 'solicitud'}.pdf`;
 
-    /*
-     * El PDF congelado, no el preview de `api_reportes`. Desde que el módulo
-     * firma, imprimir tiene que devolver el mismo archivo que se firmó, con las
-     * firmas estampadas; el de reportes lo regenera y saldría siempre sin
-     * firmar. (CLAUDE.md, "Imprimir un documento": cuál de los dos PDF pedir.)
-     */
+    // Se abre la pestaña inmediatamente para evitar que el navegador
+    // la bloquee cuando el PDF llegue de forma asíncrona.
+    const nuevaVentana = window.open('', '_blank');
+
+    if (!nuevaVentana) {
+      this.toastrAlert.showError(
+        'El navegador bloqueó la apertura del documento PDF.',
+        'Error',
+      );
+      return;
+    }
+
     this.solicitudService
       .getPdfDocumentoSolicitud(doc.id_solicitud)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (blob) =>
           this.zone.run(() => {
-            this.pdfPreviewBlob = blob;
-            this.isPdfCargando = false;
+            const pdfUrl = URL.createObjectURL(blob);
+            nuevaVentana.location.href = pdfUrl;
+
+            // El navegador ya cargó la URL; se libera más adelante.
+            setTimeout(() => URL.revokeObjectURL(pdfUrl), 60_000);
           }),
         error: () =>
           this.zone.run(() => {
-            this.isPdfCargando = false;
+            nuevaVentana.close();
             this.toastrAlert.showError('No se pudo cargar el documento PDF.', 'Error');
           }),
       });
@@ -220,18 +442,27 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
   cargarPagina(page: number): void {
     this.loading = true;
     this.currentPage = page;
+
     this.reportSolicitudService
       .getSolicitudes(page, this.PAGE_SIZE)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: ({ data, meta }) => {
-          this.solicitudes = data;
-          this.meta = meta;
-          this.loading = false;
-        },
+        next: ({ data, meta }) =>
+          this.zone.run(() => {
+            this.firmasPorSolicitud = {};
+            this.solicitudes = data;
+            this.meta = meta;
+            this.loading = false;
+
+            for (const doc of data) {
+              this.cargarFirmasSolicitud(doc);
+            }
+          }),
         error: () => {
           this.loading = false;
-          this.alertService.error('No se pudo cargar la lista de solicitudes');
+          this.alertService.error(
+            'No se pudo cargar la lista de solicitudes',
+          );
         },
       });
   }
@@ -324,13 +555,25 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
     const doc = this.selectedDoc;
     const usuario = this.authService.currentUser();
 
+    const usuarioId =
+      String(this.getTokenPayload()?.['sub'] ?? '').trim() ||
+      String(usuario.id ?? '').trim();
+
+    if (!usuarioId) {
+      this.toastrAlert.showError(
+        'No se pudo identificar al usuario autenticado.',
+        'Error de firma',
+      );
+      return;
+    }
+
     this.errorFirma = null;
     this.procesandoFirma = true;
 
     this.solicitudService
       .firmarSolicitud(doc.id_solicitud, {
         ...datos,
-        usuarioId: usuario.id,
+        usuarioId,
         nombreFirmante: usuario.nombre,
       })
       .pipe(
@@ -343,10 +586,15 @@ export class ListaSolicitudes implements OnInit, OnDestroy {
         next: (respuesta) =>
           this.zone.run(() => {
             this.cerrarFirma();
+
             this.toastrAlert.showSuccess(
               `El documento quedó con ${respuesta.totalFirmas} firma(s).`,
               '¡Firmado!',
             );
+
+            // Recargar la página vuelve a consultar la lista y la bitácora
+            // persistida de firmas, manteniendo la UI sincronizada con backend.
+            this.cargarPagina(this.currentPage);
           }),
         error: (error) =>
           this.zone.run(() => {
