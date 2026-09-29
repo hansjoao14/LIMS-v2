@@ -76,6 +76,7 @@ const REPORT_GASES_MEDICION_FIELDS = `
   valor_teorico
   cumple
   criterio_limite_id
+  observaciones
   realizado_por_id
   realizado_por_nombre
   revisado_por_id

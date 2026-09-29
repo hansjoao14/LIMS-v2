@@ -18,6 +18,10 @@ import { DynamicFormConfig } from '../../../shared/dynamic-form';
 
 /** Única sección: el formulario se llena en una sola pantalla. */
 export const SECCION_CALIBRACION = 1;
+export const SECCION_CODIGOS = 1;
+export const SECCION_FECHAS = 2;
+export const SECCION_ASEGURAMIENTO = 3;
+export const SECCION_CHECKLIST = 4;
 
 export const GRUPO_SONOMETRO = 'SONOMETRO';
 export const GRUPO_CALIBRADOR = 'CALIBRADOR_PC';
@@ -45,6 +49,51 @@ export const CAMPO_ERROR_PC = 'error_pc_114dB';
 export const CAMPO_ERROR_PL = 'error_pl_114dB';
 export const CAMPO_TOLERANCIA = 'tolerancia_patron_laboratorio_dB';
 export const CAMPO_OBSERVACIONES = 'observaciones';
+
+/**
+ * Sección histórica de cada campo.
+ *
+ * Se utiliza únicamente como fallback cuando el atributo todavía no tiene
+ * `seccion` configurada en BD.
+ *
+ * Si BD contiene una sección válida, siempre tiene prioridad sobre este mapa.
+ */
+export const SECCION_FALLBACK_POR_CAMPO: Record<string, number> = {
+  // ── Sección 1: Códigos de equipos ──────────────────────────────────────
+  [CAMPO_COD_SONOMETRO]: SECCION_CODIGOS,
+  [CAMPO_COD_CALIBRADOR]: SECCION_CODIGOS,
+  [CAMPO_COD_PATRON]: SECCION_CODIGOS,
+  [CAMPO_COD_ESTACION]: SECCION_CODIGOS,
+
+  // ── Sección 2: Fechas de última calibración ────────────────────────────
+  [CAMPO_FECHA_SONOMETRO]: SECCION_FECHAS,
+  [CAMPO_FECHA_CALIBRADOR]: SECCION_FECHAS,
+  [CAMPO_FECHA_PATRON]: SECCION_FECHAS,
+
+  fecha_ultima_calibracion_EM_velocidad_viento: SECCION_FECHAS,
+  fecha_ultima_calibracion_EM_direccion_viento: SECCION_FECHAS,
+  fecha_ultima_calibracion_EM_temperatura: SECCION_FECHAS,
+  fecha_ultima_calibracion_EM_humedad: SECCION_FECHAS,
+
+  // ── Sección 3: Aseguramiento de la validez ─────────────────────────────
+  [CAMPO_LECTURA_PC]: SECCION_ASEGURAMIENTO,
+  [CAMPO_LECTURA_PL]: SECCION_ASEGURAMIENTO,
+  [CAMPO_ERROR_PC]: SECCION_ASEGURAMIENTO,
+  [CAMPO_ERROR_PL]: SECCION_ASEGURAMIENTO,
+  [CAMPO_TOLERANCIA]: SECCION_ASEGURAMIENTO,
+
+  // ── Sección 4: Checklist ───────────────────────────────────────────────
+  baterias_adicionales_sonometro: SECCION_CHECKLIST,
+  '2_baterias_AAA_adicionales_EM': SECCION_CHECKLIST,
+  '2_baterias_AAA_adicionales_CA': SECCION_CHECKLIST,
+  'cargador_baterías_AA_AAA': SECCION_CHECKLIST,
+  gps: SECCION_CHECKLIST,
+  tripode_sonometro: SECCION_CHECKLIST,
+  tripode_estacion_meteorologica: SECCION_CHECKLIST,
+  procesador_formato: SECCION_CHECKLIST,
+  [CAMPO_OBSERVACIONES]: SECCION_CHECKLIST,
+};
+
 
 /**
  * Las cuatro fechas de la estación meteorológica salen de un mismo ítem de
@@ -133,16 +182,6 @@ export const GRUPOS_FECHAS: GrupoFechas[] = [
     titulo: 'Ambientales',
     tarjetas: [
       {
-        key: 'fecha_ultima_calibracion_EM_temperatura',
-        titulo: 'Temperatura',
-        icono: ICONO_TEMPERATURA,
-      },
-      {
-        key: 'fecha_ultima_calibracion_EM_humedad',
-        titulo: 'Humedad',
-        icono: ICONO_HUMEDAD,
-      },
-      {
         key: 'fecha_ultima_calibracion_EM_velocidad_viento',
         titulo: 'Velocidad de viento',
         icono: ICONO_VIENTO,
@@ -152,6 +191,16 @@ export const GRUPOS_FECHAS: GrupoFechas[] = [
         titulo: 'Dirección de viento',
         icono: ICONO_DIRECCION_VIENTO,
       },
+      {
+        key: 'fecha_ultima_calibracion_EM_temperatura',
+        titulo: 'Temperatura',
+        icono: ICONO_TEMPERATURA,
+      },
+      {
+        key: 'fecha_ultima_calibracion_EM_humedad',
+        titulo: 'Humedad',
+        icono: ICONO_HUMEDAD,
+      },
     ],
   },
 ];
@@ -159,9 +208,14 @@ export const GRUPOS_FECHAS: GrupoFechas[] = [
 const agrupar = (
   grupo: string,
   nombres: string[],
-): Record<string, { seccion: number; grupo: string }> =>
+): Record<string, { grupo: string }> =>
   Object.fromEntries(
-    nombres.map((nombre) => [nombre, { seccion: SECCION_CALIBRACION, grupo }]),
+    nombres.map((nombre) => [
+      nombre,
+      {
+        grupo,
+      },
+    ]),
   );
 
 export const CALIBRACION_FORM_CONFIG: DynamicFormConfig = {
@@ -183,39 +237,5 @@ export const CALIBRACION_FORM_CONFIG: DynamicFormConfig = {
       layout: LAYOUT_COMPLEMENTARIOS,
       orden: 50,
     },
-  },
-
-  ajustesAgrupacion: {
-    ...agrupar(GRUPO_SONOMETRO, [
-      CAMPO_COD_SONOMETRO,
-      CAMPO_FECHA_SONOMETRO,
-      CAMPO_LECTURA_PC,
-      CAMPO_LECTURA_PL,
-      'baterias_adicionales_sonometro',
-      'tripode_sonometro',
-    ]),
-    ...agrupar(GRUPO_CALIBRADOR, [
-      CAMPO_COD_CALIBRADOR,
-      CAMPO_FECHA_CALIBRADOR,
-      CAMPO_ERROR_PC,
-    ]),
-    ...agrupar(GRUPO_PATRON, [
-      CAMPO_COD_PATRON,
-      CAMPO_FECHA_PATRON,
-      CAMPO_ERROR_PL,
-      CAMPO_TOLERANCIA,
-    ]),
-    ...agrupar(GRUPO_ESTACION, [
-      CAMPO_COD_ESTACION,
-      ...Object.keys(FECHAS_ESTACION),
-      '2_baterias_AAA_adicionales_EM',
-      'tripode_estacion_meteorologica',
-    ]),
-    ...agrupar(GRUPO_COMPLEMENTARIOS, [
-      'cargador_baterías_AA_AAA',
-      'gps',
-      'procesador_formato',
-      CAMPO_OBSERVACIONES,
-    ]),
   },
 };

@@ -1,0 +1,90 @@
+<div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 mb-6">
+  <div class="mb-6 border-b border-slate-300 pb-4">
+    <h3 class="text-lg font-bold text-[#1e3a8a] mb-1">
+      Control de movimientos de bienes muebles
+    </h3>
+    <p class="text-sm text-slate-500">
+      Vista preliminar del formulario. Los campos son únicamente visuales.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-6">
+
+    <div class="flex flex-col">
+      <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+        Código del bien
+      </label>
+      <input
+        type="text"
+        placeholder="Ingrese el código"
+        class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+      />
+    </div>
+
+    <div class="flex flex-col">
+      <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+        Descripción del bien
+      </label>
+      <input
+        type="text"
+        placeholder="Ingrese la descripción"
+        class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+      />
+    </div>
+
+    <div class="flex flex-col">
+      <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+        Tipo de movimiento
+      </label>
+      <select
+        class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+      >
+        <option value="">Seleccione...</option>
+      </select>
+    </div>
+
+    <div class="flex flex-col">
+      <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+        Custodio actual
+      </label>
+      <input
+        type="text"
+        placeholder="Ingrese el custodio"
+        class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+      />
+    </div>
+
+    <div class="flex flex-col">
+      <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+        Ubicación actual
+      </label>
+      <input
+        type="text"
+        placeholder="Ingrese la ubicación"
+        class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+      />
+    </div>
+
+    <div class="flex flex-col">
+      <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+        Fecha
+      </label>
+      <input
+        type="date"
+        class="w-full border border-slate-300 bg-white text-slate-700 p-2.5 rounded text-sm outline-none focus:border-[#1e3a8a] transition-colors"
+      />
+    </div>
+
+    <div class="flex flex-col col-span-1 sm:col-span-2 md:col-span-3">
+      <label class="block text-[11px] font-bold text-[#1e3a8a] uppercase mb-1">
+        Observaciones
+      </label>
+      <textarea
+        rows="3"
+        placeholder="Ingrese observaciones"
+        class="w-full border border-slate-300 bg-white text-slate-700 p-3 rounded text-sm resize-none outline-none focus:border-[#1e3a8a] transition-colors"
+      ></textarea>
+    </div>
+
+  </div>
+</div>

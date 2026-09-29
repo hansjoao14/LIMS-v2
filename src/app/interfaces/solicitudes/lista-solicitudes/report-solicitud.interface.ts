@@ -25,6 +25,9 @@ export interface ReportSolicitud {
   usuario_creacion: string;
   usuario_id: string;
   usuario_nombre: string;
+
+  firmado_tecnico?: boolean;
+  firmado_responsable_lab?: boolean;
 }
 
 export interface ReportValorSolicitud {

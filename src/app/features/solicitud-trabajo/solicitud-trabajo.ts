@@ -821,6 +821,33 @@ export class SolicitudTrabajo implements OnInit, AfterViewChecked, OnDestroy {
     this.pdfPreviewBlob = null;
   }
 
+  formatearParrafoAcuerdo(parrafo: string): {
+  encabezado: string;
+  contenido: string;
+} {
+  const encabezados = [
+    '5. Información Confidencial:',
+    '6. Información Pública:',
+    '7. Información Reservada:',
+    'Artículo 32.- Solicitud y Contenido.',
+  ];
+
+  const encabezado =
+    encabezados.find((item) => parrafo.startsWith(item)) ?? '';
+
+  if (!encabezado) {
+    return {
+      encabezado: '',
+      contenido: parrafo,
+    };
+  }
+
+  return {
+    encabezado,
+    contenido: parrafo.substring(encabezado.length),
+  };
+}
+
   // ── Mapa ─────────────────────────────────────────────────────────────────
 
   openMap(): void {

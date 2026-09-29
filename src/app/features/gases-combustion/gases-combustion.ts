@@ -132,8 +132,8 @@ export class GasesCombustion implements OnInit, OnDestroy {
     anio: [new Date().getFullYear(), [Validators.required]],
     fechaVerificacion: [this.hoy(), [Validators.required]],
     observaciones: [''],
-    // Quién realizó y quién revisó: una vez por hoja. En la base son columna de
-    // cada fila hija y el servicio copia el mismo par en todas al guardar.
+    // Compatibilidad de cabecera: estos controles se conservan internamente.
+    // Las mediciones e inspecciones manejan sus responsables por fila.
     realizadoPorId: [null as string | null],
     realizadoPorNombre: [''],
     revisadoPorId: [null as string | null],
@@ -319,6 +319,8 @@ export class GasesCombustion implements OnInit, OnDestroy {
    * en el grupo porque necesita ver X1 y X2 a la vez.
    */
   private crearFilaMedicion(fila?: MedicionGas): FormGroup {
+    const usuario = this.authService.currentUser();
+
     return this.fb.group(
       {
         id: [fila?.id ?? null],
@@ -326,6 +328,11 @@ export class GasesCombustion implements OnInit, OnDestroy {
         cilindroId: [fila?.cilindroId ?? null],
         x1: [fila?.x1 ?? null, [lecturaValida]],
         x2: [fila?.x2 ?? null, [lecturaValida]],
+        observaciones: [fila?.observaciones ?? ''],
+        realizadoPorId: [fila?.realizadoPorId ?? usuario.id],
+        realizadoPorNombre: [fila?.realizadoPorNombre || usuario.nombre],
+        revisadoPorId: [fila?.revisadoPorId ?? null],
+        revisadoPorNombre: [fila?.revisadoPorNombre ?? ''],
         cumple: [fila?.cumple ?? null],
       },
       { validators: [parDeLecturas] },
@@ -333,6 +340,8 @@ export class GasesCombustion implements OnInit, OnDestroy {
   }
 
   private crearFilaInspeccion(fila?: InspeccionSonda): FormGroup {
+    const usuario = this.authService.currentUser();
+
     return this.fb.group({
       id: [fila?.id ?? null],
       cttrimestreId: [fila?.cttrimestreId ?? null],
@@ -345,6 +354,10 @@ export class GasesCombustion implements OnInit, OnDestroy {
       marcasUso: [fila?.marcasUso ?? false],
       ctdiagnosticoId: [fila?.ctdiagnosticoId ?? null],
       observaciones: [fila?.observaciones ?? ''],
+      realizadoPorId: [fila?.realizadoPorId ?? usuario.id],
+      realizadoPorNombre: [fila?.realizadoPorNombre || usuario.nombre],
+      revisadoPorId: [fila?.revisadoPorId ?? null],
+      revisadoPorNombre: [fila?.revisadoPorNombre ?? ''],
     });
   }
 

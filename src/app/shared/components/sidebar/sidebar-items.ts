@@ -119,6 +119,12 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     requiredRoles: RoleAccess.GASES_COMBUSTION,
   },
   {
+    path: '/control-bienes',
+    label: 'Bienes muebles',
+    icon: GasesCombustionIcon,
+    requiredRoles: RoleAccess.CONTROL_BIENES_MUEBLES,
+  },
+  {
     label: 'Configuración',
     icon: SettingsComponent,
     expanded: false,

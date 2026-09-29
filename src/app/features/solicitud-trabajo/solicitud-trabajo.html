@@ -1,15 +1,10 @@
 <div class="p-6 bg-slate-50 min-h-screen text-slate-700 font-sans pb-24">
   <div class="max-w-7xl mx-auto">
     <div class="animate-in fade-in">
-      <app-page-header
-        breadcrumbSection="Solicitud de trabajo"
-        [title]="formulario?.formulario_nombre ?? 'Solicitud de Trabajo'"
-        subtitle="Gestión de requerimientos técnicos"
-        [codigoFormulario]="reportFormulario?.descripcion ?? null"
-        [elaboradoPor]="selectedTecnicoNombre"
-        [fechaSolicitud]="fechaEmision"
-        [edicion]="reportFormulario?.version ?? null"
-      />
+      <app-page-header breadcrumbSection="Solicitud de trabajo"
+        [title]="formulario?.formulario_nombre ?? 'Solicitud de Trabajo'" subtitle="Gestión de requerimientos técnicos"
+        [codigoFormulario]="reportFormulario?.descripcion ?? null" [elaboradoPor]="selectedTecnicoNombre"
+        [fechaSolicitud]="fechaEmision" [edicion]="reportFormulario?.version ?? null" />
 
       <div class="mb-6">
         <div class="flex justify-between items-center mb-3">
@@ -17,81 +12,48 @@
             RF02 - SOLICITUD DE ORDEN DE TRABAJO
           </p>
           <span
-            class="text-[10px] font-bold text-[#1e3a8a] bg-blue-100 px-3 py-1 rounded-full uppercase tracking-widest"
-            >PASO {{ currentStep }} DE 4</span
-          >
+            class="text-[10px] font-bold text-[#1e3a8a] bg-blue-100 px-3 py-1 rounded-full uppercase tracking-widest">PASO
+            {{ currentStep }} DE 4</span>
         </div>
         <div class="flex items-center gap-2">
           @for (s of [1, 2, 3, 4]; track $index) {
-            <div
-              class="flex-1 h-2.5 rounded-full transition-all duration-500"
-              [class.cursor-pointer]="!secuencialAsignado"
-              [class.cursor-default]="secuencialAsignado"
-              (click)="goToStep(s)"
-              [class.bg-[#2541b2]]="currentStep >= s"
-              [class.bg-slate-200]="currentStep < s"
-            ></div>
+          <div class="flex-1 h-2.5 rounded-full transition-all duration-500"
+            [class.cursor-pointer]="!secuencialAsignado" [class.cursor-default]="secuencialAsignado"
+            (click)="goToStep(s)" [class.bg-[#2541b2]]="currentStep >= s" [class.bg-slate-200]="currentStep < s"></div>
           }
         </div>
       </div>
 
       <form [formGroup]="form">
         @if (currentStep === 1) {
-          <app-step1-solicitud
-            [titulo]="formularioTitulo"
-            [entidadesMock]="establecimientos"
-            [tecnicosFiltrados]="tecnicosFiltrados"
-            [cargando]="isCreandoSolicitud"
-            (next)="goNextStep()"
-          >
-          </app-step1-solicitud>
+        <app-step1-solicitud [titulo]="formularioTitulo" [entidadesMock]="establecimientos"
+          [tecnicosFiltrados]="tecnicosFiltrados" [cargando]="isCreandoSolicitud" (next)="goNextStep()">
+        </app-step1-solicitud>
         }
 
         @if (currentStep === 2) {
-          <app-step2-operador
-            [fields]="fields"
-            [buscandoIntegracion]="buscandoIntegracion"
-            [manualSchedules]="manualSchedules"
-            [motivoFlujo]="motivoFlujo"
-            [isPasaporteSelected]="isPasaporteSelected"
-            [cargando]="isGuardando"
-            (next)="goNextStep()"
-            (prev)="goPrevStep()"
-            (openMap)="openMap()"
-            (buscarIntegracion)="buscarDatosIntegracion($event)"
-            (addManualSchedule)="addManualScheduleItem($event)"
-            (removeManualSchedule)="removeManualScheduleItem($event)"
-          >
-          </app-step2-operador>
+        <app-step2-operador [fields]="fields" [buscandoIntegracion]="buscandoIntegracion"
+          [manualSchedules]="manualSchedules" [motivoFlujo]="motivoFlujo" [isPasaporteSelected]="isPasaporteSelected"
+          [cargando]="isGuardando" (next)="goNextStep()" (prev)="goPrevStep()" (openMap)="openMap()"
+          (buscarIntegracion)="buscarDatosIntegracion($event)" (addManualSchedule)="addManualScheduleItem($event)"
+          (removeManualSchedule)="removeManualScheduleItem($event)">
+        </app-step2-operador>
         }
 
         @if (currentStep === 3) {
-          <app-step3-catalogo
-            [cargando]="isGuardando"
-            [estadoPrevio]="catalogosSeleccionados"
-            [ensayosMuestreoPrevio]="ensayosMuestreo"
-            [ensayosResidualesPrevio]="ensayosResiduales"
-            [ensayosAirePrevio]="ensayosAirePrevio"
-            [ensayosRuidoPrevio]="ensayosRuidoPrevio"
-            (estadoCambiado)="catalogosSeleccionados = $event"
-            (ensayosMuestreoCambiado)="ensayosMuestreo = $event"
-            (ensayosResidualesCambiado)="ensayosResiduales = $event"
-            (ensayosAireCambiado)="onEnsayosAireCambiado($event)"
-            (ensayosRuidoCambiado)="onEnsayosRuidoCambiado($event)"
-            (next)="onStep3Next($event)"
-            (prev)="goPrevStep()"
-          >
-          </app-step3-catalogo>
+        <app-step3-catalogo [cargando]="isGuardando" [estadoPrevio]="catalogosSeleccionados"
+          [ensayosMuestreoPrevio]="ensayosMuestreo" [ensayosResidualesPrevio]="ensayosResiduales"
+          [ensayosAirePrevio]="ensayosAirePrevio" [ensayosRuidoPrevio]="ensayosRuidoPrevio"
+          (estadoCambiado)="catalogosSeleccionados = $event" (ensayosMuestreoCambiado)="ensayosMuestreo = $event"
+          (ensayosResidualesCambiado)="ensayosResiduales = $event" (ensayosAireCambiado)="onEnsayosAireCambiado($event)"
+          (ensayosRuidoCambiado)="onEnsayosRuidoCambiado($event)" (next)="onStep3Next($event)" (prev)="goPrevStep()">
+        </app-step3-catalogo>
         }
 
         @if (currentStep === 4) {
-          <app-step4-confirmacion
-            [secuencialAsignado]="secuencialAsignado"
-            (prev)="goPrevStep()"
-            (iniciarAcuerdos)="iniciarAcuerdos()"
-            (nuevaSolicitud)="nuevaSolicitud()"
-          >
-          </app-step4-confirmacion>
+        <app-step4-confirmacion [secuencialAsignado]="secuencialAsignado" (prev)="goPrevStep()"
+          (iniciarAcuerdos)="iniciarAcuerdos()" (nuevaSolicitud)="nuevaSolicitud()">
+        </app-step4-confirmacion>
         }
       </form>
     </div>
@@ -99,151 +61,121 @@
 </div>
 
 @if (showTerminosModal) {
-  <div
-    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in p-4"
-  >
-    <div class="bg-white rounded-lg shadow-2xl w-full max-w-xl mx-4 flex flex-col max-h-[85vh]">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <h3 class="text-base font-bold text-[#1e3a8a] uppercase tracking-wide">
-          Términos y Condiciones
-        </h3>
-        <button
-          type="button"
-          (click)="showTerminosModal = false"
-          class="text-slate-400 hover:text-red-500 text-xl leading-none"
-        >
-          &times;
+<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in p-4">
+  <div class="bg-white rounded-lg shadow-2xl w-full max-w-xl mx-4 flex flex-col max-h-[85vh]">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <h3 class="text-base font-bold text-[#1e3a8a] uppercase tracking-wide">
+        Términos y Condiciones
+      </h3>
+      <button type="button" (click)="showTerminosModal = false"
+        class="text-slate-400 hover:text-red-500 text-xl leading-none">
+        &times;
+      </button>
+    </div>
+    <div class="overflow-y-auto px-6 py-4 flex-1 custom-scroll">
+      <ul class="space-y-3">
+        @for (item of terminosCondiciones; track $index) {
+        <li class="flex gap-2 text-sm text-slate-700">
+          <span class="mt-1 shrink-0 w-2 h-2 rounded-full bg-[#1e3a8a]"></span>
+          <span>{{ item }}</span>
+        </li>
+        }
+      </ul>
+    </div>
+    <div class="px-6 py-3 border-t border-gray-200">
+      <p class="text-[11px] text-blue-900 font-semibold italic mb-3">
+        *El cliente entiende y acepta los términos de esta solicitud.
+      </p>
+      <div class="flex gap-3">
+        <button type="button" (click)="showTerminosModal = false"
+          class="flex-1 border border-gray-300 text-slate-700 font-bold uppercase text-xs py-3 rounded hover:bg-gray-50">
+          Cerrar
         </button>
-      </div>
-      <div class="overflow-y-auto px-6 py-4 flex-1 custom-scroll">
-        <ul class="space-y-3">
-          @for (item of terminosCondiciones; track $index) {
-            <li class="flex gap-2 text-sm text-slate-700">
-              <span class="mt-1 shrink-0 w-2 h-2 rounded-full bg-[#1e3a8a]"></span>
-              <span>{{ item }}</span>
-            </li>
-          }
-        </ul>
-      </div>
-      <div class="px-6 py-3 border-t border-gray-200">
-        <p class="text-[11px] text-blue-900 font-semibold italic mb-3">
-          *El cliente entiende y acepta los términos de esta solicitud.
-        </p>
-        <div class="flex gap-3">
-          <button
-            type="button"
-            (click)="showTerminosModal = false"
-            class="flex-1 border border-gray-300 text-slate-700 font-bold uppercase text-xs py-3 rounded hover:bg-gray-50"
-          >
-            Cerrar
-          </button>
-          <button
-            type="button"
-            (click)="aceptarTerminos()"
-            class="flex-1 bg-[#1e3a8a] text-white font-bold uppercase text-xs py-3 rounded hover:bg-[#2541b2]"
-          >
-            Aceptar y Continuar
-          </button>
-        </div>
+        <button type="button" (click)="aceptarTerminos()"
+          class="flex-1 bg-[#1e3a8a] text-white font-bold uppercase text-xs py-3 rounded hover:bg-[#2541b2]">
+          Aceptar y Continuar
+        </button>
       </div>
     </div>
   </div>
+</div>
 }
 
 @if (showConfidencialidadModal) {
-  <div
-    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in p-4"
-  >
-    <div class="bg-white rounded-lg shadow-2xl w-full max-w-xl mx-4 flex flex-col max-h-[85vh]">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <h3 class="text-base font-bold text-[#1e3a8a] uppercase tracking-wide">
-          Acuerdo de Confidencialidad
-        </h3>
-        <button
-          (click)="showConfidencialidadModal = false"
-          class="text-slate-400 hover:text-red-500 text-xl leading-none"
-        >
-          &times;
-        </button>
-      </div>
-      <div class="overflow-y-auto px-6 py-4 flex-1 custom-scroll">
-        <div class="space-y-4">
-          @for (
-            parrafo of acuerdoConfidencialidad.split('\n\n');
-            track $index;
-            let first = $first
-          ) {
-            <p class="text-sm text-slate-700 leading-relaxed" [class.font-bold]="first">
-              {{ parrafo }}
-            </p>
+<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in p-4">
+  <div class="bg-white rounded-lg shadow-2xl w-full max-w-xl mx-4 flex flex-col max-h-[85vh]">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <h3 class="text-base font-bold text-[#1e3a8a] uppercase tracking-wide">
+        Acuerdo de Confidencialidad
+      </h3>
+      <button (click)="showConfidencialidadModal = false"
+        class="text-slate-400 hover:text-red-500 text-xl leading-none">
+        &times;
+      </button>
+    </div>
+    <div class="overflow-y-auto px-6 py-4 flex-1 custom-scroll">
+      <div class="space-y-4">
+        @for (
+        parrafo of acuerdoConfidencialidad.split('\n\n');
+        track $index;
+        let first = $first
+        ) {
+        @let bloque = formatearParrafoAcuerdo(parrafo);
+
+        <p class="text-sm text-slate-700 leading-relaxed" [class.font-bold]="first">
+          @if (bloque.encabezado) {
+          <span class="font-bold italic">
+            {{ bloque.encabezado }}
+          </span>
           }
-        </div>
+
+          {{ bloque.contenido }}
+        </p>
+        }
       </div>
-      <div class="px-6 py-3 border-t border-gray-200">
-        <div class="flex gap-3">
-          <button
-            type="button"
-            (click)="showConfidencialidadModal = false"
-            [disabled]="isGuardando"
-            class="flex-1 border border-gray-300 text-slate-700 font-bold uppercase text-xs py-3 rounded hover:bg-gray-50 disabled:opacity-50"
-          >
-            Cerrar
-          </button>
-          <button
-            type="button"
-            (click)="aceptarConfidencialidad()"
-            [disabled]="isGuardando"
-            class="flex-1 bg-[#1e3a8a] text-white font-bold uppercase text-xs py-3 rounded hover:bg-[#2541b2] disabled:opacity-50 flex justify-center items-center gap-2"
-          >
-            @if (isGuardando) {
-              <span
-                class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"
-              ></span>
-              Guardando...
-            } @else {
-              Aceptar y Guardar Solicitud
-            }
-          </button>
-        </div>
+    </div>
+    <div class="px-6 py-3 border-t border-gray-200">
+      <div class="flex gap-3">
+        <button type="button" (click)="showConfidencialidadModal = false" [disabled]="isGuardando"
+          class="flex-1 border border-gray-300 text-slate-700 font-bold uppercase text-xs py-3 rounded hover:bg-gray-50 disabled:opacity-50">
+          Cerrar
+        </button>
+        <button type="button" (click)="aceptarConfidencialidad()" [disabled]="isGuardando"
+          class="flex-1 bg-[#1e3a8a] text-white font-bold uppercase text-xs py-3 rounded hover:bg-[#2541b2] disabled:opacity-50 flex justify-center items-center gap-2">
+          @if (isGuardando) {
+          <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+          Guardando...
+          } @else {
+          Aceptar y Guardar Solicitud
+          }
+        </button>
       </div>
     </div>
   </div>
+</div>
 }
 
-<app-pdf-viewer
-  [visible]="showPdfFinal"
-  [loading]="isPdfCargando"
-  [pdfBlob]="pdfPreviewBlob"
-  [nombreArchivo]="pdfNombreFinal"
-  titulo="Solicitud Generada"
-  (closed)="cerrarPdfFinal()"
-/>
+<app-pdf-viewer [visible]="showPdfFinal" [loading]="isPdfCargando" [pdfBlob]="pdfPreviewBlob"
+  [nombreArchivo]="pdfNombreFinal" titulo="Solicitud Generada" (closed)="cerrarPdfFinal()" />
 
 @if (showMapModal) {
-  <div
-    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-  >
-    <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <h3 class="text-base font-bold text-[#1e3a8a] uppercase tracking-wide">Ubicación Exacta</h3>
-        <button
-          type="button"
-          (click)="closeMap()"
-          class="text-slate-400 hover:text-red-500 text-xl leading-none"
-        >
-          &times;
-        </button>
-      </div>
-      <div><div id="map-container" class="h-[400px] w-full shadow-inner"></div></div>
-      <div class="px-6 py-3 border-t border-gray-200 text-right">
-        <button
-          type="button"
-          (click)="closeMap()"
-          class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-xs font-bold uppercase hover:bg-[#2541b2]"
-        >
-          Confirmar Coordenadas
-        </button>
-      </div>
+<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <h3 class="text-base font-bold text-[#1e3a8a] uppercase tracking-wide">Ubicación Exacta</h3>
+      <button type="button" (click)="closeMap()" class="text-slate-400 hover:text-red-500 text-xl leading-none">
+        &times;
+      </button>
+    </div>
+    <div>
+      <div id="map-container" class="h-[400px] w-full shadow-inner"></div>
+    </div>
+    <div class="px-6 py-3 border-t border-gray-200 text-right">
+      <button type="button" (click)="closeMap()"
+        class="bg-[#1e3a8a] text-white px-8 py-2.5 rounded text-xs font-bold uppercase hover:bg-[#2541b2]">
+        Confirmar Coordenadas
+      </button>
     </div>
   </div>
+</div>
 }
